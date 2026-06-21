@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#070B14;font-family:'DM Sans',sans-serif;color:#EFF3FA}
+a{text-decoration:none;color:inherit}
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.hub-card{display:block;border-radius:18px;padding:20px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);transition:transform .18s ease,border-color .18s ease,background .18s ease}
+.hub-card:hover{transform:translateY(-3px);border-color:rgba(203,164,94,0.4);background:#16203400}
+.hub-card:hover{background:#172339}
+@keyframes hub-glow{0%,100%{opacity:.4}50%{opacity:.85}}
+</style>
+</helmet>
+<div style="min-height:100vh;position:relative;overflow:hidden;background:#070B14">
+  <div style="position:absolute;top:-180px;left:50%;transform:translateX(-50%);width:760px;height:760px;border-radius:50%;background:radial-gradient(circle,rgba(203,164,94,0.10),transparent 65%);pointer-events:none;animation:hub-glow 8s ease-in-out infinite"></div>
+  <div style="max-width:1080px;margin:0 auto;padding:60px 28px 80px;position:relative">
+    <!-- header -->
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#0E1A30,#070D1C);box-shadow:0 0 0 1px rgba(203,164,94,0.22)"><dc-import name="Raccoon" size="42" mood="approved" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="#CBA45E" pupil="#04080F" hint-size="42px,42px"></dc-import></div>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:34px;font-weight:900;line-height:1">Move — Project map</div>
+        <div style="color:#8A99B6;font-size:13.5px;margin-top:4px">Every screen and surface in one place. Tap any card to open it.</div>
+      </div>
+    </div>
+
+    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+      <div style="margin-top:40px">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px">
+          <div style="color:#CBA45E;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase">{{ g.title }}</div>
+          <div style="flex:1;height:1px;background:rgba(110,150,225,0.12)"></div>
+          <div style="color:#41526F;font-size:11px;font-weight:600">{{ g.count }}</div>
+        </div>
+        <div class="hub-grid">
+          <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="6">
+            <a class="hub-card" href="{{ it.href }}" target="_blank">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:{{ it.bg }};font-size:20px">{{ it.icon }}</div>
+                <span style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{{ it.tagCol }};background:{{ it.tagBg }};padding:4px 9px;border-radius:99px">{{ it.tag }}</span>
+              </div>
+              <div style="font-size:16px;font-weight:700;margin-top:14px">{{ it.name }}</div>
+              <div style="color:#8A99B6;font-size:12px;line-height:1.5;margin-top:5px">{{ it.desc }}</div>
+            </a>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+
+    <div style="margin-top:44px;border-radius:18px;padding:18px 20px;background:rgba(224,168,90,0.08);border:1px solid rgba(224,168,90,0.25);color:#E0A85A;font-size:12.5px;line-height:1.6">
+      <strong>Next integration step:</strong> <span style="color:#8A99B6">the standalone mobile modules (Reminders, Help, Search, Providers, Custom providers, Invitations) are built but not yet linked inside the Move app’s navigation. Wiring them into the “More” tab + global search is the remaining product work.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1080,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals(){
+    const webTag={tag:'Web',tagCol:'#37C2C9',tagBg:'rgba(55,194,201,0.14)'};
+    const appTag={tag:'App',tagCol:'#CBA45E',tagBg:'rgba(203,164,94,0.14)'};
+    const modTag={tag:'Module',tagCol:'#54CB7E',tagBg:'rgba(84,203,126,0.14)'};
+    const bgA='rgba(203,164,94,0.14)',bgB='rgba(55,194,201,0.14)',bgC='rgba(84,203,126,0.14)',bgD='rgba(226,92,92,0.14)';
+    const mk=(href,icon,name,desc,t,bg)=>({href,icon,name,desc,bg,tag:t.tag,tagCol:t.tagCol,tagBg:t.tagBg});
+    const web=[
+      mk('Web.dc.html','🌐','Web app (router)','Full multi-page site — start here',webTag,bgB),
+      mk('Move Web.dc.html','🏠','Landing','Marketing home + live demo',webTag,bgB),
+      mk('Web Features.dc.html','✨','Features',' Everything the app does',webTag,bgB),
+      mk('Web Why-Free.dc.html','🎁','Why free','The free model explained',webTag,bgB),
+      mk('Web Blog.dc.html','📰','Guides / Blog','Moving guides',webTag,bgB),
+      mk('Web Login.dc.html','🔑','Web login','Desktop sign-in',webTag,bgB),
+      mk('Web Onboarding.dc.html','🚪','Web onboarding','4-step web sign-up',webTag,bgB),
+    ];
+    const app=[
+      mk('Move.dc.html','📱','Move app','Home · Moving · Services · Addresses · More',appTag,bgA),
+      mk('Onboarding.dc.html','🧭','Onboarding','7-step mobile onboarding',appTag,bgA),
+      mk('Auth.dc.html','🔓','Auth','Mobile sign in / sign up',appTag,bgA),
+    ];
+    const mods=[
+      mk('Providers.dc.html','🔎','Providers / Compare','Compare utility & internet plans',modTag,bgC),
+      mk('Reminders.dc.html','🔔','Reminders','Overdue · this week · upcoming',modTag,bgC),
+      mk('Help.dc.html','💬','Help & support','Topics + tickets',modTag,bgC),
+      mk('Search.dc.html','🗂️','Search','Global app search',modTag,bgC),
+      mk('CustomProviders.dc.html','➕','Custom providers','Track anything custom',modTag,bgC),
+      mk('Invitations.dc.html','👥','Invitations','Share the move with family',modTag,bgC),
+    ];
+    return { groups:[
+      {title:'Web',count:web.length+' pages',items:web},
+      {title:'Mobile app',count:app.length+' flows',items:app},
+      {title:'Mobile modules',count:mods.length+' screens',items:mods},
+    ]};
+  }
+}
+</script>
+</body>
+</html>

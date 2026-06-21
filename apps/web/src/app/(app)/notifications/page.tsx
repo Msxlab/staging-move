@@ -155,8 +155,8 @@ export default function NotificationsPage() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("eyebrow")}</p>
-          <h1 className="h2 mt-1 text-foreground">
-            {t("headingPrefix")} <em>{t("headingAccent")}</em>
+          <h1 className="h2 font-display mt-1 text-foreground">
+            {t("headingPrefix")} <em className="text-primary not-italic">{t("headingAccent")}</em>
           </h1>
           <p className="mt-1 text-sm text-foreground/45">{t("pageSub")}</p>
         </div>
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-destructive">
                   {t("unread", { count: unreadCount })}
                 </p>
-                <p className="text-sm font-semibold text-foreground mt-0.5">{t("heroTitle")}</p>
+                <p className="font-display text-sm font-semibold text-foreground mt-0.5">{t("heroTitle")}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{t("heroSubtitle")}</p>
               </div>
             </div>

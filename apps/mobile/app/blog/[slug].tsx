@@ -14,9 +14,11 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, BookOpen, ExternalLink } from "lucide-react-native";
 import { api, APP_WEB_URL } from "@/lib/api";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
+import { HeroCard, MoveCard, Pill } from "@/components/move";
 
 interface BlogPostDetail {
   slug: string;
@@ -137,7 +139,7 @@ export default function BlogDetailScreen() {
     return (
       <SafeAreaView style={styles.center} edges={["bottom"]}>
         <Text style={styles.errorText}>{error || t("blog.postNotFound")}</Text>
-        <TouchableOpacity onPress={load} style={styles.retryButton}>
+        <TouchableOpacity onPress={load} style={styles.retryButton} activeOpacity={0.85}>
           <Text style={styles.retryText}>{t("common.retry")}</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -162,6 +164,7 @@ export default function BlogDetailScreen() {
       </View>
       <ScrollView
         contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -176,14 +179,14 @@ export default function BlogDetailScreen() {
         {post.ogImageUrl ? (
           <Image source={{ uri: post.ogImageUrl }} style={styles.cover} accessibilityLabel={post.ogImageAlt || post.title} />
         ) : null}
-        <View style={styles.hero}>
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <BookOpen size={20} color={theme.colors.primary} />
             </View>
             <View style={styles.heroCopy}>
               <Text style={styles.heroKicker}>READING ROOM</Text>
-              {post.category ? <Text style={styles.category}>{post.category.name.toUpperCase()}</Text> : null}
+              {post.category ? <Pill label={post.category.name.toUpperCase()} tone="accent" style={styles.categoryPill} /> : null}
             </View>
           </View>
           <Text style={styles.title}>{post.title}</Text>
@@ -204,13 +207,20 @@ export default function BlogDetailScreen() {
               <Text style={styles.heroStatLabel}>date</Text>
             </View>
           </View>
-        </View>
-        <View style={styles.bodyPanel}>
+        </HeroCard>
+        <MoveCard style={styles.bodyPanel} padding={16} radius={theme.radius.xl}>
           <Text style={styles.body}>{body}</Text>
-        </View>
-        <TouchableOpacity onPress={openWeb} style={styles.webButton}>
-          <ExternalLink size={16} color="#fff" />
-          <Text style={styles.webButtonText}>{t("blog.openWeb")}</Text>
+        </MoveCard>
+        <TouchableOpacity onPress={openWeb} style={styles.webButton} activeOpacity={0.85}>
+          <LinearGradient
+            colors={theme.colors.gradient.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.webButtonGrad}
+          >
+            <ExternalLink size={16} color={theme.colors.onAccent} />
+            <Text style={styles.webButtonText}>{t("blog.openWeb")}</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -230,13 +240,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  screenTitle: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  screenTitle: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   center: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -250,46 +260,36 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     aspectRatio: 1200 / 630,
     borderRadius: 22,
     marginBottom: 14,
-    backgroundColor: theme.colors.elevated,
+    backgroundColor: theme.colors.surface2,
   },
   hero: {
-    borderRadius: 24,
-    padding: 16,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
+    marginBottom: 14,
   },
   heroTop: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
   heroIcon: {
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
-  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
-  category: {
-    fontSize: 11,
-    letterSpacing: 0,
-    color: theme.colors.primary,
-    fontWeight: "700",
-    marginTop: 3,
-  },
+  heroKicker: { fontSize: 10, fontFamily: fonts.sansBold, letterSpacing: 1.4, textTransform: "uppercase", color: theme.colors.primary },
+  categoryPill: { marginTop: 6 },
   title: {
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: "800",
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
   },
   excerpt: {
     fontSize: 16,
     lineHeight: 24,
-    color: theme.colors.textMuted,
+    fontFamily: fonts.sans,
+    color: theme.colors.textSecondary,
     marginTop: 12,
   },
   heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
@@ -303,49 +303,50 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
-  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatValue: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
   heroStatLabel: {
     fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 0.6,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
   bodyPanel: {
-    borderRadius: 22,
-    padding: 16,
-    marginTop: 14,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    marginTop: 0,
   },
   body: {
     fontSize: 16,
     lineHeight: 25,
+    fontFamily: fonts.sans,
     color: theme.colors.text,
   },
   webButton: {
     marginTop: 28,
-    borderRadius: 16,
-    backgroundColor: theme.colors.primary,
-    paddingVertical: 12,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+  },
+  webButtonGrad: {
+    paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 8,
   },
-  webButtonText: { color: "#fff", fontWeight: "700" },
+  webButtonText: { color: theme.colors.onAccent, fontFamily: fonts.sansBold, fontSize: 15 },
   errorText: {
     color: theme.colors.text,
+    fontFamily: fonts.sans,
     textAlign: "center",
     marginBottom: 12,
   },
   retryButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: theme.colors.primary,
+    paddingVertical: 10,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
   },
-  retryText: { color: "#fff", fontWeight: "600" },
+  retryText: { color: theme.colors.primary, fontFamily: fonts.sansBold },
 });

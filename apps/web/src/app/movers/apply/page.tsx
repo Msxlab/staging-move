@@ -20,9 +20,13 @@ export default async function MoverApplyPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-12 sm:py-16">
       <header className="mb-8">
-        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">For moving companies</p>
-        <h1 className="h1 mt-2 text-3xl text-foreground sm:text-4xl">List your moving company</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+          For moving companies
+        </span>
+        <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          List your moving company
+        </h1>
+        <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
           Get in front of people planning a move. Submit your company details and proof of authority; our team
           verifies every applicant against the public FMCSA register before listing. Listing is free — verified
           movers appear in our licensed-movers directory.
@@ -32,23 +36,23 @@ export default async function MoverApplyPage() {
       {enabled === "true" ? (
         <MoverApplyForm />
       ) : (
-        <div className="rounded-2xl border border-border bg-foreground/5 p-8 text-center">
-          <h2 className="h2 text-2xl text-foreground">Applications are paused</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <div className="rounded-[22px] border border-border bg-card/60 p-8 text-center shadow-sm">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Applications are paused</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             We&apos;re not accepting new mover applications right now. Check back soon.
           </p>
           <Link
             href="/"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
           >
             Back to home
           </Link>
         </div>
       )}
 
-      <p className="mt-8 text-center text-xs text-muted-foreground">
+      <p className="mt-8 text-center text-xs leading-relaxed text-muted-foreground">
         Questions? See our{" "}
-        <Link href="/legal/terms" className="underline underline-offset-2 hover:text-foreground">
+        <Link href="/legal/terms" className="underline underline-offset-2 transition hover:text-primary">
           terms
         </Link>
         . Submitting does not guarantee listing.

@@ -41,16 +41,19 @@ export default function CookiePolicyPage() {
       title="Cookie Policy"
       description="This page explains how LocateFlow uses cookies, browser storage, consent records, analytics tags, and similar technologies."
     >
-      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+      <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         {highlights.map((item) => (
-          <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
-            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div
+            key={item.title}
+            className="space-y-3 rounded-[22px] border border-border bg-background/60 p-7 transition hover:border-primary/40"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <item.icon className="h-5 w-5" />
-            </div>
-            <h2 className="text-base font-semibold text-foreground">{item.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+            </span>
+            <h2 className="font-display text-base font-bold tracking-tight text-foreground">{item.title}</h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
           </div>
         ))}
       </div>

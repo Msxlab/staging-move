@@ -17,13 +17,13 @@ import {
   Wallet,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { Card } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { asObject } from "@/lib/offline-cache";
 import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
+import { HeroCard, MoveCard, SectionHeader, MoveProgressBar, Pill } from "@/components/move";
 
 function readBudgetDetailCache(raw: unknown): any | null {
   return asObject(raw) as any | null;
@@ -144,7 +144,7 @@ export default function BudgetDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>{monthName}</Text>
+        <Text style={styles.title} numberOfLines={1}>{monthName}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -153,7 +153,7 @@ export default function BudgetDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
-        <View style={styles.hero}>
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <Wallet size={20} color={theme.colors.primary} />
@@ -165,24 +165,13 @@ export default function BudgetDetailScreen() {
                 {overBudget ? t("budget.overBudget") : t("budget.onTrack")}
               </Text>
             </View>
-            <View style={[styles.statusPill, overBudget ? styles.statusPillWarn : styles.statusPillGood]}>
-              <Text style={[styles.statusPillText, overBudget ? styles.statusTextWarn : styles.statusTextGood]}>
-                {overBudget ? t("budget.overBudget") : t("budget.onTrack")}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressMeter,
-                {
-                  width: `${spendPct}%`,
-                  backgroundColor: overBudget ? theme.colors.error : theme.colors.primary,
-                },
-              ]}
+            <Pill
+              label={overBudget ? t("budget.overBudget") : t("budget.onTrack")}
+              tone={overBudget ? "error" : "success"}
             />
           </View>
+
+          <MoveProgressBar value={spendPct / 100} height={8} style={styles.progressTrack} />
 
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
@@ -198,35 +187,35 @@ export default function BudgetDetailScreen() {
               <Text style={styles.heroStatLabel}>balance</Text>
             </View>
           </View>
-        </View>
+        </HeroCard>
 
         <View style={styles.summaryGrid}>
-          <Card variant="glass" style={styles.summaryCard}>
-            <TrendingUp size={18} color={theme.colors.emerald.text} />
-            <Text style={[styles.summaryValue, { color: theme.colors.emerald.text }]}>{fmt(income)}</Text>
+          <MoveCard style={styles.summaryCard} padding={14} radius={theme.radius.xl}>
+            <TrendingUp size={18} color={theme.colors.success} />
+            <Text style={[styles.summaryValue, { color: theme.colors.success }]}>{fmt(income)}</Text>
             <Text style={styles.summaryLabel}>{t("budget.actualIncome")}</Text>
             {plannedIncome ? <Text style={styles.summaryPlanned}>{t("budget.plannedAmount", { amount: fmt(plannedIncome) })}</Text> : null}
-          </Card>
-          <Card variant="glass" style={styles.summaryCard}>
-            <TrendingDown size={18} color={theme.colors.rose.text} />
-            <Text style={[styles.summaryValue, { color: theme.colors.rose.text }]}>{fmt(expenses)}</Text>
+          </MoveCard>
+          <MoveCard style={styles.summaryCard} padding={14} radius={theme.radius.xl}>
+            <TrendingDown size={18} color={theme.colors.error} />
+            <Text style={[styles.summaryValue, { color: theme.colors.error }]}>{fmt(expenses)}</Text>
             <Text style={styles.summaryLabel}>{t("budget.actualExpenses")}</Text>
             {plannedExpenses ? <Text style={styles.summaryPlanned}>{t("budget.plannedAmount", { amount: fmt(plannedExpenses) })}</Text> : null}
-          </Card>
-          <Card variant="glass" style={styles.summaryCard}>
-            <DollarSign size={18} color={savings >= 0 ? theme.colors.emerald.text : theme.colors.rose.text} />
-            <Text style={[styles.summaryValue, { color: savings >= 0 ? theme.colors.emerald.text : theme.colors.rose.text }]}>{fmt(savings)}</Text>
+          </MoveCard>
+          <MoveCard style={styles.summaryCard} padding={14} radius={theme.radius.xl}>
+            <DollarSign size={18} color={savings >= 0 ? theme.colors.success : theme.colors.error} />
+            <Text style={[styles.summaryValue, { color: savings >= 0 ? theme.colors.success : theme.colors.error }]}>{fmt(savings)}</Text>
             <Text style={styles.summaryLabel}>{t("budget.savings")}</Text>
             {income > 0 ? <Text style={styles.summaryPlanned}>{t("budget.savingsRate", { rate: ((savings / income) * 100).toFixed(1) })}</Text> : null}
             {plannedIncome || plannedExpenses ? <Text style={styles.summaryPlanned}>Plan {fmt(plannedSavings)}</Text> : null}
-          </Card>
+          </MoveCard>
         </View>
 
         {/* Category Breakdown */}
         {categoryBreakdown.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>{t("budget.spendingByCategory")}</Text>
-            <Card variant="glass" style={styles.breakdownCard}>
+            <SectionHeader label={t("budget.spendingByCategory")} style={styles.sectionHeader} />
+            <MoveCard style={styles.breakdownCard} padding={14} radius={theme.radius.xl}>
               {categoryBreakdown.map(([cat, amount], i) => {
                 const pct = expenses > 0 ? ((amount as number) / expenses) * 100 : 0;
                 return (
@@ -235,9 +224,7 @@ export default function BudgetDetailScreen() {
                       <Text style={styles.categoryName}>{cat}</Text>
                       <Text style={styles.categoryAmount}>{fmt(amount as number)}</Text>
                     </View>
-                    <View style={styles.progressBg}>
-                      <View style={[styles.progressFill, { width: `${Math.min(100, pct)}%` }]} />
-                    </View>
+                    <MoveProgressBar value={Math.min(100, pct) / 100} height={6} style={styles.progressBg} />
                     <Text style={styles.categoryPct}>{pct.toFixed(1)}%</Text>
                   </View>
                 );
@@ -246,16 +233,16 @@ export default function BudgetDetailScreen() {
                 <Text style={styles.totalLabel}>{t("budget.total")}</Text>
                 <Text style={styles.totalValue}>{fmt(expenses)}</Text>
               </View>
-            </Card>
+            </MoveCard>
           </>
         )}
 
         {budget.notes && (
           <>
-            <Text style={styles.sectionTitle}>{t("budget.notes")}</Text>
-            <Card variant="glass">
+            <SectionHeader label={t("budget.notes")} style={styles.sectionHeader} />
+            <MoveCard padding={14} radius={theme.radius.xl}>
               <Text style={styles.notes}>{budget.notes}</Text>
-            </Card>
+            </MoveCard>
           </>
         )}
       </ScrollView>
@@ -266,17 +253,11 @@ export default function BudgetDetailScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
+  title: { flex: 1, textAlign: "center", marginHorizontal: 8, fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   hero: {
-    borderRadius: 24,
-    padding: 16,
     marginBottom: 14,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
   },
   heroTop: {
     flexDirection: "row",
@@ -287,66 +268,34 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
   heroKicker: {
     fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 1.4,
     textTransform: "uppercase",
-    color: theme.colors.accent,
+    color: theme.colors.primary,
   },
   heroTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     marginTop: 3,
-    letterSpacing: 0,
   },
   heroSub: {
     fontSize: 12,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sans,
+    color: theme.colors.faint,
     marginTop: 3,
   },
-  statusPill: {
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  statusPillGood: {
-    backgroundColor: theme.colors.emerald.bg,
-    borderColor: theme.colors.emerald.border,
-  },
-  statusPillWarn: {
-    backgroundColor: theme.colors.rose.bg,
-    borderColor: theme.colors.rose.border,
-  },
-  statusPillText: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0,
-    textTransform: "uppercase",
-  },
-  statusTextGood: { color: theme.colors.emerald.text },
-  statusTextWarn: { color: theme.colors.rose.text },
   progressTrack: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: "hidden",
     marginTop: 16,
-  },
-  progressMeter: {
-    height: "100%",
-    borderRadius: 999,
   },
   heroStats: {
     flexDirection: "row",
@@ -365,7 +314,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   heroStatValue: {
     fontSize: 13,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.text,
   },
   heroStatWarn: {
@@ -373,29 +322,28 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   heroStatLabel: {
     fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 0.6,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
   summaryGrid: { gap: 12 },
   summaryCard: { gap: 4 },
-  summaryValue: { fontSize: 24, fontWeight: "800" },
-  summaryLabel: { fontSize: 12, color: theme.colors.textTertiary },
-  summaryPlanned: { fontSize: 11, color: theme.colors.textMuted, marginTop: 2 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text, marginTop: 20, marginBottom: 10 },
+  summaryValue: { fontSize: 24, fontFamily: fonts.sansBold },
+  summaryLabel: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim },
+  summaryPlanned: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2 },
+  sectionHeader: { marginTop: 20, marginBottom: 10, marginLeft: 2 },
   breakdownCard: { paddingTop: 6, paddingBottom: 12 },
   categoryRow: { paddingVertical: 10 },
   categoryDivider: { borderTopWidth: 1, borderTopColor: theme.colors.border },
   categoryHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
-  categoryName: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
-  categoryAmount: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary },
-  progressBg: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.05)", marginBottom: 3 },
-  progressFill: { height: "100%", borderRadius: 3, backgroundColor: theme.colors.primary },
-  categoryPct: { fontSize: 10, color: theme.colors.textMuted },
+  categoryName: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  categoryAmount: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
+  progressBg: { marginBottom: 3 },
+  categoryPct: { fontSize: 10, fontFamily: fonts.sans, color: theme.colors.faint },
   totalRow: { flexDirection: "row", justifyContent: "space-between", paddingTop: 12, marginTop: 4, borderTopWidth: 1, borderTopColor: theme.colors.border },
-  totalLabel: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-  totalValue: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-  notes: { fontSize: 13, color: theme.colors.textTertiary, lineHeight: 20 },
+  totalLabel: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
+  totalValue: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
+  notes: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, lineHeight: 20 },
 });

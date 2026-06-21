@@ -8,15 +8,15 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { MailCheck, ShieldCheck } from "lucide-react-native";
+import { MailCheck, ShieldCheck, ArrowRight } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
-import { LogoBrand } from "@/components/ui/LogoBrand";
+import { MoveRaccoon, HeroCard, Pill } from "@/components/move";
 import { api } from "@/lib/api";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 import { useAuthStore } from "@/lib/auth-store";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { getPasswordLinkAction } from "@/lib/password-management";
 
 export default function SetupPasswordScreen() {
@@ -68,16 +68,24 @@ export default function SetupPasswordScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.authPanel}>
-            <LogoBrand />
-            <View style={styles.iconWrap}>
-              {sent ? (
-                <MailCheck size={26} color={theme.colors.success} />
-              ) : (
-                <ShieldCheck size={26} color={theme.colors.success} />
-              )}
+          <View style={styles.hero}>
+            <View style={styles.brandBadge}>
+              <MoveRaccoon size={62} mood={sent ? "happy" : "calm"} />
             </View>
-            <Text style={styles.heroKicker}>ACCOUNT SECURITY</Text>
+          </View>
+
+          <HeroCard style={styles.heroCard}>
+            <View style={styles.iconRow}>
+              <View style={styles.iconWrap}>
+                {sent ? (
+                  <MailCheck size={22} color={theme.colors.success} />
+                ) : (
+                  <ShieldCheck size={22} color={theme.colors.primary} />
+                )}
+              </View>
+              <Pill label={t("auth.setupPasswordKicker", "Account security")} tone={sent ? "success" : "accent"} />
+            </View>
+
             <Text style={styles.title}>
               {sent ? t("auth.setupPasswordSentTitle") : t("auth.setupPasswordTitle")}
             </Text>
@@ -88,6 +96,8 @@ export default function SetupPasswordScreen() {
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <Button
+              variant="gradient"
+              fullWidth
               title={
                 sending
                   ? t("common.loading")
@@ -98,17 +108,17 @@ export default function SetupPasswordScreen() {
               onPress={sendSetupLink}
               loading={sending}
               disabled={sending}
-              fullWidth
-              style={{ marginTop: 8 }}
+              rightIcon={<ArrowRight size={16} color={theme.colors.onAccent} />}
+              style={styles.cta}
             />
             <Button
               title={t("auth.setupPasswordSkip")}
               onPress={continueWithout}
-              variant="secondary"
+              variant="ghost"
               fullWidth
-              style={{ marginTop: 8 }}
+              style={styles.skip}
             />
-          </View>
+          </HeroCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -121,59 +131,64 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     padding: 24,
-    gap: 12,
   },
-  authPanel: {
-    borderRadius: 28,
-    padding: 18,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
+  hero: {
+    alignItems: "center",
+    marginBottom: 22,
   },
-  iconWrap: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
+  brandBadge: {
+    width: 78,
+    height: 78,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
-    backgroundColor: theme.colors.successFaded,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(135, 221, 192, 0.28)",
-    marginTop: 18,
+    borderColor: theme.colors.accentBorder,
+    ...theme.shadow.sm,
   },
-  heroKicker: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0,
-    color: theme.colors.accent,
-    textTransform: "uppercase",
-    textAlign: "center",
-    marginTop: 4,
+  heroCard: {},
+  iconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  iconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
   },
   title: {
-    marginTop: 8,
+    fontFamily: fonts.serifBold,
     fontSize: 24,
-    fontWeight: "800",
     color: theme.colors.text,
-    textAlign: "center",
+    letterSpacing: 0,
   },
   subtitle: {
+    fontFamily: fonts.sans,
     fontSize: 14,
     lineHeight: 21,
-    color: theme.colors.textMuted,
-    textAlign: "center",
-    marginBottom: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 8,
   },
   error: {
     color: theme.colors.error,
     backgroundColor: theme.colors.errorFaded,
     borderWidth: 1,
-    borderColor: "rgba(240, 140, 142, 0.28)",
+    borderColor: theme.colors.accentBorder,
     borderRadius: theme.radius.lg,
     padding: 12,
     fontSize: 13,
     lineHeight: 19,
+    fontFamily: fonts.sans,
+    marginTop: 16,
   },
+  cta: { marginTop: 18 },
+  skip: { marginTop: 8 },
 });

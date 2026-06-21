@@ -13,15 +13,17 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Check, Building2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { CATEGORY_META } from "@/lib/recommendation-engine";
 import { getCategoryIcon } from "@/lib/recommendation-engine";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
+import { HeroCard, MoveCard, SectionHeader } from "@/components/move";
 
 const PROVIDER_TYPES = [
   "LOCAL_BUSINESS",
@@ -146,12 +148,24 @@ export default function EditCustomProviderScreen() {
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("customProviders.editTitle")}</Text>
-        <View style={{ width: 44 }} />
+        <TouchableOpacity
+          onPress={save}
+          disabled={saving}
+          style={[styles.headerSaveBtn, saving && { opacity: 0.55 }]}
+          accessibilityRole="button"
+          accessibilityLabel={t("customProviders.saveChanges")}
+        >
+          {saving ? (
+            <ActivityIndicator color={theme.colors.primary} size="small" />
+          ) : (
+            <Check size={17} color={theme.colors.primary} />
+          )}
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={styles.hero}>
+          <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
             <View style={styles.heroTop}>
               <View style={styles.heroIcon}>
                 {form.category ? (
@@ -161,84 +175,85 @@ export default function EditCustomProviderScreen() {
                 )}
               </View>
               <View style={styles.heroCopy}>
-                <Text style={styles.heroKicker}>LOCAL PROVIDER</Text>
+                <Text style={styles.heroKicker}>{t("customProviders.editTitle")}</Text>
                 <Text style={styles.heroTitle} numberOfLines={1}>{form.name || t("customProviders.editTitle")}</Text>
                 <Text style={styles.heroSub} numberOfLines={1}>
                   {selectedCategory ? t(`categories.${selectedCategory.value}`, { defaultValue: selectedCategory.label }) : t("customProviders.categoryRequired")}
                 </Text>
               </View>
             </View>
-            <View style={styles.heroStats}>
-              <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue}>{form.category ? "Yes" : "No"}</Text>
-                <Text style={styles.heroStatLabel}>category</Text>
-              </View>
-              <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue}>{contactCount}/3</Text>
-                <Text style={styles.heroStatLabel}>contact</Text>
-              </View>
-              <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue}>{locationCount}/4</Text>
-                <Text style={styles.heroStatLabel}>location</Text>
-              </View>
+          </HeroCard>
+
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue} numberOfLines={1}>{form.category ? "Yes" : "No"}</Text>
+              <Text style={styles.heroStatLabel} numberOfLines={1}>category</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue} numberOfLines={1}>{contactCount}/3</Text>
+              <Text style={styles.heroStatLabel} numberOfLines={1}>contact</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue} numberOfLines={1}>{locationCount}/4</Text>
+              <Text style={styles.heroStatLabel} numberOfLines={1}>location</Text>
             </View>
           </View>
 
-          <View style={styles.formSection}>
+          <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
             <Text style={styles.notice}>{t("customProviders.editNotice")}</Text>
 
             <Field label={t("customProviders.nameRequired")} value={form.name} onChangeText={(v) => update("name", v)} placeholder={t("customProviders.namePlaceholder")} />
+          </MoveCard>
 
-            <Text style={styles.sectionLabel}>{t("customProviders.categoryRequired")}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-              {CATEGORIES.map((category) => (
-                <TouchableOpacity
-                  key={category.value}
-                  onPress={() => update("category", category.value)}
-                  style={[styles.chip, form.category === category.value && styles.chipActive]}
-                >
-                  <CategoryIcon
-                    emoji={getCategoryIcon(category.value)}
-                    size={13}
-                    color={form.category === category.value ? theme.colors.primary : theme.colors.textTertiary}
-                  />
-                  <Text style={[styles.chipText, form.category === category.value && styles.chipTextActive]}>
-                    {t(`categories.${category.value}`, { defaultValue: category.label })}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+          <SectionHeader label={t("customProviders.categoryRequired")} style={styles.sectionHeader} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+            {CATEGORIES.map((category) => (
+              <TouchableOpacity
+                key={category.value}
+                onPress={() => update("category", category.value)}
+                style={[styles.chip, form.category === category.value && styles.chipActive]}
+              >
+                <CategoryIcon
+                  emoji={getCategoryIcon(category.value)}
+                  size={13}
+                  color={form.category === category.value ? theme.colors.primary : theme.colors.textTertiary}
+                />
+                <Text style={[styles.chipText, form.category === category.value && styles.chipTextActive]}>
+                  {t(`categories.${category.value}`, { defaultValue: category.label })}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-            <Text style={styles.sectionLabel}>{t("customProviders.providerType")}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-              {PROVIDER_TYPES.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  onPress={() => update("providerType", type)}
-                  style={[styles.chip, form.providerType === type && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, form.providerType === type && styles.chipTextActive]}>
-                    {t(`customProviders.type_${type}`, { defaultValue: type.replace(/_/g, " ") })}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+          <SectionHeader label={t("customProviders.providerType")} style={styles.sectionHeader} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+            {PROVIDER_TYPES.map((type) => (
+              <TouchableOpacity
+                key={type}
+                onPress={() => update("providerType", type)}
+                style={[styles.chip, form.providerType === type && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, form.providerType === type && styles.chipTextActive]}>
+                  {t(`customProviders.type_${type}`, { defaultValue: type.replace(/_/g, " ") })}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-          <View style={styles.formSection}>
-            <Text style={styles.sectionLabel}>{t("common.description")}</Text>
+          <SectionHeader label={t("common.description")} style={styles.sectionHeader} />
+          <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
             <Field label={t("common.description")} value={form.description} onChangeText={(v) => update("description", v)} multiline />
-          </View>
+          </MoveCard>
 
-          <View style={styles.formSection}>
-            <Text style={styles.sectionLabel}>{t("common.contact")}</Text>
+          <SectionHeader label={t("common.contact")} style={styles.sectionHeader} />
+          <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
             <Field label={t("common.website")} value={form.website} onChangeText={(v) => update("website", v)} placeholder="https://..." keyboardType="url" autoCapitalize="none" />
             <Field label={t("common.phone")} value={form.phone} onChangeText={(v) => update("phone", v)} keyboardType="phone-pad" />
             <Field label={t("common.email")} value={form.email} onChangeText={(v) => update("email", v)} keyboardType="email-address" autoCapitalize="none" />
-          </View>
+          </MoveCard>
 
-          <View style={styles.formSection}>
-            <Text style={styles.sectionLabel}>Location</Text>
+          <SectionHeader label="Location" style={styles.sectionHeader} />
+          <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
             <Field label={t("customProviders.addressLine1")} value={form.addressLine1} onChangeText={(v) => update("addressLine1", v)} />
             <Field label={t("customProviders.addressLine2")} value={form.addressLine2} onChangeText={(v) => update("addressLine2", v)} />
 
@@ -252,20 +267,34 @@ export default function EditCustomProviderScreen() {
             </View>
 
             <Field label={t("addresses.zip")} value={form.zipCode} onChangeText={(v) => update("zipCode", v)} keyboardType="number-pad" maxLength={10} />
-          </View>
+          </MoveCard>
 
-          <View style={styles.formSection}>
-            <Text style={styles.sectionLabel}>{t("customProviders.notes")}</Text>
+          <SectionHeader label={t("customProviders.notes")} style={styles.sectionHeader} />
+          <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
             <Field label={t("customProviders.notes")} value={form.notes} onChangeText={(v) => update("notes", v)} multiline />
-          </View>
+          </MoveCard>
 
-          <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={save} disabled={saving}>
-            {saving ? <ActivityIndicator color="#fff" /> : (
-              <>
-                <Check size={18} color="#fff" />
-                <Text style={styles.saveText}>{t("customProviders.saveChanges")}</Text>
-              </>
-            )}
+          <TouchableOpacity
+            style={[styles.saveBtn, saving && { opacity: 0.6 }]}
+            onPress={save}
+            disabled={saving}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={theme.colors.gradient.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.saveBtnGrad}
+            >
+              {saving ? (
+                <ActivityIndicator color={theme.colors.onAccent} />
+              ) : (
+                <>
+                  <Check size={18} color={theme.colors.onAccent} />
+                  <Text style={styles.saveText}>{t("customProviders.saveChanges")}</Text>
+                </>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -306,87 +335,102 @@ function Field(props: {
   );
 }
 
+
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  hero: {
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 14,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
+  backBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+    alignItems: "center", justifyContent: "center",
   },
-  heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  headerSaveBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder,
+    alignItems: "center", justifyContent: "center",
+  },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 52 },
+  hero: { marginBottom: 14 },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 13 },
   heroIcon: {
-    width: 46,
-    height: 46,
+    width: 48,
+    height: 48,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
   heroKicker: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0,
+    fontSize: 9,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 0.6,
     textTransform: "uppercase",
-    color: theme.colors.accent,
+    color: theme.colors.faint,
   },
   heroTitle: {
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 18,
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     marginTop: 3,
-    letterSpacing: 0,
   },
-  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
-  heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+  heroSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 3 },
+  heroStats: { flexDirection: "row", gap: 8, marginBottom: 14 },
   heroStat: {
     flex: 1,
     minHeight: 58,
-    borderRadius: 16,
-    padding: 10,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
-  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatValue: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
   heroStatLabel: {
     fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 0.6,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
-  formSection: {
-    borderRadius: 22,
-    padding: 14,
-    marginBottom: 14,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  formCard: { marginBottom: 4 },
+  sectionHeader: { marginTop: 20, marginBottom: 10, marginLeft: 2 },
+  notice: {
+    color: theme.colors.dim, fontSize: 13, fontFamily: fonts.sans, lineHeight: 20,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: 14, padding: 12, marginBottom: 4,
   },
-  notice: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 20, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, padding: 12, marginBottom: 8 },
-  label: { fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6 },
-  sectionLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary, textTransform: "uppercase", letterSpacing: 0, marginTop: 0, marginBottom: 10 },
-  input: { backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: theme.colors.text },
+  label: { fontSize: 14, fontFamily: fonts.sansMedium, color: theme.colors.dim, marginTop: 16, marginBottom: 6 },
+  input: {
+    backgroundColor: theme.colors.bg2, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text,
+  },
   textArea: { minHeight: 86, textAlignVertical: "top" },
   row: { flexDirection: "row", gap: 10 },
   chipRow: { gap: 8, paddingRight: 20 },
-  chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border },
-  chipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus },
-  chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
+  chip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    minHeight: 38, paddingHorizontal: 13, paddingVertical: 8, borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+  },
+  chipActive: { backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder },
+  chipText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   chipTextActive: { color: theme.colors.primary },
-  saveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg, paddingVertical: 16, marginTop: 28 },
-  saveText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  saveBtn: {
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+    marginTop: 28,
+  },
+  saveBtnGrad: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 16,
+  },
+  saveText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 });

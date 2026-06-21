@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#06080f;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased}
+  input{font-family:'DM Sans',sans-serif}
+  ::-webkit-scrollbar{width:0;display:none}
+  .ob-scroll{scrollbar-width:none}
+  @keyframes ob-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes ob-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes ob-blink{0%,42%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.1)}}
+  .ob-rise{animation:ob-rise .45s cubic-bezier(.2,.7,.3,1) both}
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:radial-gradient(ellipse 70% 50% at 50% 0%, #14110b, #06080f 72%)">
+  <div style="position:relative; width:390px; height:844px; border-radius:42px; overflow:hidden; background:#0A0F1C; border:1px solid rgba(110,150,225,0.10); box-shadow:0 40px 120px rgba(0,0,0,.6); display:flex; flex-direction:column">
+
+    <!-- status bar -->
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 26px 4px; flex-shrink:0">
+      <span style="color:#EFF3FA; font-size:13px; font-weight:600">9:41</span>
+      <div style="display:flex; align-items:center; gap:6px">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="6" width="2.6" height="5" rx="1" fill="#EFF3FA"/><rect x="3.8" y="4" width="2.6" height="7" rx="1" fill="#EFF3FA"/><rect x="7.6" y="2" width="2.6" height="9" rx="1" fill="#EFF3FA"/><rect x="11.4" y="0" width="2.6" height="11" rx="1" fill="#EFF3FA" opacity=".4"/></svg>
+        <div style="width:24px; height:11px; border-radius:3px; border:1px solid #41526F; padding:1.5px; display:flex"><div style="flex:1; background:#EFF3FA; border-radius:1px"></div></div>
+      </div>
+    </div>
+
+    <!-- progress (steps 1-5) -->
+    <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; align-items:center; gap:12px; padding:10px 24px 6px; flex-shrink:0">
+        <button onClick="{{ back }}" style="width:34px; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; background:#121B2D; border:1px solid rgba(110,150,225,0.12); color:#8A99B6; cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <div style="flex:1; height:5px; border-radius:99px; background:rgba(255,255,255,0.07); overflow:hidden"><div style="height:100%; border-radius:99px; width:{{ progressW }}; background:linear-gradient(90deg,#DCBC7C,#CBA45E); transition:width .3s"></div></div>
+        <span style="color:#8A99B6; font-size:11px; font-weight:600; width:30px; text-align:right">{{ stepLabel }}</span>
+      </div>
+    </sc-if>
+
+    <!-- content -->
+    <div class="ob-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:0 24px">
+
+      <!-- STEP 0 · WELCOME -->
+      <sc-if value="{{ s0 }}" hint-placeholder-val="{{ true }}">
+        <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding-bottom:30px">
+          <div style="animation:ob-float 4s ease-in-out infinite; width:104px; height:104px; border-radius:26px; display:flex; align-items:center; justify-content:center; background:linear-gradient(145deg,#0E1A30,#070D1C); box-shadow:0 0 0 1px rgba(203,164,94,0.22), 0 24px 60px rgba(0,0,0,.6)">
+            <dc-import name="Raccoon" size="82" mood="calm" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="#CBA45E" pupil="#04080F" hint-size="82px,82px"></dc-import>
+          </div>
+          <div class="ob-rise" style="margin-top:26px">
+            <div style="color:#EFF3FA; font-family:'Playfair Display',serif; font-size:42px; font-weight:900; line-height:1">Move</div>
+            <div style="color:#CBA45E; font-size:11px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; margin-top:6px">Relocation Intelligence</div>
+          </div>
+          <div class="ob-rise" style="color:#8A99B6; font-size:14px; line-height:1.6; margin-top:18px; max-width:280px">Your whole move in one place — utilities, addresses, deadlines and a smart briefing on your new home.</div>
+          <div style="display:flex; gap:7px; margin-top:22px">
+            <span style="width:7px; height:7px; border-radius:50%; background:#CBA45E; animation:ob-blink 1.6s infinite"></span>
+            <span style="width:7px; height:7px; border-radius:50%; background:#CBA45E; animation:ob-blink 1.6s infinite .2s"></span>
+            <span style="width:7px; height:7px; border-radius:50%; background:#CBA45E; animation:ob-blink 1.6s infinite .4s"></span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 1 · ACCOUNT -->
+      <sc-if value="{{ s1 }}" hint-placeholder-val="{{ false }}">
+        <div class="ob-rise" style="padding-top:8px">
+          <div style="color:#EFF3FA; font-family:'Playfair Display',serif; font-size:28px; font-weight:800; line-height:1.15">Create your account</div>
+          <div style="color:#8A99B6; font-size:13px; margin-top:6px">Save your move and sync across devices.</div>
+          <div style="display:flex; flex-direction:column; gap:11px; margin-top:24px">
+            <input type="email" placeholder="Email address" style="padding:15px 16px; border-radius:14px; background:#121B2D; border:1px solid rgba(110,150,225,0.12); color:#EFF3FA; font-size:14px; outline:none"/>
+            <input type="password" placeholder="Password" style="padding:15px 16px; border-radius:14px; background:#121B2D; border:1px solid rgba(110,150,225,0.12); color:#EFF3FA; font-size:14px; outline:none"/>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; margin:20px 0"><div style="flex:1; height:1px; background:rgba(110,150,225,0.12)"></div><span style="color:#41526F; font-size:11px">or</span><div style="flex:1; height:1px; background:rgba(110,150,225,0.12)"></div></div>
+          <div style="display:flex; flex-direction:column; gap:10px">
+            <div style="display:flex; align-items:center; justify-content:center; gap:9px; padding:13px; border-radius:14px; background:#fff; color:#0A0F1C; font-size:14px; font-weight:600"><svg width="16" height="16" viewBox="0 0 24 24" fill="#0A0F1C"><path d="M16.4 12.2c0-1.6 1.3-2.4 1.4-2.4-.8-1.1-2-1.3-2.4-1.3-1-.1-2 .6-2.5.6s-1.3-.6-2.2-.6c-1.1 0-2.2.7-2.7 1.7-1.2 2-.3 5 .8 6.6.5.8 1.2 1.7 2 1.6.8 0 1.1-.5 2.1-.5s1.2.5 2.1.5 1.4-.8 1.9-1.6c.6-.9.9-1.8.9-1.8s-1.8-.7-1.9-2.8zM14.7 6.7c.5-.6.8-1.4.7-2.2-.7 0-1.5.5-2 1-.4.5-.8 1.3-.7 2 .8.1 1.6-.4 2-.8z"/></svg>Continue with Apple</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:9px; padding:13px; border-radius:14px; background:#121B2D; border:1px solid rgba(110,150,225,0.12); color:#EFF3FA; font-size:14px; font-weight:600"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.6a4.8 4.8 0 01-2.1 3.2v2.6h3.4c2-1.8 3.1-4.5 3.1-7.6z"/><path fill="#34A853" d="M12 22c2.7 0 5-1 6.6-2.5l-3.4-2.6c-.9.6-2 1-3.2 1-2.5 0-4.6-1.7-5.4-4H3.1v2.6A10 10 0 0012 22z"/><path fill="#FBBC05" d="M6.6 13.9a6 6 0 010-3.8V7.5H3.1a10 10 0 000 9z"/><path fill="#EA4335" d="M12 6.1c1.4 0 2.7.5 3.7 1.5l2.7-2.7A10 10 0 003.1 7.5l3.5 2.6c.8-2.3 2.9-4 5.4-4z"/></svg>Continue with Google</div>
+          </div>
+          <button onClick="{{ toggleLegal }}" style="display:flex; align-items:flex-start; gap:10px; margin-top:22px; background:none; border:none; text-align:left; cursor:pointer; width:100%">
+            <span style="width:20px; height:20px; border-radius:6px; border:2px solid {{ legalBorder }}; background:{{ legalBg }}; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-top:1px">
+              <sc-if value="{{ legal }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0A0F1C" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if>
+            </span>
+            <span style="color:#8A99B6; font-size:11.5px; line-height:1.5">I agree to the <span style="color:#CBA45E">Terms of Service</span> and <span style="color:#CBA45E">Privacy Policy</span>.</span>
+          </button>
+        </div>
+      </sc-if>
+
+      <!-- STEP 2 · PROFILE -->
+      <sc-if value="{{ s2 }}" hint-placeholder-val="{{ false }}">
+        <div class="ob-rise" style="padding-top:8px">
+          <div style="color:#EFF3FA; font-family:'Playfair Display',serif; font-size:28px; font-weight:800; line-height:1.15">What's your move?</div>
+          <div style="color:#8A99B6; font-size:13px; margin-top:6px">We'll tailor your checklist and dossier.</div>
+          <div style="display:flex; flex-direction:column; gap:11px; margin-top:22px">
+            <sc-for list="{{ profiles }}" as="p" hint-placeholder-count="4">
+              <button onClick="{{ p.go }}" style="display:flex; align-items:center; gap:14px; padding:16px; border-radius:16px; cursor:pointer; text-align:left; background:{{ p.bg }}; border:1.5px solid {{ p.bd }}">
+                <span style="font-size:24px">{{ p.icon }}</span>
+                <span style="flex:1; color:#EFF3FA; font-size:14.5px; font-weight:600">{{ p.label }}</span>
+                <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}"><span style="width:22px; height:22px; border-radius:50%; background:#CBA45E; display:flex; align-items:center; justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0F1C" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span></sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 3 · ADDRESSES -->
+      <sc-if value="{{ s3 }}" hint-placeholder-val="{{ false }}">
+        <div class="ob-rise" style="padding-top:8px">
+          <div style="color:#EFF3FA; font-family:'Playfair Display',serif; font-size:28px; font-weight:800; line-height:1.15">Where are you moving?</div>
+          <div style="color:#8A99B6; font-size:13px; margin-top:6px">Add your current and new address.</div>
+          <div style="margin-top:22px">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px"><span style="width:8px; height:8px; border-radius:50%; background:#54CB7E"></span><span style="color:#8A99B6; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">Current home</span></div>
+            <input placeholder="1234 Congress Ave, Austin, TX" style="width:100%; padding:15px 16px; border-radius:14px; background:#121B2D; border:1px solid rgba(110,150,225,0.12); color:#EFF3FA; font-size:14px; outline:none"/>
+          </div>
+          <div style="display:flex; justify-content:center; margin:12px 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#CBA45E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></div>
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px"><span style="width:8px; height:8px; border-radius:50%; background:#CBA45E"></span><span style="color:#8A99B6; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">New home</span></div>
+            <input placeholder="560 5th Ave, New York, NY" style="width:100%; padding:15px 16px; border-radius:14px; background:#121B2D; border:1px solid rgba(203,164,94,0.22); color:#EFF3FA; font-size:14px; outline:none"/>
+          </div>
+          <div style="margin-top:18px; padding:13px 15px; border-radius:14px; background:rgba(203,164,94,0.08); border:1px solid rgba(203,164,94,0.18); display:flex; gap:11px; align-items:center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CBA45E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <span style="color:#8A99B6; font-size:11.5px; line-height:1.5">We pull a free dossier for your new home — flood, schools, air & more.</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 4 · SERVICES -->
+      <sc-if value="{{ s4 }}" hint-placeholder-val="{{ false }}">
+        <div class="ob-rise" style="padding-top:8px">
+          <div style="color:#EFF3FA; font-family:'Playfair Display',serif; font-size:28px; font-weight:800; line-height:1.15">What should we track?</div>
+          <div style="color:#8A99B6; font-size:13px; margin-top:6px">Pick the services tied to your move.</div>
+          <div style="display:flex; flex-wrap:wrap; gap:9px; margin-top:22px">
+            <sc-for list="{{ services }}" as="s" hint-placeholder-count="8">
+              <button onClick="{{ s.go }}" style="display:flex; align-items:center; gap:8px; padding:11px 15px; border-radius:99px; cursor:pointer; background:{{ s.bg }}; border:1.5px solid {{ s.bd }}; color:{{ s.col }}; font-size:13px; font-weight:600"><span style="font-size:15px">{{ s.icon }}</span>{{ s.label }}</button>
+            </sc-for>
+          </div>
+          <div style="color:#41526F; font-size:11px; margin-top:18px">{{ svcCount }} selected · you can change these later.</div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 5 · MOVE DETAILS -->
+      <sc-if value="{{ s5 }}" hint-placeholder-val="{{ false }}">
+        <div class="ob-rise" style="padding-top:8px">
+          <div style="color:#EFF3FA; font-family:'Playfair Display',serif; font-size:28px; font-weight:800; line-height:1.15">When's the big day?</div>
+          <div style="color:#8A99B6; font-size:13px; margin-top:6px">We'll count down and time your reminders.</div>
+          <div style="margin-top:22px">
+            <div style="color:#8A99B6; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px">Move date</div>
+            <div style="display:flex; align-items:center; gap:11px; padding:15px 16px; border-radius:14px; background:#121B2D; border:1px solid rgba(110,150,225,0.12)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#CBA45E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+              <span style="color:#EFF3FA; font-size:14px; font-weight:600">Sep 15, 2024</span>
+            </div>
+          </div>
+          <div style="margin-top:18px">
+            <div style="color:#8A99B6; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px">Household size</div>
+            <div style="display:flex; gap:8px">
+              <sc-for list="{{ household }}" as="h" hint-placeholder-count="4">
+                <button onClick="{{ h.go }}" style="flex:1; padding:13px 0; border-radius:13px; cursor:pointer; background:{{ h.bg }}; border:1.5px solid {{ h.bd }}; color:{{ h.col }}; font-size:14px; font-weight:700">{{ h.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 6 · DONE -->
+      <sc-if value="{{ s6 }}" hint-placeholder-val="{{ false }}">
+        <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding-bottom:30px">
+          <div style="animation:ob-float 4s ease-in-out infinite"><dc-import name="Raccoon" size="92" mood="approved" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="#CBA45E" pupil="#04080F" hint-size="92px,92px"></dc-import></div>
+          <div class="ob-rise" style="color:#EFF3FA; font-family:'Playfair Display',serif; font-size:30px; font-weight:900; margin-top:22px">You're all set</div>
+          <div class="ob-rise" style="color:#8A99B6; font-size:14px; line-height:1.6; margin-top:12px; max-width:280px">Your move plan, dossier and reminders are ready. 48 days to New York.</div>
+          <div class="ob-rise" style="display:flex; gap:8px; margin-top:20px">
+            <span style="font-size:10px; font-weight:700; color:#CBA45E; background:rgba(203,164,94,0.10); border:1px solid rgba(203,164,94,0.22); padding:5px 11px; border-radius:99px">48 days</span>
+            <span style="font-size:10px; font-weight:700; color:#54CB7E; background:rgba(84,203,126,0.14); padding:5px 11px; border-radius:99px">{{ svcCount }} services</span>
+            <span style="font-size:10px; font-weight:700; color:#37C2C9; background:rgba(55,194,201,0.14); padding:5px 11px; border-radius:99px">Dossier ✓</span>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- footer CTA -->
+    <div style="flex-shrink:0; padding:14px 24px 26px">
+      <button onClick="{{ next }}" style="width:100%; padding:16px; border-radius:16px; font-size:15px; font-weight:700; background:linear-gradient(135deg,#DCBC7C,#CBA45E,#B0852F); color:#0A0F1C; border:none; cursor:pointer; box-shadow:0 8px 28px rgba(203,164,94,0.28)">{{ continueLabel }}</button>
+      <sc-if value="{{ s0 }}" hint-placeholder-val="{{ true }}">
+        <div style="text-align:center; margin-top:14px; color:#8A99B6; font-size:13px">Already have an account? <span style="color:#CBA45E; font-weight:600">Sign in</span></div>
+      </sc-if>
+    </div>
+
+    <div style="position:absolute; bottom:7px; left:50%; transform:translateX(-50%); width:130px; height:5px; border-radius:99px; background:rgba(255,255,255,0.18)"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state={ step:0, profile:null, svc:{electric:true,water:true,internet:true,mail:true}, legal:false, house:'2' }; }
+  next(){ if(this.state.step>=6){ try{ window.top.location.href='Move.dc.html'; }catch(e){ try{ window.location.href='Move.dc.html'; }catch(e2){} } return; } this.setState(s=>({step:s.step+1})); }
+  back(){ this.setState(s=>({step: Math.max(0, s.step-1)})); }
+  setProfile(k){ this.setState({profile:k}); }
+  toggleSvc(k){ this.setState(s=>({svc:{...s.svc,[k]:!s.svc[k]}})); }
+  toggleLegal(){ this.setState(s=>({legal:!s.legal})); }
+  setHouse(h){ this.setState({house:h}); }
+  renderVals(){
+    const step=this.state.step;
+    const profileDefs=[
+      {k:'rent',icon:'🔑',label:'Renting a new place'},
+      {k:'buy',icon:'🏡',label:'Buying a home'},
+      {k:'work',icon:'💼',label:'Relocating for work'},
+      {k:'student',icon:'🎓',label:'Student move'},
+    ];
+    const profiles=profileDefs.map(p=>({...p, sel:this.state.profile===p.k, go:()=>this.setProfile(p.k),
+      bg:this.state.profile===p.k?'rgba(203,164,94,0.10)':'#121B2D', bd:this.state.profile===p.k?'#CBA45E':'rgba(110,150,225,0.12)'}));
+    const svcDefs=[
+      {k:'electric',icon:'⚡',label:'Electric'},{k:'water',icon:'💧',label:'Water'},{k:'gas',icon:'🔥',label:'Gas'},
+      {k:'internet',icon:'📡',label:'Internet'},{k:'mail',icon:'📬',label:'Mail / USPS'},{k:'dmv',icon:'🚗',label:'DMV'},
+      {k:'insurance',icon:'🛡',label:'Insurance'},{k:'subs',icon:'📺',label:'Subscriptions'},
+    ];
+    const services=svcDefs.map(s=>{const on=!!this.state.svc[s.k]; return {...s, go:()=>this.toggleSvc(s.k),
+      bg:on?'rgba(203,164,94,0.12)':'#121B2D', bd:on?'#CBA45E':'rgba(110,150,225,0.12)', col:on?'#CBA45E':'#8A99B6'};});
+    const svcCount=Object.values(this.state.svc).filter(Boolean).length;
+    const household=['1','2','3','4+'].map(h=>{const on=this.state.house===h; return {label:h, go:()=>this.setHouse(h),
+      bg:on?'rgba(203,164,94,0.12)':'#121B2D', bd:on?'#CBA45E':'rgba(110,150,225,0.12)', col:on?'#CBA45E':'#8A99B6'};});
+    const labels=['Get started','Continue','Continue','Continue','Continue','Finish setup','Enter Move'];
+    return {
+      s0:step===0,s1:step===1,s2:step===2,s3:step===3,s4:step===4,s5:step===5,s6:step===6,
+      showProgress: step>=1 && step<=5,
+      progressW: (step/5*100)+'%', stepLabel: step+'/5',
+      continueLabel: labels[step],
+      legal:this.state.legal, legalBorder:this.state.legal?'#CBA45E':'#41526F', legalBg:this.state.legal?'#CBA45E':'transparent',
+      profiles, services, svcCount, household,
+      next:()=>this.next(), back:()=>this.back(), toggleLegal:()=>this.toggleLegal(),
+    };
+  }
+}
+</script>
+</body>
+</html>

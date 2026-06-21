@@ -1,0 +1,16 @@
+{
+  "name": "Move — Relocation Intelligence",
+  "short_name": "Move",
+  "description": "Everything your move needs — dossier, services, reminders and maps. 100% free.",
+  "start_url": "./Web.dc.html#/",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070B14",
+  "theme_color": "#070B14",
+  "categories": ["lifestyle", "productivity", "utilities"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

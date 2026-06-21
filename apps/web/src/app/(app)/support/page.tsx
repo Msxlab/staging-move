@@ -191,15 +191,15 @@ export default function SupportPage() {
               <MessageCircle className="h-5 w-5 text-primary" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">{copy.command}</p>
-              <h1 className="mt-1 text-2xl font-semibold text-foreground md:text-3xl">{copy.title}</h1>
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">{copy.command}</p>
+              <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl">{copy.title}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{copy.subtitle}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary to-primary/85 px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:from-primary/90 hover:to-primary/80"
           >
             <Plus className="h-4 w-4" /> {copy.newTicket}
           </button>
@@ -211,8 +211,8 @@ export default function SupportPage() {
             [copy.stats.waiting, waitingCount],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-border bg-background/55 p-3">
-              <p className="text-lg font-semibold text-foreground">{value}</p>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+              <p className="font-mono text-lg font-semibold text-foreground">{value}</p>
+              <p className="mt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
             </div>
           ))}
         </div>
@@ -256,7 +256,7 @@ export default function SupportPage() {
             className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 id="support-ticket-title" className="text-base font-semibold text-foreground">
+              <h2 id="support-ticket-title" className="font-display text-base font-bold tracking-tight text-foreground">
                 {copy.modalTitle}
               </h2>
               <button
@@ -328,7 +328,7 @@ export default function SupportPage() {
                 <button
                   type="submit"
                   disabled={creating}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary to-primary/85 px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:from-primary/90 hover:to-primary/80 disabled:opacity-50"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   {copy.submit}
@@ -353,7 +353,7 @@ export default function SupportPage() {
       ) : tickets.length === 0 ? (
         <div className="rounded-3xl border border-border bg-card/70 p-12 text-center shadow-sm">
           <MessageCircle className="mx-auto mb-3 h-10 w-10 text-foreground/20" />
-          <p className="text-sm text-muted-foreground">{copy.noTickets}</p>
+          <p className="font-display text-sm font-bold tracking-tight text-foreground">{copy.noTickets}</p>
           <p className="mt-1 text-xs text-foreground/30">{copy.noTicketsHint}</p>
         </div>
       ) : (
@@ -384,10 +384,10 @@ export default function SupportPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <div className="text-right">
-                      <p className="text-[10px] text-foreground/30">
+                      <p className="font-mono text-[10px] text-foreground/30">
                         {ticket._count.messages} {countLabel}
                       </p>
-                      <p className="mt-0.5 text-[10px] text-foreground/30">
+                      <p className="mt-0.5 font-mono text-[10px] text-foreground/30">
                         {new Date(ticket.updatedAt).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}
                       </p>
                     </div>

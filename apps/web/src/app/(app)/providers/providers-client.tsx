@@ -553,7 +553,7 @@ export function ProvidersClient({
       {/* Header */}
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>{tp("title")}</em></h1>
+          <h1 className="h1 font-display text-2xl md:text-3xl text-foreground"><em>{tp("title")}</em></h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {tp("subtitle")}
           </p>
@@ -601,15 +601,15 @@ export function ProvidersClient({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <Sparkles className="h-4 w-4 text-tone-orange-fg" />
-                <h2 className="text-sm font-semibold text-foreground">Smart setup plan</h2>
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h2 className="font-display text-sm font-semibold text-foreground">Smart setup plan</h2>
                 {recs.recommendationGuide.completion ? (
-                  <span className="rounded-full border border-tone-orange-br bg-background px-2 py-0.5 text-[10px] font-semibold text-tone-orange-fg">
+                  <span className="rounded-full border border-tone-orange-br bg-background px-2 py-0.5 font-mono text-[10px] font-semibold text-tone-orange-fg">
                     {recs.recommendationGuide.completion.score}% ready
                   </span>
                 ) : null}
                 {recs.recommendationGuide.completion?.missingCritical ? (
-                  <span className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-0.5 text-[10px] font-semibold text-tone-honey-fg">
+                  <span className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-0.5 font-mono text-[10px] font-semibold text-tone-honey-fg">
                     {recs.recommendationGuide.completion.missingCritical} gaps
                   </span>
                 ) : null}
@@ -629,9 +629,9 @@ export function ProvidersClient({
               {recs.recommendationGuide.setupPlan?.sections?.length ? (
                 <div className="mt-4 grid gap-2 md:grid-cols-3">
                   {recs.recommendationGuide.setupPlan.sections.slice(0, 3).map((section) => (
-                    <div key={section.key} className="rounded-xl border border-border bg-background/70 p-3">
+                    <div key={section.key} className="rounded-2xl border border-border bg-card p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-xs font-semibold text-foreground">{section.title}</p>
+                        <p className="truncate font-display text-xs font-semibold text-foreground">{section.title}</p>
                         {typeof section.providerCount === "number" ? (
                           <span className="font-mono text-[10px] font-semibold text-primary">{section.providerCount}</span>
                         ) : null}
@@ -657,7 +657,7 @@ export function ProvidersClient({
             </div>
             {setupLaneProviders.length > 0 && (
               <Link href={setupLaneHref} className="shrink-0">
-                <button className="inline-flex items-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                <button className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-primary to-primary/85 px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90">
                   Add setup picks <ArrowRight className="h-4 w-4" />
                 </button>
               </Link>
@@ -666,7 +666,7 @@ export function ProvidersClient({
           {recs.recommendationGuide.decisionModel?.factors?.length ? (
             <div className="mt-4 grid gap-2 md:grid-cols-3">
               {recs.recommendationGuide.decisionModel.factors.slice(0, 3).map((factor) => (
-                <div key={factor} className="rounded-xl border border-border bg-foreground/[0.03] p-3 text-[11px] leading-relaxed text-muted-foreground">
+                <div key={factor} className="rounded-2xl border border-border bg-card p-3 text-[11px] leading-relaxed text-muted-foreground">
                   {factor}
                 </div>
               ))}
@@ -695,7 +695,7 @@ export function ProvidersClient({
                 className="h-9 w-9 rounded-lg"
                 fallbackClassName="text-lg"
               />
-              <span className="truncate text-sm font-semibold text-foreground">
+              <span className="truncate font-display text-sm font-semibold text-foreground">
                 {recs.sponsored.provider.name}
               </span>
             </Link>
@@ -727,8 +727,8 @@ export function ProvidersClient({
       {highlightProviders.length > 0 && (
         <div className="rounded-xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-tone-orange-fg" />
-            <h2 className="text-sm font-semibold text-foreground">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h2 className="font-display text-sm font-semibold text-foreground">
               {recs?.region?.label ? `Top picks for ${recs.region.label}` : "Recommended for you"}
             </h2>
             {recsLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
@@ -752,7 +752,7 @@ export function ProvidersClient({
                     surface: "providers_strip",
                   })
                 }
-                className="group relative min-w-0 rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 pr-7 flex items-start gap-3 overflow-hidden"
+                className="group relative min-w-0 rounded-2xl border border-border bg-card hover:bg-foreground/[0.04] transition p-3 pr-7 flex items-start gap-3 overflow-hidden"
               >
                 <span
                   role="button"
@@ -775,7 +775,7 @@ export function ProvidersClient({
                     return (
                       <>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
+                    <p className="font-display text-sm font-semibold text-foreground truncate">{p.name}</p>
                     <span
                       className={`text-[10px] px-1.5 py-0.5 rounded border ${TIER_BADGE[p.urgencyTier].className}`}
                     >
@@ -842,7 +842,7 @@ export function ProvidersClient({
                 : "border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            {ts("filterGroups.all")} · {providers.length}
+            {ts("filterGroups.all")} · <span className="font-mono">{providers.length}</span>
           </button>
           {shortlist.length > 0 && (
             <button
@@ -856,7 +856,7 @@ export function ProvidersClient({
             >
               <Star className={`h-3 w-3 ${showSavedOnly ? "fill-current" : ""}`} />
               <span>Saved</span>
-              <span className="text-muted-foreground">· {shortlist.length}</span>
+              <span className="font-mono text-muted-foreground">· {shortlist.length}</span>
             </button>
           )}
           {categoryCounts.map(([cat, count]) => (
@@ -871,7 +871,7 @@ export function ProvidersClient({
             >
               <CategoryIcon category={cat} className="h-3.5 w-3.5" />
               <span>{getMergedDisplayCategoryLabel(cat)}</span>
-              <span className="text-muted-foreground">· {count}</span>
+              <span className="font-mono text-muted-foreground">· {count}</span>
             </button>
           ))}
         </div>
@@ -915,8 +915,8 @@ export function ProvidersClient({
             return (
             <div
               key={p.id}
-              className={`group relative min-w-0 rounded-xl border bg-foreground/5 transition overflow-hidden ${
-                isComparing ? "border-tone-orange-br ring-1 ring-tone-orange-br/40" : "border-border hover:bg-foreground/[0.08]"
+              className={`group relative min-w-0 rounded-2xl border bg-card transition overflow-hidden ${
+                isComparing ? "border-tone-orange-br ring-1 ring-tone-orange-br/40" : "border-border hover:bg-foreground/[0.04]"
               }`}
             >
               {/* Card controls (above the link so clicks don't navigate) */}
@@ -962,7 +962,7 @@ export function ProvidersClient({
               <ProviderLogoMark provider={p} className="h-10 w-10 rounded-lg" fallbackClassName="text-xl" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm font-semibold text-foreground truncate">{p.name}</h3>
+                  <h3 className="font-display text-sm font-semibold text-foreground truncate">{p.name}</h3>
                   {p.scope === "FEDERAL" ? (
                     <span className="text-[10px] px-1.5 py-0.5 rounded border border-tone-sky-br bg-tone-sky-bg text-tone-sky-fg flex items-center gap-1">
                       <Flag className="h-2.5 w-2.5" /> National listing
@@ -998,7 +998,7 @@ export function ProvidersClient({
                 <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-muted-foreground">
                   {p.userCount && p.userCount > 0 ? (
                     <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" /> {formatCount(p.userCount)} users
+                      <Users className="h-3 w-3" /> <span className="font-mono">{formatCount(p.userCount)}</span> users
                     </span>
                   ) : null}
                   {p.website ? (
@@ -1035,7 +1035,7 @@ export function ProvidersClient({
         <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-4 flex gap-3">
           <AlertTriangle className="h-4 w-4 text-tone-honey-fg shrink-0 mt-0.5" />
           <div>
-            <p className="text-xs font-semibold text-tone-honey-fg">Know your state deadlines</p>
+            <p className="font-display text-xs font-semibold text-tone-honey-fg">Know your state deadlines</p>
             <p className="text-[11px] text-tone-honey-fg/80 mt-1">{recs.meta.stateRule.dmvRules}</p>
           </div>
         </div>
@@ -1046,9 +1046,9 @@ export function ProvidersClient({
         <div className="fixed inset-x-0 bottom-0 z-40 px-4 pb-4">
           <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
-              <Scale className="h-4 w-4 shrink-0 text-tone-orange-fg" />
-              <span className="shrink-0 text-xs font-semibold text-foreground">
-                Compare ({compareIds.length}/{MAX_COMPARE})
+              <Scale className="h-4 w-4 shrink-0 text-primary" />
+              <span className="shrink-0 font-display text-xs font-semibold text-foreground">
+                Compare (<span className="font-mono">{compareIds.length}/{MAX_COMPARE}</span>)
               </span>
               <div className="flex min-w-0 items-center gap-1.5">
                 {compareIds.map((id) => {
@@ -1084,7 +1084,7 @@ export function ProvidersClient({
                 type="button"
                 onClick={() => setShowCompare(true)}
                 disabled={compareIds.length < 2}
-                className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-br from-primary to-primary/85 px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
               >
                 {compareIds.length < 2 ? "Pick 2+ to compare" : "Compare side by side"}
               </button>

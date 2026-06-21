@@ -14,8 +14,9 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react-native";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { HeroCard, MoveCard, MoveRaccoon } from "@/components/move";
 
 /**
  * Mobile Blog list - public content, no auth required.
@@ -132,8 +133,9 @@ export default function BlogListScreen() {
   if (error && items.length === 0) {
     return (
       <SafeAreaView style={styles.center} edges={["bottom"]}>
+        <MoveRaccoon mood="alert" size={64} />
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity onPress={load} style={styles.retryButton}>
+        <TouchableOpacity onPress={load} style={styles.retryButton} activeOpacity={0.85}>
           <Text style={styles.retryText}>{t("common.retry")}</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -143,6 +145,7 @@ export default function BlogListScreen() {
   if (items.length === 0) {
     return (
       <SafeAreaView style={styles.center} edges={["bottom"]}>
+        <MoveRaccoon mood="calm" size={64} />
         <Text style={styles.emptyText}>{t("blog.empty")}</Text>
       </SafeAreaView>
     );
@@ -167,7 +170,7 @@ export default function BlogListScreen() {
         keyExtractor={(item) => `${item.locale}-${item.slug}`}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <View style={styles.hero}>
+          <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
             <View style={styles.heroTop}>
               <View style={styles.heroIcon}>
                 <BookOpen size={20} color={theme.colors.primary} />
@@ -196,7 +199,7 @@ export default function BlogListScreen() {
                 <Text style={styles.heroStatLabel}>latest</Text>
               </View>
             </View>
-          </View>
+          </HeroCard>
         }
         refreshControl={
           <RefreshControl
@@ -206,10 +209,11 @@ export default function BlogListScreen() {
           />
         }
         renderItem={({ item }) => (
-          <TouchableOpacity
+          <MoveCard
             style={styles.card}
             onPress={() => openPost(item.slug, item.locale)}
-            activeOpacity={0.7}
+            padding={0}
+            radius={theme.radius.xl}
           >
             {item.ogImageUrl ? (
               <Image source={{ uri: item.ogImageUrl }} style={styles.cover} />
@@ -236,9 +240,9 @@ export default function BlogListScreen() {
               </Text>
             </View>
             <View style={styles.cardArrow}>
-              <ChevronRight size={16} color={theme.colors.textMuted} />
+              <ChevronRight size={16} color={theme.colors.dim} />
             </View>
-          </TouchableOpacity>
+          </MoveCard>
         )}
       />
     </SafeAreaView>
@@ -258,45 +262,40 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  screenTitle: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  screenTitle: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   center: {
     flex: 1,
     backgroundColor: theme.colors.background,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
+    gap: 14,
   },
   listContent: { padding: 16, gap: 14 },
   hero: {
-    borderRadius: 24,
-    padding: 16,
     marginBottom: 2,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
   },
   heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   heroIcon: {
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
-  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
-  heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
-  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  heroKicker: { fontSize: 10, fontFamily: fonts.sansBold, letterSpacing: 1.4, textTransform: "uppercase", color: theme.colors.primary },
+  heroTitle: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text, marginTop: 3 },
+  heroSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 3 },
   heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
   heroStat: {
     flex: 1,
@@ -308,23 +307,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
-  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatValue: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
   heroStatLabel: {
     fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 0.6,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
   card: {
-    backgroundColor: theme.colors.glass.bg,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
     overflow: "hidden",
     marginBottom: 0,
-    ...theme.shadow.sm,
   },
   cover: {
     width: "100%",
@@ -332,31 +326,34 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.elevated,
   },
   coverPlaceholder: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.bg2,
     alignItems: "center",
     justifyContent: "center",
   },
   cardBody: { padding: 16, gap: 6 },
   category: {
     fontSize: 10,
-    letterSpacing: 0,
+    letterSpacing: 1.2,
     color: theme.colors.primary,
-    fontWeight: "700",
+    fontFamily: fonts.sansBold,
+    textTransform: "uppercase",
   },
   title: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     lineHeight: 24,
   },
   excerpt: {
     fontSize: 14,
-    color: theme.colors.textMuted,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
     lineHeight: 20,
   },
   meta: {
     fontSize: 11,
-    color: theme.colors.textMuted,
+    fontFamily: fonts.sansMedium,
+    color: theme.colors.faint,
     marginTop: 4,
   },
   cardArrow: {
@@ -374,15 +371,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   errorText: {
     color: theme.colors.text,
+    fontFamily: fonts.sans,
     textAlign: "center",
-    marginBottom: 12,
   },
-  emptyText: { color: theme.colors.textMuted, textAlign: "center" },
+  emptyText: { color: theme.colors.dim, fontFamily: fonts.sans, textAlign: "center" },
   retryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
   },
-  retryText: { color: "#fff", fontWeight: "600" },
+  retryText: { color: theme.colors.primary, fontFamily: fonts.sansBold },
 });

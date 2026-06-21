@@ -214,7 +214,7 @@ function CollapsibleWidget({ title, expanded, onToggle, toggleLabel, children }:
         aria-expanded={expanded}
         className="w-full flex items-center justify-between gap-2 px-4 py-2 rounded-xl border border-border bg-foreground/[0.03] text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition"
       >
-        <span className="text-xs font-semibold">{title}</span>
+        <span className="font-display text-xs font-semibold">{title}</span>
         <span className="sr-only">{toggleLabel}</span>
         <ChevronDown
           aria-hidden="true"
@@ -690,7 +690,7 @@ export default function DashboardClient({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-destructive" />
-                <h3 className="text-sm font-bold text-foreground">{td("widget_nextCritical")}</h3>
+                <h3 className="font-display text-sm font-bold text-foreground">{td("widget_nextCritical")}</h3>
               </div>
               <Link href="/providers" className="text-[10px] text-foreground/40 hover:text-foreground transition">
                 {td("browseAll")}
@@ -731,7 +731,7 @@ export default function DashboardClient({
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <div className="flex items-center gap-2">
                 <Home className="h-4 w-4 text-tone-orange-fg" />
-                <h3 className="text-sm font-semibold text-foreground">{td("widget_spending")}</h3>
+                <h3 className="font-display text-sm font-semibold text-foreground">{td("widget_spending")}</h3>
               </div>
               <Link href="/addresses" className="text-[10px] text-foreground/40 hover:text-foreground transition">{td("viewAll")}</Link>
             </div>
@@ -756,11 +756,11 @@ export default function DashboardClient({
                           <div className="flex-1 h-1.5 bg-foreground/5 rounded-full overflow-hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={`${addr.nickname || addr.street} spending percentage`}>
                             <div className="h-full bg-primary rounded-full transition-all motion-reduce:transition-none" style={{ width: `${pct}%` }} />
                           </div>
-                          <span className="text-xs text-muted-foreground shrink-0">{Math.round(pct)}%</span>
+                          <span className="font-mono text-xs text-muted-foreground shrink-0">{Math.round(pct)}%</span>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-semibold text-tone-emerald-fg">{formatCurrency(addrCost)}</p>
+                        <p className="font-mono text-sm font-semibold text-tone-emerald-fg">{formatCurrency(addrCost)}</p>
                         <p className="text-xs text-muted-foreground">{td("servicesCount", { count: svcCount })}</p>
                       </div>
                     </div>
@@ -780,7 +780,7 @@ export default function DashboardClient({
                   <Truck className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">{td("section_moving")}</h3>
+                  <h3 className="font-display text-sm font-bold text-foreground">{td("section_moving")}</h3>
                   <p className="text-xs text-muted-foreground">
                     {stats.activePlan.fromCity} → {stats.activePlan.toCity}
                     {checklist ? ` · ${td("moving_phase", { phase: checklist.currentPhase + 1, label: phaseInfo?.label || "" })}` : ""}
@@ -788,8 +788,8 @@ export default function DashboardClient({
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-foreground">{checklist ? `${checklist.progressPercent}%` : `${progress}%`}</p>
-                <p className="text-[10px] text-foreground/40">
+                <p className="font-mono text-lg font-bold text-foreground">{checklist ? `${checklist.progressPercent}%` : `${progress}%`}</p>
+                <p className="font-mono text-[10px] text-foreground/40">
                   {checklist ? `${checklist.completedItems}/${checklist.totalItems}` : `${progress}%`} {td("moving_done")}
                 </p>
               </div>
@@ -916,7 +916,7 @@ export default function DashboardClient({
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-tone-cyan-fg" />
-                <h3 className="text-sm font-semibold text-foreground">{td("section_recent")}</h3>
+                <h3 className="font-display text-sm font-semibold text-foreground">{td("section_recent")}</h3>
               </div>
               <Link href="/services" className="text-[10px] text-foreground/40 hover:text-foreground transition">{td("viewAll")}</Link>
             </div>
@@ -932,7 +932,7 @@ export default function DashboardClient({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {(svc.monthlyCost || 0) > 0 && (
-                      <span className="text-xs font-medium text-muted-foreground">{formatCurrency(svc.monthlyCost)}{cycleLabel(svc.billingCycle)}</span>
+                      <span className="font-mono text-xs font-medium text-muted-foreground">{formatCurrency(svc.monthlyCost)}{cycleLabel(svc.billingCycle)}</span>
                     )}
                     <Link
                       href={`/services/${svc.id}`}
@@ -968,16 +968,16 @@ export default function DashboardClient({
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <div className="flex items-center gap-2">
                 <PieChart className="h-4 w-4 text-tone-emerald-fg" />
-                <h3 className="text-sm font-semibold text-foreground">{td("widget_categories")}</h3>
+                <h3 className="font-display text-sm font-semibold text-foreground">{td("widget_categories")}</h3>
               </div>
-              <span className="text-lg font-bold text-foreground">{formatCurrency(stats.monthlyExpenses)}</span>
+              <span className="font-mono text-lg font-bold text-foreground">{formatCurrency(stats.monthlyExpenses)}</span>
             </div>
             <div className="px-5 pb-5 space-y-2.5">
               {sortedCats.map(([cat, amount]) => (
                 <div key={cat} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground text-xs">{categoryLabels[cat] || cat}</span>
-                    <span className="font-medium text-foreground/80 text-xs">{formatCurrency(amount)}</span>
+                    <span className="font-mono font-medium text-foreground/80 text-xs">{formatCurrency(amount)}</span>
                   </div>
                   <div className="h-1.5 bg-foreground/5 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${categoryColors[cat] || "bg-tone-slate-fg"} transition-all motion-reduce:transition-none`} style={{ width: `${(amount / maxCatAmount) * 100}%` }} />
@@ -993,17 +993,17 @@ export default function DashboardClient({
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-tone-honey-fg" />
-                <h3 className="text-sm font-semibold text-foreground">{td("widget_topSpending")}</h3>
+                <h3 className="font-display text-sm font-semibold text-foreground">{td("widget_topSpending")}</h3>
               </div>
             </div>
             <div className="px-5 pb-5 space-y-1.5">
               {topServices.map((svc: any, i: number) => (
                 <div key={svc.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-foreground/[0.03] transition">
-                  <span className="text-xs font-bold text-muted-foreground w-4 text-center">{i + 1}</span>
+                  <span className="font-mono text-xs font-bold text-muted-foreground w-4 text-center">{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-foreground/80 truncate">{svc.providerName}</p>
                   </div>
-                  <span className="text-xs font-semibold text-tone-emerald-fg shrink-0">{formatCurrency(svc.monthlyCost)}{cycleLabel(svc.billingCycle)}</span>
+                  <span className="font-mono text-xs font-semibold text-tone-emerald-fg shrink-0">{formatCurrency(svc.monthlyCost)}{cycleLabel(svc.billingCycle)}</span>
                 </div>
               ))}
             </div>
@@ -1084,7 +1084,7 @@ export default function DashboardClient({
       {onboarding && !onboarding.completed && !resumeDismissed && (
         <div className="rounded-2xl border border-tone-orange-br bg-tone-orange-bg/40 p-4 flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-foreground">Finish setting up your move</p>
+            <p className="font-display text-sm font-semibold text-foreground">Finish setting up your move</p>
             <p className="text-xs text-muted-foreground">
               You&apos;re on step {Math.min(onboarding.stepIndex + 1, 4)} of 4 — pick up where you left off.
             </p>
@@ -1158,7 +1158,7 @@ export default function DashboardClient({
       {showWidgetPanel && (
         <div className="rounded-2xl border border-tone-orange-br bg-foreground/5 backdrop-blur-xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground">{td("widget_panel_title")}</h3>
+            <h3 className="font-display text-sm font-semibold text-foreground">{td("widget_panel_title")}</h3>
             <button onClick={() => setShowWidgetPanel(false)} className="p-1 rounded-lg text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
               <X className="h-4 w-4" />
             </button>

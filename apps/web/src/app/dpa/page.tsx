@@ -44,25 +44,28 @@ export default function DpaPage() {
       title="Data Processing Addendum"
       description="This DPA summary applies when a customer uses LocateFlow to process personal data about identifiable third parties. It requires legal counsel finalization before enterprise or regulated use."
     >
-      <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
-        <p>{policyLastUpdatedLabel()}</p>
+      <div className="space-y-2 rounded-[22px] border border-border bg-background/60 p-7 text-sm leading-6 text-muted-foreground">
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
         <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           DPA contact:{" "}
-          <a href={mailto(LEGAL_CONTACTS.dpa, "LocateFlow DPA inquiry")} className="underline">
+          <a href={mailto(LEGAL_CONTACTS.dpa, "LocateFlow DPA inquiry")} className="text-primary underline">
             {LEGAL_CONTACTS.dpa}
           </a>
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         {highlights.map((item) => (
-          <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
-            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div
+            key={item.title}
+            className="space-y-3 rounded-[22px] border border-border bg-background/60 p-7 transition hover:border-primary/40"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <item.icon className="h-5 w-5" />
-            </div>
-            <h2 className="text-base font-semibold text-foreground">{item.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+            </span>
+            <h2 className="font-display text-base font-bold tracking-tight text-foreground">{item.title}</h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
           </div>
         ))}
       </div>
@@ -99,7 +102,7 @@ export default function DpaPage() {
           Known subprocessor categories include hosting/database providers, Cloudflare R2 or object storage, Stripe, Apple App Store, Google Play, Resend or email delivery providers, Google Analytics/Google Tag Manager when configured, Google Maps/address autocomplete when configured, Expo or push notification providers, and Sentry/GlitchTip or error-monitoring providers when configured.
         </p>
         <p>
-          A production subprocessor list with legal names, locations, and processing purposes must be finalized before full business launch. Subprocessor questions can be sent to <a href={mailto(LEGAL_CONTACTS.dpa, "LocateFlow subprocessor inquiry")} className="underline">{LEGAL_CONTACTS.dpa}</a>.
+          A production subprocessor list with legal names, locations, and processing purposes must be finalized before full business launch. Subprocessor questions can be sent to <a href={mailto(LEGAL_CONTACTS.dpa, "LocateFlow subprocessor inquiry")} className="text-primary underline">{LEGAL_CONTACTS.dpa}</a>.
         </p>
       </PublicSection>
 

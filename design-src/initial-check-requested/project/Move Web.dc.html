@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#070B14;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;color:#EFF3FA}
+  ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#1c2740;border-radius:8px}::-webkit-scrollbar-track{background:#0a0f1c}
+  a{text-decoration:none;color:inherit}
+  @keyframes w-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes w-rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes w-glow{0%,100%{opacity:.4}50%{opacity:.8}}
+  @keyframes w-blink{0%,42%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.1)}}
+  @keyframes w-shimmer{to{background-position:200% center}}
+  .w-rise{animation:w-rise .7s cubic-bezier(.2,.7,.3,1) both}
+  [data-reveal]{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.3,1), transform .8s cubic-bezier(.2,.7,.3,1)}
+  [data-reveal].in{opacity:1;transform:none}
+</style>
+</helmet>
+<div style="--bg:#070B14;--surface:#121B2D;--surface2:#18233A;--gold:#CBA45E;--gold-lt:#DCBC7C;--gold-dk:#B0852F;--text:#EFF3FA;--dim:#8A99B6;--faint:#41526F;--green:#54CB7E;--teal:#37C2C9;--amber:#E0A85A;--red:#E25C5C;--border:rgba(110,150,225,0.12);--border-gold:rgba(203,164,94,0.22);--rc-head:#8C9AB2;--rc-mask:#0C1525;--rc-ear:#C4A090;--rc-eye:#CBA45E;--rc-pupil:#04080F;--track:rgba(255,255,255,0.07);--mapRouteBase:rgba(255,255,255,0.10);--goldSoft:rgba(203,164,94,0.09);--redSoft:rgba(226,92,92,0.16);--amberSoft:rgba(224,168,90,0.16);--bg2:#0C1322;--heroGrad:linear-gradient(135deg,#141C30,#0C1220);--glass:rgba(6,11,24,0.62); position:relative; overflow:hidden; background:var(--bg)">
+
+  <!-- ambient mesh -->
+  <div style="position:absolute; inset:0; pointer-events:none; overflow:hidden">
+    <div style="position:absolute; top:-200px; left:-100px; width:700px; height:700px; border-radius:50%; background:radial-gradient(circle, rgba(203,164,94,0.10), transparent 65%); animation:w-glow 8s ease-in-out infinite"></div>
+    <div style="position:absolute; top:200px; right:-200px; width:760px; height:760px; border-radius:50%; background:radial-gradient(circle, rgba(55,194,201,0.07), transparent 65%); animation:w-glow 11s ease-in-out infinite"></div>
+  </div>
+
+  <div style="position:absolute; inset:0; pointer-events:none; opacity:.05; mix-blend-mode:overlay; background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E&quot;)"></div>
+  <div style="position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg, transparent, rgba(203,164,94,0.5), transparent)"></div>
+
+  <!-- ======== NAV ======== -->
+  <div style="display:none">
+    <div style="max-width:1180px; margin:0 auto; padding:16px 28px; display:flex; align-items:center; justify-content:space-between">
+      <div style="display:flex; align-items:center; gap:11px">
+        <div style="width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; background:linear-gradient(145deg,#0E1A30,#070D1C); box-shadow:0 0 0 1px var(--border-gold)"><dc-import name="Raccoon" size="30" mood="calm" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="30px,30px"></dc-import></div>
+        <span style="font-family:'Playfair Display',serif; font-size:22px; font-weight:900">Move</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:30px">
+        <sc-for list="{{ navLinks }}" as="l" hint-placeholder-count="3"><a href="#" style="color:var(--dim); font-size:14px; font-weight:500">{{ l }}</a></sc-for>
+        <a href="#/login" style="color:var(--text); font-size:14px; font-weight:600">Log in</a>
+        <a href="#/onboarding" style="padding:10px 18px; border-radius:11px; background:linear-gradient(135deg,var(--gold-lt),var(--gold)); color:#0A0F1C; font-size:13px; font-weight:700">Get the app</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== HERO ======== -->
+  <div style="max-width:1180px; margin:0 auto; padding:70px 28px 40px; display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); gap:40px; align-items:center; position:relative">
+    <div>
+      <div class="w-rise" style="display:inline-flex; align-items:center; gap:8px; padding:6px 13px; border-radius:99px; background:var(--goldSoft); border:1px solid var(--border-gold); margin-bottom:22px">
+        <span style="width:6px; height:6px; border-radius:50%; background:var(--gold); animation:w-glow 2s infinite"></span>
+        <span style="color:var(--gold); font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase">Relocation Intelligence</span>
+      </div>
+      <h1 class="w-rise" style="font-family:'Playfair Display',serif; font-size:clamp(36px,6.2vw,60px); font-weight:900; line-height:1.04; letter-spacing:-0.01em">Your entire move,<br><span style="background:linear-gradient(120deg,var(--gold-lt),var(--gold),#fff,var(--gold-lt)); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation:w-shimmer 5s linear infinite">handled.</span></h1>
+      <p class="w-rise" style="color:var(--dim); font-size:18px; line-height:1.6; margin-top:22px; max-width:480px">Move tracks every utility, address and deadline — and briefs you on your new home before you arrive. One countdown. Zero surprises.</p>
+      <div class="w-rise" style="display:flex; gap:13px; margin-top:30px">
+        <a href="#/onboarding" style="padding:15px 26px; border-radius:14px; background:linear-gradient(135deg,var(--gold-lt),var(--gold),var(--gold-dk)); color:#0A0F1C; font-size:15px; font-weight:700; box-shadow:0 10px 34px rgba(203,164,94,0.3)">Start your move — free</a>
+        <a href="#how" style="padding:15px 24px; border-radius:14px; background:var(--surface); border:1px solid var(--border); color:var(--text); font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor"/></svg>See how it works</a>
+      </div>
+      <div class="w-rise" style="display:flex; align-items:center; gap:22px; margin-top:32px; color:var(--faint); font-size:12.5px; font-weight:600">
+        <span>★★★★★ 4.9 on the App Store</span><span style="width:4px;height:4px;border-radius:50%;background:var(--faint)"></span><span>FEMA · EPA · NWS data</span>
+      </div>
+    </div>
+
+    <!-- hero phone -->
+    <div class="w-rise" style="justify-self:center; animation:w-float 6s ease-in-out infinite; text-align:center">
+      <div style="display:inline-flex; gap:6px; padding:5px; border-radius:99px; background:var(--surface); border:1px solid var(--border); margin-bottom:16px">
+        <button onClick="{{ goRough }}" style="padding:8px 15px; border-radius:99px; cursor:pointer; border:1px solid {{ pillRough.bd }}; background:{{ pillRough.bg }}; color:{{ pillRough.col }}; font-size:12.5px; font-weight:700">😣 Rough home</button>
+        <button onClick="{{ goDream }}" style="padding:8px 15px; border-radius:99px; cursor:pointer; border:1px solid {{ pillDream.bd }}; background:{{ pillDream.bg }}; color:{{ pillDream.col }}; font-size:12.5px; font-weight:700">😎 Dream home</button>
+      </div>
+      <div style="width:288px; height:592px; border-radius:40px; background:var(--bg); border:1px solid var(--border); box-shadow:0 0 0 10px #0d1322, 0 40px 100px rgba(0,0,0,.7); overflow:hidden; position:relative">
+        <div style="position:absolute; left:6px; top:0; transform:scale(0.703); transform-origin:top left; width:390px; height:844px">
+          <dc-import name="Move" embed="1" theme="Dark" weatherCondition="{{ dmW }}" areaCondition="{{ dmA }}" waterCondition="{{ dmWa }}" transitCondition="{{ dmT }}" costCondition="{{ dmC }}" airCondition="{{ dmAi }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+      <div style="display:none">
+      <div style="width:288px; height:592px; border-radius:40px; background:var(--bg); border:1px solid var(--border); box-shadow:0 0 0 10px #0d1322, 0 40px 100px rgba(0,0,0,.7); overflow:hidden; padding:18px 14px; position:relative">
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text); font-weight:600; padding:0 6px 10px"><span>9:41</span><span>▮▮▮ ▼</span></div>
+        <div style="border-radius:22px; padding:16px; background:var(--heroGrad); border:1px solid var(--border-gold); position:relative; overflow:hidden">
+          <div style="color:var(--gold); font-size:8px; font-weight:800; letter-spacing:.18em; text-transform:uppercase">Move countdown</div>
+          <div style="display:flex; align-items:baseline; gap:6px; margin-top:2px"><span style="font-family:'Playfair Display',serif; font-size:46px; font-weight:900; line-height:.9">48</span><span style="color:var(--dim); font-size:12px">days</span></div>
+          <div style="height:4px; border-radius:99px; background:var(--track); margin-top:12px; overflow:hidden"><div style="height:100%; width:25%; border-radius:99px; background:linear-gradient(90deg,var(--gold-lt),var(--gold))"></div></div>
+          <div style="color:var(--dim); font-size:9px; margin-top:5px">Austin → New York · 25% done</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:11px">
+          <sc-for list="{{ heroCards }}" as="d" hint-placeholder-count="4">
+            <div style="border-radius:15px; overflow:hidden; background:var(--surface); border:1px solid var(--border)">
+              <div style="position:relative; height:58px; overflow:hidden; background:linear-gradient(180deg,#101b30,#0a1322)"><dc-import name="DossierScene" type="{{ d.type }}" level="{{ d.level }}" tone="{{ d.tone }}" glow="{{ d.glow }}" style="position:absolute; inset:0" hint-size="100%,58px"></dc-import></div>
+              <div style="padding:8px 9px 10px"><div style="color:var(--faint); font-size:7px; font-weight:800; letter-spacing:.1em; text-transform:uppercase">{{ d.label }}</div><div style="font-family:'Playfair Display',serif; font-size:17px; font-weight:900; line-height:1; margin-top:2px">{{ d.big }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== HOW IT WORKS ======== -->
+  <div id="how" style="max-width:1180px; margin:0 auto; padding:70px 28px 30px; position:relative">
+    <div data-reveal style="text-align:center; margin-bottom:48px">
+      <div style="color:var(--gold); font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase">So simple, anyone can move</div>
+      <h2 style="font-family:'Playfair Display',serif; font-size:40px; font-weight:800; margin-top:10px">How Move works — in 3 steps</h2>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+        <div data-reveal style="border-radius:22px; padding:28px; background:var(--surface); border:1px solid var(--border); position:relative">
+          <div style="width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:var(--goldSoft); border:1px solid var(--border-gold); color:var(--gold); font-family:'Playfair Display',serif; font-size:22px; font-weight:900">{{ s.n }}</div>
+          <div style="font-size:20px; font-weight:700; margin-top:18px">{{ s.title }}</div>
+          <div style="color:var(--dim); font-size:14.5px; line-height:1.6; margin-top:8px">{{ s.body }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ======== FEATURE: DOSSIER ======== -->
+  <div style="max-width:1180px; margin:0 auto; padding:60px 28px">
+    <div data-reveal style="border-radius:30px; padding:48px 40px; background:linear-gradient(160deg,#0E1828,#0a1120); border:1px solid var(--border); position:relative; overflow:hidden">
+      <div style="position:absolute; top:-100px; right:-60px; width:360px; height:360px; border-radius:50%; background:radial-gradient(circle,rgba(203,164,94,0.12),transparent 65%)"></div>
+      <div style="text-align:center; max-width:620px; margin:0 auto; position:relative">
+        <div style="color:var(--gold); font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase">Home Dossier</div>
+        <h2 style="font-family:'Playfair Display',serif; font-size:38px; font-weight:800; margin-top:10px; line-height:1.15">Know your new home before you arrive</h2>
+        <p style="color:var(--dim); font-size:16px; line-height:1.6; margin-top:14px">Weather, air, water, safety, transit, cost and housing — pulled live from FEMA, EPA and NWS, and shown as a friendly scene that reacts to the real numbers.</p>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin-top:38px; position:relative">
+        <sc-for list="{{ dossierDemo }}" as="d" hint-placeholder-count="6">
+          <div style="border-radius:20px; overflow:hidden; background:var(--surface); border:1px solid var(--border)">
+            <div style="position:relative; height:92px; overflow:hidden; background:linear-gradient(180deg,#101b30,#0a1322)">
+              <dc-import name="DossierScene" type="{{ d.type }}" level="{{ d.level }}" tone="{{ d.tone }}" glow="{{ d.glow }}" style="position:absolute; inset:0" hint-size="100%,92px"></dc-import>
+              <span style="position:absolute; top:9px; right:9px; font-size:9px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:{{ d.tone }}; background:var(--glass); padding:3px 8px; border-radius:7px">{{ d.tag }}</span>
+            </div>
+            <div style="padding:13px 15px 16px"><div style="color:var(--faint); font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase">{{ d.label }}</div><div style="font-family:'Playfair Display',serif; font-size:24px; font-weight:900; line-height:1; margin-top:3px">{{ d.big }}</div><div style="color:var(--dim); font-size:11px; margin-top:5px">{{ d.sub }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== FEATURE: SERVICES + ADDRESS (split) ======== -->
+  <div style="max-width:1180px; margin:0 auto; padding:30px 28px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:24px">
+    <div data-reveal style="border-radius:26px; padding:34px; background:var(--surface); border:1px solid var(--border)">
+      <div style="width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:rgba(84,203,126,0.14); color:var(--green)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div>
+      <h3 style="font-size:24px; font-weight:800; margin-top:18px">Never miss a utility transfer</h3>
+      <p style="color:var(--dim); font-size:15px; line-height:1.6; margin-top:10px">Electric, water, internet, mail, DMV — Move knows what to cancel at the old place and set up at the new one, with deadline reminders and your estimated monthly cost.</p>
+      <div style="margin-top:20px; display:flex; flex-direction:column; gap:9px">
+        <sc-for list="{{ svcRows }}" as="s" hint-placeholder-count="3">
+          <div style="display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:13px; background:var(--bg2); border:1px solid var(--border)">
+            <span style="font-size:16px">{{ s.icon }}</span><div style="flex:1"><div style="font-size:13px; font-weight:600">{{ s.name }}</div><div style="color:var(--faint); font-size:10px">{{ s.sub }}</div></div>
+            <span style="font-size:9.5px; font-weight:700; color:{{ s.col }}; background:{{ s.bg }}; padding:4px 9px; border-radius:99px">{{ s.tag }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div data-reveal style="border-radius:26px; padding:34px; background:var(--surface); border:1px solid var(--border)">
+      <div style="width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:rgba(55,194,201,0.14); color:var(--teal)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
+      <h3 style="font-size:24px; font-weight:800; margin-top:18px">Every address, mapped</h3>
+      <p style="color:var(--dim); font-size:15px; line-height:1.6; margin-top:10px">Home, work, seasonal or temporary — each address on a real map, with the services tied to it. See your whole move route at a glance.</p>
+      <div style="margin-top:20px; border-radius:18px; overflow:hidden; border:1px solid var(--border-gold); background:linear-gradient(180deg,#0d1830,#0a1120); position:relative; height:184px">
+        <svg viewBox="0 0 360 184" preserveAspectRatio="none" style="position:absolute; inset:0; width:100%; height:100%">
+          <g stroke="rgba(255,255,255,0.06)" stroke-width="1"><path d="M-10 60 C80 44 130 78 220 56 C290 38 330 60 380 44" fill="none"/><path d="M-10 130 C80 110 150 138 240 116 C310 98 350 124 380 104" fill="none"/><path d="M120 -10 C112 60 132 130 120 200" fill="none"/></g>
+          <path d="M40 150 C120 110 150 130 200 92 C250 54 290 76 330 44" stroke="var(--mapRouteBase)" stroke-width="9" stroke-linecap="round" fill="none"></path>
+          <path d="M40 150 C120 110 150 130 200 92 C250 54 290 76 330 44" stroke="var(--gold)" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="8 8" fill="none"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.4s" repeatCount="indefinite"/></path>
+          <circle cx="40" cy="150" r="6" fill="var(--bg)" stroke="var(--green)" stroke-width="2.5"></circle>
+          <circle cx="330" cy="44" r="6" fill="var(--bg)" stroke="var(--gold)" stroke-width="2.5"></circle>
+        </svg>
+        <div style="position:absolute; left:12px; top:12px; padding:5px 10px; border-radius:99px; background:var(--glass); border:1px solid var(--border); font-size:8px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--green)">🏠 Austin, TX</div>
+        <div style="position:absolute; right:12px; bottom:12px; padding:5px 10px; border-radius:99px; background:var(--glass); border:1px solid var(--border-gold); font-size:8px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--gold)">New York, NY 🔑</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== FEATURE: 3-up (AI / Reminders / Budget) ======== -->
+  <div style="max-width:1180px; margin:0 auto; padding:30px 28px 20px">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px">
+      <sc-for list="{{ trio }}" as="t" hint-placeholder-count="3">
+        <div data-reveal style="border-radius:22px; padding:28px; background:var(--surface); border:1px solid var(--border)">
+          <div style="width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:{{ t.iconBg }}; color:{{ t.col }}"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ t.icon }}"/></svg></div>
+          <div style="font-size:19px; font-weight:800; margin-top:16px">{{ t.title }}</div>
+          <div style="color:var(--dim); font-size:14px; line-height:1.6; margin-top:8px">{{ t.body }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ======== SIMPLE FOR ANYONE ======== -->
+  <div style="max-width:1180px; margin:0 auto; padding:60px 28px">
+    <div data-reveal style="border-radius:30px; padding:50px 40px; text-align:center; background:linear-gradient(135deg,#141C30,#0C1220); border:1px solid var(--border-gold); position:relative; overflow:hidden">
+      <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 0%, rgba(203,164,94,0.12), transparent 60%)"></div>
+      <div style="position:relative">
+        <div style="animation:w-float 5s ease-in-out infinite; display:inline-block"><dc-import name="Raccoon" size="64" mood="approved" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="64px,64px"></dc-import></div>
+        <h2 style="font-family:'Playfair Display',serif; font-size:38px; font-weight:800; margin-top:18px; max-width:640px; margin-left:auto; margin-right:auto; line-height:1.15">No spreadsheets. No sticky notes. Just one clear next step.</h2>
+        <p style="color:var(--dim); font-size:16px; line-height:1.6; margin-top:16px; max-width:560px; margin-left:auto; margin-right:auto">Move always shows the single most important thing to do next — and a daily AI briefing in plain words. If you can read a text message, you can run your whole move.</p>
+        <div style="display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-top:26px">
+          <sc-for list="{{ reassure }}" as="r" hint-placeholder-count="3"><div style="display:flex; align-items:center; gap:9px; color:var(--text); font-size:14px; font-weight:600"><span style="width:22px; height:22px; border-radius:50%; background:rgba(84,203,126,0.16); color:var(--green); display:flex; align-items:center; justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>{{ r }}</div></sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== ALWAYS FREE · FEATURE LIST ======== -->
+  <!-- @SYSTEM-INTEGRATION PROMPT: Replace the static {{ freeFeatures }} array in renderVals with the app's real entitlement/feature registry (every feature flagged free=true). Each item: {t:title, d:one-line description, icon?}. Keep this section's copy ("Everything's included — no subscription"). If the product ever adds a paid tier, filter free=true here and move paid features to a separate "Pro" grid. -->
+  <div style="max-width:1180px; margin:0 auto; padding:60px 28px">
+    <div data-reveal style="text-align:center; margin-bottom:40px">
+      <div style="color:var(--gold); font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase">Always free</div>
+      <h2 style="font-family:'Playfair Display',serif; font-size:40px; font-weight:800; margin-top:10px">Everything's included — no subscription</h2>
+      <p style="color:var(--dim); font-size:16px; line-height:1.6; margin-top:12px; max-width:540px; margin-left:auto; margin-right:auto">Every feature below is free, forever. No paywalls, no trials, no credit card.</p>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px">
+      <sc-for list="{{ freeFeatures }}" as="f" hint-placeholder-count="9">
+        <div data-reveal style="display:flex; gap:13px; align-items:flex-start; padding:20px; border-radius:18px; background:var(--surface); border:1px solid var(--border)">
+          <span style="width:26px; height:26px; flex-shrink:0; border-radius:50%; background:rgba(84,203,126,0.16); color:var(--green); display:flex; align-items:center; justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+          <div><div style="font-weight:700; font-size:15.5px">{{ f.t }}</div><div style="color:var(--dim); font-size:12.5px; line-height:1.5; margin-top:3px">{{ f.d }}</div></div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ======== TESTIMONIALS ======== -->
+  <div style="max-width:1180px; margin:0 auto; padding:40px 28px 10px">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px">
+      <sc-for list="{{ quotes }}" as="q" hint-placeholder-count="3">
+        <div data-reveal style="padding:26px; border-radius:20px; background:var(--surface); border:1px solid var(--border)">
+          <div style="color:var(--gold); font-size:15px; letter-spacing:2px">★★★★★</div>
+          <p style="font-size:15.5px; line-height:1.6; margin-top:13px">“{{ q.t }}”</p>
+          <div style="color:var(--dim); font-size:13px; font-weight:600; margin-top:16px">{{ q.n }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ======== FAQ ======== -->
+  <div style="max-width:840px; margin:0 auto; padding:40px 28px">
+    <div data-reveal style="text-align:center; margin-bottom:30px">
+      <div style="color:var(--gold); font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase">FAQ</div>
+      <h2 style="font-family:'Playfair Display',serif; font-size:38px; font-weight:800; margin-top:10px">Questions, answered</h2>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="4">
+        <div data-reveal style="padding:22px 24px; border-radius:16px; background:var(--surface); border:1px solid var(--border)">
+          <div style="font-weight:700; font-size:16px">{{ q.q }}</div>
+          <div style="color:var(--dim); font-size:14px; line-height:1.65; margin-top:7px">{{ q.a }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ======== CTA + FOOTER ======== -->
+  <div style="max-width:1180px; margin:0 auto; padding:40px 28px 70px">
+    <div data-reveal style="border-radius:30px; padding:54px 40px; text-align:center; background:linear-gradient(135deg,var(--gold-lt),var(--gold),var(--gold-dk)); color:#0A0F1C; position:relative; overflow:hidden">
+      <h2 style="font-family:'Playfair Display',serif; font-size:44px; font-weight:900; line-height:1.05">Your move starts today.</h2>
+      <p style="font-size:17px; font-weight:600; margin-top:12px; opacity:.8">100% free — no subscription, ever. Set up in two minutes.</p>
+      <div style="display:flex; gap:13px; justify-content:center; margin-top:26px; flex-wrap:wrap">
+        <a href="#/onboarding" style="padding:15px 26px; border-radius:14px; background:#0A0F1C; color:#fff; font-size:15px; font-weight:700">Download for iOS</a>
+        <a href="#/onboarding" style="padding:15px 26px; border-radius:14px; background:rgba(10,15,28,0.12); color:#0A0F1C; border:1.5px solid rgba(10,15,28,0.3); font-size:15px; font-weight:700">Download for Android</a>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:36px; padding-top:26px; border-top:1px solid var(--border); flex-wrap:wrap; gap:16px">
+      <div style="display:flex; align-items:center; gap:10px"><div style="width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:linear-gradient(145deg,#0E1A30,#070D1C); box-shadow:0 0 0 1px var(--border-gold)"><dc-import name="Raccoon" size="24" mood="calm" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="24px,24px"></dc-import></div><span style="font-family:'Playfair Display',serif; font-weight:800; font-size:17px">Move</span><span style="color:var(--faint); font-size:12px; margin-left:8px">by LocateFlow</span></div>
+      <div style="color:var(--faint); font-size:12.5px; display:flex; gap:22px"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Support</a><span>© 2024</span></div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:2600}}">
+class Component extends DCLogic {
+  state={demo:'rough'};
+  setDemo(d){ this.setState({demo:d}); }
+  componentDidMount(){
+    try{
+      const io=new IntersectionObserver((es)=>{es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });},{threshold:0.12});
+      this._root && this._root.querySelectorAll('[data-reveal]').forEach(el=>io.observe(el));
+      // fallback: if root ref not wired, query document
+      document.querySelectorAll('[data-reveal]').forEach(el=>io.observe(el));
+    }catch(e){}
+  }
+  renderVals(){
+    const G=(c,a)=>{const m={teal:'55,194,201',green:'84,203,126',amber:'224,168,90',red:'226,92,92',gold:'203,164,94'};return `rgba(${m[c]},${a})`;};
+    const demo=this.state.demo;
+    const heroCards = demo==='dream' ? [
+      {type:'transit',level:'good',tone:'var(--teal)',glow:G('teal',.18),label:'Transit',big:'100'},
+      {type:'cost',level:'good',tone:'var(--green)',glow:G('green',.18),label:'Cost',big:'−4%'},
+      {type:'weather',level:'sun',tone:'var(--amber)',glow:G('amber',.18),label:'Weather',big:'78°'},
+      {type:'air',level:'good',tone:'var(--green)',glow:G('green',.18),label:'Air',big:'28'},
+    ] : [
+      {type:'transit',level:'bad',tone:'var(--red)',glow:G('red',.18),label:'Transit',big:'12'},
+      {type:'cost',level:'bad',tone:'var(--red)',glow:G('red',.18),label:'Cost',big:'+128%'},
+      {type:'weather',level:'storm',tone:'var(--teal)',glow:G('teal',.18),label:'Weather',big:'58°'},
+      {type:'air',level:'bad',tone:'var(--red)',glow:G('red',.18),label:'Air',big:'171'},
+    ];
+    const dossierDemo = demo==='dream' ? [
+      {type:'area',level:'good',tone:'var(--green)',glow:G('green',.2),tag:'Safe',label:'Area Confidence',big:'9.1',sub:'Officer-patrolled · well-lit streets'},
+      {type:'weather',level:'sun',tone:'var(--amber)',glow:G('amber',.2),tag:'Clear',label:'Weather',big:'78°',sub:'Clear skies all week'},
+      {type:'water',level:'good',tone:'var(--teal)',glow:G('teal',.2),tag:'Clean',label:'Water',big:'96',sub:'Crystal clear · lead-free'},
+      {type:'transit',level:'good',tone:'var(--teal)',glow:G('teal',.2),tag:'3 min',label:'Transit',big:'100',sub:'8 lines · next train 3 min'},
+      {type:'air',level:'good',tone:'var(--green)',glow:G('green',.2),tag:'Good',label:'Air Quality',big:'28',sub:'Fresh, clean outdoor air'},
+      {type:'housing',level:'mid',tone:'var(--gold)',glow:G('gold',.2),tag:'Market',label:'Housing',big:'$2,150',sub:'Rent 1BR · great value'},
+    ] : [
+      {type:'area',level:'bad',tone:'var(--red)',glow:G('red',.2),tag:'Risky',label:'Area Confidence',big:'4.2',sub:'Shady at night — take main roads'},
+      {type:'weather',level:'storm',tone:'var(--teal)',glow:G('teal',.2),tag:'Storm',label:'Weather',big:'58°',sub:'Severe thunderstorms tonight'},
+      {type:'water',level:'bad',tone:'var(--red)',glow:G('red',.2),tag:'Unsafe',label:'Water',big:'38',sub:'Do not drink — violations on record'},
+      {type:'transit',level:'bad',tone:'var(--red)',glow:G('red',.2),tag:'Sparse',label:'Transit',big:'12',sub:'No nearby lines — a car is a must'},
+      {type:'air',level:'bad',tone:'var(--red)',glow:G('red',.2),tag:'Unhealthy',label:'Air Quality',big:'171',sub:'Unhealthy — limit time outside'},
+      {type:'cost',level:'bad',tone:'var(--red)',glow:G('red',.2),tag:'High',label:'Cost vs here',big:'+128%',sub:'Rent +210% — a real budget shock'},
+    ];
+    const svcRows=[
+      {icon:'📡',name:'Internet · AT&T Fiber',sub:'Expires Jul 28',tag:'Transfer',col:'var(--amber)',bg:'var(--amberSoft)'},
+      {icon:'⚡',name:'Electric · ConEdison',sub:'Set up before move-in',tag:'Set up',col:'var(--red)',bg:'var(--redSoft)'},
+      {icon:'🏠',name:'Renters Insurance',sub:'Address update queued',tag:'Active',col:'var(--green)',bg:G('green',.14)},
+    ];
+    const trio=[
+      {title:'Daily AI Briefing',body:'A plain-English summary of where your move stands and the one thing to do next.',icon:'M12 2a7 7 0 00-4 12.7V17a2 2 0 002 2h4a2 2 0 002-2v-2.3A7 7 0 0012 2zM9 21h6',col:'var(--gold)',iconBg:'var(--goldSoft)'},
+      {title:'Smart Reminders',body:'Mail forwarding, license, utility deadlines — timed perfectly so nothing slips.',icon:'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0',col:'var(--teal)',iconBg:G('teal',.14)},
+      {title:'Move Budget',body:'Movers, deposits, supplies — see the whole cost and what you have committed.',icon:'M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6',col:'var(--green)',iconBg:G('green',.14)},
+    ];
+    return {
+      navLinks:['Features','How it works','Always free'],
+      demoDream: demo==='dream',
+      pillRough:{bg: demo!=='dream'?'#fff':'var(--bg2)', col: demo!=='dream'?'#0A0F1C':'var(--dim)', bd: demo!=='dream'?'#fff':'var(--border)'},
+      pillDream:{bg: demo==='dream'?'#fff':'var(--bg2)', col: demo==='dream'?'#0A0F1C':'var(--dim)', bd: demo==='dream'?'#fff':'var(--border)'},
+      goRough:()=>this.setDemo('rough'), goDream:()=>this.setDemo('dream'),
+      dmW: demo==='dream'?'Sun':'Storm', dmA: demo==='dream'?'Safe':'Risky', dmWa: demo==='dream'?'Clean':'Unsafe',
+      dmT: demo==='dream'?'Frequent':'None', dmC: demo==='dream'?'Affordable':'Expensive', dmAi: demo==='dream'?'Good':'Unhealthy',
+      steps:[
+        {n:'1',title:'Add your move',body:'Tell Move where you’re moving from and to, and your move date. Two minutes, done.'},
+        {n:'2',title:'We build your plan',body:'Move pulls a full dossier on your new home and a personalized checklist of every service and task.'},
+        {n:'3',title:'Track to move-in',body:'Follow one countdown and one next step. Move reminds you before every deadline.'},
+      ],
+      heroCards, dossierDemo, svcRows, trio,
+      reassure:['Free forever — no subscription','One clear next step at a time','Everything your move needs'],
+      freeFeatures:[
+        {t:'Home Dossier',d:'Live FEMA, EPA & NWS data on your new home'},
+        {t:'Service transfers',d:'Track, cancel & set up every utility'},
+        {t:'Provider directory',d:'See every provider before you switch'},
+        {t:'Real address maps',d:'Home, work, seasonal & temp on a live map'},
+        {t:'Move budget',d:'Full cost breakdown & what’s committed'},
+        {t:'Smart reminders',d:'Deadline-timed alerts so nothing slips'},
+        {t:'Daily AI briefing',d:'Plain-language status & your next step'},
+        {t:'Move countdown',d:'One clear countdown to move-in day'},
+        {t:'Dark & light themes',d:'Plus accent colors — your way'},
+      ],
+      faqs:[
+        {q:'Is it really 100% free?',a:'Yes — every feature is free, forever. No subscription, no trial, no credit card. Optional partner referrals fund the app; you’re never required to use them.'},
+        {q:'Where does the new-home data come from?',a:'Official public sources only — FEMA (flood/hazards), EPA (air, water, radon), NWS (weather), HUD & Census (housing). Nothing is invented; each card cites its source.'},
+        {q:'Do I have to sign up to try it?',a:'No. Explore the live demo right on this page — switch between a rough and a dream home and tap through Home, Services and Moving. An account only syncs your real move across devices.'},
+        {q:'Which devices does Move work on?',a:'iPhone and Android, plus this web view. Your move stays in sync everywhere.'},
+      ],
+      quotes:[
+        {t:'Moved 1,400 miles and didn’t forget a single utility. The countdown kept me sane.',n:'Dana R. · Austin → Denver'},
+        {t:'The dossier flagged the flood zone before we signed the lease. That alone paid off.',n:'Marcus T. · Tampa → Raleigh'},
+        {t:'Finally a moving app my mom can actually use. One clear step at a time.',n:'Priya S. · Chicago → Seattle'},
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

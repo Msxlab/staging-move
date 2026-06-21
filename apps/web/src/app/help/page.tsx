@@ -59,12 +59,12 @@ export default async function HelpPage() {
     <div className="min-h-screen bg-background">
       <MarketingHeader userId={null} />
       <main>
-        <section className="border-b bg-card/40">
+        <section className="border-b border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
           <div className="container py-12 sm:py-16">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+            <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-semibold uppercase tracking-[0.2em] text-primary">
               {copy.eyebrow}
-            </p>
-            <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            </span>
+            <h1 className="mt-4 max-w-3xl font-display text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
               {copy.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
