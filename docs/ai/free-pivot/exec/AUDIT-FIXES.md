@@ -54,10 +54,12 @@ verified) → 43 confirmed findings → prioritized + fixed here.
 
 ## Deferred — with rationale (NOT regressions)
 
-- **Mover lead opt-in UI.** `MoverApplication.leadsOptIn` defaults false, so moving
-  leads do not flow until movers opt in. A mover-facing opt-in capture is a pre-launch
-  requirement before `offers_moving_quotes_v1` is enabled. (Partners opt in at
-  registration, so cleaning/junk are unaffected.)
+- **Mover lead opt-in UI — DONE** (commit 41c734b5). Mover enrollment is now an
+  explicit admin checkbox on the application decision (separate from the accuracy
+  attestation), and partners have a self-serve on/off toggle in the partner portal.
+  So `MoverApplication.leadsOptIn` can be turned on for vetted, consenting movers and
+  the moving pipeline can deliver. (A fully mover-self-serve surface — magic-link like
+  the partner portal — remains a possible future enhancement; admin-mediated is v1.)
 - **Dossier 50/user/day backstop (16-M4 / STEP-1 §2.6).** Not retrofitted into the
   ~800-line dossier route; the global daily fuse + 60/min limiter + durable geo cache
   already bound upstream cost. Implement at the route or document permanently.
