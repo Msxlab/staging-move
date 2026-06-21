@@ -1,15 +1,14 @@
 # 2026-06-21 Staging Deploy, Theme, and Runtime QA
 
-## Current Live Staging Before Latest Push
+## Current Live Staging
 
 Dokploy `Staging Move` (`staging-move-phkdb4`) was redeployed from branch
 `codex/staging-audit-2026-06-21`.
 
-Live build-info currently reports the last pushed code deploy, not the latest
-local audit fixes below:
+Live build-info after deploying the latest code fix:
 
-- Web: `9929a7d6f03864ab9166af9119a7cdf6fb92be28`, built at `2026-06-21T20:29:55.756Z`.
-- Admin: `9929a7d6f03864ab9166af9119a7cdf6fb92be28`, built at `2026-06-21T20:29:55.750Z`.
+- Web: `0f4e343ebbf68ca6f5bc8ad4e6919dfd3dd5db36`, built at `2026-06-21T20:55:07.940Z`.
+- Admin: `0f4e343ebbf68ca6f5bc8ad4e6919dfd3dd5db36`, built at `2026-06-21T20:55:07.932Z`.
 
 Latest live health check after the operator copied staging envs:
 
@@ -33,8 +32,8 @@ Runtime theme drift was found after the first successful deploy: fresh sessions 
 
 - `ae1d53be` kept `/features` and `/why-free` public. Before the fix both routes redirected to `/sign-in`, even though the design bundle includes public Features and Why Free pages.
 - `9929a7d6` changed fresh web sessions to the dark Move Gold theme and added a regression test.
-- Pending local fix: web subscription settings now shows the Consumer Free panel only after the effective entitlement is active and on an included paid-tier access level (`INDIVIDUAL`, `FAMILY`, or `PRO`). This closes a web/mobile logic drift where a lapsed/manual/admin-derived row could render as "Free, everything included" while the effective entitlement was inactive or free-tier.
-- Pending local fix: public `/features` and `/why-free` copy no longer exposes internal "design bundle / route mapping" implementation language to users.
+- `0f4e343e` makes web subscription settings show the Consumer Free panel only after the effective entitlement is active and on an included paid-tier access level (`INDIVIDUAL`, `FAMILY`, or `PRO`). This closes a web/mobile logic drift where a lapsed/manual/admin-derived row could render as "Free, everything included" while the effective entitlement was inactive or free-tier.
+- `0f4e343e` removes internal "design bundle / route mapping" implementation language from the public `/features` and `/why-free` pages.
 
 ## Verification Passed
 
@@ -66,6 +65,14 @@ Live HTTP QA after `9929a7d6`:
 - Admin auth-gated: `/users` redirected to `/login` as expected.
 - Imgproxy root returned `200`.
 
+Live HTTP QA after `0f4e343e`:
+
+- Web public: `/`, `/features`, `/why-free`, `/blog`, `/sign-in` returned `200`.
+- Web auth-gated: `/dashboard`, `/onboarding` redirected to sign-in as expected.
+- Admin public: `/login`, `/api/healthz`, `/api/ready` returned `200`.
+- Admin auth-gated: `/users` redirected to `/login` as expected.
+- Web `/api/health` and `/api/ready?soft=1` returned ready.
+
 Live Playwright visual QA after `9929a7d6`:
 
 - Fresh sessions rendered with `<html class="dark">`.
@@ -73,10 +80,21 @@ Live Playwright visual QA after `9929a7d6`:
 - Primary token resolved to `39 51% 58%`, matching the Gold `#CBA45E` family.
 - Public web, Features, Why Free, Sign In, Admin Login, and mobile-width public pages loaded without console errors or page errors.
 
+Live Playwright visual QA after `0f4e343e`:
+
+- Fresh sessions rendered with `<html class="dark">` even when the browser context preferred light.
+- Web body background resolved to `rgb(9, 14, 22)`.
+- Web primary token resolved to `39 51% 58%`, matching the Gold `#CBA45E` family.
+- Admin login rendered dark with primary token `39 51% 58%`.
+- Public web, Features, Why Free, Sign In, Admin Login, and mobile-width public pages loaded without console errors or page errors.
+- Public `/features` and `/why-free` no longer expose internal design-bundle wording in visible text samples.
+
 Local screenshot evidence generated during this pass:
 
 - `tmp-theme-zip-contact-sheet.png`
 - `tmp-live-qa-9929a7d6/live-contact-sheet.png`
+- `tmp-live-qa-0f4e343e/*.png`
+- `tmp-live-qa-0f4e343e/results.json`
 
 ## Remaining Work
 
@@ -85,7 +103,7 @@ Local screenshot evidence generated during this pass:
 - Native mobile/emulator QA is still pending: tabs, settings/subscription, services/providers, OAuth handoff, app-lock, staging API config, and mobile visual theme.
 - Product Design screenshot audit can now use the latest dark/gold staging screenshots, but the full formal audit pass is not yet complete.
 - The full Codex Security deep scan six-worker workflow is still not honestly complete in this thread; prior work covered tests/static security review, not the plugin's full delegated scan.
-- Push and redeploy the pending local fixes, then confirm web/admin `/api/build-info` match the new pushed commit.
+- Push and redeploy this final memory update if branch HEAD needs to match the documentation-only commit; otherwise `0f4e343e` is the latest deployed code commit.
 - If the operator has a newer external design zip that is not the one now committed in `design-src/handoffs`, compare that exact file before changing the palette again.
 
 ## Operator / Agent Split
