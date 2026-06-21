@@ -365,6 +365,8 @@ services:
         max-file: "3"
 
   cron:
+    profiles:
+      - cron
     image: mcuadros/ofelia:latest
     container_name: ${DOKPLOY_CONTAINER_PREFIX:-locateflow}-cron
     restart: unless-stopped
