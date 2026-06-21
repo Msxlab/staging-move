@@ -28,8 +28,15 @@ Latest recheck after the operator said staging was deployed:
 - Admin `/api/build-info`: still `9d9ae9643c19eb2c24948f0bc85d6d1e5795d842`, branch `codex/staging-audit-2026-06-21`, built `2026-06-21T21:36:38.203Z`.
 - Web `/api/health`: `healthy`, `ready: true`, `requiredOk: true`, `missingRequiredCount: 0`.
 - Admin `/api/ready`: `ready: true`, `requiredOk: true`, `missingRequiredCount: 0`, DB ready.
-- Local branch HEAD is `e09bd6990de7c357bc12f383ef01f62e3be5110b`, but that commit is memory/docs-only. No runtime redeploy difference is expected beyond `9d9ae964`.
+- Local branch HEAD was later advanced to `d1c06e0b4c7111d85dd31f9b02854c5c43297085`, but `d1c06e0b` is comments/memory-only. No runtime redeploy difference is expected beyond `9d9ae964`.
 - Existing Chrome profile/window is present as `LocateFlow Admin - Google Chrome`; do not open a fresh Chrome profile for authenticated QA.
+
+Chrome/theme cache recheck after the operator reported the deploy:
+
+- Checked at `2026-06-21T22:12Z` from the existing Chrome window, without opening a new Chrome profile.
+- Before hard refresh, the open admin login tab still displayed a blue-looking admin-command accent while live CSS chunks already contained Gold tokens.
+- Direct live CSS checks for `/_next/static/chunks/11s45j6twk.0b.css` and `/_next/static/chunks/0uio1chkvpw35.css` showed Gold values (`#cba45e`, `#dcbc7c`, `#b0852f`, `--primary: 39 51% 58%`).
+- A Ctrl+F5 hard refresh on the existing Chrome tab changed the tab title to `Move Admin - Google Chrome` and the admin login accent rendered Gold. Treat the earlier blue screen as stale tab/service-worker/static-cache state, not as a live CSS regression.
 
 ## Theme Decision
 
@@ -44,6 +51,12 @@ Evidence:
 - A local contact sheet exists at `tmp-theme-zip-contact-sheet.png` showing the Gold default plus Sapphire/Emerald variants.
 
 If the intended new design is not Gold, the operator must provide the exact newer zip/source package. Do not infer Emerald or Sapphire from memory alone; compare the exact artifact first.
+
+Important source ambiguity:
+
+- Repo also contains `NEW GENERATION/`, whose `assets/tokens.css` is labeled `LocateFlow - Edition VI - Champagne & Rose` and defines a rose/foil/orange family (`#D4846A`, `#EDB99D`, `#A85A42`, `#E5C9A8`) plus prototype files using `#f97316`.
+- `NEW GENERATION/` is a separate design source from the latest `design-src/handoffs/*.zip` bundle. This likely explains the operator's memory that the intended palette was not Gold.
+- Do not switch runtime palettes from Gold to Champagne/Rose without an explicit product decision that `NEW GENERATION/` supersedes the pushed zip bundle. If that decision is made, audit web, admin, mobile, app icons, OG images, screenshots, and token comments as one coordinated palette migration.
 
 Source comment cleanup prepared after the color dispute:
 
