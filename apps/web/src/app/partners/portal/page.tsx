@@ -38,7 +38,7 @@ export default async function PartnerPortalPage({
   const [partner, dispatches] = await Promise.all([
     prisma.partner.findUnique({
       where: { id: session.partnerId },
-      select: { companyName: true, category: true, serviceStates: true },
+      select: { companyName: true, category: true, serviceStates: true, leadsOptIn: true },
     }),
     prisma.leadDispatch.findMany({
       where: { partnerKind: "partner", partnerId: session.partnerId },
@@ -83,6 +83,28 @@ export default async function PartnerPortalPage({
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-sm text-muted-foreground">Delivered</p>
           <p className="mt-1 text-2xl font-bold text-foreground">{sent}</p>
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-border bg-card p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold text-foreground">Lead delivery</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {partner?.leadsOptIn
+                ? "On — we email you matching customer leads in your service area."
+                : "Off — you are not currently receiving leads."}
+            </p>
+          </div>
+          <form action="/api/partners/portal/leads-optin" method="post">
+            <input type="hidden" name="optIn" value={partner?.leadsOptIn ? "false" : "true"} />
+            <button
+              className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+              type="submit"
+            >
+              {partner?.leadsOptIn ? "Turn off lead delivery" : "Turn on lead delivery"}
+            </button>
+          </form>
         </div>
       </div>
 

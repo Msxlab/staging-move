@@ -72,6 +72,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const decisionMessage =
       typeof body?.decisionMessage === "string" ? body.decisionMessage.trim().slice(0, 4000) : null;
     const reviewNotes = typeof body?.reviewNotes === "string" ? body.reviewNotes.trim().slice(0, 4000) : null;
+    // Lead-program enrollment (audit P2): an explicit, separate consent from the
+    // accuracy attestation. Optional — omitted leaves the current value unchanged.
+    // Only opted-in movers receive consumer lead PII (matchMoversForLead ANDs it).
+    const leadsOptIn = typeof body?.leadsOptIn === "boolean" ? body.leadsOptIn : undefined;
 
     // A rejection / needs-info without a message leaves the applicant guessing.
     if ((decision === "REJECTED" || decision === "NEEDS_INFO") && !decisionMessage) {
@@ -153,6 +157,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         reviewedByAdminId: session.adminId,
         reviewedAt: new Date(),
         linkedMovingCompanyId,
+        ...(leadsOptIn !== undefined ? { leadsOptIn } : {}),
       },
       select: { id: true, status: true, companyLegalName: true, contactEmail: true, usdotNumber: true, services: true },
     });
