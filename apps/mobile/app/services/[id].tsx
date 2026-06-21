@@ -27,14 +27,14 @@ import {
   Edit,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
+import { HeroCard, MoveCard, SectionHeader } from "@/components/move";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import { formatCurrency } from "@/lib/format";
 import { asObject } from "@/lib/offline-cache";
@@ -269,8 +269,8 @@ export default function ServiceDetailScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
       >
-        {/* ── Aurora glass hero — category glyph + provider identity + ministats ── */}
-        <View style={styles.hero}>
+        {/* ── Move hero — category glyph + provider identity + ministats ── */}
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
           <View style={styles.heroRow}>
             <ServiceLogoMark
               service={service}

@@ -10,16 +10,18 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Edit, Trash2, Plus, AlertTriangle, ChevronRight, Truck } from "lucide-react-native";
+import { ArrowLeft, Edit, Trash2, Plus, AlertTriangle, ChevronRight, Truck, MapPin } from "lucide-react-native";
 import { monthlyAmountForCycle } from "@locateflow/shared";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ListEntrance } from "@/components/ui/ListEntrance";
+import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import { asObject } from "@/lib/offline-cache";
 import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
@@ -121,7 +123,7 @@ export default function AddressDetailScreen() {
           <ErrorState message={error} onRetry={load} />
         ) : (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: theme.colors.textTertiary }}>{t("addresses.notFound")}</Text>
+            <Text style={{ color: theme.colors.faint, fontFamily: fonts.sans }}>{t("addresses.notFound")}</Text>
           </View>
         )}
       </SafeAreaView>
@@ -180,9 +182,9 @@ export default function AddressDetailScreen() {
         </Text>
         <TouchableOpacity
           onPress={() => router.push({ pathname: "/addresses/[id]/edit", params: { id: String(id) } })}
-          style={styles.backBtn}
+          style={styles.editBtn}
         >
-          <Edit size={18} color={theme.colors.text} />
+          <Edit size={18} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -193,81 +195,79 @@ export default function AddressDetailScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
       >
-        {/* Stylized map banner (recreates the design's .ad-dbanner) */}
-        <View style={styles.banner}>
-          {[0.34, 0.64].map((p) => (
-            <View key={`h${p}`} style={{ position: "absolute", left: 0, right: 0, top: `${p * 100}%`, height: 1, backgroundColor: "rgba(236,241,248,0.05)" }} />
-          ))}
-          {[0.4, 0.72].map((p) => (
-            <View key={`v${p}`} style={{ position: "absolute", top: 0, bottom: 0, left: `${p * 100}%`, width: 1, backgroundColor: "rgba(236,241,248,0.05)" }} />
-          ))}
-          <View style={{ position: "absolute", left: "-5%", right: "-5%", top: "52%", height: 3, backgroundColor: "rgba(236,241,248,0.08)", transform: [{ rotate: "-7deg" }] }} />
-          <View style={[styles.bannerPin, { borderColor: tone.text, backgroundColor: tone.text + "33" }]} />
-          <View style={styles.bannerFade} />
-        </View>
-
-        {/* Header */}
-        <View style={styles.dhd}>
-          <View style={styles.dhdRow}>
-            <Text style={styles.dhdTitle} numberOfLines={1}>
-              {address.nickname || (address.isPrimary ? "Current home" : address.street)}
-            </Text>
-            <View style={[styles.chip, { backgroundColor: tone.bg, borderColor: tone.border }]}>
-              <Text style={[styles.chipText, { color: tone.text }]}>{statusLabel}</Text>
+        {/* Hero — address identity + tonal status + map mark */}
+        <HeroCard style={styles.hero} radius={theme.radius.xl} padding={18}>
+          <View style={styles.heroRow}>
+            <View style={styles.heroPin}>
+              <MapPin size={20} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <View style={styles.heroTitleRow}>
+                <Text style={styles.heroTitle} numberOfLines={1}>
+                  {address.nickname || (address.isPrimary ? "Current home" : address.street)}
+                </Text>
+                <View style={[styles.statusChip, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+                  <Text style={[styles.statusChipText, { color: tone.text }]}>{statusLabel}</Text>
+                </View>
+              </View>
+              <Text style={styles.heroAddr} numberOfLines={2}>
+                {address.street}, {address.city}, {address.state} {address.zip}
+              </Text>
             </View>
           </View>
-          <Text style={styles.dhdAddr}>
-            {address.street}, {address.city}, {address.state} {address.zip}
-          </Text>
-        </View>
 
-        {/* Summary 3-stat */}
-        <View style={styles.summary}>
-          <View style={styles.sumBox}>
-            <Text style={styles.sumV}>{services.length}</Text>
-            <Text style={styles.sumK}>accounts</Text>
+          {/* Summary 3-stat */}
+          <View style={styles.summary}>
+            <View style={styles.sumBox}>
+              <Text style={styles.sumV}>{services.length}</Text>
+              <Text style={styles.sumK}>accounts</Text>
+            </View>
+            <View style={styles.sumDivider} />
+            <View style={styles.sumBox}>
+              <Text style={[styles.sumV, attentionItems.length > 0 && { color: theme.colors.error }]}>{attentionItems.length}</Text>
+              <Text style={styles.sumK}>attention</Text>
+            </View>
+            <View style={styles.sumDivider} />
+            <View style={styles.sumBox}>
+              <Text style={styles.sumV}>{fmtUsd(perMo)}</Text>
+              <Text style={styles.sumK}>per mo</Text>
+            </View>
           </View>
-          <View style={styles.sumBox}>
-            <Text style={[styles.sumV, attentionItems.length > 0 && { color: theme.colors.error }]}>{attentionItems.length}</Text>
-            <Text style={styles.sumK}>attention</Text>
-          </View>
-          <View style={styles.sumBox}>
-            <Text style={styles.sumV}>{fmtUsd(perMo)}</Text>
-            <Text style={styles.sumK}>per mo</Text>
-          </View>
-        </View>
+        </HeroCard>
 
         {/* Needs attention */}
         {attentionItems.length > 0 && (
           <>
-            <Text style={styles.lbl}>Needs attention</Text>
+            <SectionHeader label="Needs attention" style={styles.section} />
             {attentionItems.map(({ s, days }: any) => (
               <TouchableOpacity
                 key={s.id}
                 style={styles.att}
                 onPress={() => router.push({ pathname: "/services/[id]", params: { id: s.id } })}
               >
-                <AlertTriangle size={16} color={theme.colors.error} />
+                <View style={styles.attIcon}>
+                  <AlertTriangle size={15} color={theme.colors.error} />
+                </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.attT} numberOfLines={1}>
                     {(s.providerName || s.provider?.name || "Service")} renews in {days} day{days === 1 ? "" : "s"}
                   </Text>
                   <Text style={styles.attS} numberOfLines={1}>Confirm the billing address before it auto-renews</Text>
                 </View>
-                <ChevronRight size={14} color={theme.colors.error} />
+                <ChevronRight size={15} color={theme.colors.error} />
               </TouchableOpacity>
             ))}
           </>
         )}
 
         {/* Everything tied here — category menu */}
-        <Text style={styles.lbl}>Everything tied here</Text>
+        <SectionHeader label="Everything tied here" style={styles.section} />
         {categories.length === 0 ? (
-          <Card variant="default">
-            <Text style={{ color: theme.colors.textTertiary, textAlign: "center", paddingVertical: 18 }}>
+          <MoveCard padding={18} radius={theme.radius.xl}>
+            <Text style={styles.emptyText}>
               {t("services.emptyForAddress")}
             </Text>
-          </Card>
+          </MoveCard>
         ) : (
           <View style={styles.catGrid}>
             {categories.map((c) => (
@@ -296,18 +296,26 @@ export default function AddressDetailScreen() {
         {/* Actions */}
         <View style={styles.actions}>
           <TouchableOpacity
-            style={[styles.cta, styles.ctaGhost]}
+            style={styles.ctaGhost}
             onPress={() => router.push({ pathname: "/moving/new", params: { fromAddressId: String(id) } })}
           >
-            <Truck size={15} color={theme.colors.textSecondary} />
-            <Text style={[styles.ctaText, { color: theme.colors.textSecondary }]}>{t("addresses.moveOut")}</Text>
+            <Truck size={15} color={theme.colors.dim} />
+            <Text style={[styles.ctaText, { color: theme.colors.dim }]}>{t("addresses.moveOut")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.cta, styles.ctaPrimary]}
+            style={styles.ctaPrimary}
             onPress={() => router.push({ pathname: "/services/new", params: { addressId: String(id) } })}
+            activeOpacity={0.85}
           >
-            <Plus size={15} color="#fff" />
-            <Text style={[styles.ctaText, { color: "#fff" }]}>{t("services.newTitle")}</Text>
+            <LinearGradient
+              colors={theme.colors.gradient.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.ctaGrad}
+            >
+              <Plus size={15} color={theme.colors.onAccent} />
+              <Text style={[styles.ctaText, { color: theme.colors.onAccent }]}>{t("services.newTitle")}</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -335,49 +343,52 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, flex: 1, textAlign: "center" },
+  editBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder,
+    alignItems: "center", justifyContent: "center",
+  },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text, flex: 1, textAlign: "center" },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  // ── Category-menu detail (Aurora design recreation) ──
-  banner: {
-    height: 130, borderRadius: 18, overflow: "hidden", marginTop: 8, marginBottom: 14,
-    backgroundColor: "#0B121E", borderWidth: 1, borderColor: theme.colors.border, position: "relative",
+  // ── Move-reskinned address detail ──
+  hero: { marginTop: 8, marginBottom: 4 },
+  heroRow: { flexDirection: "row", alignItems: "flex-start", gap: 13 },
+  heroPin: {
+    width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center",
+    backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder,
   },
-  bannerPin: {
-    position: "absolute", left: 42, top: 42, width: 22, height: 22, borderWidth: 2,
-    borderTopLeftRadius: 11, borderTopRightRadius: 11, borderBottomRightRadius: 11, borderBottomLeftRadius: 3,
-    transform: [{ rotate: "-45deg" }],
+  heroTitleRow: { flexDirection: "row", alignItems: "center", gap: 9 },
+  heroTitle: { flexShrink: 1, fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
+  statusChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: 1 },
+  statusChipText: { fontSize: 8, letterSpacing: 0.8, textTransform: "uppercase", fontFamily: fonts.sansBold },
+  heroAddr: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 4, lineHeight: 18 },
+  summary: {
+    flexDirection: "row", alignItems: "center", marginTop: 16, paddingTop: 14,
+    borderTopWidth: 1, borderTopColor: theme.colors.border,
   },
-  bannerFade: { position: "absolute", left: 0, right: 0, bottom: 0, height: 36 },
-  dhd: { paddingHorizontal: 2 },
-  dhdRow: { flexDirection: "row", alignItems: "center", gap: 9 },
-  dhdTitle: { flexShrink: 1, fontSize: 22, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
-  chip: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999, borderWidth: 1 },
-  chipText: { fontSize: 8, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: "800" },
-  dhdAddr: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 3 },
-  summary: { flexDirection: "row", gap: 8, marginTop: 16, marginBottom: 4 },
-  sumBox: {
-    flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
-  },
-  sumV: { fontSize: 18, fontWeight: "800", color: theme.colors.text },
-  sumK: { fontSize: 8, letterSpacing: 0.5, textTransform: "uppercase", color: theme.colors.textTertiary, marginTop: 3 },
-  lbl: {
-    fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", fontWeight: "700",
-    color: theme.colors.textTertiary, marginTop: 18, marginBottom: 9, marginLeft: 2,
-  },
+  sumBox: { flex: 1, alignItems: "center" },
+  sumDivider: { width: 1, height: 26, backgroundColor: theme.colors.border },
+  sumV: { fontSize: 18, fontFamily: fonts.sansBold, color: theme.colors.text },
+  sumK: { fontSize: 8, letterSpacing: 0.5, textTransform: "uppercase", fontFamily: fonts.sansBold, color: theme.colors.faint, marginTop: 4 },
+  section: { marginTop: 22, marginBottom: 10, marginLeft: 2 },
+  emptyText: { color: theme.colors.faint, fontFamily: fonts.sans, textAlign: "center", paddingVertical: 18 },
   att: {
-    flexDirection: "row", alignItems: "center", gap: 11, padding: 12, borderRadius: 14, marginBottom: 8,
-    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240,140,142,0.22)",
+    flexDirection: "row", alignItems: "center", gap: 11, padding: 12, borderRadius: 16, marginBottom: 8,
+    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: theme.colors.errorFaded,
   },
-  attT: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
-  attS: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 1 },
+  attIcon: {
+    width: 30, height: 30, borderRadius: 10, alignItems: "center", justifyContent: "center",
+    backgroundColor: theme.colors.errorFaded,
+  },
+  attT: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  attS: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 1 },
   catGrid: { flexDirection: "row", flexWrap: "wrap", gap: 9 },
   cat: {
-    width: "48%", flexDirection: "row", alignItems: "center", gap: 11, padding: 12, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    width: "48%", flexDirection: "row", alignItems: "center", gap: 11, padding: 12, borderRadius: 16,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
   },
   catIconWrap: {
     width: 30,
@@ -385,26 +396,29 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.borderFocus,
+    borderColor: theme.colors.accentBorder,
   },
-  catT: { fontSize: 12.5, fontWeight: "600", color: theme.colors.text },
-  catC: { fontSize: 10, color: theme.colors.textTertiary, marginTop: 1 },
+  catT: { fontSize: 12.5, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  catC: { fontSize: 10, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 1 },
   catBadge: {
     minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 999,
     backgroundColor: theme.colors.error, alignItems: "center", justifyContent: "center",
   },
-  catBadgeText: { fontSize: 9, fontWeight: "800", color: "#2a0809" },
-  actions: { flexDirection: "row", gap: 9, marginTop: 18 },
-  cta: { flex: 1, height: 46, borderRadius: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
-  ctaGhost: { backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border },
-  ctaPrimary: { backgroundColor: theme.colors.primary },
-  ctaText: { fontSize: 14, fontWeight: "700" },
+  catBadgeText: { fontSize: 9, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+  actions: { flexDirection: "row", gap: 9, marginTop: 20 },
+  ctaGhost: {
+    flex: 1, height: 48, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+  },
+  ctaPrimary: { flex: 1, height: 48, borderRadius: 14, overflow: "hidden" },
+  ctaGrad: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
+  ctaText: { fontSize: 14, fontFamily: fonts.sansBold },
   deleteBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     marginTop: 32, paddingVertical: 14, borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.20)",
+    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: theme.colors.errorFaded,
   },
-  deleteText: { fontSize: 14, fontWeight: "600", color: theme.colors.error },
+  deleteText: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.error },
 });

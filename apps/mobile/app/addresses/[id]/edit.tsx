@@ -12,14 +12,16 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Check, MapPin } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { HeroCard, MoveCard, SectionHeader } from "@/components/move";
 
 const ADDRESS_TYPES = ["HOME", "WORK", "VACATION", "TEMPORARY", "STORAGE", "OTHER"] as const;
 const OWNERSHIP_TYPES = ["OWNER", "RENTER", "FAMILY", "OTHER"] as const;
@@ -146,7 +148,19 @@ export default function EditAddressScreen() {
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("addresses.editTitle")}</Text>
-        <View style={{ width: 44 }} />
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={saving}
+          style={[styles.headerSaveBtn, saving && { opacity: 0.55 }]}
+          accessibilityRole="button"
+          accessibilityLabel={t("addresses.update")}
+        >
+          {saving ? (
+            <ActivityIndicator color={theme.colors.primary} size="small" />
+          ) : (
+            <Check size={17} color={theme.colors.primary} />
+          )}
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -156,63 +170,60 @@ export default function EditAddressScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
-        <View style={styles.hero}>
-          <View style={styles.heroTop}>
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
+          <View style={styles.heroRow}>
             <View style={styles.heroIcon}>
               <MapPin size={20} color={theme.colors.primary} />
             </View>
-            <View style={styles.heroCopy}>
-              <Text style={styles.heroKicker}>ADDRESS COMMAND</Text>
-              <Text style={styles.heroTitle}>{form.nickname || selectedTypeLabel}</Text>
-              <Text style={styles.heroSub} numberOfLines={2}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.heroTitle} numberOfLines={1}>{form.nickname || selectedTypeLabel}</Text>
+              <Text style={styles.heroMeta} numberOfLines={2}>
                 {placeLine || form.street || t("addresses.editTitle")}
               </Text>
             </View>
           </View>
-          <View style={styles.heroStats}>
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{requiredComplete}/4</Text>
-              <Text style={styles.heroStatLabel}>required</Text>
-            </View>
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{form.ownership}</Text>
-              <Text style={styles.heroStatLabel}>ownership</Text>
-            </View>
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{form.isPrimary ? "Yes" : "No"}</Text>
-              <Text style={styles.heroStatLabel}>primary</Text>
-            </View>
+        </HeroCard>
+
+        <View style={styles.statsRow}>
+          <View style={styles.stat}>
+            <Text style={styles.statValue} numberOfLines={1}>{requiredComplete}/4</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>{t("addresses.street")}</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statValue} numberOfLines={1}>{t(OWNERSHIP_LABEL_KEYS[form.ownership as (typeof OWNERSHIP_TYPES)[number]] || "addresses.ownership_renter")}</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>{t("addresses.ownership")}</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statValue} numberOfLines={1}>{form.isPrimary ? "Yes" : "No"}</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>{t("addresses.primary")}</Text>
           </View>
         </View>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
-          <View style={styles.chipRow}>
-            {ADDRESS_TYPES.map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[styles.chip, form.type === type && styles.chipActive]}
-                onPress={() => update("type", type)}
-              >
-                <Text style={[styles.chipText, form.type === type && styles.chipTextActive]}>
-                  {t(ADDRESS_TYPE_LABEL_KEYS[type])}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <SectionHeader label={t("addresses.type")} style={styles.sectionHeader} />
+        <View style={styles.chipRow}>
+          {ADDRESS_TYPES.map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[styles.chip, form.type === type && styles.chipActive]}
+              onPress={() => update("type", type)}
+            >
+              <Text style={[styles.chipText, form.type === type && styles.chipTextActive]}>
+                {t(ADDRESS_TYPE_LABEL_KEYS[type])}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
+        <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
           <Text style={styles.label}>{t("addresses.nickname")}</Text>
           <TextInput
             style={styles.input}
             placeholder={t("addresses.nicknameHint")}
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={theme.colors.faint}
             value={form.nickname}
             onChangeText={(v) => update("nickname", v)}
           />
-        </View>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>Location</Text>
           <AddressAutocompleteField
             label={t("addresses.street") + " *"}
             value={form.street}
@@ -225,7 +236,7 @@ export default function EditAddressScreen() {
           <TextInput
             style={styles.input}
             placeholder="Apt 4B"
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={theme.colors.faint}
             value={form.street2}
             onChangeText={(v) => update("street2", v)}
           />
@@ -234,7 +245,7 @@ export default function EditAddressScreen() {
           <TextInput
             style={styles.input}
             placeholder="New York"
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={theme.colors.faint}
             value={form.city}
             onChangeText={(v) => update("city", v)}
           />
@@ -245,7 +256,7 @@ export default function EditAddressScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="NY"
-                placeholderTextColor={theme.colors.textMuted}
+                placeholderTextColor={theme.colors.faint}
                 value={form.state}
                 onChangeText={(v) => update("state", v.toUpperCase().slice(0, 2))}
                 maxLength={2}
@@ -257,7 +268,7 @@ export default function EditAddressScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="10001"
-                placeholderTextColor={theme.colors.textMuted}
+                placeholderTextColor={theme.colors.faint}
                 value={form.zip}
                 onChangeText={(v) => update("zip", v)}
                 keyboardType="number-pad"
@@ -265,49 +276,54 @@ export default function EditAddressScreen() {
               />
             </View>
           </View>
+        </MoveCard>
+
+        <SectionHeader label={t("addresses.ownership")} style={styles.sectionHeader} />
+        <View style={styles.chipRow}>
+          {OWNERSHIP_TYPES.map((ownership) => (
+            <TouchableOpacity
+              key={ownership}
+              style={[styles.chip, form.ownership === ownership && styles.chipActive]}
+              onPress={() => update("ownership", ownership)}
+            >
+              <Text style={[styles.chipText, form.ownership === ownership && styles.chipTextActive]}>
+                {t(OWNERSHIP_LABEL_KEYS[ownership])}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>{t("addresses.ownership")}</Text>
-          <View style={styles.chipRow}>
-            {OWNERSHIP_TYPES.map((ownership) => (
-              <TouchableOpacity
-                key={ownership}
-                style={[styles.chip, form.ownership === ownership && styles.chipActive]}
-                onPress={() => update("ownership", ownership)}
-              >
-                <Text style={[styles.chipText, form.ownership === ownership && styles.chipTextActive]}>
-                  {t(OWNERSHIP_LABEL_KEYS[ownership])}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>{t("addresses.primary")}</Text>
-            <Switch
-              value={form.isPrimary}
-              onValueChange={(v) => update("isPrimary", v)}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-              thumbColor="#fff"
-            />
-          </View>
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>{t("addresses.primary")}</Text>
+          <Switch
+            value={form.isPrimary}
+            onValueChange={(v) => update("isPrimary", v)}
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
+          />
         </View>
 
         <TouchableOpacity
           style={[styles.saveBtn, saving && { opacity: 0.6 }]}
           onPress={handleSave}
           disabled={saving}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>{t("addresses.update")}</Text>
-            </>
-          )}
+          <LinearGradient
+            colors={theme.colors.gradient.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.saveBtnGrad}
+          >
+            {saving ? (
+              <ActivityIndicator color={theme.colors.onAccent} />
+            ) : (
+              <>
+                <Check size={18} color={theme.colors.onAccent} />
+                <Text style={styles.saveBtnText}>{t("addresses.update")}</Text>
+              </>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -322,126 +338,99 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  hero: {
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 18,
-    backgroundColor: theme.colors.glass.bg,
+  headerSaveBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
-  },
-  heroTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  heroIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
-    borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
-  heroCopy: { flex: 1, minWidth: 0 },
-  heroKicker: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.3,
-    textTransform: "uppercase",
-    color: theme.colors.accent,
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 52 },
+  hero: {
+    marginBottom: 14,
   },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: theme.colors.text,
-    marginTop: 3,
-    letterSpacing: 0,
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
   },
-  heroSub: {
-    fontSize: 12,
-    color: theme.colors.textTertiary,
-    marginTop: 3,
-    lineHeight: 17,
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  heroStats: {
+  heroTitle: { fontSize: 18, fontFamily: fonts.serifBold, color: theme.colors.text },
+  heroMeta: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 3, lineHeight: 17 },
+  statsRow: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 14,
+    marginBottom: 14,
   },
-  heroStat: {
+  stat: {
     flex: 1,
     minHeight: 58,
-    borderRadius: 16,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 14,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
-  heroStatValue: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: theme.colors.text,
-  },
-  heroStatLabel: {
-    fontSize: 9,
-    fontWeight: "700",
-    letterSpacing: 0.9,
-    color: theme.colors.textTertiary,
-    textTransform: "uppercase",
-    marginTop: 3,
-  },
-  formSection: {
-    borderRadius: 22,
-    padding: 14,
-    marginBottom: 14,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  sectionLabel: {
-    fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.8, marginTop: 0, marginBottom: 10,
+  statValue: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
+  statLabel: { marginTop: 3, fontSize: 9, fontFamily: fonts.sansBold, letterSpacing: 0.6, color: theme.colors.faint, textTransform: "uppercase" },
+  sectionHeader: { marginTop: 20, marginBottom: 10, marginLeft: 2 },
+  formCard: {
+    marginBottom: 4,
   },
   label: {
-    fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6,
+    fontSize: 14, fontFamily: fonts.sansMedium, color: theme.colors.dim, marginTop: 16, marginBottom: 6,
   },
   input: {
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: theme.colors.text,
+    backgroundColor: theme.colors.bg2, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text,
   },
   row: { flexDirection: "row", gap: 12 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    minHeight: 38,
+    paddingHorizontal: 13, paddingVertical: 8, borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+    justifyContent: "center",
   },
   chipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder,
   },
-  chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
+  chipText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   chipTextActive: { color: theme.colors.primary },
   switchRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginTop: 20, paddingVertical: 14, paddingHorizontal: 16,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.lg,
+    marginTop: 12, paddingVertical: 13, paddingHorizontal: 15,
+    backgroundColor: theme.colors.surface, borderRadius: 16,
     borderWidth: 1, borderColor: theme.colors.border,
   },
-  switchLabel: { fontSize: 15, fontWeight: "500", color: theme.colors.text },
+  switchLabel: { flex: 1, paddingRight: 12, fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text },
   saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, marginTop: 28, ...theme.shadow.glow,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+    marginTop: 28,
   },
-  saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  saveBtnGrad: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 16,
+  },
+  saveBtnText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 });

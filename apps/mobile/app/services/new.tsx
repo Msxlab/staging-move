@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
   Check,
@@ -28,7 +29,8 @@ import {
   Globe,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
+import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
