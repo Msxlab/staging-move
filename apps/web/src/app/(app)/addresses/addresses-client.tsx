@@ -70,7 +70,7 @@ function AddressHealthRing({ count, total, warn, label }: { count: number; total
           />
         )}
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">{count}</span>
+      <span className="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold text-foreground">{count}</span>
     </div>
   );
 }
@@ -192,8 +192,8 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
               <MapPin className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase text-primary">Address command</p>
-              <h1 className="h1 text-2xl text-foreground md:text-3xl">
+              <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-primary">Address command</p>
+              <h1 className="h1 font-display text-2xl text-foreground md:text-3xl">
                 {t.rich("titleEditorial", { em: (chunks) => <em>{chunks}</em> })}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("formSubtitle")}</p>
@@ -207,16 +207,16 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-border bg-background/55 p-3">
-            <p className="text-lg font-bold text-foreground">{addresses.length}</p>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">addresses</p>
+            <p className="font-mono text-lg font-bold text-foreground">{addresses.length}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">addresses</p>
           </div>
           <div className="rounded-2xl border border-border bg-background/55 p-3">
-            <p className="text-lg font-bold text-foreground">{totalServices}</p>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">services</p>
+            <p className="font-mono text-lg font-bold text-foreground">{totalServices}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">services</p>
           </div>
           <div className="rounded-2xl border border-border bg-background/55 p-3">
-            <p className="text-lg font-bold text-foreground">{formattedMonthly}</p>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">monthly</p>
+            <p className="font-mono text-lg font-bold text-foreground">{formattedMonthly}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">monthly</p>
           </div>
         </div>
       </section>
@@ -228,7 +228,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
           aria-label={t("transit_aria", { from: transitFromCity, to: transitToCity })}
           className="block rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 hover:bg-foreground/[0.07] transition-all"
         >
-          <p className="text-[11px] font-semibold uppercase text-primary">{t("transit_kicker")}</p>
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">{t("transit_kicker")}</p>
           <div className="my-3 flex items-center gap-4">
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-semibold text-foreground">
@@ -305,7 +305,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                       <TypeIcon className="h-5 w-5 text-tone-orange-fg group-hover:text-foreground transition-colors" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <h3 className="font-display text-base font-semibold text-foreground flex items-center gap-2">
                         {address.nickname || t("title")}
                         {address.isPrimary && <Star className="h-3.5 w-3.5 text-tone-honey-fg fill-warning" />}
                       </h3>
@@ -336,15 +336,15 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                 <div className="flex items-center justify-between text-sm border-t border-border pt-3 mb-3">
                   <div className="flex items-center gap-4">
                     <span className="text-muted-foreground">
-                      <span className="font-medium text-foreground/80">{servicesCount}</span>
+                      <span className="font-mono font-medium text-foreground/80">{servicesCount}</span>
                     </span>
                     <span className="text-muted-foreground">
-                      <span className="font-semibold text-tone-emerald-fg">
+                      <span className="font-mono font-semibold text-tone-emerald-fg">
                         {new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(monthlyCost)}
                       </span>
                     </span>
                   </div>
-                  <span className="text-xs text-foreground/35">
+                  <span className="font-mono text-xs text-foreground/35">
                     {new Date(address.startDate).toLocaleDateString(locale, { month: "short", year: "numeric" })}
                   </span>
                 </div>

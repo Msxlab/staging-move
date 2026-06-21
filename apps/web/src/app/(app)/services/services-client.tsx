@@ -490,24 +490,24 @@ export function ServicesClient({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">{t("eyebrow")}</p>
-          <h1 className="h2 mt-1 text-3xl md:text-4xl text-foreground">
+          <p className="font-mono text-xs uppercase tracking-wider text-primary">{t("eyebrow")}</p>
+          <h1 className="font-display h2 mt-1 text-3xl md:text-4xl text-foreground">
             {t.rich("heroTitle", { em: (chunks) => <em>{chunks}</em> })}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-foreground/45">{t("subtitle")}</p>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-muted-foreground text-sm">
+            <span className="font-mono text-muted-foreground text-sm">
               {filtered.length}
             </span>
             {totalMonthlyCost > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full bg-tone-emerald-bg text-tone-emerald-fg text-xs font-medium">
+              <span className="px-2.5 py-0.5 rounded-full bg-tone-emerald-bg text-tone-emerald-fg text-xs font-mono font-medium">
                 {formatCurrency(totalMonthlyCost)}/mo
               </span>
             )}
           </div>
         </div>
         <Link href="/services/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition">
             <Plus className="h-4 w-4" />{t("newTitle")}
           </button>
         </Link>
@@ -576,9 +576,9 @@ export function ServicesClient({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-tone-honey-fg" />
-                <h2 className="text-sm font-bold text-foreground">Missing essentials</h2>
+                <h2 className="font-display text-sm font-bold text-foreground">Missing essentials</h2>
                 {providerPlan?.recommendationGuide?.completion ? (
-                  <span className="rounded-full border border-tone-honey-br bg-background px-2 py-0.5 text-[10px] font-semibold text-tone-honey-fg">
+                  <span className="rounded-full border border-tone-honey-br bg-background px-2 py-0.5 font-mono text-[10px] font-semibold text-tone-honey-fg">
                     {providerPlan.recommendationGuide.completion.score}% ready
                   </span>
                 ) : null}
@@ -622,21 +622,21 @@ export function ServicesClient({
       )}
 
       {checklist && (
-        <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5 space-y-4">
+        <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary">
                 <ClipboardList className="h-5 w-5" aria-hidden="true" />
               </span>
               <div>
-                <h2 className="text-sm font-bold text-foreground">{t("checklist.heading")}</h2>
+                <h2 className="font-display text-sm font-bold text-foreground">{t("checklist.heading")}</h2>
                 <p className="text-xs text-muted-foreground">
                   {checklist.fromState} → {checklist.toState} · Phase {checklist.currentPhase + 1}: {currentPhaseInfo?.label || ""}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-lg font-bold text-foreground">{checklist.progressPercent}%</p>
+              <p className="font-mono text-lg font-bold text-foreground">{checklist.progressPercent}%</p>
               <p className="text-[10px] text-foreground/40">{t("checklist.progressDone", { percent: checklist.progressPercent })}</p>
             </div>
           </div>
@@ -687,7 +687,7 @@ export function ServicesClient({
                 )}
               </div>
               <Link href="/services/new">
-                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap">
+                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-xs font-medium shadow-sm hover:opacity-90 transition whitespace-nowrap">
                   {t("doIt")} <ArrowRight className="h-3 w-3" />
                 </button>
               </Link>
@@ -703,7 +703,7 @@ export function ServicesClient({
             <button
               onClick={() => setAddressFilter("")}
               className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                !addressFilter ? "bg-tone-orange-fg text-white shadow-sm" : "bg-foreground/5 text-muted-foreground border border-foreground/[0.06] hover:bg-foreground/10"
+                !addressFilter ? "bg-primary text-primary-foreground shadow-sm" : "bg-foreground/5 text-muted-foreground border border-border hover:bg-foreground/10"
               }`}
             >{tCommon("all")}</button>
             {addresses.map((addr) => {
@@ -714,14 +714,14 @@ export function ServicesClient({
                 <button key={addr.id} onClick={() => setAddressFilter(isActive ? "" : addr.id)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     isActive
-                      ? "bg-tone-orange-bg text-tone-orange-fg border border-tone-orange-br ring-1 ring-primary/20"
-                      : "bg-foreground/[0.03] text-muted-foreground border border-foreground/[0.06] hover:bg-foreground/[0.06]"
+                      ? "bg-primary/10 text-primary border border-primary/30 ring-1 ring-primary/20"
+                      : "bg-foreground/[0.03] text-muted-foreground border border-border hover:bg-foreground/[0.06]"
                   }`}
                 >
-                  <TypeIcon className={`h-3.5 w-3.5 ${isActive ? "text-tone-orange-fg" : "text-foreground/35"}`} />
+                  <TypeIcon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-foreground/35"}`} />
                   <span>{addr.nickname || `${addr.city}, ${addr.state}`}</span>
                   {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-warning" />}
-                  <span className={`px-1.5 py-0 rounded-full text-[10px] ${isActive ? "bg-tone-orange-bg text-tone-orange-fg" : "bg-foreground/5 text-foreground/35"}`}>{svcCount}</span>
+                  <span className={`px-1.5 py-0 rounded-full font-mono text-[10px] ${isActive ? "bg-primary/15 text-primary" : "bg-foreground/5 text-foreground/35"}`}>{svcCount}</span>
                 </button>
               );
             })}
@@ -765,13 +765,13 @@ export function ServicesClient({
                 onClick={() => setCategoryFilter(categoryFilter === g.value ? "" : g.value)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   categoryFilter === g.value
-                    ? "bg-tone-orange-fg text-white shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {g.label}
-                <span className={`px-1.5 py-0 rounded-full text-[10px] ${categoryFilter === g.value ? "bg-tone-orange-bg text-tone-orange-fg" : "bg-foreground/5 text-foreground/35"}`}>{count}</span>
+                <span className={`px-1.5 py-0 rounded-full font-mono text-[10px] ${categoryFilter === g.value ? "bg-primary-foreground/20 text-primary-foreground" : "bg-foreground/5 text-foreground/35"}`}>{count}</span>
               </button>
             );
           })}
@@ -839,19 +839,19 @@ export function ServicesClient({
               <div key={prefix} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
                   <GroupIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupLabels[prefix] || prefix}</h2>
-                  <span className="text-[10px] text-foreground/30">{items.length}</span>
+                  <h2 className="font-display text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupLabels[prefix] || prefix}</h2>
+                  <span className="font-mono text-[10px] text-foreground/30">{items.length}</span>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((service) => (
                     <Link key={service.id} href={`/services/${service.id}`}>
-                      <div className="group rounded-xl border border-border bg-foreground/[0.02] p-4 hover:bg-foreground/[0.05] hover:border-border transition-all cursor-pointer">
+                      <div className="group rounded-2xl border border-border bg-card p-4 hover:bg-foreground/[0.05] hover:border-primary/30 transition-all cursor-pointer">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3 min-w-0">
                             <ServiceLogoMark service={service} />
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <h3 className="font-medium text-sm text-foreground truncate group-hover:text-tone-orange-fg transition">{service.providerName}</h3>
+                                <h3 className="font-medium text-sm text-foreground truncate group-hover:text-primary transition">{service.providerName}</h3>
                                 <ChevronRight className="h-3.5 w-3.5 text-foreground/30 opacity-0 group-hover:opacity-100 transition shrink-0" />
                               </div>
                               <p className="text-[11px] text-foreground/35 mt-0.5">
@@ -871,7 +871,7 @@ export function ServicesClient({
                                   </span>
                                 )}
                                 {service.monthlyCost > 0 && (
-                                  <span className="font-semibold text-tone-emerald-fg/70">{formatCurrency(service.monthlyCost)}{cycleLabel(service.billingCycle)}</span>
+                                  <span className="font-mono font-semibold text-tone-emerald-fg/70">{formatCurrency(service.monthlyCost)}{cycleLabel(service.billingCycle)}</span>
                                 )}
                               </div>
                               {service.provider?.affiliateActive && service.provider.id && (
