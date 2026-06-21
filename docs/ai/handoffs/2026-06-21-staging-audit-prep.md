@@ -264,7 +264,12 @@ HTTP responses and masked/indirect Dokploy state.
 - Shifted CI migration job from `prisma migrate deploy` to `prisma migrate status`; deploy environment remains migration owner.
 - Made `docker/migrate.Dockerfile` migrate-only by default and moved `seed-admin` to an explicit `bootstrap` profile in `docker-compose.prod.yml`.
 - Parameterized Dokploy DB prep/copy compose project/container/volume names and require explicit staging/prod identifiers to prevent volume/container collisions.
-- Added non-leaky admin `/api/ready`, changed Dokploy/prod web/admin healthchecks to readiness endpoints, and made web `/api/ready` return only counts/status publicly.
+- Added non-leaky admin `/api/ready` and made web `/api/ready` return only counts/status publicly.
+- Live Dokploy follow-up found admin became `running (unhealthy)` when the Docker
+  healthcheck used strict `/api/ready`; because Dokploy/Traefik then stopped
+  routing `admin-staging.locateflow.com`, admin healthchecks were changed back
+  to liveness `/api/healthz` in Dokploy/prod compose while `/api/ready` remains
+  the explicit readiness/config gate for QA.
 - Added `CRON_SCHEDULER_OWNER` guards for GitHub cron and Ofelia cron runner so only the declared scheduler owner fires production cron endpoints.
 
 ### Verification Completed After Docker Node 22 Setup

@@ -237,7 +237,7 @@ services:
     expose:
       - "3001"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/ready"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/healthz"]
       interval: 30s
       timeout: 5s
       start_period: 30s
