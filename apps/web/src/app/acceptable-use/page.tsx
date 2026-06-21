@@ -93,7 +93,7 @@ export default function AcceptableUsePage() {
           Move may investigate suspected violations, throttle or suspend accounts, remove content, and cooperate with law enforcement where required. Serious or repeated violations may result in permanent termination of the account with no refund.
         </p>
         <p>
-          If you believe content on LocateFlow violates this policy, contact us via the <a href="/contact" className="text-primary underline">Contact page</a>.
+          If you believe content on Move violates this policy, contact us via the <a href="/contact" className="text-primary underline">Contact page</a>.
         </p>
       </PublicSection>
     </PublicPageShell>

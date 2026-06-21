@@ -48,7 +48,7 @@ export default function DataDeletionPage() {
           </p>
           <p>
             If you cannot sign in, contact{" "}
-            <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow data deletion request")} className="text-primary underline">
+            <a href={mailto(LEGAL_CONTACTS.privacy, "Move data deletion request")} className="text-primary underline">
               {LEGAL_CONTACTS.privacy}
             </a>{" "}
             with enough information for Move to review the request without

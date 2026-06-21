@@ -53,7 +53,7 @@ export default function PrivacyPage() {
         <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           Privacy contact:{" "}
-          <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow privacy request")} className="text-primary underline">
+          <a href={mailto(LEGAL_CONTACTS.privacy, "Move privacy request")} className="text-primary underline">
             {LEGAL_CONTACTS.privacy}
           </a>
         </p>
@@ -173,7 +173,7 @@ export default function PrivacyPage() {
 
       <PublicSection title="Contact">
         <p>
-          For privacy requests, email <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow privacy request")} className="text-primary underline">{LEGAL_CONTACTS.privacy}</a> or use the account settings tools when available.
+          For privacy requests, email <a href={mailto(LEGAL_CONTACTS.privacy, "Move privacy request")} className="text-primary underline">{LEGAL_CONTACTS.privacy}</a> or use the account settings tools when available.
         </p>
       </PublicSection>
     </PublicPageShell>
