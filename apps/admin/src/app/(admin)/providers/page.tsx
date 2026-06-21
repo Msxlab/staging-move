@@ -396,28 +396,28 @@ export default function ProvidersPage() {
         subtitle={`${total} providers in catalog`}
         actions={
           <>
-            <button onClick={() => setShowImport(!showImport)} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+            <button onClick={() => setShowImport(!showImport)} className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
               <Upload className="h-4 w-4" /> Import CSV
             </button>
-            <button onClick={handleExport} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+            <button onClick={handleExport} className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
               <Download className="h-4 w-4" /> Export
             </button>
             <button onClick={() => window.location.assign("/providers/coverage")}
-              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
               <MapPin className="h-4 w-4" /> Coverage overview
             </button>
             <button onClick={() => window.location.assign("/providers/needs-logo")}
-              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
               <ImageOff className="h-4 w-4" /> Logo backfill
               {missingLogoCount > 0 && (
-                <span className="rounded-full bg-tone-honey-bg px-2 py-0.5 text-xs font-semibold text-tone-honey-fg">
+                <span className="rounded-full bg-tone-honey-bg px-2 py-0.5 font-mono text-xs font-semibold text-tone-honey-fg">
                   {missingLogoCount}
                 </span>
               )}
             </button>
             <button onClick={() => window.location.assign("/providers/new")}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-              <Plus className="h-4 w-4" /> Add Provider
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+              <Plus className="h-4 w-4" /> Add provider
             </button>
           </>
         }
@@ -425,10 +425,10 @@ export default function ProvidersPage() {
 
       {/* CSV Import Panel */}
       {showImport && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">Import Providers from CSV</h3>
-            <button onClick={() => setShowImport(false)} className="p-1 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+            <h3 className="font-display text-base font-bold text-foreground">Import providers from CSV</h3>
+            <button onClick={() => setShowImport(false)} className="p-1 text-muted-foreground transition-colors hover:text-foreground"><X className="h-4 w-4" /></button>
           </div>
           <p className="text-xs text-muted-foreground">CSV must have headers: <code className="bg-muted px-1 rounded">name,category,scope,website,phone,description,popularityScore,states,tags</code></p>
           <div className="flex items-center gap-3">
@@ -446,12 +446,12 @@ export default function ProvidersPage() {
                 }
                 setImportFile(file);
               }}
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1 file:text-xs file:font-medium file:text-primary"
+              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1 file:text-xs file:font-medium file:text-primary"
             />
             <button
               onClick={handleImport}
               disabled={!importFile || importing}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               {importing ? <><Loader2 className="h-4 w-4 animate-spin" />Importing...</> : "Import"}
             </button>
@@ -469,26 +469,26 @@ export default function ProvidersPage() {
           { label: "State", value: stateCount, color: "text-tone-orange-fg", bg: "bg-tone-orange-bg" },
           { label: "Quality warnings", value: qualityWarningTotal, color: "text-tone-honey-fg", bg: "bg-tone-honey-bg" },
         ].map((s) => (
-          <div key={s.label} className={`rounded-xl border border-border ${s.bg} p-4`}>
-            <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
-            <p className={`mt-1 text-2xl font-bold ${s.color}`}>{s.value}</p>
+          <div key={s.label} className={`rounded-2xl border border-border ${s.bg} p-4`}>
+            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{s.label}</p>
+            <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${s.color}`}>{s.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4">
+      <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-tone-honey-fg" />
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Provider data quality</h2>
+            <h2 className="font-display text-base font-bold text-foreground">Provider data quality</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Warnings are derived from current catalog fields only. They do not prove a provider is verified or official.
             </p>
             {qualityIssues.length > 0 ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {qualityIssues.map(([code, count]) => (
-                  <span key={code} className="rounded-full border border-tone-honey-br bg-background px-2.5 py-1 text-xs text-tone-honey-fg">
-                    {code.replace(/_/g, " ")}: {count}
+                  <span key={code} className="rounded-full border border-tone-honey-br bg-background px-2.5 py-1 text-xs font-medium text-tone-honey-fg">
+                    {code.replace(/_/g, " ")}: <span className="font-mono">{count}</span>
                   </span>
                 ))}
               </div>
@@ -505,17 +505,17 @@ export default function ProvidersPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Search name, slug, description, tags..."
             value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background pl-10 pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            className="w-full rounded-xl border border-input bg-card pl-10 pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
         </div>
         <button onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors ${showFilters ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent"}`}>
+          className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors ${showFilters ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
           <Filter className="h-4 w-4" />
-          Filters {activeFilters > 0 && <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">{activeFilters}</span>}
+          Filters {activeFilters > 0 && <span className="rounded-full bg-primary px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary-foreground">{activeFilters}</span>}
         </button>
-        <div className="flex items-center rounded-lg border border-border">
+        <div className="flex items-center rounded-xl border border-border bg-card">
           {([["accordion", Layers], ["table", List], ["grid", LayoutGrid]] as [ViewMode, any][]).map(([mode, Icon]) => (
             <button key={mode} onClick={() => setViewMode(mode)}
-              className={`p-2.5 transition-colors ${viewMode === mode ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}>
+              className={`p-2.5 transition-colors first:rounded-l-xl last:rounded-r-xl ${viewMode === mode ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
               <Icon className="h-4 w-4" />
             </button>
           ))}
@@ -524,31 +524,31 @@ export default function ProvidersPage() {
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground">Advanced Filters</h3>
-            <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground">Clear all</button>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display text-base font-bold text-foreground">Advanced filters</h3>
+            <button onClick={clearFilters} className="text-xs font-medium text-primary transition-colors hover:text-primary/80">Clear all</button>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-6">
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Scope</label>
-              <select value={filterScope} onChange={(e) => setFilterScope(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Scope</label>
+              <select value={filterScope} onChange={(e) => setFilterScope(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground">
                 <option value="">All</option>
                 <option value="FEDERAL">Federal</option>
                 <option value="STATE">State</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Status</label>
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Status</label>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground">
                 <option value="">All</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Category</label>
-              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Category</label>
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground">
                 <option value="">All Categories</option>
                 {categoryStats.sort((a, b) => getCategoryOrder(a.category) - getCategoryOrder(b.category)).map((c) => (
                   <option key={c.category} value={c.category}>{getCategoryLabel(c.category)} ({c.count})</option>
@@ -556,25 +556,25 @@ export default function ProvidersPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">State</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">State</label>
               <input
                 type="text"
                 value={filterState}
                 onChange={(e) => setFilterState(e.target.value.toUpperCase().slice(0, 2))}
                 placeholder="TX"
                 maxLength={2}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Min Score</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Min Score</label>
               <input type="number" value={scoreMin} onChange={(e) => setScoreMin(e.target.value)} placeholder="0" min={0} max={100}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Max Score</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Max Score</label>
               <input type="number" value={scoreMax} onChange={(e) => setScoreMax(e.target.value)} placeholder="100" min={0} max={100}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
           </div>
         </div>
@@ -582,9 +582,9 @@ export default function ProvidersPage() {
 
       {/* Bulk Actions Bar */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
-          <span className="text-sm font-medium text-primary">{selected.size} selected</span>
-          <select value={bulkAction} onChange={(e) => { setBulkAction(e.target.value); setBulkCategory(""); setBulkScore(""); setBulkNetwork(""); }} className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground">
+        <div className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3.5">
+          <span className="text-sm font-semibold text-primary"><span className="font-mono">{selected.size}</span> selected</span>
+          <select value={bulkAction} onChange={(e) => { setBulkAction(e.target.value); setBulkCategory(""); setBulkScore(""); setBulkNetwork(""); }} className="rounded-xl border border-input bg-background px-3 py-1.5 text-sm text-foreground">
             <option value="">Choose action...</option>
             <option value="activate">Activate</option>
             <option value="deactivate">Deactivate</option>
@@ -599,7 +599,7 @@ export default function ProvidersPage() {
             <select
               value={bulkCategory}
               onChange={(e) => setBulkCategory(e.target.value)}
-              className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground"
+              className="rounded-xl border border-input bg-background px-3 py-1.5 text-sm text-foreground"
             >
               <option value="">Select category…</option>
               {BULK_CATEGORY_OPTIONS.map((c) => (
@@ -615,7 +615,7 @@ export default function ProvidersPage() {
               value={bulkScore}
               onChange={(e) => setBulkScore(e.target.value)}
               placeholder="Score 0–100"
-              className="w-32 rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground"
+              className="w-32 rounded-xl border border-input bg-background px-3 py-1.5 text-sm text-foreground"
             />
           )}
           {bulkAction === "set_affiliate_network" && (
@@ -624,7 +624,7 @@ export default function ProvidersPage() {
               onChange={(e) => setBulkNetwork(e.target.value)}
               placeholder="Network (impact, cj, direct…)"
               maxLength={40}
-              className="w-56 rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground"
+              className="w-56 rounded-xl border border-input bg-background px-3 py-1.5 text-sm text-foreground"
             />
           )}
           <button
@@ -635,11 +635,11 @@ export default function ProvidersPage() {
               (bulkAction === "set_score" && bulkScore.trim() === "") ||
               (bulkAction === "set_affiliate_network" && bulkNetwork.trim() === "")
             }
-            className="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="rounded-xl bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             Apply
           </button>
-          <button onClick={deselectAll} className="ml-auto text-sm text-muted-foreground hover:text-foreground">
+          <button onClick={deselectAll} className="ml-auto text-sm text-muted-foreground transition-colors hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -647,7 +647,7 @@ export default function ProvidersPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="py-20 text-center text-muted-foreground">Loading providers...</div>
+        <div className="py-20 text-center text-sm text-muted-foreground">Loading providers...</div>
       ) : allProviders.length === 0 ? (
         <EmptyState
           icon={Building2}
@@ -667,7 +667,7 @@ export default function ProvidersPage() {
               </button>
             ) : undefined
           }
-          className="rounded-xl border border-dashed border-border"
+          className="rounded-2xl border border-dashed border-border"
         />
       ) : viewMode === "accordion" ? (
         <div className="space-y-2">
@@ -683,19 +683,19 @@ export default function ProvidersPage() {
             const items = groups[stat.category] || [];
             const catActiveCount = items.filter((p) => p.isActive).length;
             return (
-              <div key={stat.category} className="rounded-xl border border-border overflow-hidden">
+              <div key={stat.category} className="rounded-2xl border border-border overflow-hidden">
                 <button onClick={() => toggleCategory(stat.category)}
-                  className="flex w-full items-center justify-between bg-card px-5 py-3.5 hover:bg-accent/50 transition-colors">
+                  className="flex w-full items-center justify-between bg-card px-5 py-4 hover:bg-accent/50 transition-colors">
                   <div className="flex items-center gap-3">
                     {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                    <span className="text-lg">{getCategoryIcon(stat.category)}</span>
-                    <span className="font-semibold text-foreground">{getCategoryLabel(stat.category)}</span>
-                    <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{stat.count}</span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-lg">{getCategoryIcon(stat.category)}</span>
+                    <span className="font-display text-base font-bold text-foreground">{getCategoryLabel(stat.category)}</span>
+                    <span className="rounded-full bg-muted px-2.5 py-0.5 font-mono text-xs font-medium text-muted-foreground">{stat.count}</span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>Avg Score: <span className="font-medium text-foreground">{stat.avgScore}</span></span>
-                    <span className="text-tone-sage-fg">{catActiveCount} active</span>
-                    {items.length - catActiveCount > 0 && <span className="text-muted-foreground">{items.length - catActiveCount} inactive</span>}
+                    <span className="uppercase tracking-[0.06em]">Avg score <span className="ml-1 font-mono font-semibold text-foreground">{stat.avgScore}</span></span>
+                    <span className="font-medium text-tone-sage-fg"><span className="font-mono">{catActiveCount}</span> active</span>
+                    {items.length - catActiveCount > 0 && <span className="text-muted-foreground"><span className="font-mono">{items.length - catActiveCount}</span> inactive</span>}
                   </div>
                 </button>
                 {isOpen && items.length > 0 && (
@@ -703,13 +703,13 @@ export default function ProvidersPage() {
                     <table className="w-full min-w-[640px]">
                       <thead className="bg-muted/30">
                         <tr>
-                          <th className="w-10 px-3 py-2"><button onClick={() => { const allSelected = items.every(p => selected.has(p.id)); items.forEach(p => { setSelected(prev => { const n = new Set(prev); allSelected ? n.delete(p.id) : n.add(p.id); return n; }); }); }} aria-label="Select all providers in this category"><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Provider</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Scope</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">States</th>
-                          <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Score</th>
-                          <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Status</th>
-                          <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Actions</th>
+                          <th className="w-10 px-3 py-2.5"><button onClick={() => { const allSelected = items.every(p => selected.has(p.id)); items.forEach(p => { setSelected(prev => { const n = new Set(prev); allSelected ? n.delete(p.id) : n.add(p.id); return n; }); }); }} aria-label="Select all providers in this category"><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>
+                          <th className="px-3 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Provider</th>
+                          <th className="px-3 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Scope</th>
+                          <th className="px-3 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">States</th>
+                          <th className="px-3 py-2.5 text-center text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Score</th>
+                          <th className="px-3 py-2.5 text-center text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</th>
+                          <th className="px-3 py-2.5 text-right text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/50">
@@ -740,12 +740,13 @@ export default function ProvidersPage() {
                                 {p.scope === "FEDERAL" ? "All" : states.length > 3 ? `${states.slice(0, 3).join(", ")} +${states.length - 3}` : states.join(", ") || "—"}
                               </td>
                               <td className="px-3 py-2.5 text-center">
-                                <span className={`text-sm font-bold ${p.popularityScore >= 90 ? "text-tone-sage-fg" : p.popularityScore >= 70 ? "text-tone-sky-fg" : p.popularityScore >= 50 ? "text-tone-honey-fg" : "text-muted-foreground"}`}>
+                                <span className={`font-mono text-sm font-bold ${p.popularityScore >= 90 ? "text-tone-sage-fg" : p.popularityScore >= 70 ? "text-tone-sky-fg" : p.popularityScore >= 50 ? "text-tone-honey-fg" : "text-muted-foreground"}`}>
                                   {p.popularityScore}
                                 </span>
                               </td>
                               <td className="px-3 py-2.5 text-center">
-                                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${p.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${p.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>
+                                  <span className={`h-1.5 w-1.5 rounded-full ${p.isActive ? "bg-tone-sage-fg" : "bg-muted-foreground"}`} />
                                   {p.isActive ? "Active" : "Inactive"}
                                 </span>
                               </td>
@@ -770,15 +771,16 @@ export default function ProvidersPage() {
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {allProviders.map((p) => (
-            <div key={p.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-lg transition-shadow">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
+            <div key={p.id} className="rounded-2xl border border-border bg-card p-5 transition-shadow hover:shadow-lg">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
                   <button onClick={() => toggleSelect(p.id)} aria-pressed={selected.has(p.id)} aria-label={selected.has(p.id) ? `Deselect ${p.name}` : `Select ${p.name}`}>
                     {selected.has(p.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground" />}
                   </button>
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{getCategoryIcon(p.category)} {getCategoryLabel(p.category)}</p>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-lg">{getCategoryIcon(p.category)}</span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-foreground">{p.name}</p>
+                    <p className="truncate text-[11px] text-muted-foreground">{getCategoryLabel(p.category)}</p>
                     {(p.qualityWarningCount || 0) > 0 && (
                       <p className="mt-1 text-[11px] text-tone-honey-fg">
                         {p.qualityWarningCount} quality warning{p.qualityWarningCount === 1 ? "" : "s"}
@@ -786,25 +788,34 @@ export default function ProvidersPage() {
                     )}
                   </div>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>
+                <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${p.isActive ? "bg-tone-sage-fg" : "bg-muted-foreground"}`} />
                   {p.isActive ? "Active" : "Off"}
                 </span>
               </div>
-              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className={`rounded px-1.5 py-0.5 ${p.scope === "FEDERAL" ? "bg-tone-sky-bg text-tone-sky-fg" : "bg-tone-orange-bg text-tone-orange-fg"}`}>{p.scope}</span>
-                <span className="font-bold text-foreground">{p.popularityScore}</span>
+              <div className="mt-4 flex items-center gap-5 border-t border-border pt-3.5">
+                <div>
+                  <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Scope</div>
+                  <div className="mt-1">
+                    <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${p.scope === "FEDERAL" ? "bg-tone-sky-bg text-tone-sky-fg" : "bg-tone-orange-bg text-tone-orange-fg"}`}>{p.scope}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Score</div>
+                  <div className="mt-1 font-mono text-base font-semibold text-foreground">{p.popularityScore}</div>
+                </div>
               </div>
-              <div className="mt-3 flex items-center gap-1">
-                <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="flex-1 rounded-lg bg-muted/50 py-1.5 text-xs text-muted-foreground hover:bg-accent">View</button>
-                <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="flex-1 rounded-lg bg-muted/50 py-1.5 text-xs text-muted-foreground hover:bg-accent">Edit</button>
-                <button onClick={() => handleDelete(p.id, p.name)} className="rounded-lg bg-muted/50 p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label={`Delete ${p.name}`} title="Delete"><Trash2 className="h-3 w-3" /></button>
+              <div className="mt-4 flex items-center gap-1">
+                <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="flex-1 rounded-xl bg-muted/50 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">View</button>
+                <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="flex-1 rounded-xl bg-muted/50 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Edit</button>
+                <button onClick={() => handleDelete(p.id, p.name)} className="rounded-xl bg-muted/50 p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive" aria-label={`Delete ${p.name}`} title="Delete"><Trash2 className="h-3 w-3" /></button>
               </div>
             </div>
           ))}
         </div>
       ) : (
         /* Table View */
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="overflow-x-auto rounded-2xl border border-border">
           <table className="w-full min-w-[720px]">
             <thead className="bg-muted/50">
               <tr>
@@ -836,8 +847,8 @@ export default function ProvidersPage() {
                     <td className="px-4 py-3 text-sm text-foreground"><span className="mr-1">{getCategoryIcon(p.category)}</span>{getCategoryLabel(p.category)}</td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.scope === "FEDERAL" ? "bg-tone-sky-bg text-tone-sky-fg" : "bg-tone-orange-bg text-tone-orange-fg"}`}>{p.scope}</span></td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{p.scope === "FEDERAL" ? "All" : states.length > 3 ? `${states.slice(0, 3).join(", ")}...` : states.join(", ")}</td>
-                    <td className="px-4 py-3 text-center text-sm font-bold text-foreground">{p.popularityScore}</td>
-                    <td className="px-4 py-3 text-center"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>{p.isActive ? "Active" : "Inactive"}</span></td>
+                    <td className="px-4 py-3 text-center font-mono text-sm font-bold text-foreground">{p.popularityScore}</td>
+                    <td className="px-4 py-3 text-center"><span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${p.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}><span className={`h-1.5 w-1.5 rounded-full ${p.isActive ? "bg-tone-sage-fg" : "bg-muted-foreground"}`} />{p.isActive ? "Active" : "Inactive"}</span></td>
                     <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">
                       <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={`View ${p.name}`} title="View"><Eye className="h-4 w-4" /></button>
                       <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={`Edit ${p.name}`} title="Edit"><Pencil className="h-4 w-4" /></button>
