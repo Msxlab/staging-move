@@ -1,10 +1,4 @@
 import type { Config } from "tailwindcss";
-import {
-  brandColors,
-  orangeScale,
-  surfaceDark,
-  semanticColors,
-} from "@locateflow/shared";
 
 // Edition VII · Aurora. The mobile NativeWind palette is sourced from
 // packages/shared/src/design-tokens.ts so `bg-primary-500` / `bg-primary`
@@ -25,61 +19,64 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary scale — `bg-primary-500` etc. resolve to Aurora cool values.
+        // Move design — single uniform Sapphire accent on navy. These
+        // NativeWind className colors are a fixed (dark) palette; runtime
+        // light/dark theming is driven by src/lib/theme.ts (useAppTheme).
+        // Legacy keys (rose/foil/sage/primary/surface) are kept so existing
+        // className call sites keep rendering — values just flip to Move.
         primary: {
-          DEFAULT: brandColors.orange,        // Aurora cool #7FB6E8
-          light: brandColors.orangeLight,     // cool-light #A5C9F0
-          dark: brandColors.orangeDark,       // cool-2 #5C9DDC
-          50: orangeScale[50],
-          100: orangeScale[100],
-          200: orangeScale[200],
-          300: orangeScale[300],
-          400: orangeScale[400],
-          500: orangeScale[500],
-          600: orangeScale[600],
-          700: orangeScale[700],
-          800: orangeScale[800],
-          900: orangeScale[900],
+          DEFAULT: "#5B8DEF", // Sapphire
+          light: "#83AAF5",
+          dark: "#3D6FD6",
+          50: "#EEF3FE",
+          100: "#D9E5FC",
+          200: "#B7CEF9",
+          300: "#92B2F4",
+          400: "#83AAF5",
+          500: "#5B8DEF",
+          600: "#3D6FD6",
+          700: "#2E5FB0",
+          800: "#244C90",
+          900: "#1B3A6E",
         },
-        // Aurora-named aliases (kept under legacy "rose"/"foil"/"sage" keys
-        // so existing call sites flip palette without source changes).
+        // Aurora-named aliases — all now resolve to the Sapphire accent.
         rose: {
-          DEFAULT: brandColors.rose,          // Aurora cool #7FB6E8
-          light: brandColors.roseLight,       // cool-light #A5C9F0
-          deep: brandColors.roseDeep,         // cool-2 #5C9DDC
-          dark: brandColors.roseDark,         // cool-deep #3D7AB8
+          DEFAULT: "#5B8DEF",
+          light: "#83AAF5",
+          deep: "#3D6FD6",
+          dark: "#2E5FB0",
         },
         foil: {
-          DEFAULT: brandColors.foil,          // honey/champagne #F2C46C
-          highlight: brandColors.foilHighlight, // champagne #FBE7BD
-          shadow: brandColors.foilShadow,     // champagne shadow #D99A4E
-          ink: brandColors.foilInk,           // honey ink #7A5418
+          DEFAULT: "#5B8DEF",
+          highlight: "#83AAF5",
+          shadow: "#3D6FD6",
+          ink: "#2E5FB0",
         },
         sage: {
-          DEFAULT: brandColors.sage,          // Aurora mint #87DDC0
-          soft: brandColors.sageSoft,         // mint-soft #B0E8D2
+          DEFAULT: "#54CB7E", // Move green
+          soft: "#7FE0A0",
         },
         surface: {
-          DEFAULT: surfaceDark.background,    // au-base #0A0F18
-          elevated: surfaceDark.surface,      // au-base-2 #0E1521
-          card: surfaceDark.card,             // au-base-3 #131C2C
-          hover: surfaceDark.cardHover,       // #1A2438
+          DEFAULT: "#0A0F1C", // Move bg
+          elevated: "#121B2D", // surface
+          card: "#121B2D",
+          hover: "#18233A", // surface2
         },
-        // `accent` historically meant "amber/yellow callout" — now the
-        // honey/champagne foil so highlight pills match web.
-        accent: brandColors.foil,             // honey/champagne #F2C46C
-        // Semantic shorthands.
-        success: semanticColors.success,      // Aurora mint #87DDC0
-        warning: semanticColors.warning,      // Aurora amber #F2C46C
-        danger: semanticColors.danger,        // Aurora coral #F08C8E
-        info: semanticColors.info,            // Aurora cool #7FB6E8
+        accent: "#5B8DEF", // Sapphire accent
+        // Semantic shorthands — Move green / amber / red / teal.
+        success: "#54CB7E",
+        warning: "#E0A85A",
+        danger: "#E25C5C",
+        info: "#37C2C9",
       },
       fontFamily: {
-        // Fraunces (display) + Geist (sans/mono) — loaded via expo-font in
-        // app/_layout.tsx. Falls back to system if the font hasn't loaded.
-        display: ["Fraunces_400Regular", "Didot", "Georgia", "serif"],
-        sans: ["Geist_400Regular", "Inter", "system-ui", "sans-serif"],
-        mono: ["GeistMono_400Regular", "JetBrainsMono", "monospace"],
+        // Move design system: Playfair Display (display/serif) + DM Sans
+        // (sans) + DM Mono (mono) — loaded via expo-font in app/_layout.tsx.
+        // Falls back to system if the font hasn't loaded. For specific heading
+        // weights use the explicit `fonts.*` constants from src/lib/theme.ts.
+        display: ["PlayfairDisplay_700Bold", "Didot", "Georgia", "serif"],
+        sans: ["DMSans_400Regular", "Inter", "system-ui", "sans-serif"],
+        mono: ["DMMono_400Regular", "JetBrainsMono", "monospace"],
       },
     },
   },
