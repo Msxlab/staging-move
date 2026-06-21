@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;0,900;1,700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#16110a;-webkit-font-smoothing:antialiased;font-family:'DM Sans',sans-serif}
+  ::-webkit-scrollbar{width:0;height:0;display:none}
+  .scrollarea{scrollbar-width:none;-ms-overflow-style:none}
+  @keyframes mv-sweep{0%{transform:translateX(-120%) skewX(-14deg)}100%{transform:translateX(320%) skewX(-14deg)}}
+  @keyframes mv-pulse{0%,100%{opacity:.35}50%{opacity:1}}
+  @keyframes mv-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes mv-rise{from{transform:translateY(12px)}to{transform:translateY(0)}}
+  @keyframes mv-fade{from{opacity:0}to{opacity:1}}
+  @keyframes mv-blink{0%,42%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.1)}}
+  @keyframes mv-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @keyframes mv-spin{to{transform:rotate(360deg)}}
+  @keyframes mv-dash{to{stroke-dashoffset:-32}}
+  @keyframes mv-travel{0%{offset-distance:0%}80%{offset-distance:100%}100%{offset-distance:100%}}
+  @keyframes mv-splashpop{0%{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+  .mv-rise{animation:mv-rise .5s cubic-bezier(.2,.7,.3,1) both}
+  .mv-bar{transform-origin:left center;animation:mv-grow .9s cubic-bezier(.2,.7,.3,1) both}
+  .mv-sweepwrap{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit}
+  .mv-sweep{position:absolute;top:0;bottom:0;width:46%;left:-46%;animation:mv-sweep 4.6s ease-in-out infinite}
+</style>
+</helmet>
+<div style="{{ rootStyle }}; min-height:{{ outerMinH }}; width:100%; display:flex; align-items:center; justify-content:center; padding:{{ outerPad }}; background:{{ outerBg }}">
+  <div style="position:relative; display:flex; flex-direction:column; width:390px; height:844px; border-radius:42px; overflow:hidden; background:var(--bg); border:1px solid var(--border); box-shadow:0 40px 120px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.2)">
+
+    <!-- status bar -->
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 26px 4px; flex-shrink:0; position:relative; z-index:5">
+      <span style="color:var(--text); font-size:13px; font-weight:600; letter-spacing:-.01em">9:41</span>
+      <div style="display:flex; align-items:center; gap:6px">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="6" width="2.6" height="5" rx="1" fill="var(--text)"/><rect x="3.8" y="4" width="2.6" height="7" rx="1" fill="var(--text)"/><rect x="7.6" y="2" width="2.6" height="9" rx="1" fill="var(--text)"/><rect x="11.4" y="0" width="2.6" height="11" rx="1" fill="var(--text)" opacity=".4"/></svg>
+        <svg width="15" height="11" viewBox="0 0 16 12" fill="none"><path d="M8 2.5c2.1 0 4 .9 5.4 2.3L14.8 3.4C13 1.3 10.7.1 8 .1S3 1.3 1.2 3.4l1.4 1.4C4 3.4 5.9 2.5 8 2.5z" fill="var(--text)"/><path d="M8 5.5c1.4 0 2.7.6 3.6 1.5L13 5.7C11.7 4.1 10 3.1 8 3.1S4.3 4.1 3 5.7l1.4 1.3C5.3 6.1 6.6 5.5 8 5.5z" fill="var(--text)"/><circle cx="8" cy="10" r="2" fill="var(--text)"/></svg>
+        <div style="width:24px; height:11px; border-radius:3px; border:1px solid var(--faint); padding:1.5px; display:flex"><div style="flex:1; background:var(--text); border-radius:1px"></div></div>
+      </div>
+    </div>
+
+    <!-- screen + stack region -->
+    <div style="position:relative; flex:1; min-height:0; overflow:hidden">
+      <div class="scrollarea" style="position:absolute; inset:0; overflow-y:auto; background:var(--bg); display:{{ tabsDisplay }}">
+
+        <!-- ============ HOME ============ -->
+        <sc-if value="{{ tabHome }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:8px 0 28px">
+          <!-- header -->
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; padding:10px 22px 6px">
+            <div>
+              <div style="color:var(--gold); font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase">{{ greeting }}</div>
+              <div style="color:var(--text); font-family:'Playfair Display',serif; font-size:27px; font-weight:800; line-height:1.05; margin-top:2px">{{ userName }}</div>
+              <div style="color:var(--faint); font-size:11px; margin-top:2px">{{ dateStr }}</div>
+            </div>
+            <div style="display:flex; gap:8px">
+              <button onClick="{{ toggleTheme }}" style="width:38px; height:38px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); color:var(--dim); cursor:pointer">
+                <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></sc-if>
+                <sc-if value="{{ isLight }}" hint-placeholder-val="{{ false }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></sc-if>
+              </button>
+              <button onClick="{{ goNotifs }}" style="position:relative; width:38px; height:38px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); color:var(--dim); cursor:pointer">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
+                <span style="position:absolute; top:-3px; right:-3px; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--red); color:#fff; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center">{{ unread }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- AI briefing (top priority) -->
+          <div class="mv-rise" style="margin:16px 22px 0; border-radius:22px; padding:16px; position:relative; overflow:hidden; background:var(--heroGrad); border:1px solid var(--border-gold)">
+            <div style="position:absolute; top:-40px; right:-30px; width:150px; height:150px; border-radius:50%; background:radial-gradient(circle, var(--gold) 0%, transparent 68%); opacity:.12"></div>
+            <div style="position:relative; display:flex; align-items:flex-start; gap:13px">
+              <div style="flex-shrink:0; animation:mv-float 4s ease-in-out infinite">
+                <dc-import name="Raccoon" size="40" mood="thinking" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="40px,40px"></dc-import>
+              </div>
+              <div style="flex:1">
+                <div style="display:flex; align-items:center; gap:7px; margin-bottom:5px">
+                  <span style="color:var(--gold); font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; white-space:nowrap">AI Briefing</span>
+                  <span style="width:3px; height:3px; border-radius:50%; background:var(--gold); animation:mv-blink 1.6s infinite"></span>
+                  <span style="width:3px; height:3px; border-radius:50%; background:var(--gold); animation:mv-blink 1.6s infinite .2s"></span>
+                  <span style="width:3px; height:3px; border-radius:50%; background:var(--gold); animation:mv-blink 1.6s infinite .4s"></span>
+                  <span style="margin-left:auto; color:var(--faint); font-size:9px">Updated now</span>
+                </div>
+                <div style="color:var(--text); font-size:12px; line-height:1.55">{{ briefText }}</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:7px; margin-top:13px; flex-wrap:wrap">
+              <span style="font-size:9.5px; font-weight:700; color:var(--gold); background:var(--goldSoft); border:1px solid var(--border-gold); padding:4px 9px; border-radius:8px">{{ daysLeft }} days out</span>
+              <span style="font-size:9.5px; font-weight:700; color:var(--red); background:var(--redSoft); padding:4px 9px; border-radius:8px">{{ briefCritical }} critical</span>
+              <span style="font-size:9.5px; font-weight:700; color:var(--green); background:rgba(84,203,126,.14); padding:4px 9px; border-radius:8px">Midtown fits ✓</span>
+            </div>
+            <button onClick="{{ goMoving }}" style="width:100%; margin-top:12px; padding:10px; border-radius:12px; font-size:12px; font-weight:700; background:linear-gradient(135deg,var(--gold-lt),var(--gold)); color:var(--on-gold); border:none; cursor:pointer">Open full briefing →</button>
+          </div>
+
+          <!-- countdown hero -->
+          <div class="mv-rise" style="margin:16px 22px 0; border-radius:26px; padding:22px; position:relative; overflow:hidden; background:var(--heroGrad); border:1px solid var(--border-gold)">
+            <div style="position:absolute; top:-50px; right:-40px; width:190px; height:190px; border-radius:50%; background:radial-gradient(circle, var(--gold) 0%, transparent 68%); opacity:.14"></div>
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; position:relative">
+              <div>
+                <div style="color:var(--gold); font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; white-space:nowrap">Move countdown</div>
+                <div style="display:flex; align-items:baseline; gap:8px; margin-top:2px">
+                  <span style="color:var(--text); font-family:'Playfair Display',serif; font-size:60px; font-weight:900; line-height:.92">{{ daysLeft }}</span>
+                  <span style="color:var(--dim); font-size:15px">days</span>
+                </div>
+              </div>
+              <div style="text-align:right; padding-top:6px; white-space:nowrap">
+                <div style="color:var(--faint); font-size:11px">{{ fromCity }}</div>
+                <div style="color:var(--gold); font-size:13px; line-height:1.1">↓</div>
+                <div style="color:var(--text); font-size:11px; font-weight:600">{{ toCity }}</div>
+                <div style="color:var(--faint); font-size:10px; margin-top:2px">{{ moveDate }}</div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin:16px 0 7px; position:relative">
+              <span style="color:var(--dim); font-size:11px">{{ taskDone }}/{{ taskTotal }} tasks done</span>
+              <span style="color:var(--gold); font-size:11px; font-weight:700">{{ pct }}%</span>
+            </div>
+            <div style="height:5px; border-radius:99px; background:var(--track); position:relative; overflow:hidden">
+              <div class="mv-bar" style="height:100%; border-radius:99px; width:{{ pctW }}; background:linear-gradient(90deg, var(--gold-lt), var(--gold))"></div>
+            </div>
+            <button onClick="{{ goMoving }}" style="width:100%; margin-top:14px; padding:11px; border-radius:13px; font-size:12px; font-weight:600; background:var(--goldSoft); color:var(--gold); border:1px solid var(--border-gold); cursor:pointer">View move plan →</button>
+          </div>
+
+          <!-- reminders · this week -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:26px 22px 10px">
+            <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">Reminders · this week</div>
+            <button onClick="{{ goNotifs }}" style="color:var(--gold); font-size:11px; font-weight:600; background:none; border:none; cursor:pointer">All →</button>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:9px; padding:0 22px">
+            <sc-for list="{{ urgentTasks }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.toggle }}" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; width:100%; text-align:left; background:var(--surface); border:1px solid var(--amberLine); cursor:pointer">
+                <span style="width:18px; height:18px; border-radius:6px; border:2px solid {{ t.checkBorder }}; background:{{ t.checkBg }}; flex-shrink:0; display:flex; align-items:center; justify-content:center">
+                  <sc-if value="{{ t.done }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if>
+                </span>
+                <div style="flex:1">
+                  <div style="color:var(--text); font-size:12.5px; font-weight:500; text-decoration:{{ t.strike }}">{{ t.title }}</div>
+                  <div style="color:var(--amber); font-size:10px">Due {{ t.due }}</div>
+                </div>
+                <span style="font-size:9.5px; font-weight:700; color:var(--amber); background:var(--amberSoft); padding:3px 8px; border-radius:7px">{{ t.cat }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <!-- home dossier (priority-ordered · swipe / view full) -->
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; padding:26px 22px 12px">
+            <div>
+              <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase">Home Dossier</div>
+              <div style="color:var(--text); font-family:'Playfair Display',serif; font-size:17px; font-weight:700; margin-top:3px">{{ neighborhood }}</div>
+              <div style="color:var(--faint); font-size:10.5px">{{ city }}</div>
+            </div>
+            <button onClick="{{ toggleDossierFull }}" style="display:flex; align-items:center; gap:6px; padding:7px 11px; border-radius:99px; background:var(--surface); border:1px solid var(--border); color:var(--gold); font-size:10px; font-weight:700; cursor:pointer">{{ dViewLabel }}</button>
+          </div>
+          <div class="scrollarea" onScroll="{{ onDossierScroll }}" style="display:flex; gap:12px; padding:0 22px 4px; flex-wrap:{{ dWrap }}; overflow-x:{{ dOverflow }}; scroll-snap-type:{{ dSnap }}; scroll-padding-left:22px">
+            <sc-for list="{{ dossier }}" as="d" hint-placeholder-count="6">
+              <div class="mv-rise" style="flex:0 0 {{ dCardW }}; scroll-snap-align:start; position:relative; overflow:hidden; border-radius:20px; background:var(--surface); border:1px solid var(--border)">
+                <div style="position:absolute; top:0; left:0; right:0; height:2px; background:{{ d.tone }}; opacity:.55; z-index:2"></div>
+                <div style="position:relative; height:82px; border-bottom:1px solid var(--border); overflow:hidden; background:linear-gradient(180deg,#101b30,#0a1322)">
+                  <dc-import name="DossierScene" type="{{ d.type }}" level="{{ d.level }}" tone="{{ d.tone }}" glow="{{ d.glow }}" style="position:absolute; inset:0" hint-size="100%,82px"></dc-import>
+                  <span style="position:absolute; top:8px; right:8px; z-index:3; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:{{ d.tone }}; background:{{ d.iconBg }}; padding:3px 7px; border-radius:7px; backdrop-filter:blur(3px)">{{ d.tag }}</span>
+                </div>
+                <div style="padding:11px 13px 13px">
+                  <div style="color:var(--faint); font-size:9px; font-weight:800; letter-spacing:.12em; text-transform:uppercase">{{ d.label }}</div>
+                  <div style="color:var(--text); font-family:'Playfair Display',serif; font-size:25px; font-weight:900; line-height:1.02; margin-top:3px">{{ d.big }}</div>
+                  <div style="color:var(--dim); font-size:10px; line-height:1.35; margin-top:4px">{{ d.sub }}</div>
+                  <div style="display:flex; align-items:center; gap:7px; margin-top:10px">
+                    <div style="flex:1; display:flex; gap:3px"><sc-for list="{{ d.segs }}" as="sg" hint-placeholder-count="5"><div style="flex:1; height:4px; border-radius:2px; background:{{ sg }}"></div></sc-for></div>
+                    <span style="font-size:8px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:{{ d.bandTone }}">{{ d.bandLabel }}</span>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ dossierSwipe }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; justify-content:center; gap:5px; padding:12px 0 0">
+              <sc-for list="{{ dossierDots }}" as="dot" hint-placeholder-count="7">
+                <div style="height:5px; border-radius:99px; width:{{ dot.w }}; background:{{ dot.bg }}; transition:width .2s, background .2s"></div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- guides -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:24px 22px 12px">
+            <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">Moving guides</div>
+            <button onClick="{{ goBlog }}" style="color:var(--gold); font-size:11px; font-weight:600; background:none; border:none; cursor:pointer">See all →</button>
+          </div>
+          <div style="padding:0 22px">
+            <button onClick="{{ openFeatured }}" style="width:100%; text-align:left; padding:16px; border-radius:20px; background:var(--surface); border:1px solid var(--border); cursor:pointer; display:flex; gap:14px; align-items:center">
+              <div style="flex:1">
+                <span style="font-size:9.5px; font-weight:700; color:var(--gold); background:var(--goldSoft); padding:3px 8px; border-radius:7px">{{ featuredTag }}</span>
+                <div style="color:var(--text); font-family:'Playfair Display',serif; font-size:15px; font-weight:700; margin:8px 0 4px; line-height:1.3">{{ featuredTitle }}</div>
+                <div style="color:var(--faint); font-size:11px">{{ featuredMeta }}</div>
+              </div>
+              <div style="width:60px; height:60px; border-radius:15px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--surface2); font-size:28px">📦</div>
+            </button>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ============ MOVING (stub) ============ -->
+        <sc-if value="{{ tabMoving }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 0 28px">
+          <!-- header -->
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; padding:10px 22px 6px">
+            <div>
+              <div style="color:var(--gold); font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase">Move command</div>
+              <div style="color:var(--text); font-family:'Playfair Display',serif; font-size:25px; font-weight:800; line-height:1.05; margin-top:2px">Your move plan</div>
+              <div style="color:var(--faint); font-size:11px; margin-top:2px">Sep 15, 2024 · Austin → New York</div>
+            </div>
+            <button onClick="{{ goSettings }}" style="width:38px; height:38px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); color:var(--dim); cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-2.7 1.1V21a2 2 0 11-4 0v-.1A1.6 1.6 0 006 19.4l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00-1.1-2.7H2a2 2 0 110-4h.1A1.6 1.6 0 004.6 6l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V2a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H22a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg></button>
+          </div>
+
+          <!-- next best action (top priority) -->
+          <div class="mv-rise" style="margin:14px 22px 0; border-radius:18px; padding:16px; background:var(--goldSoft); border:1px solid var(--border-gold); border-left:4px solid var(--gold)">
+            <div style="color:var(--gold); font-size:8.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase">Next best action</div>
+            <div style="color:var(--text); font-size:15px; font-weight:700; margin-top:4px">{{ nextActionTitle }}</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px">
+              <div style="display:flex; gap:6px">
+                <span style="font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:7px; background:var(--track); color:var(--dim)">Due {{ nextActionDue }}</span>
+                <span style="font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:7px; background:var(--redSoft); color:var(--red)">Critical</span>
+              </div>
+              <button style="padding:8px 13px; border-radius:11px; font-size:11px; font-weight:700; background:linear-gradient(135deg,var(--gold-lt),var(--gold)); color:var(--on-gold); border:none; cursor:pointer">Do this now →</button>
+            </div>
+          </div>
+
+          <!-- route / ops card -->
+          <div class="mv-rise" style="margin:14px 22px 0; border-radius:24px; padding:16px; background:var(--heroGrad); border:1px solid var(--border-gold); position:relative; overflow:hidden">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:13px">
+              <div>
+                <div style="color:var(--gold); font-size:9px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; white-space:nowrap">Live move intelligence</div>
+                <div style="color:var(--dim); font-size:10px; margin-top:3px">Old home to new home, end to end</div>
+              </div>
+              <div style="animation:mv-float 4s ease-in-out infinite">
+                <dc-import name="Raccoon" size="34" mood="alert" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="34px,34px"></dc-import>
+              </div>
+            </div>
+
+            <!-- map -->
+            <div style="position:relative; height:158px; border-radius:18px; overflow:hidden; background:var(--mapBg); border:1px solid var(--border)">
+              <svg viewBox="0 0 300 158" preserveAspectRatio="none" style="position:absolute; inset:0; width:100%; height:100%">
+                <g stroke="var(--mapGrid)" stroke-width="1">
+                  <path d="M-10 40 C60 28 110 56 180 40 C240 26 280 44 320 32" fill="none"/>
+                  <path d="M-10 96 C60 80 120 104 190 88 C250 74 290 96 320 78" fill="none"/>
+                  <path d="M40 -10 C52 50 36 110 50 168" fill="none"/>
+                  <path d="M150 -10 C140 50 160 110 150 168" fill="none"/>
+                  <path d="M250 -10 C258 50 244 110 256 168" fill="none"/>
+                </g>
+                <path d="M44 124 C92 92 120 108 156 78 C196 46 226 60 262 36" stroke="var(--mapRouteBase)" stroke-width="11" stroke-linecap="round" fill="none"/>
+                <path d="M44 124 C92 92 120 108 156 78 C196 46 226 60 262 36" stroke="var(--gold)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="9 9" fill="none" style="animation:mv-dash 1.4s linear infinite"/>
+                <circle cx="44" cy="124" r="5" fill="var(--bg)" stroke="var(--teal)" stroke-width="2.4"/>
+                <circle cx="262" cy="36" r="5" fill="var(--bg)" stroke="var(--gold)" stroke-width="2.4"/>
+                <g style="offset-path:path('M44 124 C92 92 120 108 156 78 C196 46 226 60 262 36'); offset-rotate:0deg; animation:mv-travel 6.5s ease-in-out infinite">
+                  <g transform="translate(-8,-7)">
+                    <ellipse cx="7" cy="11.5" rx="8" ry="1.6" fill="#000" opacity="0.28"/>
+                    <rect x="0" y="2" width="9.5" height="8" rx="1.5" fill="var(--gold)"/>
+                    <rect x="9" y="4" width="5" height="6" rx="1" fill="var(--gold-lt)"/>
+                    <rect x="10" y="5.2" width="3" height="3" rx="0.5" fill="#0b1422" opacity="0.6"/>
+                    <circle cx="3" cy="2.2" r="1.3" fill="var(--rc-head)"/>
+                    <circle cx="6" cy="2.2" r="1.3" fill="var(--rc-head)"/>
+                    <circle cx="3.2" cy="10.4" r="1.7" fill="#0b1422"/>
+                    <circle cx="11" cy="10.4" r="1.7" fill="#0b1422"/>
+                  </g>
+                </g>
+              </svg>
+              <div style="position:absolute; left:10px; top:10px; border-radius:12px; padding:6px 9px; background:var(--glass); border:1px solid var(--border); backdrop-filter:blur(6px)">
+                <div style="color:var(--teal); font-size:8px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap">Austin, TX</div>
+                <div style="color:var(--faint); font-size:8px">old address</div>
+              </div>
+              <div style="position:absolute; right:10px; top:10px; text-align:right; border-radius:12px; padding:6px 9px; background:var(--glass); border:1px solid var(--border-gold); backdrop-filter:blur(6px)">
+                <div style="color:var(--gold); font-size:8px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap">New York, NY</div>
+                <div style="color:var(--faint); font-size:8px">new address</div>
+              </div>
+              <div style="position:absolute; left:10px; right:10px; bottom:10px; display:flex; align-items:center; justify-content:space-between; border-radius:13px; padding:8px 12px; background:var(--glass); border:1px solid var(--border); backdrop-filter:blur(7px)">
+                <span style="color:var(--text); font-size:10px; font-weight:800; white-space:nowrap">1,742 mi route preview</span>
+                <span style="color:var(--faint); font-size:8px">arrival in 48 days</span>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; margin-top:13px">
+              <sc-for list="{{ opsSignals }}" as="s" hint-placeholder-count="3">
+                <div style="border-radius:14px; padding:9px 10px; background:var(--surface); border:1px solid var(--border)">
+                  <span style="display:block; width:6px; height:6px; border-radius:99px; background:{{ s.color }}; margin-bottom:6px; animation:mv-pulse 1.8s ease-in-out infinite"></span>
+                  <div style="color:var(--text); font-size:10px; font-weight:800">{{ s.value }}</div>
+                  <div style="color:var(--faint); font-size:8.5px; margin-top:1px">{{ s.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- risk panel -->
+          <div class="mv-rise" style="margin:14px 22px 0; border-radius:24px; padding:16px; background:var(--surface); border:1px solid var(--redLine); position:relative; overflow:hidden">
+            <div style="position:absolute; top:-40px; left:50%; transform:translateX(-50%); width:220px; height:80px; background:radial-gradient(ellipse, var(--redSoft), transparent 70%); pointer-events:none"></div>
+            <div style="display:flex; align-items:center; gap:16px; position:relative">
+              <svg width="120" height="70" viewBox="0 0 140 80" style="flex-shrink:0">
+                <path d="M14,72 A58,58 0 0 1 31,31" fill="none" stroke="var(--green)" stroke-width="9" stroke-linecap="round" opacity="0.4"/>
+                <path d="M44,21 A58,58 0 0 1 96,21" fill="none" stroke="var(--amber)" stroke-width="9" stroke-linecap="round" opacity="0.4"/>
+                <path d="M109,31 A58,58 0 0 1 126,72" fill="none" stroke="var(--red)" stroke-width="9" stroke-linecap="round" opacity="0.95"/>
+                <g transform="rotate(54 70 72)"><line x1="70" y1="72" x2="70" y2="26" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/></g>
+                <circle cx="70" cy="72" r="6" fill="var(--surface3)" stroke="var(--text)" stroke-width="2"/>
+              </svg>
+              <div style="flex:1; min-width:0">
+                <div style="color:var(--red); font-size:12px; font-weight:800; letter-spacing:.04em">RISK LEVEL · HIGH</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px">
+                  <span style="padding:3px 8px; border-radius:7px; font-size:9px; font-weight:700; background:var(--redSoft); color:var(--red)">{{ moveCritical }} Critical</span>
+                  <span style="padding:3px 8px; border-radius:7px; font-size:9px; font-weight:700; background:var(--amberSoft); color:var(--amber)">1 Expiring</span>
+                  <span style="padding:3px 8px; border-radius:7px; font-size:9px; font-weight:700; background:rgba(84,203,126,.14); color:var(--green)">{{ taskDone }} Done</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- countdown -->
+          <div class="mv-rise" style="margin:14px 22px 0; border-radius:24px; padding:20px; background:var(--heroGrad); border:1px solid var(--border-gold); position:relative; overflow:hidden">
+            <div style="position:absolute; top:-40px; right:-30px; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle,var(--gold),transparent 70%); opacity:.12"></div>
+            <div style="display:flex; align-items:baseline; gap:8px; position:relative">
+              <span style="color:var(--text); font-family:'Playfair Display',serif; font-size:64px; font-weight:900; line-height:.9">{{ daysLeft }}</span>
+              <span style="color:var(--dim); font-size:14px">days until your move</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin:16px 0 7px">
+              <span style="color:var(--dim); font-size:11px">{{ pct }}% of tasks complete</span>
+              <span style="color:var(--gold); font-size:11px; font-weight:700">{{ taskDone }}/{{ taskTotal }}</span>
+            </div>
+            <div style="height:5px; border-radius:99px; background:var(--track); overflow:hidden">
+              <div class="mv-bar" style="height:100%; border-radius:99px; width:{{ pctW }}; background:linear-gradient(90deg,var(--gold-lt),var(--gold))"></div>
+            </div>
+          </div>
+
+          <!-- timeline -->
+          <div style="padding:24px 22px 12px"><div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">Mission timeline</div></div>
+          <div style="position:relative; padding-left:54px; margin:0 22px">
+            <div style="position:absolute; left:33px; top:10px; bottom:10px; width:2px; background:var(--border); border-radius:2px"></div>
+            <div style="position:absolute; left:33px; top:10px; height:22%; width:2px; background:linear-gradient(var(--green),var(--gold)); border-radius:2px"></div>
+            <div style="display:flex; flex-direction:column; gap:11px">
+              <sc-for list="{{ movePhases }}" as="p" hint-placeholder-count="5">
+                <div class="mv-rise" style="position:relative">
+                  <div style="position:absolute; left:-29px; top:14px; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:{{ p.badgeColor }}; border:2px solid var(--bg); box-shadow:0 0 0 3px {{ p.badgeBg }}">
+                    <sc-if value="{{ p.past }}" hint-placeholder-val="{{ false }}"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if>
+                  </div>
+                  <div style="border-radius:16px; padding:13px; background:{{ p.cardBg }}; border:1px solid {{ p.borderC }}">
+                    <div style="display:flex; align-items:center; justify-content:space-between">
+                      <span style="color:var(--text); font-size:13px; font-weight:700">{{ p.name }}</span>
+                      <span style="font-size:9px; font-weight:700; padding:2px 8px; border-radius:7px; color:{{ p.badgeColor }}; background:{{ p.badgeBg }}">{{ p.badge }}</span>
+                    </div>
+                    <div style="color:var(--faint); font-size:10px; margin-top:3px">{{ p.range }}</div>
+                    <div style="color:{{ p.taskColor }}; font-size:10.5px; font-weight:500; margin-top:2px">{{ p.tasks }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- admin sprint tasks -->
+          <div style="padding:24px 22px 12px"><div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">Admin sprint · current</div></div>
+          <div style="display:flex; flex-direction:column; gap:9px; padding:0 22px">
+            <sc-for list="{{ adminTasks }}" as="t" hint-placeholder-count="6">
+              <div style="display:flex; align-items:center; gap:12px; padding:13px; border-radius:16px; background:var(--surface); border:1px solid {{ t.cardBorder }}; position:relative; overflow:hidden">
+                <div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:{{ t.accent }}"></div>
+                <div style="width:32px; height:32px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--surface2); font-size:15px; margin-left:3px">{{ t.catEmoji }}</div>
+                <div style="flex:1; min-width:0">
+                  <div style="color:var(--text); font-size:12.5px; font-weight:600; text-decoration:{{ t.strike }}">{{ t.title }}</div>
+                  <div style="color:{{ t.metaColor }}; font-size:10px">Due {{ t.due }} · {{ t.cat }}</div>
+                </div>
+                <button onClick="{{ t.toggle }}" style="width:24px; height:24px; border-radius:8px; border:2px solid {{ t.checkBorder }}; background:{{ t.checkBg }}; flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer">
+                  <sc-if value="{{ t.done }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if>
+                </button>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- category accordion -->
+          <div style="padding:18px 22px 0">
+            <button onClick="{{ toggleCats }}" style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border-radius:16px; background:var(--surface); border:1px solid var(--border); cursor:pointer">
+              <span style="color:var(--text); font-size:12px; font-weight:600">Category progress</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate({{ catsRot }}); transition:transform .2s"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <sc-if value="{{ showCats }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:11px; padding:14px 4px 0">
+                <sc-for list="{{ moveCats }}" as="c" hint-placeholder-count="4">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+                      <span style="color:var(--text); font-size:11px">{{ c.emoji }} {{ c.label }}</span>
+                      <span style="color:{{ c.color }}; font-family:'DM Mono',monospace; font-size:11px; font-weight:600">{{ c.pct }}</span>
+                    </div>
+                    <div style="height:4px; border-radius:99px; background:var(--track); overflow:hidden">
+                      <div class="mv-bar" style="height:100%; border-radius:99px; width:{{ c.pct }}; background:{{ c.color }}"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+        <!-- ============ SERVICES (stub) ============ -->
+        <sc-if value="{{ tabServices }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 0 28px">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; padding:10px 22px 6px">
+            <div>
+              <div style="color:var(--text); font-family:'Playfair Display',serif; font-size:25px; font-weight:800; line-height:1.05">Services</div>
+              <div style="color:var(--faint); font-size:11px; margin-top:2px">Austin → New York portfolio</div>
+            </div>
+            <div style="display:flex; gap:8px">
+              <button style="width:38px; height:38px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--goldSoft); border:1px solid var(--border-gold); color:var(--gold); cursor:pointer" onClick="{{ goAddProvider }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button style="width:38px; height:38px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); color:var(--dim); cursor:pointer" onClick="{{ goSearch }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+            </div>
+          </div>
+
+          <!-- health -->
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:14px 22px 0">
+            <sc-for list="{{ svcHealth }}" as="h" hint-placeholder-count="3">
+              <div class="mv-rise" style="border-radius:18px; padding:14px 6px; text-align:center; position:relative; overflow:hidden; background:var(--surface); border:1px solid var(--border)">
+                <div style="position:absolute; top:0; left:0; right:0; height:2px; background:{{ h.color }}; opacity:.5"></div>
+                <div style="color:{{ h.color }}; font-family:'DM Mono',monospace; font-size:22px; font-weight:600; line-height:1">{{ h.val }}</div>
+                <div style="color:var(--faint); font-size:10px; margin-top:4px">{{ h.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- transfer progress -->
+          <div class="mv-rise" style="margin:12px 22px 0; border-radius:18px; padding:15px 16px; background:var(--surface); border:1px solid var(--border)">
+            <div style="display:flex; align-items:center; gap:12px">
+              <span style="font-size:20px">🏠</span>
+              <div style="flex:1; height:6px; border-radius:99px; background:var(--track); overflow:hidden">
+                <div class="mv-bar" style="height:100%; border-radius:99px; width:{{ trackPct }}; background:linear-gradient(90deg,var(--gold-lt),var(--gold))"></div>
+              </div>
+              <span style="font-size:20px">🏢</span>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:9px">
+              <span style="color:var(--dim); font-size:10.5px">{{ trackText }}</span>
+              <span style="color:var(--gold); font-family:'DM Mono',monospace; font-size:11px; font-weight:600">{{ trackPct }}</span>
+            </div>
+          </div>
+
+          <!-- monthly cost (old → new) -->
+          <div class="mv-rise" style="margin:12px 22px 0; border-radius:18px; padding:15px 16px; background:var(--surface); border:1px solid var(--border)">
+            <div style="display:flex; align-items:center; justify-content:space-between">
+              <div>
+                <div style="color:var(--faint); font-size:9px; font-weight:800; letter-spacing:.14em; text-transform:uppercase">Monthly services</div>
+                <div style="display:flex; align-items:baseline; gap:7px; margin-top:5px">
+                  <span style="color:var(--dim); font-family:'DM Mono',monospace; font-size:14px; text-decoration:line-through">{{ svcMonthlyOld }}</span>
+                  <span style="color:var(--faint); font-size:12px">→</span>
+                  <span style="color:var(--text); font-family:'DM Mono',monospace; font-size:20px; font-weight:600">{{ svcMonthlyNew }}</span>
+                </div>
+              </div>
+              <span style="font-size:9.5px; font-weight:700; color:var(--amber); background:var(--amberSoft); padding:4px 9px; border-radius:8px">{{ svcMonthlyDelta }}/mo</span>
+            </div>
+            <div style="color:var(--faint); font-size:10px; margin-top:8px">Estimated recurring cost after your move</div>
+          </div>
+
+          <!-- alerts -->
+          <div style="padding:22px 22px 12px"><div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">⚠ This week · act now</div></div>
+          <div style="display:flex; flex-direction:column; gap:9px; padding:0 22px">
+            <sc-for list="{{ svcAlerts }}" as="a" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:16px; position:relative; overflow:hidden; background:var(--surface); border:1px solid {{ a.line }}">
+                <div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:{{ a.color }}"></div>
+                <div style="width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-left:3px; background:{{ a.bg }}; font-size:15px">{{ a.icon }}</div>
+                <div style="flex:1; min-width:0">
+                  <div style="color:var(--text); font-size:12px; font-weight:600">{{ a.title }}</div>
+                  <div style="color:var(--dim); font-size:10.5px">{{ a.sub }}</div>
+                </div>
+                <button style="padding:6px 11px; border-radius:99px; font-size:10px; font-weight:600; flex-shrink:0; color:{{ a.color }}; background:{{ a.bg }}; border:1px solid {{ a.color }}; cursor:pointer">{{ a.action }}</button>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- location toggle -->
+          <div style="display:flex; gap:10px; padding:22px 22px 16px">
+            <sc-for list="{{ locTabs }}" as="l" hint-placeholder-count="2">
+              <button onClick="{{ l.go }}" style="flex:1; padding:13px; border-radius:18px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; background:{{ l.bg }}; border:1px solid {{ l.border }}">
+                <span style="font-size:15px">{{ l.emoji }}</span>
+                <span style="color:{{ l.col }}; font-size:11px; font-weight:700">{{ l.label }}</span>
+                <span style="color:{{ l.sub }}; font-size:9px; opacity:.8">{{ l.note }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ locNew }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:0 22px 16px; padding:12px; border-radius:14px; display:flex; align-items:flex-start; gap:10px; background:var(--goldSoft); border:1px solid var(--border-gold)">
+              <span style="font-size:16px">🗽</span>
+              <div>
+                <div style="color:var(--gold); font-size:11px; font-weight:600">Setup at New York, NY 10036</div>
+                <div style="color:var(--dim); font-size:10.5px; line-height:1.5">Get services ready before your Sep 15 move-in.</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- categories -->
+          <div style="padding:0 22px">
+            <sc-for list="{{ activeCats }}" as="c" hint-placeholder-count="3">
+              <div style="margin-bottom:20px">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:11px">
+                  <span style="font-size:14px">{{ c.emoji }}</span>
+                  <span style="color:var(--text); font-size:13px; font-weight:600">{{ c.cat }}</span>
+                  <span style="color:var(--faint); font-size:11px">{{ c.count }} services</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:9px">
+                  <sc-for list="{{ c.items }}" as="s" hint-placeholder-count="3">
+                    <div class="mv-rise" style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:18px; position:relative; overflow:hidden; background:var(--surface); border:1px solid {{ s.cardBorder }}">
+                      <div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:{{ s.accent }}"></div>
+                      <div style="width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-left:4px; background:var(--surface2); font-size:18px">{{ s.emoji }}</div>
+                      <div style="flex:1; min-width:0">
+                        <div style="color:var(--text); font-weight:700; font-size:13px">{{ s.name }}</div>
+                        <div style="color:var(--faint); font-size:11px">{{ s.provider }}</div>
+                        <div style="color:var(--faint); font-size:10px; margin-top:1px; opacity:.85">{{ s.keyInfo }}</div>
+                      </div>
+                      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0">
+                        <span style="padding:3px 7px; border-radius:7px; font-size:9px; font-weight:700; color:{{ s.statusColor }}; background:{{ s.statusBg }}">{{ s.statusText }}</span>
+                        <sc-if value="{{ s.showAction }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ s.open }}" style="padding:5px 9px; border-radius:9px; font-size:10px; font-weight:600; color:{{ s.actionColor }}; background:{{ s.actionBg }}; border:1px solid {{ s.actionBorder }}; cursor:pointer">{{ s.actionText }}</button>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+        <!-- ============ ADDRESSES (stub) ============ -->
+        <sc-if value="{{ tabAddresses }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 0 28px">
+          <div style="padding:14px 22px 12px">
+            <div style="color:var(--text); font-family:'Playfair Display',serif; font-size:25px; font-weight:800">Addresses</div>
+            <div style="color:var(--faint); font-size:11px; margin-top:2px">{{ addrCount }} saved · tap to switch</div>
+          </div>
+          <!-- your move (animated origin -> destination route) -->
+          <div style="margin:0 22px 14px; padding:14px 16px; border-radius:16px; background:var(--heroGrad); border:1px solid var(--border-gold)">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px">
+              <div><div style="color:var(--gold); font-size:9px; font-weight:800; letter-spacing:.14em; text-transform:uppercase">Your move</div><div style="color:var(--text); font-size:12px; font-weight:600; margin-top:2px">1,742 mi · arrives in 48 days</div></div>
+              <span style="font-size:9.5px; font-weight:700; color:var(--gold); background:var(--goldSoft); padding:4px 9px; border-radius:8px; white-space:nowrap">Move-in {{ moveDate }}</span>
+            </div>
+            <div style="position:relative; height:32px">
+              <svg viewBox="0 0 300 32" preserveAspectRatio="none" style="position:absolute; inset:0; width:100%; height:100%">
+                <path d="M12 24 C90 24 110 9 150 9 C190 9 210 24 288 24" stroke="var(--mapRouteBase)" stroke-width="6" stroke-linecap="round" fill="none"></path>
+                <path d="M12 24 C90 24 110 9 150 9 C190 9 210 24 288 24" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="7 7" fill="none" style="animation:mv-dash 1.4s linear infinite"></path>
+                <circle cx="12" cy="24" r="4.5" fill="var(--bg)" stroke="var(--green)" stroke-width="2.2"></circle>
+                <circle cx="288" cy="24" r="4.5" fill="var(--bg)" stroke="var(--gold)" stroke-width="2.2"></circle>
+                <g style="offset-path:path('M12 24 C90 24 110 9 150 9 C190 9 210 24 288 24'); offset-rotate:0deg; animation:mv-travel 5s ease-in-out infinite">
+                  <rect x="-7" y="-5" width="14" height="9" rx="2" fill="var(--gold)"></rect>
+                  <circle cx="-4" cy="5" r="2" fill="#0b1422"></circle>
+                  <circle cx="4" cy="5" r="2" fill="#0b1422"></circle>
+                </g>
+              </svg>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:3px"><span style="color:var(--green); font-size:9px; font-weight:700">🏠 {{ fromCity }}</span><span style="color:var(--gold); font-size:9px; font-weight:700">{{ toCity }} 🔑</span></div>
+          </div>
+          <div class="scrollarea" style="display:flex; gap:8px; padding:0 22px 14px; overflow-x:auto">
+            <sc-for list="{{ addrTabs }}" as="t" hint-placeholder-count="4">
+              <button onClick="{{ t.go }}" style="flex:0 0 auto; display:flex; align-items:center; gap:7px; padding:8px 13px; border-radius:99px; cursor:pointer; background:{{ t.bg }}; border:1.5px solid {{ t.bd }}; color:{{ t.col }}; font-size:12px; font-weight:700; white-space:nowrap"><span style="font-size:13px">{{ t.icon }}</span>{{ t.label }}</button>
+            </sc-for>
+          </div>
+          <div style="margin:0 22px; height:178px; border-radius:20px; overflow:hidden; position:relative; border:1px solid var(--border); background:var(--mapBg)">
+            {{ addrMapEl }}
+            <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 42%, transparent 32%, rgba(8,12,22,.34))"></div>
+            <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-100%)">
+              <div style="width:30px; height:30px; border-radius:50% 50% 50% 2px; transform:rotate(45deg); background:{{ addrTone }}; box-shadow:0 6px 16px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center">
+                <div style="width:9px; height:9px; border-radius:50%; background:#fff; transform:rotate(-45deg)"></div>
+              </div>
+            </div>
+            <div style="position:absolute; left:10px; top:10px; padding:5px 10px; border-radius:99px; background:var(--glass); border:1px solid var(--border); backdrop-filter:blur(6px)">
+              <span style="color:{{ addrTone }}; font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase">{{ addrStatus }}</span>
+            </div>
+            <span style="position:absolute; right:8px; bottom:6px; color:var(--faint); font-size:8px; background:var(--glass); padding:1px 5px; border-radius:4px">© OpenStreetMap</span>
+          </div>
+          <div style="margin:14px 22px 0; padding:16px; border-radius:18px; background:var(--surface); border:1px solid var(--border)">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px">
+              <span style="color:{{ addrTone }}; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">{{ addrLabel }}</span>
+              <sc-if value="{{ addrPrimary }}" hint-placeholder-val="{{ true }}"><span style="font-size:9px; font-weight:700; color:var(--gold); background:var(--goldSoft); padding:2px 7px; border-radius:6px">Primary</span></sc-if>
+            </div>
+            <div style="color:var(--text); font-weight:600; font-size:15px">{{ addrStreet }}</div>
+            <div style="color:var(--dim); font-size:12px">{{ addrCity }}</div>
+            <sc-if value="{{ addrHasMove }}" hint-placeholder-val="{{ false }}"><div style="color:var(--faint); font-size:11px; margin-top:3px">Move-in: {{ addrMove }}</div></sc-if>
+            <div style="display:flex; gap:8px; margin-top:13px">
+              <div style="flex:1; padding:9px; border-radius:11px; text-align:center; background:var(--goldSoft); border:1px solid var(--border-gold); color:var(--gold); font-size:11px; font-weight:600">Directions</div>
+              <div style="flex:1; padding:9px; border-radius:11px; text-align:center; background:var(--surface2); border:1px solid var(--border); color:var(--dim); font-size:11px; font-weight:600">Edit</div>
+              <div style="flex:1; padding:9px; border-radius:11px; text-align:center; background:var(--surface2); border:1px solid var(--border); color:var(--dim); font-size:11px; font-weight:600">Set primary</div>
+            </div>
+          </div>
+          <div style="padding:22px 22px 10px"><div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">Services at this address</div></div>
+          <sc-if value="{{ addrTiedEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:0 22px; padding:16px; border-radius:14px; text-align:center; background:var(--surface); border:1px dashed var(--border); color:var(--faint); font-size:11.5px">No services tracked at this address yet.</div>
+          </sc-if>
+          <div style="display:flex; flex-direction:column; gap:8px; padding:0 22px">
+            <sc-for list="{{ addrTied }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:13px; background:var(--surface); border:1px solid var(--border)">
+                <div style="width:28px; height:28px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:var(--surface2); font-size:14px">{{ s.e }}</div>
+                <span style="flex:1; color:var(--text); font-size:12.5px; font-weight:500">{{ s.n }}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:22px 22px 10px"><div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase">All addresses</div></div>
+          <div style="display:flex; flex-direction:column; gap:8px; padding:0 22px">
+            <sc-for list="{{ addrList }}" as="a" hint-placeholder-count="4">
+              <button onClick="{{ a.go }}" style="display:flex; align-items:center; gap:12px; padding:12px 13px; border-radius:14px; width:100%; text-align:left; cursor:pointer; background:{{ a.bg }}; border:1.5px solid {{ a.bd }}">
+                <span style="font-size:17px">{{ a.icon }}</span>
+                <div style="flex:1; min-width:0">
+                  <div style="color:var(--text); font-size:13px; font-weight:600">{{ a.label }}</div>
+                  <div style="color:var(--faint); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ a.city }}</div>
+                </div>
+                <span style="font-size:9px; font-weight:700; color:{{ a.tone }}; white-space:nowrap">{{ a.status }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="padding:16px 22px 0">
+            <button style="width:100%; padding:15px; border-radius:16px; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; border:1px dashed var(--border-gold); background:var(--goldSoft)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span style="color:var(--gold); font-size:13px; font-weight:600">Add address</span>
+            </button>
+          </div>
+        </div>
+        </sc-if>
+        <!-- ============ MORE (stub) ============ -->
+        <sc-if value="{{ tabMore }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 0 28px">
+          <div style="padding:14px 22px 4px"><div style="color:var(--text); font-family:'Playfair Display',serif; font-size:25px; font-weight:800">More</div></div>
+          <div style="padding:14px 22px 0">
+            <!-- profile card -->
+            <button onClick="{{ goProfile }}" style="width:100%; padding:16px; border-radius:20px; display:flex; align-items:center; gap:14px; text-align:left; cursor:pointer; background:var(--surface); border:1px solid var(--border)">
+              <div style="width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; flex-shrink:0; background:linear-gradient(135deg,var(--gold-lt),var(--gold)); color:var(--on-gold)">{{ userAvatar }}</div>
+              <div style="flex:1">
+                <div style="color:var(--text); font-weight:600; font-size:15px">{{ userName }}</div>
+                <div style="color:var(--faint); font-size:11px; margin-bottom:4px">{{ userEmail }}</div>
+                <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:7px; background:var(--goldSoft); border:1px solid var(--border-gold)">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="var(--gold)"><path d="M5 16l-2-9 6 4 3-7 3 7 6-4-2 9z"/></svg>
+                  <span style="color:var(--gold); font-size:9px; font-weight:700">PRO Annual</span>
+                </span>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+
+            <!-- pro banner -->
+            <div style="margin-top:14px; padding:16px; border-radius:20px; display:flex; align-items:center; justify-content:space-between; background:var(--heroGrad); border:1px solid var(--border-gold)">
+              <div>
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="var(--gold)"><path d="M5 16l-2-9 6 4 3-7 3 7 6-4-2 9z"/></svg>
+                  <span style="color:var(--gold); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap">Move PRO active</span>
+                </div>
+                <div style="color:var(--dim); font-size:12px; white-space:nowrap">Annual · renews Dec 15, 2024</div>
+              </div>
+              <button onClick="{{ goManageSub }}" style="padding:8px 12px; border-radius:11px; background:var(--goldSoft); border:1px solid var(--border-gold); color:var(--gold); font-size:11px; font-weight:600; cursor:pointer">Manage</button>
+            </div>
+
+            <!-- groups -->
+            <sc-for list="{{ moreGroups }}" as="g" hint-placeholder-count="2">
+              <div style="margin-top:20px">
+                <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px">{{ g.title }}</div>
+                <div style="border-radius:18px; overflow:hidden; background:var(--surface); border:1px solid var(--border)">
+                  <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="3">
+                    <button onClick="{{ i.go }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:14px 16px; text-align:left; background:none; border:none; border-top:1px solid var(--border); cursor:pointer">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ i.icon }}"/></svg>
+                      <span style="flex:1; color:var(--text); font-size:13.5px">{{ i.label }}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+
+            <!-- appearance -->
+            <div style="margin-top:20px">
+              <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px">Appearance</div>
+              <button onClick="{{ toggleTheme }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:14px 16px; text-align:left; border-radius:18px; background:var(--surface); border:1px solid var(--border); cursor:pointer">
+                <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></sc-if>
+                <sc-if value="{{ isLight }}" hint-placeholder-val="{{ false }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></sc-if>
+                <span style="flex:1; color:var(--text); font-size:13.5px">{{ themeLabel }}</span>
+              </button>
+            </div>
+
+            <div style="margin-top:20px; border-radius:18px; overflow:hidden; background:var(--surface); border:1px solid var(--border)">
+              <button style="width:100%; display:flex; align-items:center; gap:13px; padding:14px 16px; text-align:left; background:none; border:none; cursor:pointer">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                <span style="flex:1; color:var(--red); font-size:13.5px">Sign out</span>
+              </button>
+            </div>
+            <div style="text-align:center; color:var(--faint); font-size:10px; margin-top:18px">Move v2.1.0 · PRO</div>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+
+      <!-- stack overlay -->
+      <sc-if value="{{ stackOpen }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ stkNative }}"><div class="scrollarea" style="position:absolute; inset:0; overflow-y:auto; background:var(--bg); z-index:20">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px">
+            <button onClick="{{ pop }}" style="width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); color:var(--dim); cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+            <span style="color:var(--text); font-weight:600; font-size:15px">{{ stackTitle }}</span>
+            <div style="width:36px"></div>
+          </div>
+          <div style="padding:0 22px 28px">
+            <!-- NOTIFICATIONS -->
+            <sc-if value="{{ stkNotifs }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:9px">
+                <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="4">
+                  <div style="padding:14px; border-radius:16px; background:var(--surface); border:1px solid {{ n.borderC }}; opacity:{{ n.op }}; display:flex; gap:12px; align-items:flex-start">
+                    <div style="width:30px; height:30px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:{{ n.bg }}; color:{{ n.color }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.icon }}"/></svg></div>
+                    <div style="flex:1">
+                      <div style="color:var(--text); font-weight:600; font-size:12.5px">{{ n.title }}</div>
+                      <div style="color:var(--dim); font-size:11px; line-height:1.5; margin-top:2px">{{ n.body }}</div>
+                      <div style="color:var(--faint); font-size:10px; margin-top:4px">{{ n.time }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- BLOG -->
+            <sc-if value="{{ stkBlog }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:11px">
+                <sc-for list="{{ blogPosts }}" as="p" hint-placeholder-count="4">
+                  <button onClick="{{ p.open }}" style="width:100%; text-align:left; padding:16px; border-radius:18px; background:var(--surface); border:1px solid var(--border); cursor:pointer; display:flex; gap:14px; align-items:flex-start">
+                    <div style="flex:1">
+                      <span style="font-size:9.5px; font-weight:700; color:var(--gold); background:var(--goldSoft); padding:3px 8px; border-radius:7px">{{ p.tag }}</span>
+                      <div style="color:var(--text); font-family:'Playfair Display',serif; font-size:15px; font-weight:700; margin:8px 0 4px; line-height:1.3">{{ p.title }}</div>
+                      <div style="color:var(--faint); font-size:11px">{{ p.meta }}</div>
+                    </div>
+                    <div style="width:58px; height:58px; border-radius:14px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--surface2); font-size:26px">📦</div>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- BLOG POST -->
+            <sc-if value="{{ stkPost }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <span style="font-size:9.5px; font-weight:700; color:var(--gold); background:var(--goldSoft); padding:3px 8px; border-radius:7px">{{ post.tag }}</span>
+                <h1 style="color:var(--text); font-family:'Playfair Display',serif; font-size:23px; font-weight:800; margin:10px 0 6px; line-height:1.25">{{ post.title }}</h1>
+                <div style="color:var(--faint); font-size:11px; margin-bottom:18px">{{ post.meta }}</div>
+                <div style="height:150px; border-radius:18px; display:flex; align-items:center; justify-content:center; background:var(--surface); font-size:52px; margin-bottom:20px">📦</div>
+                <sc-for list="{{ post.paras }}" as="para" hint-placeholder-count="4">
+                  <p style="color:var(--dim); font-size:13px; line-height:1.75; margin-bottom:14px">{{ para }}</p>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- SERVICE DETAIL -->
+            <sc-if value="{{ stkServiceDetail }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div style="display:flex; align-items:center; gap:14px; padding:16px; border-radius:18px; background:var(--surface); border:1px solid var(--border); margin-bottom:14px">
+                  <div style="width:54px; height:54px; border-radius:16px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--surface2); font-size:28px">{{ serviceDetail.emoji }}</div>
+                  <div>
+                    <div style="color:var(--text); font-weight:700; font-size:16px">{{ serviceDetail.name }}</div>
+                    <div style="color:var(--dim); font-size:12px">{{ serviceDetail.provider }}</div>
+                    <span style="display:inline-block; margin-top:5px; font-size:9.5px; font-weight:700; color:{{ serviceDetail.statusColor }}; background:{{ serviceDetail.statusBg }}; padding:3px 8px; border-radius:7px">{{ serviceDetail.status }}</span>
+                  </div>
+                </div>
+                <div style="border-radius:18px; overflow:hidden; background:var(--surface); border:1px solid var(--border); margin-bottom:16px">
+                  <sc-for list="{{ serviceDetail.rows }}" as="row" hint-placeholder-count="4">
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-top:1px solid var(--border)">
+                      <span style="color:var(--faint); font-size:12px">{{ row.k }}</span>
+                      <span style="color:var(--text); font-size:12px; font-weight:600; white-space:nowrap">{{ row.v }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <button style="width:100%; padding:15px; border-radius:16px; font-size:15px; font-weight:700; background:linear-gradient(135deg,var(--gold-lt),var(--gold)); color:var(--on-gold); border:none; cursor:pointer">Transfer to new address</button>
+                <button style="width:100%; margin-top:10px; padding:15px; border-radius:16px; font-size:14px; font-weight:600; background:var(--surface); border:1px solid var(--border); color:var(--dim); cursor:pointer">Edit details</button>
+              </div>
+            </sc-if>
+
+            <!-- SUBSCRIPTION -->
+            <sc-if value="{{ stkSub }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div style="border-radius:22px; padding:20px; position:relative; overflow:hidden; background:var(--heroGrad); border:1px solid var(--border-gold); margin-bottom:18px">
+                  <div style="position:absolute; top:-30px; right:-30px; width:140px; height:140px; border-radius:50%; background:radial-gradient(circle,var(--gold),transparent 70%); opacity:.14"></div>
+                  <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; position:relative">
+                    <div style="width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:linear-gradient(145deg,#0E1A30,#070D1C); box-shadow:0 0 0 1px var(--border-gold)">
+                      <dc-import name="Raccoon" size="34" mood="approved" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="var(--gold)" pupil="#04080F" hint-size="34px,34px"></dc-import>
+                    </div>
+                    <div><div style="color:var(--gold); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase">Move PRO</div><div style="color:var(--text); font-size:16px; font-weight:700; white-space:nowrap">Annual Plan</div></div>
+                  </div>
+                  <div style="display:flex; gap:18px; position:relative">
+                    <div><div style="color:var(--faint); font-size:9px; text-transform:uppercase; letter-spacing:.1em">Renews</div><div style="color:var(--text); font-size:12px; font-weight:600">Dec 15, 2024</div></div>
+                    <div><div style="color:var(--faint); font-size:9px; text-transform:uppercase; letter-spacing:.1em">Rate</div><div style="color:var(--text); font-size:12px; font-weight:600">$47.88/yr</div></div>
+                    <div><div style="color:var(--faint); font-size:9px; text-transform:uppercase; letter-spacing:.1em">Status</div><span style="font-size:9.5px; font-weight:700; color:var(--green); background:rgba(84,203,126,.16); padding:2px 7px; border-radius:6px">Active</span></div>
+                  </div>
+                </div>
+                <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px">All PRO features active</div>
+                <div style="border-radius:18px; padding:6px 16px; background:var(--surface); border:1px solid var(--border)">
+                  <sc-for list="{{ subFeatures }}" as="f" hint-placeholder-count="6">
+                    <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--border)">
+                      <span style="font-size:18px">{{ f.e }}</span>
+                      <span style="flex:1; color:var(--text); font-size:13px">{{ f.t }}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- SETTINGS -->
+            <sc-if value="{{ stkSettings }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:18px">
+                <sc-for list="{{ settingsGroups }}" as="g" hint-placeholder-count="2">
+                  <div>
+                    <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px">{{ g.title }}</div>
+                    <div style="border-radius:18px; overflow:hidden; background:var(--surface); border:1px solid var(--border)">
+                      <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="2">
+                        <button onClick="{{ i.go }}" style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:none; border:none; border-top:1px solid var(--border); cursor:pointer">
+                          <span style="color:var(--text); font-size:13.5px">{{ i.label }}</span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+                <div>
+                  <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px">Preferences</div>
+                  <button onClick="{{ toggleTheme }}" style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-radius:18px; background:var(--surface); border:1px solid var(--border); cursor:pointer">
+                    <span style="color:var(--text); font-size:13.5px">{{ themeLabel }}</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- PROFILE -->
+            <sc-if value="{{ stkProfile }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:22px">
+                  <div style="width:78px; height:78px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:26px; margin-bottom:12px; background:linear-gradient(135deg,var(--gold-lt),var(--gold)); color:var(--on-gold)">LK</div>
+                  <div style="padding:7px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--border); color:var(--dim); font-size:12px">Change photo</div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:22px">
+                  <sc-for list="{{ profileFields }}" as="f" hint-placeholder-count="2">
+                    <div>
+                      <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:6px">{{ f.k }}</div>
+                      <div style="padding:13px 15px; border-radius:13px; background:var(--surface); border:1px solid var(--border); color:var(--text); font-size:14px">{{ f.v }}</div>
+                    </div>
+                  </sc-for>
+                  <div>
+                    <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:6px">Age range</div>
+                    <div style="display:flex; gap:8px">
+                      <sc-for list="{{ ageRanges }}" as="a" hint-placeholder-count="5">
+                        <div style="flex:1; padding:9px 0; border-radius:11px; text-align:center; font-size:11px; background:{{ a.bg }}; border:1px solid {{ a.bd }}; color:{{ a.col }}">{{ a.r }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+                <button style="width:100%; padding:15px; border-radius:16px; font-size:15px; font-weight:700; background:linear-gradient(135deg,var(--gold-lt),var(--gold)); color:var(--on-gold); border:none; cursor:pointer">Save changes</button>
+              </div>
+            </sc-if>
+
+            <!-- BUDGET -->
+            <sc-if value="{{ stkBudget }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div style="border-radius:20px; padding:18px; background:var(--heroGrad); border:1px solid var(--border-gold); margin-bottom:16px">
+                  <div style="color:var(--gold); font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase">Estimated move budget</div>
+                  <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px">
+                    <span style="color:var(--text); font-family:'Playfair Display',serif; font-size:36px; font-weight:900; line-height:1">{{ budget.total }}</span>
+                    <span style="color:var(--dim); font-size:12px">estimated</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin:14px 0 6px"><span style="color:var(--dim); font-size:11px">{{ budget.spent }} committed</span><span style="color:var(--gold); font-size:11px; font-weight:700">37%</span></div>
+                  <div style="height:6px; border-radius:99px; background:var(--track); overflow:hidden"><div class="mv-bar" style="height:100%; width:37%; border-radius:99px; background:linear-gradient(90deg,var(--gold-lt),var(--gold))"></div></div>
+                </div>
+                <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px">Breakdown</div>
+                <div style="display:flex; flex-direction:column; gap:9px">
+                  <sc-for list="{{ budget.items }}" as="b" hint-placeholder-count="5">
+                    <div style="display:flex; align-items:center; gap:12px; padding:13px; border-radius:14px; background:var(--surface); border:1px solid var(--border)">
+                      <div style="width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:var(--surface2); font-size:15px">{{ b.emoji }}</div>
+                      <div style="flex:1"><div style="color:var(--text); font-size:13px; font-weight:600">{{ b.name }}</div><div style="color:var(--faint); font-size:10px">{{ b.pct }} of budget</div></div>
+                      <span style="color:var(--text); font-family:'DM Mono',monospace; font-size:13px; font-weight:600">{{ b.amt }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <button style="width:100%; margin-top:14px; padding:14px; border-radius:16px; font-size:14px; font-weight:700; background:linear-gradient(135deg,var(--gold-lt),var(--gold)); color:var(--on-gold); border:none; cursor:pointer">Add expense</button>
+              </div>
+            </sc-if>
+
+            <!-- PRIVACY -->
+            <sc-if value="{{ stkPrivacy }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:18px">
+                <div style="padding:16px; border-radius:18px; display:flex; align-items:flex-start; gap:12px; background:var(--goldSoft); border:1px solid var(--border-gold)">
+                  <dc-import name="Raccoon" size="36" mood="calm" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="36px,36px"></dc-import>
+                  <div>
+                    <div style="color:var(--gold); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px">Your data, your control</div>
+                    <div style="color:var(--dim); font-size:11px; line-height:1.6">Move stores only what you enter. Export or delete anytime. We never sell your information.</div>
+                  </div>
+                </div>
+                <div>
+                  <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px">Export</div>
+                  <div style="border-radius:18px; overflow:hidden; background:var(--surface); border:1px solid var(--border)">
+                    <div style="display:flex; align-items:center; gap:13px; padding:14px 16px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span style="color:var(--text); font-size:13.5px">Export all data (JSON)</span></div>
+                    <div style="display:flex; align-items:center; gap:13px; padding:14px 16px; border-top:1px solid var(--border)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6"/></svg><span style="color:var(--text); font-size:13.5px">Export checklist (PDF)</span></div>
+                  </div>
+                </div>
+                <div>
+                  <div style="color:var(--faint); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px">Danger zone</div>
+                  <div style="border-radius:18px; overflow:hidden; background:var(--surface); border:1px solid var(--redLine)">
+                    <div style="display:flex; align-items:center; gap:13px; padding:14px 16px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg><span style="color:var(--red); font-size:13.5px">Delete all my data</span></div>
+                    <div style="display:flex; align-items:center; gap:13px; padding:14px 16px; border-top:1px solid var(--redLine)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg><span style="color:var(--red); font-size:13.5px">Delete account</span></div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ stkModule }}">
+          <div style="position:absolute; inset:0; z-index:20; background:var(--bg)">
+            <button onClick="{{ pop }}" style="position:absolute; top:12px; right:12px; z-index:40; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(10,15,28,0.55); backdrop-filter:blur(8px); border:1px solid var(--border); color:var(--text); cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            <sc-if value="{{ stkReminders }}" hint-placeholder-val="{{ false }}"><dc-import name="Reminders" embed="true" style="position:absolute; inset:0" hint-size="100%,100%"></dc-import></sc-if>
+            <sc-if value="{{ stkHelp }}" hint-placeholder-val="{{ false }}"><dc-import name="Help" embed="true" style="position:absolute; inset:0" hint-size="100%,100%"></dc-import></sc-if>
+            <sc-if value="{{ stkSearch }}" hint-placeholder-val="{{ false }}"><dc-import name="Search" embed="true" style="position:absolute; inset:0" hint-size="100%,100%"></dc-import></sc-if>
+            <sc-if value="{{ stkProviders }}" hint-placeholder-val="{{ false }}"><dc-import name="Providers" embed="true" style="position:absolute; inset:0" hint-size="100%,100%"></dc-import></sc-if>
+            <sc-if value="{{ stkCustom }}" hint-placeholder-val="{{ false }}"><dc-import name="CustomProviders" embed="true" style="position:absolute; inset:0" hint-size="100%,100%"></dc-import></sc-if>
+            <sc-if value="{{ stkInvites }}" hint-placeholder-val="{{ false }}"><dc-import name="Invitations" embed="true" style="position:absolute; inset:0" hint-size="100%,100%"></dc-import></sc-if>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <!-- splash -->
+      <sc-if value="{{ splash }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ dismissSplash }}" style="position:absolute; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--splashGrad); cursor:pointer">
+          <div style="animation:mv-splashpop .8s cubic-bezier(.2,.8,.3,1) both; width:92px; height:92px; border-radius:22px; position:relative; overflow:hidden; background:linear-gradient(145deg,#0E1A30,#070D1C); box-shadow:0 0 0 1px var(--border-gold), 0 20px 50px rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center">
+            <dc-import name="Raccoon" size="74" mood="calm" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="var(--gold)" pupil="#04080F" hint-size="74px,74px"></dc-import>
+          </div>
+          <div style="animation:mv-rise .6s .3s both; margin-top:20px; text-align:center">
+            <div style="color:var(--text); font-family:'Playfair Display',serif; font-size:38px; font-weight:900; line-height:1">Move</div>
+            <div style="color:var(--gold); font-size:11px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-top:5px">Relocation Intelligence</div>
+          </div>
+          <div style="animation:mv-fade .6s .6s both; margin-top:14px; display:flex; align-items:center; gap:5px; padding:5px 12px; border-radius:20px; background:var(--goldSoft); border:1px solid var(--border-gold)">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="var(--gold)"><path d="M5 16l-2-9 6 4 3-7 3 7 6-4-2 9z"/></svg>
+            <span style="color:var(--gold); font-size:10px; font-weight:700; letter-spacing:.15em">PRO</span>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- bottom nav -->
+    <div style="flex-shrink:0; height:66px; display:flex; align-items:center; justify-content:space-around; padding:8px 6px 4px; background:var(--bg2); border-top:1px solid var(--border)">
+      <button onClick="{{ goHome }}" style="display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; cursor:pointer; min-width:52px; position:relative">
+        <span style="position:absolute; top:-2px; right:8px; width:15px; height:15px; border-radius:50%; background:var(--red); color:#fff; font-size:8px; font-weight:700; display:flex; align-items:center; justify-content:center">{{ unread }}</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ cHome }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10a1 1 0 001 1h12a1 1 0 001-1V10"/></svg>
+        <span style="color:{{ cHome }}; font-size:10px; font-weight:600">Home</span>
+      </button>
+      <button onClick="{{ goMoving }}" style="display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; cursor:pointer; min-width:52px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ cMoving }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h11v9H1zM12 8h4l3 3v3h-7M5 19a2 2 0 11-4 0 2 2 0 014 0zM19 19a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span style="color:{{ cMoving }}; font-size:10px; font-weight:600">Moving</span>
+      </button>
+      <button onClick="{{ goServices }}" style="display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; cursor:pointer; min-width:52px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ cServices }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg>
+        <span style="color:{{ cServices }}; font-size:10px; font-weight:600">Services</span>
+      </button>
+      <button onClick="{{ goAddresses }}" style="display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; cursor:pointer; min-width:52px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ cAddresses }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <span style="color:{{ cAddresses }}; font-size:10px; font-weight:600">Addresses</span>
+      </button>
+      <button onClick="{{ goMore }}" style="display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; cursor:pointer; min-width:52px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ cMore }}" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+        <span style="color:{{ cMore }}; font-size:10px; font-weight:600">More</span>
+      </button>
+    </div>
+
+    <div style="position:absolute; bottom:7px; left:50%; transform:translateX(-50%); width:130px; height:5px; border-radius:99px; background:var(--handle); z-index:30"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Dark&quot;,&quot;Light&quot;],&quot;default&quot;:&quot;Dark&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Gold&quot;,&quot;Sapphire&quot;,&quot;Emerald&quot;],&quot;default&quot;:&quot;Gold&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;lightBg&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Greige&quot;,&quot;Pearl&quot;,&quot;Taupe&quot;,&quot;Sapphire&quot;],&quot;default&quot;:&quot;Greige&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;weatherCondition&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Auto&quot;,&quot;Sun&quot;,&quot;Cloud&quot;,&quot;Rain&quot;,&quot;Snow&quot;,&quot;Storm&quot;,&quot;Fog&quot;,&quot;Wind&quot;,&quot;Heat&quot;,&quot;Cold&quot;],&quot;default&quot;:&quot;Auto&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;areaCondition&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Auto&quot;,&quot;Safe&quot;,&quot;Moderate&quot;,&quot;Risky&quot;],&quot;default&quot;:&quot;Auto&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;waterCondition&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Auto&quot;,&quot;Clean&quot;,&quot;Filter&quot;,&quot;Unsafe&quot;],&quot;default&quot;:&quot;Auto&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;transitCondition&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Auto&quot;,&quot;Frequent&quot;,&quot;Occasional&quot;,&quot;None&quot;],&quot;default&quot;:&quot;Auto&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;costCondition&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Auto&quot;,&quot;Affordable&quot;,&quot;Moderate&quot;,&quot;Expensive&quot;],&quot;default&quot;:&quot;Auto&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;airCondition&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Auto&quot;,&quot;Good&quot;,&quot;Moderate&quot;,&quot;Unhealthy&quot;],&quot;default&quot;:&quot;Auto&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.state = {
+      dark: (this.props.theme || 'Dark') !== 'Light',
+      tab: 'home',
+      stack: null,
+      splash: true,
+      done: {6:true, 8:true},
+      showCats: false,
+      loc: 'current',
+      addrSel: 0,
+      dossierFull: false,
+      dossierIdx: 0,
+    };
+  }
+  componentDidMount(){
+    this._t = setTimeout(()=>{ if(this.state.splash) this.setState({splash:false}); }, 2400);
+  }
+  componentWillUnmount(){ clearTimeout(this._t); }
+
+  accentFamily(){
+    const a = (this.props.accent || 'Gold');
+    const map = {
+      Gold:     {d:['#CBA45E','#DCBC7C','#B0852F'], l:['#9A7325','#AD8534','#86631A']},
+      Sapphire: {d:['#5B8DEF','#83AAF5','#3D6FD6'], l:['#2E5FB0','#3D74C8','#244C90']},
+      Emerald:  {d:['#3FB585','#62C79E','#2C9269'], l:['#1C7A55','#2A8E66','#125E40']},
+    };
+    return map[a] || map.Gold;
+  }
+
+  theme(){
+    const dark = this.state.dark;
+    const acc = this.accentFamily();
+    const [gold,goldLt,goldDk] = dark ? acc.d : acc.l;
+    const hx = (h,a)=>{ const n=parseInt(h.slice(1),16); const r=(n>>16)&255,g=(n>>8)&255,b=n&255; return `rgba(${r},${g},${b},${a})`; };
+    if(dark){
+      return {gold,goldLt,goldDk,
+        bg:'#0A0F1C', bg2:'#0C1322', surface:'#121B2D', surface2:'#18233A', surface3:'#1F2C47',
+        text:'#EFF3FA', dim:'#8A99B6', faint:'#42526F',
+        border:'rgba(110,150,225,0.10)', borderGold:hx(gold,0.22),
+        green:'#54CB7E', red:'#E25C5C', amber:'#E0A85A', teal:'#37C2C9',
+        track:'rgba(255,255,255,0.07)', handle:'rgba(255,255,255,0.18)',
+        page:'radial-gradient(ellipse 70% 50% at 50% 0%, #14110b, #0a0a10 70%)',
+        rcHead:'#8C9AB2', rcMask:'#0C1525', rcEar:'#C4A090', rcPupil:'#04080F',
+        onGold:'#0A0F1C',
+        heroGrad:'linear-gradient(135deg,#141C30,#0C1220)',
+        splashGrad:'radial-gradient(ellipse 80% 50% at 50% 35%, '+hx(gold,0.10)+' 0%, transparent 65%), #060B18',
+        goldSoft:hx(gold,0.09), amberSoft:'rgba(224,168,90,0.16)', amberLine:'rgba(224,168,90,0.24)',
+        mapBg:'linear-gradient(180deg,#0d1830,#0a1120)', mapGrid:'rgba(255,255,255,0.06)', mapRouteBase:'rgba(255,255,255,0.10)',
+        glass:'rgba(6,11,24,0.62)', redLine:'rgba(226,92,92,0.22)', redSoft:'rgba(226,92,92,0.16)',
+        mapFilter:'grayscale(0.32) invert(0.92) hue-rotate(185deg) brightness(0.96) contrast(0.92)',
+      };
+    }
+    return {gold,goldLt,goldDk,
+      bg:'#EFEADF', bg2:'#E7E1D4', surface:'#FFFFFF', surface2:'#F5F0E7', surface3:'#ECE6DA',
+      text:'#101D2D', dim:'#48566C', faint:'#8794AC',
+      border:'rgba(16,29,45,0.10)', borderGold:hx(gold,0.26),
+      green:'#1C8A63', red:'#C73838', amber:'#A9761E', teal:'#168E9C',
+      track:'rgba(0,0,0,0.08)', handle:'rgba(0,0,0,0.14)',
+      page:this.lightPage(),
+      rcHead:'#7E8EA6', rcMask:'#0F1D2D', rcEar:'#C4A090', rcPupil:'#06101E',
+      onGold:'#FFFFFF',
+      heroGrad:'linear-gradient(135deg,#FFFFFF,#F4EFE5)',
+      splashGrad:'radial-gradient(ellipse 80% 50% at 50% 35%, '+hx(gold,0.12)+' 0%, transparent 65%), #EDE9DF',
+      goldSoft:hx(gold,0.10), amberSoft:'rgba(169,118,30,0.12)', amberLine:'rgba(169,118,30,0.22)',
+      mapBg:'linear-gradient(180deg,#dde6ef,#cdd8e6)', mapGrid:'rgba(12,24,40,0.07)', mapRouteBase:'rgba(12,24,40,0.12)',
+      glass:'rgba(255,255,255,0.72)', redLine:'rgba(199,56,56,0.22)', redSoft:'rgba(199,56,56,0.12)',
+      mapFilter:'saturate(0.95) brightness(1.02)',
+    };
+  }
+
+  rootStyle(){
+    const T = this.theme();
+    return `--bg:${T.bg};--bg2:${T.bg2};--surface:${T.surface};--surface2:${T.surface2};--surface3:${T.surface3};`
+      + `--text:${T.text};--dim:${T.dim};--faint:${T.faint};--border:${T.border};--border-gold:${T.borderGold};`
+      + `--gold:${T.gold};--gold-lt:${T.goldLt};--gold-dk:${T.goldDk};--green:${T.green};--red:${T.red};--amber:${T.amber};--teal:${T.teal};`
+      + `--track:${T.track};--handle:${T.handle};--page:${T.page};--on-gold:${T.onGold};`
+      + `--hero:${T.heroGrad};--heroGrad:${T.heroGrad};--splashGrad:${T.splashGrad};--goldSoft:${T.goldSoft};--amberSoft:${T.amberSoft};--amberLine:${T.amberLine};`
+      + `--rc-head:${T.rcHead};--rc-mask:${T.rcMask};--rc-ear:${T.rcEar};--rc-pupil:${T.rcPupil};--rc-eye:${T.gold};`
+      + `--mapBg:${T.mapBg};--mapGrid:${T.mapGrid};--mapRouteBase:${T.mapRouteBase};--glass:${T.glass};--redLine:${T.redLine};--redSoft:${T.redSoft};`
+      + `--map-filter:${T.mapFilter};`
+      + `font-family:'DM Sans',sans-serif`;
+  }
+
+  data(){
+    const tasks = [
+      {id:1,title:"Forward mail with USPS",due:"Jun 25",urgent:true,cat:"Government"},
+      {id:2,title:"Update driver's license address",due:"Jul 1",urgent:true,cat:"Government"},
+      {id:3,title:"Transfer electric to new address",due:"Sep 10",urgent:false,cat:"Utilities"},
+      {id:4,title:"Cancel AT&T at old address",due:"Jul 28",urgent:true,cat:"Utilities"},
+      {id:5,title:"Update voter registration",due:"Aug 15",urgent:false,cat:"Government"},
+      {id:6,title:"Notify bank of address change",due:"Aug 1",urgent:false,cat:"Finance"},
+      {id:7,title:"Transfer renters insurance",due:"Sep 5",urgent:false,cat:"Insurance"},
+      {id:8,title:"Book moving truck",due:"Jun 30",urgent:true,cat:"Logistics"},
+    ];
+    return {tasks};
+  }
+
+  setTab(t){ this.setState({tab:t, stack:null}); }
+  push(s){ this.setState({stack:s}); }
+  pop(){ this.setState({stack:null}); }
+  toggleTheme(){ this.setState(s=>({dark:!s.dark})); }
+  toggleTask(id){ this.setState(s=>({done:{...s.done,[id]:!s.done[id]}})); }
+  toggleCats(){ this.setState(s=>({showCats:!s.showCats})); }
+  setLoc(l){ this.setState({loc:l}); }
+  setAddrSel(i){ this.setState({addrSel:i}); }
+  toggleDossierFull(){ this.setState(s=>({dossierFull:!s.dossierFull})); }
+  onDossierScroll(e){ const el=e.target; const i=Math.round(el.scrollLeft/(el.clientWidth*0.79+12)); if(i!==this.state.dossierIdx) this.setState({dossierIdx:Math.max(0,i)}); }
+  osmMap(lat,lng,z){
+    const n=Math.pow(2,z);
+    const wx=(lng+180)/360*n;
+    const latR=lat*Math.PI/180;
+    const wy=(1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*n;
+    const xt=Math.floor(wx),yt=Math.floor(wy);
+    const fx=wx-xt,fy=wy-yt;
+    const tiles=[];
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+      tiles.push({u:`https://tile.openstreetmap.org/${z}/${xt+dx}/${yt+dy}.png`,x:(dx+1)*256,y:(dy+1)*256});
+    }
+    const px=256+fx*256,py=256+fy*256;
+    return {tiles,leftCss:`calc(50% - ${px.toFixed(1)}px)`,topCss:`calc(50% - ${py.toFixed(1)}px)`};
+  }
+  classifyWeather(summary,precip,high,low){
+    const s=(summary||'').toLowerCase();
+    const has=(arr)=>arr.some(n=>s.includes(n));
+    if(has(['thunder','storm','lightning','squall','tornado'])) return 'storm';
+    if(has(['snow','sleet','freezing','ice','blizzard','flurr'])) return 'snow';
+    if(has(['fog','mist','haze','smoke'])) return 'fog';
+    if(has(['wind','gust','breez'])) return 'wind';
+    if(typeof precip==='number'&&precip>=50) return 'rain';
+    if(has(['cloud','overcast'])) return 'cloud';
+    if(has(['heat','hot','excessive'])||(high!=null&&high>=95)) return 'heat';
+    if(has(['cold','chill','freeze'])||(low!=null&&low<=32)) return 'cold';
+    return 'sun';
+  }
+  weatherLevel(){
+    const o=(this.props.weatherCondition||'Auto');
+    if(o!=='Auto') return o.toLowerCase();
+    return this.classifyWeather('Partly cloudy', null, 72, 58);
+  }
+  areaLevel(){
+    const o=(this.props.areaCondition||'Auto');
+    if(o!=='Auto') return {Safe:'good',Moderate:'mid',Risky:'bad'}[o];
+    const s=6.8;
+    return s>=8.2?'good':s>=6.0?'mid':'bad';
+  }
+  airLevel(){
+    const o=(this.props.airCondition||'Auto');
+    if(o!=='Auto') return {Good:'good',Moderate:'mid',Unhealthy:'bad'}[o];
+    const aqi=42; return aqi<=50?'good':aqi<=100?'mid':'bad';
+  }
+  costLevel(){
+    const o=(this.props.costCondition||'Auto');
+    if(o!=='Auto') return {Affordable:'good',Moderate:'mid',Expensive:'bad'}[o];
+    const d=87; return d<=30?'good':d<=80?'mid':'bad';
+  }
+  transitLevel(){
+    const o=(this.props.transitCondition||'Auto');
+    if(o!=='Auto') return {Frequent:'good',Occasional:'mid',None:'bad'}[o];
+    const s=100; return s>=70?'good':s>=40?'mid':'bad';
+  }
+  waterLevel(){
+    const o=(this.props.waterCondition||'Auto');
+    if(o!=='Auto') return {Clean:'good',Filter:'mid',Unsafe:'bad'}[o];
+    const s=92; return s>=75?'good':s>=45?'mid':'bad';
+  }
+  lightPage(){
+    const m={
+      Greige:'radial-gradient(ellipse 120% 80% at 50% -20%, #EFEEEA 0%, #DEDCD3 68%, #D4D2C8 100%)',
+      Pearl:'radial-gradient(ellipse 120% 80% at 50% -20%, #F4F5F6 0%, #E2E5E8 70%, #D6DADE 100%)',
+      Taupe:'radial-gradient(ellipse 120% 80% at 50% -20%, #ECE7DD 0%, #DAD3C5 68%, #CCC4B3 100%)',
+      Sapphire:'radial-gradient(ellipse 120% 80% at 50% -20%, #EEF1F5 0%, #DBE1E9 70%, #CDD6E1 100%)',
+    };
+    return m[this.props.lightBg||'Greige']||m.Greige;
+  }
+  servicesModel(){
+    const C='var(--green)',A='var(--amber)',R='var(--red)',F='var(--faint)';
+    const sc={active:C,expiring:A,needed:R,transferred:F};
+    const scBg={active:'rgba(84,203,126,.16)',expiring:'var(--amberSoft)',needed:'var(--redSoft)',transferred:'var(--track)'};
+    const slabel={active:'Active',expiring:'Expiring',needed:'Needs setup',transferred:'Done'};
+    const alabel={transfer:'Transfer →',cancel:'Cancel →',setup:'Set up →',update_address:'Update →',will_end:'Keep ✓'};
+    const cur=[
+      {id:'electric',name:'Electric',provider:'Austin Energy',emoji:'⚡',cat:'Utilities',status:'active',renewal:'Sep 1',account:'#AE-0042918',action:'transfer'},
+      {id:'water',name:'Water',provider:'Austin Water',emoji:'💧',cat:'Utilities',status:'active',renewal:'Sep 1',account:'#AW-77310',action:'cancel'},
+      {id:'internet',name:'Internet',provider:'AT&T Fiber',emoji:'📡',cat:'Utilities',status:'expiring',renewal:'Jul 28',account:'#ATT-559021',action:'transfer'},
+      {id:'gas',name:'Gas',provider:'CenterPoint Energy',emoji:'🔥',cat:'Utilities',status:'active',renewal:'Sep 1',account:'#CP-118842',action:'cancel'},
+      {id:'mail',name:'Mail & Postal',provider:'USPS',emoji:'📬',cat:'Government',status:'needed',action:'setup'},
+      {id:'dmv',name:'DMV',provider:'Texas DMV',emoji:'🚗',cat:'Government',status:'needed',account:'DL #41209883',action:'update_address'},
+      {id:'renters',name:'Renters Insurance',provider:'Lemonade',emoji:'🏠',cat:'Insurance',status:'active',renewal:'Dec 1',account:'POL-2291',action:'update_address'},
+      {id:'netflix',name:'Netflix',provider:'Netflix Inc.',emoji:'📺',cat:'Subscriptions',status:'active',renewal:'Aug 5',action:'will_end'},
+      {id:'spotify',name:'Spotify',provider:'Spotify AB',emoji:'🎵',cat:'Subscriptions',status:'active',renewal:'Aug 12',action:'will_end'},
+    ];
+    const newl=[
+      {id:'coned',name:'Electric',provider:'ConEdison',emoji:'⚡',cat:'Utilities',status:'needed',detail:'Pending account setup',action:'setup',newHome:true},
+      {id:'conedgas',name:'Gas',provider:'Con Ed Gas',emoji:'🔥',cat:'Utilities',status:'active',detail:'Ready to activate on arrival',newHome:true},
+      {id:'fios',name:'Internet',provider:'Verizon Fios',emoji:'📡',cat:'Utilities',status:'needed',detail:'Select a plan to continue',action:'setup',newHome:true},
+      {id:'uspsfwd',name:'USPS Forward',provider:'USPS',emoji:'📬',cat:'Government',status:'active',detail:'Forwarding active from Sep 14',newHome:true},
+      {id:'nydmv',name:'NY DMV',provider:'New York State DMV',emoji:'🚗',cat:'Government',status:'needed',detail:'License needs NY update',action:'update_address',newHome:true},
+      {id:'nyrenters',name:'Renters Insurance',provider:'Lemonade',emoji:'🏠',cat:'Insurance',status:'active',detail:'Address update queued',newHome:true},
+    ];
+    const order=['Utilities','Government','Insurance','Subscriptions'];
+    const emoji={Utilities:'⚡',Government:'🏛',Insurance:'🛡',Subscriptions:'📺'};
+    const build = list => order.map(cat=>{
+      const items=list.filter(s=>s.cat===cat).map(s=>({
+        ...s, statusColor:sc[s.status], statusBg:scBg[s.status],
+        statusText: s.newHome ? (s.status==='active'?'Ready':'Pending') : slabel[s.status],
+        accent: sc[s.status],
+        keyInfo: s.detail || s.account || (s.renewal?('Renews '+s.renewal):'Action required'),
+        showAction: !!s.action,
+        actionText: alabel[s.action]||'',
+        actionColor: s.status==='needed'?R:s.status==='expiring'?A:'var(--gold)',
+        actionBg: s.status==='needed'?'var(--redSoft)':s.status==='expiring'?'var(--amberSoft)':'var(--goldSoft)',
+        actionBorder: s.status==='needed'?R:s.status==='expiring'?A:'var(--border-gold)',
+        cardBorder: s.status==='expiring'?'var(--amberLine)':s.status==='needed'?'var(--redLine)':'var(--border)',
+        open:()=>this.push('service-detail'),
+      }));
+      return {cat, emoji:emoji[cat], count:items.length, items};
+    }).filter(c=>c.count>0);
+    return {currentCats:build(cur), newCats:build(newl)};
+  }
+
+  renderVals(){
+    const T = this.theme();
+    const {tab, stack, dark} = this.state;
+    const {tasks} = this.data();
+    const done = this.state.done;
+    const doneCount = tasks.filter(t=>done[t.id]).length;
+    const pct = Math.round(doneCount/tasks.length*100);
+    const navC = k => tab===k && !stack ? 'var(--gold)' : 'var(--faint)';
+
+    const ds = [
+      {k:'weather',label:'Weather',big:'72°',sub:'Partly cloudy · +4° today',tag:'Stable',tone:'var(--teal)',icon:'M12 3v1M12 20v1M4.2 4.2l.7.7M19.1 19.1l.7.7M3 12h1M20 12h1M4.2 19.8l.7-.7M19.1 4.9l.7-.7M16 12a4 4 0 11-8 0 4 4 0 018 0z'},
+      {k:'air',label:'Air Quality',big:'AQI 42',sub:'Good · clean outdoor window',tag:'Good',tone:'var(--green)',icon:'M3 8h13a3 3 0 10-3-3M3 12h17a3 3 0 11-3 3M3 16h10a2.5 2.5 0 11-2.5 2.5'},
+      {k:'water',label:'Water',big:'92',sub:'Clear · lead risk low',tag:'Clear',tone:'var(--teal)',icon:'M12 3s6 6.5 6 11a6 6 0 11-12 0c0-4.5 6-11 6-11z'},
+      {k:'safety',label:'Area Confidence',big:'6.8',sub:'Lit route · safe day & night',tag:'Moderate',tone:'var(--amber)',icon:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'},
+      {k:'transit',label:'Transit',big:'100',sub:'8 lines · 32 min commute',tag:'3 min',tone:'var(--teal)',icon:'M4 11V6a3 3 0 013-3h10a3 3 0 013 3v5M4 11h16M4 11v5a2 2 0 002 2h12a2 2 0 002-2v-5M7 21l1.5-3M17 21l-1.5-3M8 7h8'},
+      {k:'cost',label:'Cost vs Austin',big:'+87%',sub:'Rent +185% · transit −28%',tag:'High',tone:'var(--red)',icon:'M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6'},
+      {k:'housing',label:'Housing',big:'$3,950',sub:'Rent 1BR · Buy ~$1.2M',tag:'Market',tone:'var(--gold)',icon:''},
+    ];
+    const tint = (tone)=>({tone, glow:tone.replace('var(','').replace(')','') , });
+    const typeMap={weather:'weather',air:'air',water:'water',safety:'area',transit:'transit',cost:'cost',housing:'housing'};
+    const levelMap={weather:this.weatherLevel(),air:this.airLevel(),water:this.waterLevel(),safety:this.areaLevel(),transit:this.transitLevel(),cost:this.costLevel(),housing:'mid'};
+    const prio={crit:4,bad:3,mid:2,good:1};
+    const scoreMap={weather:7.2,air:8.6,water:9.2,safety:6.8,transit:9.5,cost:3.2,housing:5.4};
+    const bandName={1:'Critical',2:'Poor',3:'Fair',4:'Good',5:'Excellent'};
+    const dossier = ds.map(d=>{
+      const map={'var(--teal)':T.teal,'var(--green)':T.green,'var(--amber)':T.amber,'var(--red)':T.red,'var(--gold)':T.gold};
+      const hex=map[d.tone]; const n=parseInt(hex.slice(1),16);const r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+      const lvl=levelMap[d.k];
+      const score=scoreMap[d.k]; const band=Math.min(5,Math.max(1,Math.ceil(score/2)));
+      const bandHex={1:T.red,2:T.amber,3:T.gold,4:T.teal,5:T.green}[band];
+      const segs=[0,1,2,3,4].map(i=>i<band?bandHex:'rgba(255,255,255,0.08)');
+      return {...d, glow:`rgba(${r},${g},${b},0.18)`, iconBg:`rgba(${r},${g},${b},0.14)`, type:typeMap[d.k], level:lvl, priority:prio[lvl]||1, score:score.toFixed(1), band, bandTone:bandHex, bandLabel:bandName[band], segs};
+    });
+    dossier.sort((a,b)=>b.priority-a.priority);
+    const di=this.state.dossierIdx||0;
+    const dossierDots = dossier.map((d,i)=>({w:i===di?'16px':'5px', bg:i===di?'var(--gold)':'var(--faint)'}));
+
+    const rentBands=[{type:'Studio',price:'$2,850',w:'42%'},{type:'1BR',price:'$3,950',w:'64%'},{type:'2BR',price:'$5,800',w:'94%'}];
+
+    const urgentTasks = tasks.filter(t=>t.urgent).slice(0,3).map(t=>({
+      ...t, done:!!done[t.id], toggle:()=>this.toggleTask(t.id),
+      strike: done[t.id]?'line-through':'none',
+      checkBorder: done[t.id]?'var(--green)':'var(--amber)',
+      checkBg: done[t.id]?'var(--green)':'transparent',
+    }));
+
+    // ----- Moving -----
+    const catEmoji={Government:'🏛',Utilities:'⚡',Finance:'💰',Logistics:'📦',Insurance:'🛡'};
+    const moveTasks = tasks.map(t=>({...t, done:!!done[t.id], toggle:()=>this.toggleTask(t.id),
+      strike: done[t.id]?'line-through':'none',
+      accent: done[t.id]?'var(--green)':t.urgent?'var(--red)':'var(--faint)',
+      checkBorder: done[t.id]?'var(--green)':t.urgent?'var(--red)':'var(--faint)',
+      checkBg: done[t.id]?'var(--green)':'transparent',
+      catEmoji: catEmoji[t.cat]||'•',
+      metaColor: t.urgent&&!done[t.id]?'var(--red)':'var(--faint)',
+      cardBorder: t.urgent&&!done[t.id]?'var(--amberLine)':'var(--border)',
+    }));
+    const adminTasks = moveTasks.filter(t=>!t.done).concat(moveTasks.filter(t=>t.done)).slice(0,6);
+    const critical = tasks.filter(t=>t.urgent&&!done[t.id]).length;
+    const nextAction = tasks.find(t=>t.urgent&&!done[t.id]) || {title:'All critical tasks complete',due:'—',cat:'Logistics'};
+    const movePhases = [
+      {name:'Research & Book',range:'Jun 1 – 15',status:'done',tasks:'4 tasks · complete'},
+      {name:'Admin Sprint',range:'Jun 15 – Jul 15',status:'current',tasks:'3 tasks due now'},
+      {name:'Final Preparations',range:'Jul 15 – Sep 1',status:'future',tasks:'6 tasks'},
+      {name:'Move Day',range:'Sep 15',status:'future',tasks:'4 tasks'},
+      {name:'Settle In',range:'Sep 15 – Oct 15',status:'future',tasks:'5 tasks'},
+    ].map(p=>{
+      const cur=p.status==='current', past=p.status==='done';
+      return {...p, cur, past, future:p.status==='future',
+        badge: cur?'Current':past?'Complete':'Upcoming',
+        badgeColor: cur?'var(--gold)':past?'var(--green)':'var(--faint)',
+        badgeBg: cur?'var(--goldSoft)':past?'rgba(84,203,126,0.16)':'var(--track)',
+        cardBg: cur?'var(--goldSoft)':'var(--surface)',
+        borderC: cur?'var(--border-gold)':'var(--border)',
+        taskColor: cur?'var(--amber)':'var(--dim)',
+      };
+    });
+    const moveCats=[
+      {emoji:'🏛',label:'Government',pct:'33%',color:'var(--teal)'},
+      {emoji:'⚡',label:'Utilities',pct:'50%',color:'var(--amber)'},
+      {emoji:'💰',label:'Finance',pct:'100%',color:'var(--green)'},
+      {emoji:'📦',label:'Logistics',pct:'75%',color:'var(--gold)'},
+    ];
+    const opsSignals=[
+      {label:'Critical path',value:critical+' open',color:'var(--red)'},
+      {label:'Service risk',value:'1 expiring',color:'var(--amber)'},
+      {label:'Weather window',value:'Clear',color:'var(--teal)'},
+    ];
+
+    // ----- Services -----
+    const svc = this.servicesModel();
+    const loc = this.state.loc;
+    const locTabs = [
+      {emoji:'🏠',label:'Austin, TX',note:'Current',active:loc==='current',go:()=>this.setLoc('current')},
+      {emoji:'🏢',label:'New York, NY',note:'Moving to',active:loc==='new',go:()=>this.setLoc('new')},
+    ].map(t=>({...t,
+      bg:t.active?'linear-gradient(135deg,var(--gold-lt),var(--gold))':'var(--surface)',
+      col:t.active?'var(--on-gold)':'var(--text)',
+      sub:t.active?'var(--on-gold)':'var(--faint)',
+      border:t.active?'transparent':'var(--border)',
+    }));
+    const svcAlerts=[
+      {icon:'📡',title:'Internet expiring Jul 28',sub:'AT&T Fiber — transfer before move',action:'Transfer →',color:'var(--amber)',bg:'var(--amberSoft)',line:'var(--amberLine)'},
+      {icon:'🚗',title:'DMV update needed',sub:'NY license update required',action:'Start →',color:'var(--red)',bg:'var(--redSoft)',line:'var(--redLine)'},
+      {icon:'📬',title:'USPS forward not set',sub:'Forwarding needed 7 days out',action:'Set up →',color:'var(--red)',bg:'var(--redSoft)',line:'var(--redLine)'},
+    ];
+
+    // ----- Addresses -----
+    const ADDRS=[
+      {label:'Home',street:'1234 Congress Ave',city:'Austin, TX 78701',lat:30.2672,lng:-97.7431,status:'Active home',type:'Home',icon:'🏠',tone:'var(--green)',primary:true,move:'',tied:[['⚡','Electric · Austin Energy'],['💧','Water · Austin Water'],['📡','Internet · AT&T Fiber'],['🔥','Gas · CenterPoint']]},
+      {label:'New home',street:'560 5th Ave',city:'New York, NY 10036',lat:40.7549,lng:-73.9840,status:'Move-in Sep 15',type:'New home',icon:'🔑',tone:'var(--gold)',primary:false,move:'Sep 15, 2024',tied:[['⚡','Electric · ConEdison'],['📡','Internet · Verizon Fios'],['🔥','Gas · Con Ed Gas']]},
+      {label:'Office',street:'200 Park Ave',city:'New York, NY 10166',lat:40.7527,lng:-73.9772,status:'Work address',type:'Work',icon:'🏢',tone:'var(--teal)',primary:false,move:'',tied:[['📡','Internet · Spectrum Business'],['⚡','Power · ConEdison']]},
+      {label:'Lake cabin',street:'88 Lakeway Dr',city:'Lakeway, TX 78734',lat:30.3626,lng:-97.9794,status:'Seasonal',type:'Vacation',icon:'🌲',tone:'var(--amber)',primary:false,move:'',tied:[['💧','Water · WTCPUA']]},
+      {label:'Temp stay',street:'15 W 29th St',city:'New York, NY 10001',lat:40.7457,lng:-73.9881,status:'Until Sep 15',type:'Temporary',icon:'🧳',tone:'var(--dim)',primary:false,move:'',tied:[]},
+    ];
+    const aSel=Math.min(this.state.addrSel||0, 4);
+    const addrTabs=ADDRS.map((a,i)=>({label:a.label,icon:a.icon,active:i===aSel,go:()=>this.setAddrSel(i),
+      bg:i===aSel?'var(--surface2)':'var(--surface)',col:i===aSel?a.tone:'var(--dim)',bd:i===aSel?a.tone:'var(--border)'}));
+    const A=ADDRS[aSel];
+    const amap=this.osmMap(A.lat,A.lng,14);
+    const addrMapEl=React.createElement('div',{style:{position:'absolute',left:amap.leftCss,top:amap.topCss,width:'768px',height:'768px',filter:'var(--map-filter)'}}, amap.tiles.map(t=>React.createElement('img',{key:t.x+'_'+t.y+'_'+t.u,src:t.u,style:{position:'absolute',left:t.x+'px',top:t.y+'px',width:'256px',height:'256px'}})));
+    const addrTied=A.tied.map(t=>({e:t[0],n:t[1]}));
+    const addrList=ADDRS.map((a,i)=>({label:a.label,city:a.city,icon:a.icon,status:a.status,tone:a.tone,go:()=>this.setAddrSel(i),bd:i===aSel?a.tone:'var(--border)',bg:i===aSel?'var(--surface2)':'var(--surface)',activeDot:i===aSel}));
+    // ----- More -----
+    const ic={user:'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8',bell:'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0',card:'M2 7h20v12H2zM2 11h20',book:'M4 19V5a2 2 0 012-2h12v16H6a2 2 0 00-2 2zM6 21h12',shield:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',file:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6'};
+    const moreGroups=[
+      {title:'Account',items:[
+        {label:'Profile',icon:ic.user,go:()=>this.push('profile')},
+        {label:'Notifications',icon:ic.bell,go:()=>this.push('settings')},
+        {label:'Subscription',icon:ic.card,go:()=>this.push('subscription')},
+      ]},
+      {title:'Tools',items:[
+        {label:'Moving budget',icon:'M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6',go:()=>this.push('budget')},
+        {label:'Compare providers',icon:'M13 2L3 14h7l-1 8 10-12h-7z',go:()=>this.push('providers')},
+        {label:'Custom providers',icon:'M12 5v14M5 12h14',go:()=>this.push('customproviders')},
+        {label:'Reminders',icon:ic.bell,go:()=>this.push('reminders')},
+        {label:'Search everything',icon:'M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.3-4.3',go:()=>this.push('search')},
+        {label:'Invite family',icon:'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z',go:()=>this.push('invitations')},
+        {label:'Help & support',icon:'M12 17h.01M12 14a2 2 0 10-2-2M12 22a10 10 0 100-20 10 10 0 000 20z',go:()=>this.push('help')},
+      ]},
+      {title:'App',items:[
+        {label:'Moving Blog',icon:ic.book,go:()=>this.push('blog')},
+        {label:'Privacy & Data',icon:ic.shield,go:()=>this.push('privacy')},
+        {label:'Terms & Policies',icon:ic.file,go:()=>this.push('privacy')},
+      ]},
+    ];
+
+    const stackTitles={notifications:'Notifications',profile:'Profile',subscription:'Subscription',settings:'Settings',blog:'Moving Guides','blog-post':'Guide','service-detail':'Service',privacy:'Privacy & Data',budget:'Moving budget'};
+    // ----- Stack screen data -----
+    const budget={total:'$3,240', spent:'$1,180', items:[
+      {emoji:'🚚',name:'Movers & truck',amt:'$1,850',pct:'57%'},
+      {emoji:'⚡',name:'Utility setup & deposits',amt:'$420',pct:'13%'},
+      {emoji:'🏠',name:'First-month essentials',amt:'$540',pct:'17%'},
+      {emoji:'📦',name:'Packing supplies',amt:'$180',pct:'6%'},
+      {emoji:'🧾',name:'Address changes & fees',amt:'$250',pct:'7%'},
+    ]};
+    const notifs=[
+      {title:'Internet renewal in 14 days',body:'AT&T Fiber expires Jul 28 — transfer or cancel before your move.',time:'2h ago',read:false,color:'var(--amber)',bg:'var(--amberSoft)',icon:'M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z'},
+      {title:'Mail forwarding deadline',body:'USPS forwarding needs to be active 7 days before move date.',time:'1d ago',read:false,color:'var(--red)',bg:'var(--redSoft)',icon:'M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h16.9a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z'},
+      {title:'Rent price update for NYC',body:'Midtown 1BR average rose 1.2% this month — now $3,950.',time:'2d ago',read:true,color:'var(--dim)',bg:'var(--track)',icon:'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9'},
+      {title:'48 days to go — great progress',body:"You're on track through your moving checklist. Keep it up.",time:'3d ago',read:true,color:'var(--dim)',bg:'var(--track)',icon:'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9'},
+    ].map(n=>({...n, op:n.read?'0.62':'1', borderC:n.read?'var(--border)':n.color}));
+    const blogPosts=[
+      {tag:'Planning',title:'10 things to do 60 days before moving',meta:'5 min read · Jun 10'},
+      {tag:'Utilities',title:'How to transfer your utilities efficiently',meta:'4 min read · Jun 8'},
+      {tag:'Government',title:'The complete DMV address change guide',meta:'7 min read · Jun 3'},
+      {tag:'Tools',title:'Best moving apps of 2024',meta:'3 min read · May 28'},
+    ].map(p=>({...p, open:()=>this.push('blog-post')}));
+    const post={tag:'Planning',title:'10 things to do 60 days before moving',meta:'5 min read · Jun 10',paras:[
+      'Planning your move early gives you a significant advantage. Most people underestimate the number of steps involved.',
+      'Start by working backward from your move date. Critical tasks — utilities, mail forwarding, and government updates — should be handled around 60 days out.',
+      'Services like electric and water often require two to three weeks of notice. USPS mail forwarding takes 7–10 business days to activate.',
+      'Your Home Dossier tracks neighborhood data, rent trends, and local setup readiness for your destination, so nothing falls through the cracks.',
+    ]};
+    const subFeatures=[['♾️','Unlimited services'],['🧠','AI move checklist'],['💰','Budget tracker'],['🔔','Priority reminders'],['📦','Custom providers'],['🏛','Home Dossier intelligence']].map(x=>({e:x[0],t:x[1]}));
+    const settingsGroups=[
+      {title:'Account',items:[{label:'Profile',go:()=>this.push('profile')},{label:'Subscription',go:()=>this.push('subscription')}]},
+      {title:'Legal',items:[{label:'Privacy & Data',go:()=>this.push('privacy')},{label:'Terms of Service',go:()=>{}}]},
+    ];
+    const serviceDetail={name:'Internet',provider:'AT&T Fiber',emoji:'📡',status:'Expiring',statusColor:'var(--amber)',statusBg:'var(--amberSoft)',
+      rows:[['Category','Utilities'],['Account','#ATT-559021'],['Next renewal','Jul 28'],['Days remaining','14 days']].map(x=>({k:x[0],v:x[1]}))};
+    const profileFields=[['Full name','Liam Kutay'],['Email','liam@example.com']].map(x=>({k:x[0],v:x[1]}));
+    const ageRanges=['18–24','25–34','35–44','45–54','55+'].map(r=>({r, on:r==='25–34',
+      bg:r==='25–34'?'var(--goldSoft)':'var(--surface)', col:r==='25–34'?'var(--gold)':'var(--dim)', bd:r==='25–34'?'var(--border-gold)':'var(--border)'}));
+
+    return {
+      rootStyle: this.rootStyle(),
+      outerMinH:this.props.embed?'0':'100vh', outerPad:this.props.embed?'0':'24px', outerBg:this.props.embed?'transparent':'var(--page)',
+      isDark: dark, isLight: !dark,
+      tabHome: tab==='home', tabMoving: tab==='moving', tabServices: tab==='services', tabAddresses: tab==='addresses', tabMore: tab==='more',
+      cHome:navC('home'), cMoving:navC('moving'), cServices:navC('services'), cAddresses:navC('addresses'), cMore:navC('more'),
+      stackOpen: !!stack, stackTitle: stackTitles[stack]||'', tabsDisplay: stack?'none':'block',
+      stkModule: ['reminders','help','search','providers','customproviders','invitations'].indexOf(stack)>=0,
+      stkNative: !!stack && ['reminders','help','search','providers','customproviders','invitations'].indexOf(stack)<0,
+      stkReminders:stack==='reminders', stkHelp:stack==='help', stkSearch:stack==='search', stkProviders:stack==='providers', stkCustom:stack==='customproviders', stkInvites:stack==='invitations',
+      splash: this.state.splash,
+      greeting:'Good morning', userName:'Liam Kutay', dateStr:'Thursday, June 20',
+      daysLeft:48, fromCity:'Austin, TX', toCity:'New York, NY', moveDate:'Sep 15, 2024',
+      taskDone:doneCount, taskTotal:tasks.length, pct, pctW:pct+'%',
+      neighborhood:'Midtown Manhattan', city:'New York, NY 10036',
+      dossier, rentBands,
+      dossierFull:this.state.dossierFull, toggleDossierFull:()=>this.toggleDossierFull(),
+      dViewLabel:this.state.dossierFull?'Swipe view':'View full',
+      dWrap:this.state.dossierFull?'wrap':'nowrap', dOverflow:this.state.dossierFull?'visible':'auto',
+      dSnap:this.state.dossierFull?'none':'x mandatory', dCardW:this.state.dossierFull?'calc(50% - 6px)':'76%',
+      dossierDots, dossierSwipe:!this.state.dossierFull, onDossierScroll:(e)=>this.onDossierScroll(e),
+      briefText:'Route looks good — Midtown fits your commute. 3 tasks need you this week, and AT&T internet expires Jul 28. Costs run about 87% above Austin, mostly rent.',
+      briefCritical:critical,
+      aiNote:'Strong transit offsets car costs. Budget ~87% more than Austin — Midtown still fits your commute profile best.',
+      unread:2,
+      urgentTasks,
+      featuredTag:'Planning', featuredTitle:'10 things to do 60 days before moving', featuredMeta:'5 min read · Jun 10',
+      moveTasks, adminTasks, movePhases, moveCats, opsSignals, moveCritical:critical,
+      nextActionTitle:nextAction.title, nextActionDue:nextAction.due, nextActionCat:nextAction.cat,
+      showCats:this.state.showCats, catsRot:this.state.showCats?'90deg':'0deg',
+      toggleCats:()=>this.toggleCats(), goSettings:()=>this.push('settings'),
+      locTabs, svcAlerts, locNew: loc==='new',
+      activeCats: loc==='current'?svc.currentCats:svc.newCats,
+      svcHealth:[{label:'Active',val:'6',color:'var(--green)'},{label:'Attention',val:'3',color:'var(--amber)'},{label:'On track',val:'67%',color:'var(--teal)'}],
+      trackPct:'67%', trackText:'6 of 9 services on track',
+      svcMonthlyOld:'$312/mo', svcMonthlyNew:'$418/mo', svcMonthlyDelta:'+$106',
+      addrTabs, addrMapEl,
+      addrLabel:A.label, addrStreet:A.street, addrCity:A.city, addrStatus:A.status, addrTone:A.tone,
+      addrMove:A.move, addrHasMove:!!A.move, addrPrimary:A.primary, addrTied, addrType:A.type, addrCount:ADDRS.length, addrTiedEmpty:addrTied.length===0, addrList,
+      moreGroups, userEmail:'liam@example.com', userAvatar:'LK',
+      goProfile:()=>this.push('profile'), goManageSub:()=>this.push('subscription'),
+      themeLabel: dark?'Switch to light mode':'Switch to dark mode',
+      notifs, blogPosts, post, subFeatures, settingsGroups, serviceDetail, profileFields, ageRanges, budget,
+      stkNotifs:stack==='notifications', stkProfile:stack==='profile', stkSub:stack==='subscription',
+      stkSettings:stack==='settings', stkBlog:stack==='blog', stkPost:stack==='blog-post',
+      stkServiceDetail:stack==='service-detail', stkPrivacy:stack==='privacy', stkBudget:stack==='budget',
+      toggleTheme:()=>this.toggleTheme(),
+      goHome:()=>this.setTab('home'), goMoving:()=>this.setTab('moving'), goServices:()=>this.setTab('services'),
+      goAddresses:()=>this.setTab('addresses'), goMore:()=>this.setTab('more'),
+      goNotifs:()=>this.push('notifications'), goSearch:()=>this.push('search'), goAddProvider:()=>this.push('customproviders'), goBlog:()=>this.push('blog'), openFeatured:()=>this.push('blog-post'),
+      pop:()=>this.pop(), dismissSplash:()=>this.setState({splash:false}),
+    };
+  }
+}
+</script>
+</body>
+</html>

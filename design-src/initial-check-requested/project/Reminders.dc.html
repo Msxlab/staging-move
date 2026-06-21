@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#06080f;font-family:'DM Sans',sans-serif}.r-scroll{scrollbar-width:none}.r-scroll::-webkit-scrollbar{display:none}@keyframes r-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.r-rise{animation:r-rise .35s ease both}</style>
+</helmet>
+<div style="{{ outer }}">
+  <div style="{{ frame }}">
+    <sc-if value="{{ chrome }}"><div style="display:flex;justify-content:space-between;padding:14px 26px 4px;font-size:13px;font-weight:600;color:#EFF3FA"><span>9:41</span><span style="color:#41526F">▮▮▮ ▼</span></div></sc-if>
+    <div style="padding:8px 22px 6px">
+      <div style="color:#EFF3FA;font-family:'Playfair Display',serif;font-size:25px;font-weight:800">Reminders</div>
+      <div style="color:#8A99B6;font-size:11px;margin-top:2px">{{ openCount }} open · {{ doneCount }} done</div>
+    </div>
+    <div class="r-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:8px 22px 28px">
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+        <div style="margin-bottom:18px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="width:7px;height:7px;border-radius:50%;background:{{ g.color }}"></span><span style="color:#8A99B6;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase">{{ g.title }}</span><span style="color:#41526F;font-size:11px">{{ g.n }}</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="3">
+              <div class="r-rise" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:#121B2D;border:1px solid {{ t.border }};position:relative;overflow:hidden;opacity:{{ t.op }}">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:{{ t.accent }}"></div>
+                <button onClick="{{ t.toggle }}" style="width:22px;height:22px;border-radius:7px;border:2px solid {{ t.checkBd }};background:{{ t.checkBg }};flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:3px">
+                  <sc-if value="{{ t.done }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if>
+                </button>
+                <div style="flex:1;min-width:0"><div style="color:#EFF3FA;font-size:13px;font-weight:600;text-decoration:{{ t.strike }}">{{ t.title }}</div><div style="color:{{ t.dueColor }};font-size:10.5px;margin-top:1px">Due {{ t.due }}</div></div>
+                <span style="font-size:9.5px;font-weight:700;color:#8A99B6;background:rgba(255,255,255,0.05);padding:4px 9px;border-radius:99px">{{ t.cat }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ chrome }}"><div style="position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:130px;height:5px;border-radius:99px;background:rgba(255,255,255,0.18)"></div></sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  state={done:{r6:true}};
+  toggle(k){ this.setState(s=>({done:{...s.done,[k]:!s.done[k]}})); }
+  renderVals(){
+    const defs=[
+      {k:'r1',title:'Forward mail with USPS',due:'Jun 25',cat:'Government',grp:'over'},
+      {k:'r2',title:'Transfer AT&T before move',due:'Jul 28',cat:'Utilities',grp:'week'},
+      {k:'r3',title:'Update driver’s license address',due:'Jul 1',cat:'Government',grp:'week'},
+      {k:'r4',title:'Book moving truck',due:'Jun 30',cat:'Logistics',grp:'week'},
+      {k:'r5',title:'Set up ConEdison electric',due:'Sep 10',cat:'Utilities',grp:'soon'},
+      {k:'r6',title:'Notify bank of address change',due:'Aug 1',cat:'Finance',grp:'soon'},
+      {k:'r7',title:'Update voter registration',due:'Aug 15',cat:'Government',grp:'soon'},
+    ];
+    const done=this.state.done;
+    const meta={over:{title:'Overdue',color:'#E25C5C',accent:'#E25C5C'},week:{title:'This week',color:'#E0A85A',accent:'#E0A85A'},soon:{title:'Upcoming',color:'#37C2C9',accent:'#8A99B6'}};
+    const mk=t=>({...t, done:!!done[t.k], toggle:()=>this.toggle(t.k),
+      strike:done[t.k]?'line-through':'none',
+      accent:done[t.k]?'#54CB7E':meta[t.grp].accent,
+      checkBd:done[t.k]?'#54CB7E':meta[t.grp].accent, checkBg:done[t.k]?'#54CB7E':'transparent',
+      border:done[t.k]?'rgba(110,150,225,0.12)':(t.grp==='over'?'rgba(226,92,92,0.25)':'rgba(110,150,225,0.12)'),
+      dueColor:done[t.k]?'#41526F':(t.grp==='over'?'#E25C5C':'#8A99B6'),
+      op:done[t.k]?'0.6':'1'});
+    const groups=['over','week','soon'].map(g=>{const items=defs.filter(d=>d.grp===g).map(mk);return {title:meta[g].title,color:meta[g].color,n:items.length,items};}).filter(g=>g.n>0);
+    const openCount=defs.filter(d=>!done[d.k]).length, doneCount=defs.filter(d=>done[d.k]).length;
+    return {outer:this.props.embed?'height:100%;width:100%':'min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 70% 50% at 50% 0%,#14110b,#06080f 72%)', frame:this.props.embed?'position:relative;display:flex;flex-direction:column;height:100%;width:100%;background:#0A0F1C':'position:relative;width:390px;height:844px;border-radius:42px;overflow:hidden;background:#0A0F1C;border:1px solid rgba(110,150,225,0.10);box-shadow:0 40px 120px rgba(0,0,0,.6);display:flex;flex-direction:column', chrome:!this.props.embed, groups,openCount,doneCount};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#06080f;font-family:'DM Sans',sans-serif}input{font-family:inherit}@keyframes a-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}.a-rise{animation:a-rise .45s cubic-bezier(.2,.7,.3,1) both}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 70% 50% at 50% 0%,#14110b,#06080f 72%)">
+  <div style="width:390px;height:844px;border-radius:42px;overflow:hidden;background:#0A0F1C;border:1px solid rgba(110,150,225,0.10);box-shadow:0 40px 120px rgba(0,0,0,.6);display:flex;flex-direction:column;padding:0 26px">
+    <div style="display:flex;justify-content:space-between;padding:16px 0 4px;font-size:13px;font-weight:600;color:#EFF3FA"><span>9:41</span><span style="color:#41526F">▮▮▮ ▼</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:40px">
+      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:34px">
+        <div style="width:78px;height:78px;border-radius:20px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#0E1A30,#070D1C);box-shadow:0 0 0 1px rgba(203,164,94,0.22)"><dc-import name="Raccoon" size="62" mood="calm" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="#CBA45E" pupil="#04080F" hint-size="62px,62px"></dc-import></div>
+        <div style="font-family:'Playfair Display',serif;font-size:30px;font-weight:900;color:#EFF3FA;margin-top:16px">{{ heading }}</div>
+        <div style="color:#8A99B6;font-size:13.5px;margin-top:6px;text-align:center;max-width:280px">{{ sub }}</div>
+      </div>
+
+      <sc-if value="{{ isSignin }}" hint-placeholder-val="{{ true }}">
+        <div class="a-rise" style="display:flex;flex-direction:column;gap:11px">
+          <input type="email" placeholder="Email address" style="padding:15px 16px;border-radius:14px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#EFF3FA;font-size:14px;outline:none"/>
+          <input type="password" placeholder="Password" style="padding:15px 16px;border-radius:14px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#EFF3FA;font-size:14px;outline:none"/>
+          <button onClick="{{ goForgot }}" style="align-self:flex-end;background:none;border:none;color:#CBA45E;font-size:12.5px;font-weight:600;cursor:pointer;padding:2px 0">Forgot password?</button>
+        </div>
+        <button onClick="{{ goApp }}" style="width:100%;margin-top:18px;padding:16px;border-radius:16px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#DCBC7C,#CBA45E,#B0852F);color:#0A0F1C;border:none;cursor:pointer;box-shadow:0 8px 28px rgba(203,164,94,0.28)">Sign in</button>
+        <div style="display:flex;align-items:center;gap:12px;margin:20px 0"><div style="flex:1;height:1px;background:rgba(110,150,225,0.12)"></div><span style="color:#41526F;font-size:11px">or</span><div style="flex:1;height:1px;background:rgba(110,150,225,0.12)"></div></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:center;gap:9px;padding:13px;border-radius:14px;background:#fff;color:#0A0F1C;font-size:14px;font-weight:600;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="#0A0F1C"><path d="M16.4 12.2c0-1.6 1.3-2.4 1.4-2.4-.8-1.1-2-1.3-2.4-1.3-1-.1-2 .6-2.5.6s-1.3-.6-2.2-.6c-1.1 0-2.2.7-2.7 1.7-1.2 2-.3 5 .8 6.6.5.8 1.2 1.7 2 1.6.8 0 1.1-.5 2.1-.5s1.2.5 2.1.5 1.4-.8 1.9-1.6c.6-.9.9-1.8.9-1.8s-1.8-.7-1.9-2.8zM14.7 6.7c.5-.6.8-1.4.7-2.2-.7 0-1.5.5-2 1-.4.5-.8 1.3-.7 2 .8.1 1.6-.4 2-.8z"/></svg>Continue with Apple</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:9px;padding:13px;border-radius:14px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#EFF3FA;font-size:14px;font-weight:600;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.6a4.8 4.8 0 01-2.1 3.2v2.6h3.4c2-1.8 3.1-4.5 3.1-7.6z"/><path fill="#34A853" d="M12 22c2.7 0 5-1 6.6-2.5l-3.4-2.6c-.9.6-2 1-3.2 1-2.5 0-4.6-1.7-5.4-4H3.1v2.6A10 10 0 0012 22z"/><path fill="#FBBC05" d="M6.6 13.9a6 6 0 010-3.8V7.5H3.1a10 10 0 000 9z"/><path fill="#EA4335" d="M12 6.1c1.4 0 2.7.5 3.7 1.5l2.7-2.7A10 10 0 003.1 7.5l3.5 2.6c.8-2.3 2.9-4 5.4-4z"/></svg>Continue with Google</div>
+        </div>
+        <div style="text-align:center;margin-top:24px;color:#8A99B6;font-size:13px">New here? <span style="color:#CBA45E;font-weight:600">Create account</span></div>
+      </sc-if>
+
+      <sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
+        <div class="a-rise" style="display:flex;flex-direction:column;gap:11px">
+          <input type="email" placeholder="Email address" style="padding:15px 16px;border-radius:14px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#EFF3FA;font-size:14px;outline:none"/>
+        </div>
+        <button onClick="{{ goSent }}" style="width:100%;margin-top:18px;padding:16px;border-radius:16px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#DCBC7C,#CBA45E,#B0852F);color:#0A0F1C;border:none;cursor:pointer">Send reset link</button>
+        <button onClick="{{ goSignin }}" style="width:100%;margin-top:11px;padding:14px;border-radius:14px;font-size:14px;font-weight:600;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#8A99B6;cursor:pointer">Back to sign in</button>
+      </sc-if>
+
+      <sc-if value="{{ isSent }}" hint-placeholder-val="{{ false }}">
+        <div class="a-rise" style="text-align:center">
+          <div style="width:64px;height:64px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;background:rgba(84,203,126,0.16);color:#54CB7E"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6l-10 7L2 6M2 6h20v12H2z"/></svg></div>
+          <div style="color:#EFF3FA;font-size:17px;font-weight:700;margin-top:16px">Check your inbox</div>
+          <div style="color:#8A99B6;font-size:13.5px;line-height:1.6;margin-top:8px">We sent a reset link to your email. It expires in 30 minutes.</div>
+          <button onClick="{{ goSignin }}" style="width:100%;margin-top:22px;padding:15px;border-radius:14px;font-size:14px;font-weight:700;background:linear-gradient(135deg,#DCBC7C,#CBA45E);color:#0A0F1C;border:none;cursor:pointer">Back to sign in</button>
+        </div>
+      </sc-if>
+    </div>
+    <div style="position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:130px;height:5px;border-radius:99px;background:rgba(255,255,255,0.18)"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  state={view:'signin'};
+  set(v){ this.setState({view:v}); }
+  renderVals(){
+    const v=this.state.view;
+    const head={signin:'Welcome back',forgot:'Reset password',sent:'Reset password'}[v];
+    const sub={signin:'Sign in to pick up your move where you left off.',forgot:'Enter your email and we’ll send a reset link.',sent:''}[v];
+    return {
+      goApp:()=>{try{window.location.href='Move.dc.html';}catch(e){}},
+      isSignin:v==='signin', isForgot:v==='forgot', isSent:v==='sent',
+      heading:head, sub:sub,
+      goForgot:()=>this.set('forgot'), goSignin:()=>this.set('signin'), goSent:()=>this.set('sent'),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#070B14;font-family:'DM Sans',sans-serif;color:#EFF3FA}a{text-decoration:none;color:inherit}@media(max-width:780px){.feat-grid{grid-template-columns:1fr!important}.feat-hero{font-size:34px!important}}</style>
+</helmet>
+<div style="background:#070B14;position:relative;overflow:hidden">
+  <div style="position:absolute;top:-160px;right:-120px;width:620px;height:620px;border-radius:50%;background:radial-gradient(circle,rgba(203,164,94,0.10),transparent 65%);pointer-events:none"></div>
+  <!-- nav -->
+  <div style="max-width:1100px;margin:0 auto;display:none">
+    <div style="display:flex;align-items:center;gap:11px"><div style="width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#0E1A30,#070D1C);box-shadow:0 0 0 1px rgba(203,164,94,0.22)"><dc-import name="Raccoon" size="28" mood="calm" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="#CBA45E" pupil="#04080F" hint-size="28px,28px"></dc-import></div><span style="font-family:'Playfair Display',serif;font-size:21px;font-weight:900">Move</span></div>
+    <a href="#" style="padding:10px 18px;border-radius:11px;background:linear-gradient(135deg,#DCBC7C,#CBA45E);color:#0A0F1C;font-size:13px;font-weight:700">Get the app</a>
+  </div>
+  <!-- hero -->
+  <div style="max-width:760px;margin:0 auto;padding:66px 28px 30px;text-align:center;position:relative">
+    <div style="color:#CBA45E;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase">Features</div>
+    <h1 class="feat-hero" style="font-family:'Playfair Display',serif;font-size:48px;font-weight:900;line-height:1.06;margin-top:12px">Everything your move needs — in one free app</h1>
+    <p style="color:#8A99B6;font-size:17px;line-height:1.6;margin-top:18px">From the first box to your first night in the new place. No spreadsheets, no subscription.</p>
+  </div>
+  <!-- feature blocks -->
+  <div class="feat-grid" style="max-width:1100px;margin:0 auto;padding:20px 28px 70px;display:grid;grid-template-columns:repeat(2,1fr);gap:18px">
+    <sc-for list="{{ features }}" as="f" hint-placeholder-count="8">
+      <div style="border-radius:22px;padding:30px;background:#121B2D;border:1px solid rgba(110,150,225,0.12)">
+        <div style="width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:{{ f.bg }};color:{{ f.col }};font-size:22px">{{ f.icon }}</div>
+        <div style="font-size:21px;font-weight:800;margin-top:18px">{{ f.title }}</div>
+        <div style="color:#8A99B6;font-size:14.5px;line-height:1.6;margin-top:9px">{{ f.body }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="max-width:1100px;margin:0 auto;padding:0 28px 70px">
+    <div style="border-radius:26px;padding:48px;text-align:center;background:linear-gradient(135deg,#DCBC7C,#CBA45E,#B0852F);color:#0A0F1C">
+      <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900">All of it, free. Start today.</div>
+      <a href="#" style="display:inline-block;margin-top:20px;padding:15px 28px;border-radius:14px;background:#0A0F1C;color:#fff;font-size:15px;font-weight:700">Download Move</a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:1500}}">
+class Component extends DCLogic {
+  renderVals(){
+    return { features:[
+      {icon:'🧭',title:'Home Dossier',body:'Live FEMA, EPA & NWS data on your new home — weather, air, water, safety, transit, cost & housing, shown as friendly scenes.',bg:'rgba(203,164,94,0.12)',col:'#CBA45E'},
+      {icon:'⚡',title:'Service transfers',body:'Track, cancel and set up every utility — electric, water, internet, mail, DMV — with deadlines and monthly cost.',bg:'rgba(84,203,126,0.14)',col:'#54CB7E'},
+      {icon:'📍',title:'Real address maps',body:'Home, work, seasonal or temporary — every address on a live map, with the services tied to it.',bg:'rgba(55,194,201,0.14)',col:'#37C2C9'},
+      {icon:'🧠',title:'Daily AI briefing',body:'A plain-English summary of where your move stands and the single most important thing to do next.',bg:'rgba(203,164,94,0.12)',col:'#CBA45E'},
+      {icon:'🔔',title:'Smart reminders',body:'Mail forwarding, license, utility deadlines — timed perfectly so nothing ever slips.',bg:'rgba(224,168,90,0.16)',col:'#E0A85A'},
+      {icon:'💰',title:'Move budget',body:'Movers, deposits, supplies — the whole cost in one place and what you’ve already committed.',bg:'rgba(84,203,126,0.14)',col:'#54CB7E'},
+      {icon:'🔎',title:'Provider compare',body:'See every internet & utility provider at your new address and compare plans before you switch.',bg:'rgba(55,194,201,0.14)',col:'#37C2C9'},
+      {icon:'👥',title:'Share your move',body:'Invite a partner or family — everyone sees the same checklist, with owner, editor & viewer roles.',bg:'rgba(226,92,92,0.16)',col:'#E25C5C'},
+    ]};
+  }
+}
+</script>
+</body>
+</html>
