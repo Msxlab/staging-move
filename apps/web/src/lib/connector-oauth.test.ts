@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   consentUpdate: vi.fn(),
   consentUpdateMany: vi.fn(),
   consentCreate: vi.fn(),
+  isFeatureEnabled: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -25,6 +26,9 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: (...a: unknown[]) => mocks.getRuntimeConfigValue(...a),
+}));
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: (...a: unknown[]) => mocks.isFeatureEnabled(...a),
 }));
 vi.mock("@/lib/shared-encryption", () => ({ decrypt: (v: string) => v, encrypt: (v: string) => v }));
 
@@ -44,7 +48,11 @@ function mockConfig(values: Record<string, string | null>) {
 }
 
 describe("userHasApiConnectorEntitlement - sync requires active annual Pro", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Default: consumer-free pivot OFF, so the annual-Pro rules below are unchanged.
+    mocks.isFeatureEnabled.mockResolvedValue(false);
+  });
   afterEach(() => vi.unstubAllGlobals());
 
   it("allows an active annual Pro subscriber", async () => {
@@ -126,6 +134,26 @@ describe("userHasApiConnectorEntitlement - sync requires active annual Pro", () 
       premiumUntil: FUTURE,
     });
     await expect(userHasApiConnectorEntitlement("u1")).resolves.toBe(true);
+  });
+
+  it("CONSUMER_FREE: a free/no-row consumer gets connectors with NO annual commitment (audit P1-3)", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(null);
+    mocks.isFeatureEnabled.mockResolvedValue(true);
+    await expect(userHasApiConnectorEntitlement("u1")).resolves.toBe(true);
+  });
+
+  it("CONSUMER_FREE does NOT grant a lapsed Stripe payer (H3-safe)", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      plan: "PRO",
+      status: "CANCELED",
+      accessType: "PAID",
+      provider: "STRIPE",
+      billingInterval: "MONTH",
+      canceledAt: PAST,
+      currentPeriodEndsAt: PAST,
+    });
+    mocks.isFeatureEnabled.mockResolvedValue(true);
+    await expect(userHasApiConnectorEntitlement("u1")).resolves.toBe(false);
   });
 });
 

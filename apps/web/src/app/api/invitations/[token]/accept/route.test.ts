@@ -4,6 +4,14 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 vi.mock("@locateflow/shared", () => ({
   getEffectiveEntitlement: vi.fn(() => ({ effectivePlan: "FAMILY" })),
 }));
+// The seat gate in workspace-invite-accept resolves through this helper now
+// (audit P1-2): owner is FAMILY (seatLimitForPlan mocked to 6), consumer-free off.
+vi.mock("@/lib/consumer-entitlement", () => ({
+  resolveConsumerEntitlement: vi.fn(async () => ({
+    entitlement: { effectivePlan: "FAMILY" },
+    consumerFreeApplied: false,
+  })),
+}));
 vi.mock("@/lib/db", () => ({
   prisma: {
     workspaceInvitation: { findUnique: vi.fn(), update: vi.fn(), count: vi.fn() },
