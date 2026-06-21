@@ -10,6 +10,22 @@ Current active targets are DigitalOcean App Platform components on the real doma
 
 The temporary `https://locateflow-staging-owew7.ondigitalocean.app` URL is legacy/starter-only. The old `https://locateflow-staging-owew7.ondigitalocean.app/move-main/login` admin path is deprecated and should not be used for active deployments.
 
+## Dokploy Staging Stack
+
+For a Dokploy staging stack that runs next to the existing production stack on
+the same server, configure these values in the Dokploy app environment before
+the first deploy:
+
+```bash
+DOKPLOY_COMPOSE_PROJECT_NAME=staging-move
+DOKPLOY_CONTAINER_PREFIX=staging-move
+```
+
+Use staging-only domains for `web`, `admin`, and `imgproxy`. Do not point this
+stack at the active `locateflow.com` / `admin.locateflow.com` domains until a
+real cutover is intended. Keep the cron profile disabled during rehearsal unless
+GitHub scheduled cron is disabled for the same target URLs.
+
 ## DigitalOcean App Platform Components
 
 | Component | Domain | Purpose | Build command | Run command |

@@ -75,6 +75,20 @@ Dokploy service/domain mapping:
 - `admin` on port `3001` -> `admin.locateflow.com`
 - `imgproxy` on port `8080` -> `img.locateflow.com`
 
+When running a staging stack next to an existing production stack on the same
+Dokploy server, set a unique compose project name and container prefix in that
+Dokploy app's environment before deploying:
+
+```bash
+DOKPLOY_COMPOSE_PROJECT_NAME=staging-move
+DOKPLOY_CONTAINER_PREFIX=staging-move
+```
+
+Production can omit these values and will keep the existing `locateflow`
+defaults. A second stack must not reuse the production defaults because
+Compose project names, container names, and generated volumes would collide on
+the host.
+
 Before cutover, follow the full runbook in
 `docs/runbooks/dokploy-migration.md`. The migration is whole-MySQL-dump based;
 app-level backup archives are not sufficient because `RuntimeConfigEntry` and
