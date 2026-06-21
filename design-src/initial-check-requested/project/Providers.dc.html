@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#06080f;font-family:'DM Sans',sans-serif}.p-scroll{scrollbar-width:none}.p-scroll::-webkit-scrollbar{display:none}@keyframes p-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.p-rise{animation:p-rise .4s ease both}</style>
+</helmet>
+<div style="{{ outer }}">
+  <div style="{{ frame }}">
+    <sc-if value="{{ chrome }}"><div style="display:flex;justify-content:space-between;padding:14px 26px 4px;font-size:13px;font-weight:600;color:#EFF3FA"><span>9:41</span><span style="color:#41526F">▮▮▮ ▼</span></div></sc-if>
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 18px 10px">
+      <div style="width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#8A99B6"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></div>
+      <div><div style="color:#EFF3FA;font-weight:600;font-size:15px">Internet providers</div><div style="color:#41526F;font-size:11px">New York, NY 10036</div></div>
+    </div>
+
+    <div class="p-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:6px 18px 18px">
+      <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+        <div style="color:#8A99B6;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:10px 0">{{ count }} available · tap to compare</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ providers }}" as="p" hint-placeholder-count="4">
+            <div class="p-rise" style="border-radius:18px;padding:15px;background:#121B2D;border:1.5px solid {{ p.bd }};position:relative">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#18233A;font-size:20px">{{ p.logo }}</div>
+                <div style="flex:1;min-width:0"><div style="color:#EFF3FA;font-weight:700;font-size:14.5px">{{ p.name }}</div><div style="color:#8A99B6;font-size:11.5px">{{ p.type }}</div></div>
+                <sc-if value="{{ p.rec }}" hint-placeholder-val="{{ false }}"><span style="font-size:8.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#CBA45E;background:rgba(203,164,94,0.12);border:1px solid rgba(203,164,94,0.22);padding:4px 8px;border-radius:7px">Best pick</span></sc-if>
+              </div>
+              <div style="display:flex;gap:18px;margin-top:13px">
+                <div><div style="color:#41526F;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Speed</div><div style="color:#EFF3FA;font-family:'DM Mono',monospace;font-size:14px;font-weight:600;margin-top:2px">{{ p.speed }}</div></div>
+                <div><div style="color:#41526F;font-size:9px;text-transform:uppercase;letter-spacing:.08em">From</div><div style="color:#EFF3FA;font-family:'DM Mono',monospace;font-size:14px;font-weight:600;margin-top:2px">{{ p.price }}</div></div>
+                <div><div style="color:#41526F;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Rating</div><div style="color:#CBA45E;font-size:13px;font-weight:700;margin-top:3px">★ {{ p.rating }}</div></div>
+              </div>
+              <button onClick="{{ p.toggle }}" style="position:absolute;right:14px;bottom:14px;width:26px;height:26px;border-radius:8px;border:2px solid {{ p.checkBd }};background:{{ p.checkBg }};display:flex;align-items:center;justify-content:center;cursor:pointer">
+                <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0F1C" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if>
+              </button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCompare }}" hint-placeholder-val="{{ false }}">
+        <div class="p-rise" style="margin-top:10px">
+          <div style="color:#8A99B6;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px">Comparing {{ selCount }} providers</div>
+          <div style="display:flex;gap:10px">
+            <sc-for list="{{ compareList }}" as="c" hint-placeholder-count="2">
+              <div style="flex:1;border-radius:18px;padding:16px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);text-align:center">
+                <div style="width:42px;height:42px;border-radius:12px;margin:0 auto;display:flex;align-items:center;justify-content:center;background:#18233A;font-size:21px">{{ c.logo }}</div>
+                <div style="color:#EFF3FA;font-weight:700;font-size:14px;margin-top:10px">{{ c.name }}</div>
+                <div style="height:1px;background:rgba(110,150,225,0.12);margin:13px 0"></div>
+                <div style="color:#41526F;font-size:9px;text-transform:uppercase">Speed</div><div style="color:#EFF3FA;font-family:'DM Mono',monospace;font-size:15px;font-weight:600;margin-bottom:10px">{{ c.speed }}</div>
+                <div style="color:#41526F;font-size:9px;text-transform:uppercase">From</div><div style="color:#EFF3FA;font-family:'DM Mono',monospace;font-size:15px;font-weight:600;margin-bottom:10px">{{ c.price }}</div>
+                <div style="color:#41526F;font-size:9px;text-transform:uppercase">Rating</div><div style="color:#CBA45E;font-size:14px;font-weight:700">★ {{ c.rating }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <button onClick="{{ goList }}" style="width:100%;margin-top:16px;padding:13px;border-radius:14px;font-size:13px;font-weight:600;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#8A99B6;cursor:pointer">Back to all providers</button>
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ showBar }}" hint-placeholder-val="{{ false }}">
+      <div style="flex-shrink:0;padding:14px 18px 26px">
+        <button onClick="{{ goCompare }}" style="width:100%;padding:16px;border-radius:16px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#DCBC7C,#CBA45E,#B0852F);color:#0A0F1C;border:none;cursor:pointer;box-shadow:0 8px 28px rgba(203,164,94,0.28)">Compare {{ selCount }} →</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ chrome }}"><div style="position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:130px;height:5px;border-radius:99px;background:rgba(255,255,255,0.18)"></div></sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  state={sel:{fios:true,spectrum:true},view:'list'};
+  toggle(k){ this.setState(s=>({sel:{...s.sel,[k]:!s.sel[k]}})); }
+  set(v){ this.setState({view:v}); }
+  renderVals(){
+    const defs=[
+      {k:'fios',name:'Verizon Fios',type:'Fiber · no contract',logo:'📡',speed:'940 Mbps',price:'$50/mo',rating:'4.6',rec:true},
+      {k:'spectrum',name:'Spectrum',type:'Cable · no data cap',logo:'🌐',speed:'500 Mbps',price:'$40/mo',rating:'3.9',rec:false},
+      {k:'optimum',name:'Optimum',type:'Fiber/Cable',logo:'🔌',speed:'1 Gbps',price:'$60/mo',rating:'4.1',rec:false},
+      {k:'att',name:'AT&T Fiber',type:'Fiber · symmetric',logo:'📶',speed:'1 Gbps',price:'$55/mo',rating:'4.4',rec:false},
+    ];
+    const sel=this.state.sel;
+    const providers=defs.map(p=>({...p, sel:!!sel[p.k], toggle:()=>this.toggle(p.k),
+      bd:sel[p.k]?'#CBA45E':'rgba(110,150,225,0.12)',
+      checkBd:sel[p.k]?'#CBA45E':'#41526F', checkBg:sel[p.k]?'#CBA45E':'transparent'}));
+    const selCount=defs.filter(p=>sel[p.k]).length;
+    const compareList=defs.filter(p=>sel[p.k]).slice(0,3);
+    return {
+      outer:this.props.embed?'height:100%;width:100%':'min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 70% 50% at 50% 0%,#14110b,#06080f 72%)', frame:this.props.embed?'position:relative;display:flex;flex-direction:column;height:100%;width:100%;background:#0A0F1C':'position:relative;width:390px;height:844px;border-radius:42px;overflow:hidden;background:#0A0F1C;border:1px solid rgba(110,150,225,0.10);box-shadow:0 40px 120px rgba(0,0,0,.6);display:flex;flex-direction:column', chrome:!this.props.embed, isList:this.state.view==='list', isCompare:this.state.view==='compare',
+      providers, count:defs.length, selCount, compareList,
+      showBar:this.state.view==='list' && selCount>=2,
+      goCompare:()=>this.set('compare'), goList:()=>this.set('list'),
+    };
+  }
+}
+</script>
+</body>
+</html>

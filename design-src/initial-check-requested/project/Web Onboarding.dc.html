@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#070B14;font-family:'DM Sans',sans-serif;color:#EFF3FA}input{font-family:inherit}@keyframes o-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.o-rise{animation:o-rise .4s ease both}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 60% 50% at 50% 0%,#14110b,#070B14 70%);position:relative;overflow:hidden">
+  <div style="width:520px;max-width:100%;border-radius:26px;background:linear-gradient(160deg,#0E1828,#0a1120);border:1px solid rgba(110,150,225,0.12);box-shadow:0 40px 120px rgba(0,0,0,.6);padding:40px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:26px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#0E1A30,#070D1C);box-shadow:0 0 0 1px rgba(203,164,94,0.22)"><dc-import name="Raccoon" size="27" mood="calm" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="#CBA45E" pupil="#04080F" hint-size="27px,27px"></dc-import></div><span style="font-family:'Playfair Display',serif;font-size:19px;font-weight:900">Move</span></div>
+      <span style="color:#8A99B6;font-size:12px;font-weight:600">Step {{ stepNo }} of 4</span>
+    </div>
+    <div style="height:5px;border-radius:99px;background:rgba(255,255,255,0.07);overflow:hidden;margin-bottom:30px"><div style="height:100%;border-radius:99px;width:{{ progressW }};background:linear-gradient(90deg,#DCBC7C,#CBA45E);transition:width .3s"></div></div>
+
+    <div style="min-height:230px">
+      <sc-if value="{{ s1 }}" hint-placeholder-val="{{ true }}">
+        <div class="o-rise"><div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:800">Create your free account</div><div style="color:#8A99B6;font-size:14px;margin-top:6px">No subscription, ever.</div>
+          <div style="display:flex;flex-direction:column;gap:11px;margin-top:22px"><input placeholder="Full name" style="padding:14px 15px;border-radius:13px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#EFF3FA;font-size:14px;outline:none"/><input type="email" placeholder="Email address" style="padding:14px 15px;border-radius:13px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#EFF3FA;font-size:14px;outline:none"/></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ s2 }}" hint-placeholder-val="{{ false }}">
+        <div class="o-rise"><div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:800">Where are you moving?</div><div style="color:#8A99B6;font-size:14px;margin-top:6px">From and to, plus your date.</div>
+          <div style="display:flex;flex-direction:column;gap:11px;margin-top:22px"><input placeholder="Current address" style="padding:14px 15px;border-radius:13px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#EFF3FA;font-size:14px;outline:none"/><input placeholder="New address" style="padding:14px 15px;border-radius:13px;background:#121B2D;border:1px solid rgba(203,164,94,0.25);color:#EFF3FA;font-size:14px;outline:none"/><input placeholder="Move date — Sep 15, 2024" style="padding:14px 15px;border-radius:13px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#EFF3FA;font-size:14px;outline:none"/></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ s3 }}" hint-placeholder-val="{{ false }}">
+        <div class="o-rise"><div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:800">What should we track?</div><div style="color:#8A99B6;font-size:14px;margin-top:6px">Pick your services.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:9px;margin-top:22px"><sc-for list="{{ services }}" as="x" hint-placeholder-count="6"><button onClick="{{ x.go }}" style="display:flex;align-items:center;gap:7px;padding:11px 15px;border-radius:99px;cursor:pointer;background:{{ x.bg }};border:1.5px solid {{ x.bd }};color:{{ x.col }};font-size:13px;font-weight:600"><span style="font-size:15px">{{ x.icon }}</span>{{ x.label }}</button></sc-for></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ s4 }}" hint-placeholder-val="{{ false }}">
+        <div class="o-rise" style="text-align:center;padding-top:8px"><div style="display:inline-block"><dc-import name="Raccoon" size="64" mood="approved" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="#CBA45E" pupil="#04080F" hint-size="64px,64px"></dc-import></div>
+          <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;margin-top:14px">You're all set</div><div style="color:#8A99B6;font-size:14.5px;line-height:1.6;margin-top:10px;max-width:360px;margin-left:auto;margin-right:auto">Your move plan, dossier and reminders are ready. 48 days to New York.</div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;gap:11px;margin-top:26px">
+      <sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ back }}" style="padding:15px 22px;border-radius:14px;background:#121B2D;border:1px solid rgba(110,150,225,0.12);color:#8A99B6;font-size:14px;font-weight:600;cursor:pointer">Back</button></sc-if>
+      <button onClick="{{ next }}" style="flex:1;padding:15px;border-radius:14px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#DCBC7C,#CBA45E,#B0852F);color:#0A0F1C;border:none;cursor:pointer;box-shadow:0 8px 26px rgba(203,164,94,0.28)">{{ cta }}</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:600,&quot;height&quot;:640}}">
+class Component extends DCLogic {
+  state={step:1,svc:{electric:true,internet:true,mail:true}};
+  next(){ if(this.state.step>=4){ try{ window.location.hash='#/app'; }catch(e){} return; } this.setState(s=>({step:s.step+1})); }
+  back(){ this.setState(s=>({step:Math.max(1,s.step-1)})); }
+  toggle(k){ this.setState(s=>({svc:{...s.svc,[k]:!s.svc[k]}})); }
+  renderVals(){
+    const step=this.state.step;
+    const defs=[['electric','⚡','Electric'],['water','💧','Water'],['gas','🔥','Gas'],['internet','📡','Internet'],['mail','📬','Mail'],['dmv','🚗','DMV']];
+    const services=defs.map(([k,icon,label])=>{const on=!!this.state.svc[k];return{icon,label,go:()=>this.toggle(k),bg:on?'rgba(203,164,94,0.12)':'#121B2D',bd:on?'#CBA45E':'rgba(110,150,225,0.12)',col:on?'#CBA45E':'#8A99B6'};});
+    return { s1:step===1,s2:step===2,s3:step===3,s4:step===4, stepNo:step, progressW:(step/4*100)+'%',
+      canBack:step>1, cta:step===4?'Enter Move':(step===3?'Finish':'Continue'),
+      services, next:()=>this.next(), back:()=>this.back() };
+  }
+}
+</script>
+</body>
+</html>

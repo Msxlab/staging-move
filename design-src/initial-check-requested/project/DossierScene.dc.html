@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  @keyframes ds-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+  @keyframes ds-breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.1)}}
+  @keyframes ds-heave{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-1.5px) scaleY(1.2)}}
+  @keyframes ds-pass{0%{transform:translateX(-175%)}38%{transform:translateX(180%)}100%{transform:translateX(180%)}}
+  @keyframes ds-wave{0%,100%{transform:rotate(-26deg)}50%{transform:rotate(18deg)}}
+  @keyframes ds-leaf{0%{transform:translate(0,6px) rotate(0);opacity:0}25%{opacity:.95}100%{transform:translate(var(--dx,8px),-30px) rotate(160deg);opacity:0}}
+  @keyframes ds-mote{0%{transform:translate(0,0);opacity:0}30%{opacity:.7}100%{transform:translate(var(--dx,10px),-16px);opacity:0}}
+  @keyframes ds-sip{0%,70%,100%{transform:rotate(0)}82%{transform:rotate(-15deg)}}
+  @keyframes ds-spark{0%,100%{transform:scale(.5) rotate(0);opacity:.2}50%{transform:scale(1) rotate(45deg);opacity:1}}
+  @keyframes ds-glow{0%,100%{opacity:.32;transform:scale(.94)}50%{opacity:.7;transform:scale(1.06)}}
+  @keyframes ds-look{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(8deg)}}
+  @keyframes ds-rise{0%{transform:translateY(4px)}100%{transform:translateY(-12px)}}
+  @keyframes ds-sweat{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(13px);opacity:0}}
+  @keyframes ds-cloud{0%,100%{transform:translateX(0)}50%{transform:translateX(7px)}}
+  @keyframes ds-ray{to{transform:rotate(360deg)}}
+  @keyframes ds-tumble{0%{transform:translateX(-30px) rotate(0);opacity:0}10%{opacity:.8}90%{opacity:.8}100%{transform:translateX(190px) rotate(540deg);opacity:0}}
+  @keyframes ds-pop{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:1;transform:scale(1)}}
+  @keyframes ds-tug{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(3deg)}}
+  @keyframes ds-rain{0%{transform:translateY(-6px);opacity:0}15%{opacity:.8}100%{transform:translateY(54px);opacity:0}}
+  @keyframes ds-snow{0%{transform:translate(0,-6px);opacity:0}15%{opacity:.95}100%{transform:translate(var(--dx,6px),58px);opacity:0}}
+  @keyframes ds-shiver{0%,100%{transform:translateX(-0.8px)}50%{transform:translateX(0.8px)}}
+  @keyframes ds-fan{0%,100%{transform:rotate(-22deg)}50%{transform:rotate(18deg)}}
+  @keyframes ds-lean{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(-13deg)}}
+  @keyframes ds-flash{0%,92%,100%{opacity:0}94%,97%{opacity:.85}}
+  @keyframes ds-puff{0%{transform:translate(0,0) scale(.5);opacity:0}30%{opacity:.6}100%{transform:translate(10px,-7px) scale(1.3);opacity:0}}
+  @keyframes ds-streak{0%{transform:translateX(-30px);opacity:0}20%{opacity:.7}100%{transform:translateX(220px);opacity:0}}
+  @keyframes ds-heatline{0%{transform:translateY(4px) scaleX(1);opacity:0}30%{opacity:.5}100%{transform:translateY(-20px) scaleX(1.4);opacity:0}}
+  @keyframes ds-fogband{0%{transform:translateX(-40px);opacity:.2}50%{opacity:.6}100%{transform:translateX(40px);opacity:.2}}
+  @keyframes ds-cloud2{0%,100%{transform:translateX(0)}50%{transform:translateX(-9px)}}
+  @keyframes ds-umbrella{0%{transform:scale(.05)}12%{transform:scale(1.08)}17%{transform:scale(1)}88%{transform:scale(1)}96%{transform:scale(.05)}100%{transform:scale(.05)}}
+  @keyframes ds-cane{0%,100%{transform:rotate(7deg)}50%{transform:rotate(23deg)}}
+  @keyframes ds-kick{0%,55%,100%{transform:rotate(8deg)}70%{transform:rotate(-34deg)}82%{transform:rotate(8deg)}}
+  @keyframes ds-acshake{0%,68%,100%{transform:translateX(0)}72%{transform:translateX(2.5px)}77%{transform:translateX(-2.5px)}82%{transform:translateX(0)}}
+  @keyframes ds-chase{0%{transform:translateX(360px)}100%{transform:translateX(-120px)}}
+  @keyframes ds-flicker{0%,44%{opacity:.55}47%{opacity:.1}51%{opacity:.6}54%{opacity:.18}58%,100%{opacity:.55}}
+  @keyframes ds-run{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-2px) rotate(3deg)}}
+  @keyframes ds-impact{0%,62%,100%{opacity:0;transform:scale(.3)}70%{opacity:1;transform:scale(1.1)}80%{opacity:0;transform:scale(1.35)}}
+  .ds-root{position:relative;width:100%;height:100%;overflow:hidden}
+  .ds-ground{position:absolute;left:0;right:0;bottom:0;height:13px}
+  .ds-char{position:absolute;bottom:13px;width:34px;display:flex;flex-direction:column;align-items:center}
+  .ds-hd{z-index:2;line-height:0}
+  .ds-bd{margin-top:-9px;z-index:1;width:26px;height:17px;border-radius:11px 11px 9px 9px;background:var(--rc-head);position:relative}
+  .ds-belly{position:absolute;left:50%;top:5px;transform:translateX(-50%);width:13px;height:10px;border-radius:50%;background:#cdd5e0;opacity:.3}
+  .ds-foot{position:absolute;bottom:-2px;width:6px;height:4px;border-radius:3px;background:var(--rc-mask);opacity:.6}
+  .ds-arm{position:absolute;width:11px;height:4px;border-radius:3px;background:var(--rc-head);z-index:3}
+</style>
+</helmet>
+<div class="ds-root" style="background:{{ bg }}">
+
+  <!-- ========================= TRANSIT · GOOD ========================= -->
+  <sc-if value="{{ transitGood }}" hint-placeholder-val="{{ false }}">
+    <div class="ds-ground" style="background:linear-gradient(180deg,#2a3349,#1a2235)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:6px;height:1.5px;background:repeating-linear-gradient(90deg,var(--rc-eye) 0,var(--rc-eye) 7px,transparent 7px,transparent 15px);opacity:.5"></div>
+    <div style="position:absolute;left:16px;bottom:13px;width:2px;height:30px;background:var(--rc-head);opacity:.7"></div>
+    <div style="position:absolute;left:11px;bottom:41px;width:12px;height:8px;border-radius:2px;background:{{ tone }};opacity:.85"></div>
+    <div class="ds-char" style="left:26px;animation:ds-bob 2.4s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="28" mood="happy" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="28px,28px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:1px;bottom:11px;transform-origin:left center;animation:ds-wave 1.1s ease-in-out infinite"></div>
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:13px;height:26px;overflow:hidden">
+      <div style="position:absolute;bottom:1px;left:0;width:50px;height:20px;animation:ds-pass 6s linear infinite">
+        <div style="position:absolute;inset:0;border-radius:6px 7px 4px 4px;background:{{ tone }}"></div>
+        <div style="position:absolute;top:3px;left:4px;width:8px;height:7px;border-radius:1.5px;background:#0b1422;opacity:.6"></div>
+        <div style="position:absolute;top:3px;left:15px;width:8px;height:7px;border-radius:1.5px;background:#0b1422;opacity:.6"></div>
+        <div style="position:absolute;top:3px;left:26px;width:8px;height:7px;border-radius:1.5px;background:#0b1422;opacity:.6"></div>
+        <div style="position:absolute;top:3px;left:39px;width:6px;height:7px;border-radius:1.5px;background:#0b1422;opacity:.45"></div>
+        <div style="position:absolute;bottom:-3px;left:8px;width:7px;height:7px;border-radius:50%;background:#0b1422"></div>
+        <div style="position:absolute;bottom:-3px;left:33px;width:7px;height:7px;border-radius:50%;background:#0b1422"></div>
+      </div>
+      <div style="position:absolute;bottom:1px;left:0;width:58px;height:18px;animation:ds-pass 6s linear infinite;animation-delay:3s">
+        <div style="position:absolute;inset:0;border-radius:9px 5px 4px 4px;background:var(--rc-eye)"></div>
+        <div style="position:absolute;top:3px;left:6px;width:7px;height:6px;border-radius:1.5px;background:#0b1422;opacity:.55"></div>
+        <div style="position:absolute;top:3px;left:16px;width:7px;height:6px;border-radius:1.5px;background:#0b1422;opacity:.55"></div>
+        <div style="position:absolute;top:3px;left:26px;width:7px;height:6px;border-radius:1.5px;background:#0b1422;opacity:.55"></div>
+        <div style="position:absolute;top:3px;left:36px;width:7px;height:6px;border-radius:1.5px;background:#0b1422;opacity:.55"></div>
+        <div style="position:absolute;top:3px;left:46px;width:7px;height:6px;border-radius:1.5px;background:#0b1422;opacity:.55"></div>
+        <div style="position:absolute;bottom:-2px;left:9px;width:5px;height:5px;border-radius:50%;background:#0b1422"></div>
+        <div style="position:absolute;bottom:-2px;left:42px;width:5px;height:5px;border-radius:50%;background:#0b1422"></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= TRANSIT · MID (waiting, sparse) ========================= -->
+  <sc-if value="{{ transitMid }}" hint-placeholder-val="{{ false }}">
+    <div class="ds-ground" style="background:linear-gradient(180deg,#2a3349,#1a2235)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:6px;height:1.5px;background:repeating-linear-gradient(90deg,var(--amber,#E0A85A) 0,var(--amber,#E0A85A) 6px,transparent 6px,transparent 16px);opacity:.4"></div>
+    <div style="position:absolute;left:20px;bottom:13px;width:2px;height:30px;background:var(--rc-head);opacity:.7"></div>
+    <div style="position:absolute;left:15px;bottom:41px;width:12px;height:8px;border-radius:2px;background:{{ tone }};opacity:.85"></div>
+    <div style="position:absolute;left:0;right:0;bottom:13px;height:24px;overflow:hidden">
+      <div style="position:absolute;bottom:1px;left:0;width:44px;height:16px;animation:ds-pass 9s linear infinite">
+        <div style="position:absolute;inset:0;border-radius:6px 6px 3px 3px;background:{{ tone }};opacity:.85"></div>
+        <div style="position:absolute;bottom:-2px;left:7px;width:5px;height:5px;border-radius:50%;background:#0b1422"></div>
+        <div style="position:absolute;bottom:-2px;left:30px;width:5px;height:5px;border-radius:50%;background:#0b1422"></div>
+      </div>
+    </div>
+    <div class="ds-char" style="left:34%;animation:ds-bob 2.8s ease-in-out infinite">
+      <div class="ds-hd" style="transform-origin:bottom center;animation:ds-look 3.4s ease-in-out infinite"><dc-import name="Raccoon" size="28" mood="thinking" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="28px,28px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:-3px;bottom:15px;transform:rotate(-58deg);transform-origin:left center"></div>
+      <div style="position:absolute;right:-7px;bottom:23px;width:6px;height:6px;border-radius:50%;border:1.5px solid {{ tone }};z-index:4"></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= TRANSIT · BAD (hitchhike) ========================= -->
+  <sc-if value="{{ transitBad }}" hint-placeholder-val="{{ false }}">
+    <div class="ds-ground" style="background:linear-gradient(180deg,#3a3326,#241f16)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:5px;height:1.5px;background:repeating-linear-gradient(90deg,var(--amber,#E0A85A) 0,var(--amber,#E0A85A) 6px,transparent 6px,transparent 16px);opacity:.4"></div>
+    <div style="position:absolute;bottom:14px;left:0;width:11px;height:11px;border-radius:50%;border:1.5px dashed {{ tone }};opacity:.7;animation:ds-tumble 5s linear infinite"></div>
+    <div class="ds-char" style="left:46%;animation:ds-bob 2.8s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="28" mood="happy" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="28px,28px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:-6px;bottom:12px;transform:rotate(-34deg);transform-origin:left center"></div>
+      <div style="position:absolute;right:-9px;bottom:19px;width:5px;height:5px;border-radius:50%;background:var(--rc-head);z-index:3"></div>
+      <div style="position:absolute;left:-14px;bottom:5px;width:17px;height:13px;border-radius:2px;background:#cdb98c;transform:rotate(-8deg);display:flex;align-items:center;justify-content:center;z-index:3"><span style="font:700 7px 'DM Sans',sans-serif;color:#5a4a28">NY?</span></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= AIR · GOOD ========================= -->
+  <sc-if value="{{ airGood }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 85%, {{ glow }}, transparent 65%)"></div>
+    <span style="position:absolute;left:24%;bottom:18px;width:7px;height:7px;border-radius:0 60% 0 60%;background:var(--green,#54CB7E);--dx:-9px;animation:ds-leaf 3.4s ease-in-out infinite"></span>
+    <span style="position:absolute;left:56%;bottom:14px;width:6px;height:6px;border-radius:0 60% 0 60%;background:var(--green,#54CB7E);--dx:11px;animation:ds-leaf 3.8s ease-in-out infinite;animation-delay:1s"></span>
+    <span style="position:absolute;left:72%;bottom:20px;width:5px;height:5px;border-radius:0 60% 0 60%;background:{{ tone }};--dx:6px;animation:ds-leaf 4.2s ease-in-out infinite;animation-delay:2s"></span>
+    <div class="ds-char" style="left:50%;margin-left:-17px;animation:ds-bob 3s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="30" mood="approved" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="30px,30px"></dc-import></div>
+      <div class="ds-bd" style="transform-origin:bottom center;animation:ds-breathe 3.4s ease-in-out infinite"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= AIR · MODERATE (light mask) ========================= -->
+  <sc-if value="{{ airMid }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(224,168,90,.10),transparent 60%)"></div>
+    <span style="position:absolute;left:24%;bottom:14px;width:3px;height:3px;border-radius:50%;background:var(--amber,#E0A85A);--dx:7px;animation:ds-mote 3.2s linear infinite"></span>
+    <span style="position:absolute;left:60%;bottom:22px;width:3px;height:3px;border-radius:50%;background:var(--amber,#E0A85A);--dx:-6px;animation:ds-mote 3.6s linear infinite;animation-delay:.8s"></span>
+    <span style="position:absolute;left:76%;bottom:12px;width:3px;height:3px;border-radius:50%;background:{{ tone }};--dx:5px;animation:ds-mote 3s linear infinite;animation-delay:1.4s"></span>
+    <div class="ds-char" style="left:50%;margin-left:-17px;animation:ds-bob 3s ease-in-out infinite">
+      <div class="ds-hd" style="position:relative"><dc-import name="Raccoon" size="30" mood="thinking" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="30px,30px"></dc-import>
+        <div style="position:absolute;left:50%;bottom:1px;transform:translateX(-50%);width:14px;height:7px;border-radius:3px;background:#eef2f6;opacity:.85;box-shadow:0 0 0 1px rgba(0,0,0,.1)"></div>
+      </div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= AIR · BAD (wheezing, mask) ========================= -->
+  <sc-if value="{{ airBad }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(120,120,130,.16),rgba(90,80,80,.10))"></div>
+    <span style="position:absolute;left:14%;bottom:10px;width:4px;height:4px;border-radius:50%;background:#9aa0a8;--dx:7px;animation:ds-mote 3s linear infinite"></span>
+    <span style="position:absolute;left:30%;bottom:22px;width:3px;height:3px;border-radius:50%;background:#aab;--dx:-6px;animation:ds-mote 2.6s linear infinite;animation-delay:.4s"></span>
+    <span style="position:absolute;left:44%;bottom:8px;width:5px;height:5px;border-radius:50%;background:#888f99;--dx:9px;animation:ds-mote 3.4s linear infinite;animation-delay:.8s"></span>
+    <span style="position:absolute;left:64%;bottom:26px;width:3px;height:3px;border-radius:50%;background:#9aa0a8;--dx:-8px;animation:ds-mote 2.8s linear infinite;animation-delay:1.2s"></span>
+    <span style="position:absolute;left:78%;bottom:14px;width:4px;height:4px;border-radius:50%;background:{{ tone }};--dx:6px;animation:ds-mote 3.2s linear infinite;animation-delay:1.6s"></span>
+    <div class="ds-char" style="left:50%;margin-left:-17px;animation:ds-heave 1.1s ease-in-out infinite">
+      <div class="ds-hd" style="position:relative"><dc-import name="Raccoon" size="30" mood="alert" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="30px,30px"></dc-import>
+        <div style="position:absolute;left:50%;bottom:1px;transform:translateX(-50%);width:15px;height:8px;border-radius:3px;background:#eef2f6;box-shadow:0 0 0 1px rgba(0,0,0,.12)"></div>
+      </div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <span style="position:absolute;right:-4px;bottom:24px;font:800 9px 'DM Sans',sans-serif;color:{{ tone }};animation:ds-pop 1.1s ease-in-out infinite;z-index:4">~</span>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WATER ========================= -->
+  <sc-if value="{{ waterGood }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:radial-gradient(circle at 60% 78%, {{ glow }}, transparent 60%)"></div>
+    <span style="position:absolute;left:64%;bottom:30px;width:8px;height:8px;color:{{ tone }};font-size:8px;animation:ds-spark 2.2s ease-in-out infinite">✦</span>
+    <div class="ds-char" style="left:42%;animation:ds-bob 3s ease-in-out infinite">
+      <div class="ds-hd" style="transform-origin:bottom center;animation:ds-sip 4s ease-in-out infinite"><dc-import name="Raccoon" size="29" mood="happy" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div style="position:absolute;right:-7px;bottom:11px;width:11px;height:14px;border-radius:2px 2px 3px 3px;background:rgba(255,255,255,.14);border:1px solid {{ tone }};overflow:hidden;z-index:3"><div style="position:absolute;left:0;right:0;bottom:0;height:62%;background:{{ tone }};opacity:.55"></div></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= AREA · HIGH (officer raccoon + patrol) ========================= -->
+  <sc-if value="{{ areaHigh }}" hint-placeholder-val="{{ false }}">
+    <div class="ds-ground" style="background:linear-gradient(180deg,#22304a,#152238)"></div>
+    <div style="position:absolute;right:20px;bottom:13px;width:2.5px;height:42px;background:var(--rc-head);opacity:.7"></div>
+    <div style="position:absolute;right:14px;bottom:52px;width:15px;height:6px;border-radius:4px;background:{{ tone }}"></div>
+    <div style="position:absolute;right:2px;bottom:14px;width:42px;height:48px;border-radius:50%;background:radial-gradient(circle at 70% 0,{{ glow }},transparent 70%);animation:ds-glow 3.4s ease-in-out infinite"></div>
+    <div style="position:absolute;bottom:14px;left:0;width:52px;height:18px;animation:ds-pass 7s linear infinite">
+      <div style="position:absolute;bottom:0;left:0;width:52px;height:12px;border-radius:6px 7px 4px 4px;background:#e9eef4"></div>
+      <div style="position:absolute;bottom:8px;left:14px;width:26px;height:7px;border-radius:5px 5px 0 0;background:#dbe2ea"></div>
+      <div style="position:absolute;bottom:2px;left:17px;width:18px;height:5px;background:#1a2c4a"></div>
+      <div style="position:absolute;bottom:9px;left:21px;width:3px;height:4px;border-radius:1px;background:var(--red);animation:ds-pop .6s ease-in-out infinite"></div>
+      <div style="position:absolute;bottom:9px;left:27px;width:3px;height:4px;border-radius:1px;background:#3a7bd5;animation:ds-pop .6s ease-in-out infinite;animation-delay:.3s"></div>
+      <div style="position:absolute;bottom:-3px;left:9px;width:8px;height:8px;border-radius:50%;background:#0b1422"></div>
+      <div style="position:absolute;bottom:-3px;left:36px;width:8px;height:8px;border-radius:50%;background:#0b1422"></div>
+    </div>
+    <div class="ds-char" style="left:30%;animation:ds-bob 3s ease-in-out infinite">
+      <div class="ds-hd" style="position:relative"><dc-import name="Raccoon" size="28" mood="approved" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="28px,28px"></dc-import>
+        <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);z-index:3;width:20px;height:9px">
+          <div style="position:absolute;bottom:2px;left:0;width:20px;height:2.5px;border-radius:2px;background:#16263f"></div>
+          <div style="position:absolute;bottom:3px;left:3px;width:14px;height:6px;border-radius:6px 6px 1px 1px;background:#1d3251"></div>
+          <div style="position:absolute;bottom:5px;left:9px;width:3px;height:3px;border-radius:50%;background:{{ tone }}"></div>
+        </div>
+      </div>
+      <div class="ds-bd"><div class="ds-belly"></div>
+        <div style="position:absolute;left:50%;top:4px;transform:translateX(-50%);width:5px;height:5px;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);background:{{ tone }}"></div>
+        <div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= AREA · MID (lit route, glancing) ========================= -->
+  <sc-if value="{{ areaMid }}" hint-placeholder-val="{{ false }}">
+    <div class="ds-ground" style="background:linear-gradient(180deg,#262c3c,#171c28)"></div>
+    <div style="position:absolute;right:22px;bottom:13px;width:2.5px;height:42px;background:var(--rc-head);opacity:.7"></div>
+    <div style="position:absolute;right:16px;bottom:52px;width:15px;height:6px;border-radius:4px;background:{{ tone }}"></div>
+    <div style="position:absolute;right:4px;bottom:14px;width:40px;height:46px;border-radius:50%;background:radial-gradient(circle at 70% 0,{{ glow }},transparent 70%);animation:ds-glow 3s ease-in-out infinite"></div>
+    <div class="ds-char" style="left:28%;animation:ds-bob 2.2s ease-in-out infinite">
+      <div class="ds-hd" style="transform-origin:bottom center;animation:ds-look 3.2s ease-in-out infinite"><dc-import name="Raccoon" size="28" mood="thinking" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="28px,28px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= AREA · LOW (shady chase, right→left) ========================= -->
+  <sc-if value="{{ areaLow }}" hint-placeholder-val="{{ false }}">
+    <div class="ds-ground" style="background:linear-gradient(180deg,#191622,#0d0a13)"></div>
+    <div style="position:absolute;inset:0;background:rgba(10,8,16,.28)"></div>
+    <div style="position:absolute;left:18px;bottom:13px;width:2.5px;height:40px;background:var(--rc-head);opacity:.5"></div>
+    <div style="position:absolute;left:12px;bottom:50px;width:14px;height:6px;border-radius:4px;background:var(--amber,#E0A85A);opacity:.7;animation:ds-flicker 3s linear infinite"></div>
+    <div style="position:absolute;left:2px;bottom:16px;width:36px;height:42px;border-radius:50%;background:radial-gradient(circle at 60% 0,rgba(224,168,90,.18),transparent 70%);animation:ds-flicker 3s linear infinite"></div>
+    <span style="position:absolute;right:12px;top:9px;font:800 12px 'DM Sans',sans-serif;color:{{ tone }};animation:ds-pop 1s ease-in-out infinite;z-index:4">!</span>
+    <div style="position:absolute;left:0;right:0;bottom:13px;height:42px;overflow:hidden">
+      <div style="position:absolute;bottom:0;left:0;display:flex;align-items:flex-end;gap:8px;animation:ds-chase 3.8s linear infinite">
+        <div style="width:26px;display:flex;flex-direction:column;align-items:center;animation:ds-bob .32s ease-in-out infinite">
+          <div style="line-height:0"><dc-import name="Raccoon" size="24" mood="alert" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="24px,24px"></dc-import></div>
+          <div style="margin-top:-7px;width:20px;height:14px;border-radius:9px 9px 7px 7px;background:var(--rc-head)"></div>
+        </div>
+        <div style="position:relative;width:20px;height:30px;animation:ds-bob .3s ease-in-out infinite;animation-delay:.05s">
+          <div style="position:absolute;bottom:0;left:3px;width:14px;height:20px;border-radius:7px 7px 5px 5px;background:#0f1420"></div>
+          <div style="position:absolute;bottom:15px;left:3px;width:14px;height:14px;border-radius:50%;background:#0f1420"></div>
+          <div style="position:absolute;bottom:26px;left:6px;width:8px;height:6px;border-radius:6px 6px 0 0;background:#0f1420"></div>
+          <div style="position:absolute;bottom:21px;left:6px;width:2px;height:2px;border-radius:50%;background:var(--red)"></div>
+          <div style="position:absolute;bottom:21px;left:10px;width:2px;height:2px;border-radius:50%;background:var(--red)"></div>
+          <div style="position:absolute;bottom:12px;left:-3px;width:9px;height:3px;border-radius:2px;background:#0f1420;transform:rotate(22deg)"></div>
+        </div>
+        <div style="position:relative;width:20px;height:28px;animation:ds-bob .3s ease-in-out infinite;animation-delay:.12s">
+          <div style="position:absolute;bottom:0;left:3px;width:14px;height:18px;border-radius:7px 7px 5px 5px;background:#11131c"></div>
+          <div style="position:absolute;bottom:13px;left:3px;width:14px;height:13px;border-radius:50%;background:#11131c"></div>
+          <div style="position:absolute;bottom:19px;left:6px;width:2px;height:2px;border-radius:50%;background:var(--red)"></div>
+          <div style="position:absolute;bottom:19px;left:10px;width:2px;height:2px;border-radius:50%;background:var(--red)"></div>
+          <div style="position:absolute;bottom:11px;left:-3px;width:9px;height:3px;border-radius:2px;background:#11131c;transform:rotate(18deg)"></div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= COST · GOOD (relaxed) ========================= -->
+  <sc-if value="{{ costGood }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:radial-gradient(circle at 70% 20%, {{ glow }}, transparent 60%)"></div>
+    <div style="position:absolute;left:50%;top:13px;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--green,#54CB7E);display:flex;align-items:center;justify-content:center;animation:ds-rise 1.4s ease-in-out infinite alternate;z-index:4"><span style="font:800 7px 'DM Mono',monospace;color:var(--green,#54CB7E)">$</span></div>
+    <div class="ds-char" style="left:40%;animation:ds-bob 2.8s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="29" mood="happy" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:-4px;bottom:14px;transform:rotate(-34deg);transform-origin:left center"></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= COST · BAD (rising prices, stressed) ========================= -->
+  <sc-if value="{{ costBad }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:radial-gradient(circle at 72% 20%, {{ glow }}, transparent 60%)"></div>
+    <div style="position:absolute;right:18px;bottom:28px;animation:ds-rise 1.8s ease-in-out infinite alternate">
+      <div style="width:14px;height:18px;border-radius:50%;background:{{ tone }};opacity:.85"></div>
+      <div style="position:absolute;left:6px;bottom:-12px;width:1px;height:13px;background:var(--rc-head);opacity:.6"></div>
+      <div style="position:absolute;left:-1px;bottom:-24px;width:13px;height:10px;border-radius:2px;background:#cdbf8c;display:flex;align-items:center;justify-content:center"><span style="font:800 8px 'DM Mono',monospace;color:#5a4a28">$</span></div>
+    </div>
+    <span style="position:absolute;right:13px;top:7px;font:800 11px 'DM Sans',sans-serif;color:{{ tone }};animation:ds-pop 1.6s ease-in-out infinite">↑</span>
+    <div class="ds-char" style="left:24%">
+      <div class="ds-hd"><dc-import name="Raccoon" size="29" mood="alert" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import></div>
+      <div class="ds-bd" style="transform-origin:bottom center;animation:ds-tug 1.4s ease-in-out infinite"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:-4px;bottom:13px;transform:rotate(-46deg);transform-origin:left center"></div>
+      <span style="position:absolute;left:1px;bottom:22px;width:4px;height:6px;border-radius:0 50% 50% 50%;background:var(--teal,#37C2C9);transform:rotate(45deg);animation:ds-sweat 1.8s ease-in-out infinite;z-index:4"></span>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WATER · FILTER (needs filtering) ========================= -->
+  <sc-if value="{{ waterMid }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:radial-gradient(circle at 60% 78%, {{ glow }}, transparent 60%)"></div>
+    <div class="ds-char" style="left:40%;animation:ds-bob 3.2s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="29" mood="thinking" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div style="position:absolute;right:-8px;bottom:11px;width:12px;height:14px;border-radius:2px 2px 3px 3px;background:rgba(255,255,255,.12);border:1px solid {{ tone }};overflow:hidden;z-index:3"><div style="position:absolute;left:0;right:0;bottom:0;height:45%;background:{{ tone }};opacity:.5"></div></div>
+      <div style="position:absolute;right:-9px;bottom:24px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid {{ tone }};z-index:4"></div>
+      <span style="position:absolute;right:-3px;bottom:20px;width:1.5px;height:4px;background:{{ tone }};border-radius:2px;animation:ds-rain 1.2s linear infinite;z-index:4"></span>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WATER · UNSAFE (do not drink) ========================= -->
+  <sc-if value="{{ waterBad }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:radial-gradient(circle at 60% 78%, rgba(226,92,92,.14), transparent 60%)"></div>
+    <span style="position:absolute;left:60%;bottom:22px;width:4px;height:4px;border-radius:50%;background:var(--amber,#E0A85A);animation:ds-mote 2.6s linear infinite"></span>
+    <span style="position:absolute;left:66%;bottom:18px;width:3px;height:3px;border-radius:50%;background:var(--amber,#E0A85A);animation:ds-mote 3s linear infinite;animation-delay:.6s"></span>
+    <span style="position:absolute;right:14px;top:9px;font-size:14px;animation:ds-pop 1.4s ease-in-out infinite;z-index:4">💀</span>
+    <div class="ds-char" style="left:40%;animation:ds-bob 3s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="29" mood="alert" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="left:50%;margin-left:-5px;bottom:20px;transform:rotate(-50deg);transform-origin:right center;z-index:4"></div>
+      <div style="position:absolute;right:-7px;bottom:11px;width:11px;height:14px;border-radius:2px 2px 3px 3px;background:rgba(255,255,255,.1);border:1px solid var(--amber,#E0A85A);overflow:hidden;z-index:3"><div style="position:absolute;left:0;right:0;bottom:0;height:62%;background:#8a6a3a;opacity:.75"></div></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= HOUSING (rent / buy) ========================= -->
+  <sc-if value="{{ housingScene }}" hint-placeholder-val="{{ false }}">
+    <div class="ds-ground" style="background:linear-gradient(180deg,#2a3346,#1a2336)"></div>
+    <div style="position:absolute;right:14px;bottom:13px;width:46px;height:42px">
+      <div style="position:absolute;bottom:0;left:3px;width:40px;height:28px;background:#e7ebf1;border-radius:2px"></div>
+      <div style="position:absolute;bottom:24px;left:-2px;width:0;height:0;border-left:25px solid transparent;border-right:25px solid transparent;border-bottom:14px solid {{ tone }}"></div>
+      <div style="position:absolute;bottom:0;left:18px;width:10px;height:16px;border-radius:2px 2px 0 0;background:#3a414d"></div>
+      <div style="position:absolute;bottom:14px;left:7px;width:8px;height:7px;background:#f7c65a;border-radius:1px;animation:ds-glow 3s ease-in-out infinite"></div>
+      <div style="position:absolute;bottom:14px;right:7px;width:8px;height:7px;background:#f7c65a;border-radius:1px;animation:ds-glow 3s ease-in-out infinite;animation-delay:.5s"></div>
+    </div>
+    <div style="position:absolute;right:55px;bottom:13px;width:2px;height:26px;background:var(--rc-head);opacity:.7;transform-origin:bottom center;animation:ds-look 3.4s ease-in-out infinite">
+      <div style="position:absolute;top:0;left:-12px;width:24px;height:13px;border-radius:2px;background:{{ tone }};display:flex;align-items:center;justify-content:center"><span style="font:800 6px 'DM Sans',sans-serif;color:#1a1206">RENT</span></div>
+    </div>
+    <div class="ds-char" style="left:14%;animation:ds-bob 3s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="29" mood="happy" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:-4px;bottom:13px;transform:rotate(-30deg);transform-origin:left center"></div>
+      <div style="position:absolute;right:-11px;bottom:16px;width:5px;height:5px;border-radius:50%;border:1.5px solid var(--gold);z-index:3;animation:ds-pop 1.4s ease-in-out infinite"><div style="position:absolute;left:4px;top:1.5px;width:5px;height:1.5px;background:var(--gold)"></div></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WEATHER · SUN ========================= -->
+  <sc-if value="{{ wSun }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:62%;top:4px;width:40px;height:40px;animation:ds-ray 26s linear infinite">
+      <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent,#F6B43F66,transparent,#F6B43F66,transparent)"></div>
+    </div>
+    <div style="position:absolute;left:68%;top:11px;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,#F6B43F,transparent 72%);animation:ds-glow 3.4s ease-in-out infinite"></div>
+    <div class="ds-char" style="left:26%;animation:ds-bob 3.2s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="30" mood="approved" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="30px,30px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WEATHER · CLOUD (puffy, parallax) ========================= -->
+  <sc-if value="{{ wCloud }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:67%;top:3px;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,#F6B43F,transparent 72%);opacity:.45;animation:ds-glow 4.4s ease-in-out infinite"></div>
+    <div style="position:absolute;left:28%;top:27px;width:40px;height:14px;opacity:.4;animation:ds-cloud2 11s ease-in-out infinite">
+      <div style="position:absolute;bottom:0;left:0;width:40px;height:11px;border-radius:9px;background:var(--rc-head)"></div>
+      <div style="position:absolute;bottom:4px;left:8px;width:16px;height:16px;border-radius:50%;background:var(--rc-head)"></div>
+      <div style="position:absolute;bottom:4px;left:20px;width:13px;height:13px;border-radius:50%;background:var(--rc-head)"></div>
+    </div>
+    <div style="position:absolute;left:42%;top:8px;width:54px;height:20px;animation:ds-cloud 8s ease-in-out infinite">
+      <div style="position:absolute;bottom:0;left:0;width:54px;height:13px;border-radius:11px;background:var(--rc-head);opacity:.92"></div>
+      <div style="position:absolute;bottom:5px;left:5px;width:18px;height:18px;border-radius:50%;background:var(--rc-head);opacity:.92"></div>
+      <div style="position:absolute;bottom:7px;left:18px;width:25px;height:25px;border-radius:50%;background:var(--rc-head);opacity:.92"></div>
+      <div style="position:absolute;bottom:4px;left:35px;width:17px;height:17px;border-radius:50%;background:var(--rc-head);opacity:.92"></div>
+    </div>
+    <div class="ds-char" style="left:24%;animation:ds-bob 3.2s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="30" mood="calm" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="30px,30px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WEATHER · RAIN (opens umbrella) ========================= -->
+  <sc-if value="{{ wRain }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:28%;top:4px;width:48px;height:15px;opacity:.9;animation:ds-cloud 6s ease-in-out infinite">
+      <div style="position:absolute;bottom:0;left:0;width:48px;height:11px;border-radius:9px;background:#5a6478"></div>
+      <div style="position:absolute;bottom:4px;left:9px;width:16px;height:16px;border-radius:50%;background:#5a6478"></div>
+      <div style="position:absolute;bottom:5px;left:23px;width:18px;height:18px;border-radius:50%;background:#5a6478"></div>
+    </div>
+    <span style="position:absolute;left:20%;top:24px;width:1.5px;height:9px;background:{{ tone }};border-radius:2px;animation:ds-rain 1s linear infinite"></span>
+    <span style="position:absolute;left:36%;top:24px;width:1.5px;height:9px;background:{{ tone }};border-radius:2px;animation:ds-rain 1.1s linear infinite;animation-delay:.3s"></span>
+    <span style="position:absolute;left:78%;top:24px;width:1.5px;height:9px;background:{{ tone }};border-radius:2px;animation:ds-rain .9s linear infinite;animation-delay:.5s"></span>
+    <span style="position:absolute;left:90%;top:24px;width:1.5px;height:9px;background:{{ tone }};border-radius:2px;animation:ds-rain 1.05s linear infinite;animation-delay:.15s"></span>
+    <div class="ds-char" style="left:28%;animation:ds-bob 3s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="29" mood="calm" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:-3px;bottom:14px;transform:rotate(-44deg);transform-origin:left center"></div>
+    </div>
+    <div style="position:absolute;left:30%;top:6px;width:42px;height:30px;z-index:5;transform-origin:bottom center;animation:ds-umbrella 5s ease-in-out infinite">
+      <div style="position:absolute;top:0;left:0;width:42px;height:19px;border-radius:21px 21px 2px 2px;background:{{ tone }}"></div>
+      <div style="position:absolute;top:14px;left:7px;width:1px;height:5px;background:rgba(0,0,0,.18)"></div>
+      <div style="position:absolute;top:14px;left:21px;width:1px;height:5px;background:rgba(0,0,0,.18)"></div>
+      <div style="position:absolute;top:14px;left:35px;width:1px;height:5px;background:rgba(0,0,0,.18)"></div>
+      <div style="position:absolute;top:2px;left:50%;width:1.5px;height:27px;background:var(--rc-head);transform:translateX(-50%)"></div>
+      <div style="position:absolute;bottom:0;left:50%;width:5px;height:4px;border:1.5px solid var(--rc-head);border-top:none;border-radius:0 0 4px 4px;transform:translateX(-90%)"></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WEATHER · SNOW (scarf raccoon + snowman) ========================= -->
+  <sc-if value="{{ wSnow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(200,225,255,.10),transparent 60%)"></div>
+    <span style="position:absolute;left:18%;top:4px;width:4px;height:4px;border-radius:50%;background:#fff;--dx:8px;animation:ds-snow 4s linear infinite"></span>
+    <span style="position:absolute;left:40%;top:4px;width:3px;height:3px;border-radius:50%;background:#fff;--dx:-7px;animation:ds-snow 4.6s linear infinite;animation-delay:1s"></span>
+    <span style="position:absolute;left:62%;top:4px;width:4px;height:4px;border-radius:50%;background:#fff;--dx:6px;animation:ds-snow 4.2s linear infinite;animation-delay:.5s"></span>
+    <span style="position:absolute;left:82%;top:4px;width:3px;height:3px;border-radius:50%;background:#fff;--dx:-5px;animation:ds-snow 5s linear infinite;animation-delay:1.6s"></span>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:8px;background:#e7eef7;opacity:.55;border-radius:40% 40% 0 0"></div>
+    <div style="position:absolute;right:16px;bottom:9px;width:22px;height:32px;animation:ds-bob 4.4s ease-in-out infinite">
+      <div style="position:absolute;bottom:0;left:1px;width:20px;height:17px;border-radius:50%;background:#eef4fb"></div>
+      <div style="position:absolute;bottom:13px;left:4px;width:14px;height:14px;border-radius:50%;background:#eef4fb"></div>
+      <div style="position:absolute;bottom:21px;left:7px;width:2px;height:2px;border-radius:50%;background:#0b1422"></div>
+      <div style="position:absolute;bottom:21px;left:11px;width:2px;height:2px;border-radius:50%;background:#0b1422"></div>
+      <div style="position:absolute;bottom:18px;left:12px;width:5px;height:2px;background:#e8923a;clip-path:polygon(0 0,100% 50%,0 100%)"></div>
+      <div style="position:absolute;bottom:6px;left:9px;width:2px;height:2px;border-radius:50%;background:#0b1422"></div>
+      <div style="position:absolute;bottom:11px;left:-3px;width:7px;height:1.5px;background:#7a5a36;transform:rotate(18deg)"></div>
+      <div style="position:absolute;bottom:11px;right:-3px;width:7px;height:1.5px;background:#7a5a36;transform:rotate(-18deg)"></div>
+      <div style="position:absolute;bottom:25px;left:4px;width:14px;height:3px;background:#26303f"></div>
+      <div style="position:absolute;bottom:27px;left:6px;width:10px;height:5px;background:#26303f"></div>
+    </div>
+    <div class="ds-char" style="left:24%;animation:ds-shiver .25s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="28" mood="thinking" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="28px,28px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div style="position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:21px;height:5px;border-radius:3px;background:{{ tone }};z-index:3"></div>
+      <div style="position:absolute;left:7px;bottom:9px;width:4px;height:7px;border-radius:2px;background:{{ tone }};z-index:3"></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WEATHER · STORM (lightning) ========================= -->
+  <sc-if value="{{ wStorm }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(255,255,255,.9);animation:ds-flash 4s linear infinite;z-index:6;pointer-events:none"></div>
+    <div style="position:absolute;left:28%;top:4px;width:48px;height:16px;border-radius:11px;background:#3a4258;animation:ds-cloud 5s ease-in-out infinite"></div>
+    <span style="position:absolute;left:22%;top:22px;width:1.5px;height:11px;background:{{ tone }};transform:rotate(14deg);animation:ds-rain .7s linear infinite"></span>
+    <span style="position:absolute;left:42%;top:22px;width:1.5px;height:11px;background:{{ tone }};transform:rotate(14deg);animation:ds-rain .6s linear infinite;animation-delay:.2s"></span>
+    <span style="position:absolute;left:72%;top:22px;width:1.5px;height:11px;background:{{ tone }};transform:rotate(14deg);animation:ds-rain .65s linear infinite;animation-delay:.4s"></span>
+    <svg viewBox="0 0 20 30" style="position:absolute;left:54%;top:20px;width:13px;height:20px;z-index:5;filter:drop-shadow(0 0 5px #ffe98a)"><path d="M11 0 L3 17 L9 16 L6 30 L18 11 L11 12 Z" fill="#ffe98a"></path></svg>
+    <div class="ds-char" style="left:24%;animation:ds-shiver .2s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="28" mood="alert" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="28px,28px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:-3px;bottom:15px;transform:rotate(-44deg);transform-origin:left center"></div>
+    </div>
+    <div style="position:absolute;left:32%;top:8px;width:30px;height:15px;border-radius:15px 15px 0 0;background:{{ tone }};z-index:4"></div>
+  </sc-if>
+
+  <!-- ========================= WEATHER · FOG (blind: cane, shades, warning) ========================= -->
+  <sc-if value="{{ wFog }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(210,216,224,.14)"></div>
+    <div style="position:absolute;left:0;right:0;top:16px;height:6px;background:#c8d0dc;opacity:.5;border-radius:6px;filter:blur(2px);animation:ds-fogband 5s ease-in-out infinite"></div>
+    <div style="position:absolute;left:0;right:0;top:34px;height:7px;background:#c8d0dc;opacity:.5;border-radius:6px;filter:blur(2px);animation:ds-fogband 6.5s ease-in-out infinite;animation-delay:.8s"></div>
+    <div style="position:absolute;left:0;right:0;top:52px;height:6px;background:#c8d0dc;opacity:.5;border-radius:6px;filter:blur(2px);animation:ds-fogband 5.6s ease-in-out infinite;animation-delay:.4s"></div>
+    <div style="position:absolute;right:12px;top:11px;width:20px;height:18px;z-index:4">
+      <div style="position:absolute;inset:0;clip-path:polygon(50% 0,100% 100%,0 100%);background:var(--amber,#E0A85A)"></div>
+      <span style="position:absolute;left:0;right:0;bottom:1px;text-align:center;font:800 9px 'DM Sans',sans-serif;color:#1a1206">!</span>
+    </div>
+    <div class="ds-char" style="left:32%;animation:ds-bob 3.4s ease-in-out infinite">
+      <div class="ds-hd" style="position:relative"><dc-import name="Raccoon" size="29" mood="thinking" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import>
+        <div style="position:absolute;left:50%;top:13px;transform:translateX(-50%);display:flex;gap:2px;align-items:center;z-index:3">
+          <div style="width:7px;height:6px;border-radius:3px;background:#0b0e14"></div>
+          <div style="width:2px;height:1.5px;background:#0b0e14"></div>
+          <div style="width:7px;height:6px;border-radius:3px;background:#0b0e14"></div>
+        </div>
+      </div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:-2px;bottom:12px;transform:rotate(-30deg);transform-origin:left center"></div>
+      <div style="position:absolute;right:-8px;bottom:-5px;width:2px;height:20px;background:#f2f4f7;border-radius:2px;transform-origin:top center;animation:ds-cane 1.4s ease-in-out infinite;z-index:3">
+        <div style="position:absolute;bottom:3px;left:0;width:2px;height:4px;background:#d23b3b"></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WEATHER · WIND (leaning) ========================= -->
+  <sc-if value="{{ wWind }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:0;top:20px;width:30px;height:2px;border-radius:2px;background:{{ tone }};opacity:.6;animation:ds-streak 1.6s linear infinite"></div>
+    <div style="position:absolute;left:0;top:34px;width:24px;height:2px;border-radius:2px;background:{{ tone }};opacity:.5;animation:ds-streak 2s linear infinite;animation-delay:.5s"></div>
+    <div style="position:absolute;left:0;top:48px;width:28px;height:2px;border-radius:2px;background:{{ tone }};opacity:.55;animation:ds-streak 1.8s linear infinite;animation-delay:.9s"></div>
+    <span style="position:absolute;left:0;top:40px;width:7px;height:7px;border-radius:0 60% 0 60%;background:var(--green,#54CB7E);animation:ds-streak 2.2s linear infinite;animation-delay:.3s"></span>
+    <div class="ds-char" style="left:34%;animation:ds-lean 1.4s ease-in-out infinite;transform-origin:bottom center">
+      <div class="ds-hd"><dc-import name="Raccoon" size="29" mood="alert" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div class="ds-arm" style="right:-4px;bottom:18px;transform:rotate(-58deg);transform-origin:left center"></div>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WEATHER · HEAT (kicks the broken AC) ========================= -->
+  <sc-if value="{{ wHeat }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:6%;top:1px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle,#EF8B3A,transparent 70%);animation:ds-glow 2.6s ease-in-out infinite"></div>
+    <div style="position:absolute;left:30%;bottom:13px;width:3px;height:22px;border-left:1.5px solid rgba(239,139,58,.5);border-right:1.5px solid rgba(239,139,58,.25);filter:blur(1px);animation:ds-heatline 2.2s ease-in-out infinite"></div>
+    <div style="position:absolute;left:50%;bottom:13px;width:3px;height:22px;border-left:1.5px solid rgba(239,139,58,.5);border-right:1.5px solid rgba(239,139,58,.25);filter:blur(1px);animation:ds-heatline 2.6s ease-in-out infinite;animation-delay:.6s"></div>
+    <div style="position:absolute;right:7px;bottom:15px;width:42px;height:30px;z-index:2;animation:ds-acshake 2.4s ease-in-out infinite">
+      <div style="position:absolute;inset:0;border-radius:3px;background:linear-gradient(180deg,#eef2f6,#d7dde5);border:1px solid #aab2bd;box-shadow:0 3px 6px rgba(0,0,0,.25)"></div>
+      <div style="position:absolute;top:3px;left:4px;right:4px;height:1.5px;background:#b6bdc8"></div>
+      <div style="position:absolute;top:6px;left:4px;right:4px;height:1.5px;background:#b6bdc8"></div>
+      <div style="position:absolute;bottom:4px;left:5px;width:22px;height:15px;border-radius:2px;background:repeating-linear-gradient(90deg,#c4ccd6 0,#c4ccd6 2px,#e7ebf0 2px,#e7ebf0 5px)"></div>
+      <div style="position:absolute;bottom:4px;right:5px;width:9px;height:15px;border-radius:2px;background:#3a414d"></div>
+      <div style="position:absolute;bottom:13px;right:7px;width:3px;height:3px;border-radius:50%;background:#7d8794"></div>
+      <span style="position:absolute;left:-6px;top:7px;width:7px;height:2px;border-radius:2px;background:var(--teal,#37C2C9);opacity:.6;animation:ds-puff 2.6s ease-in-out infinite"></span>
+    </div>
+    <span style="position:absolute;right:46px;bottom:24px;z-index:4;color:#fff3cf;font:800 12px 'DM Sans',sans-serif;animation:ds-impact 2.4s ease-in-out infinite">✶</span>
+    <div class="ds-char" style="left:22%;animation:ds-bob 2.6s ease-in-out infinite">
+      <div class="ds-hd"><dc-import name="Raccoon" size="29" mood="alert" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import></div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div></div>
+      <div style="position:absolute;right:-12px;bottom:1px;width:16px;height:4px;border-radius:3px;background:var(--rc-head);transform-origin:left center;animation:ds-kick 2.4s ease-in-out infinite;z-index:3"></div>
+      <span style="position:absolute;left:1px;bottom:22px;width:4px;height:6px;border-radius:0 50% 50% 50%;background:var(--teal,#37C2C9);transform:rotate(45deg);animation:ds-sweat 1.6s ease-in-out infinite;z-index:4"></span>
+    </div>
+  </sc-if>
+
+  <!-- ========================= WEATHER · COLD (shiver, breath) ========================= -->
+  <sc-if value="{{ wCold }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(150,190,235,.14),transparent 70%)"></div>
+    <div class="ds-char" style="left:32%;animation:ds-shiver .22s ease-in-out infinite">
+      <div class="ds-hd" style="position:relative"><dc-import name="Raccoon" size="29" mood="thinking" head="var(--rc-head)" mask="var(--rc-mask)" ear="var(--rc-ear)" eye="var(--rc-eye)" pupil="var(--rc-pupil)" hint-size="29px,29px"></dc-import>
+        <span style="position:absolute;right:-4px;bottom:5px;width:6px;height:5px;border-radius:50%;background:#dfeaf6;animation:ds-puff 2s ease-in-out infinite"></span>
+      </div>
+      <div class="ds-bd"><div class="ds-belly"></div><div class="ds-foot" style="left:5px"></div><div class="ds-foot" style="right:5px"></div></div>
+      <div style="position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:22px;height:5px;border-radius:3px;background:{{ tone }};z-index:3"></div>
+      <div class="ds-arm" style="left:0;bottom:9px;transform:rotate(34deg);transform-origin:right center"></div>
+      <div class="ds-arm" style="right:0;bottom:9px;transform:rotate(-34deg);transform-origin:left center"></div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:180,&quot;height&quot;:86},&quot;type&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;weather&quot;,&quot;air&quot;,&quot;water&quot;,&quot;area&quot;,&quot;transit&quot;,&quot;cost&quot;],&quot;default&quot;:&quot;weather&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;level&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;good&quot;,&quot;mid&quot;,&quot;bad&quot;,&quot;sun&quot;,&quot;cloud&quot;,&quot;rain&quot;,&quot;snow&quot;,&quot;storm&quot;,&quot;fog&quot;,&quot;wind&quot;,&quot;heat&quot;,&quot;cold&quot;],&quot;default&quot;:&quot;cloud&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tone&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;var(--gold)&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;glow&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;rgba(203,164,94,0.18)&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;transparent&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals(){
+    const type = this.props.type || 'weather';
+    const level = this.props.level || 'good';
+    const w = (v)=> type==='weather' && level===v;
+    const known = ['sun','cloud','rain','snow','storm','fog','wind','heat','cold'];
+    return {
+      bg: this.props.bg || 'transparent',
+      tone: this.props.tone || 'var(--gold)',
+      glow: this.props.glow || 'rgba(203,164,94,0.18)',
+      transitGood: type==='transit' && level!=='bad' && level!=='mid',
+      transitMid:  type==='transit' && level==='mid',
+      transitBad:  type==='transit' && level==='bad',
+      airGood: type==='air' && level!=='bad' && level!=='mid',
+      airMid:  type==='air' && level==='mid',
+      airBad:  type==='air' && level==='bad',
+      waterGood: type==='water' && level!=='bad' && level!=='mid',
+      waterMid: type==='water' && level==='mid',
+      waterBad: type==='water' && level==='bad',
+      areaHigh: type==='area' && level==='good',
+      areaLow: type==='area' && level==='bad',
+      areaMid: type==='area' && level!=='good' && level!=='bad',
+      costBad: type==='cost' && level!=='good',
+      costGood: type==='cost' && level==='good',
+      housingScene: type==='housing',
+      wSun:w('sun'), wRain:w('rain'), wSnow:w('snow'), wStorm:w('storm'),
+      wFog:w('fog'), wWind:w('wind'), wHeat:w('heat'), wCold:w('cold'),
+      wCloud: type==='weather' && (level==='cloud' || !known.includes(level)),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#070B14;font-family:'DM Sans',sans-serif;color:#EFF3FA}a{text-decoration:none;color:inherit}@media(max-width:620px){.why-grid{grid-template-columns:1fr!important}.why-hero{font-size:32px!important}}</style>
+</helmet>
+<div style="background:#070B14;position:relative;overflow:hidden">
+  <div style="position:absolute;top:-160px;left:-120px;width:620px;height:620px;border-radius:50%;background:radial-gradient(circle,rgba(203,164,94,0.10),transparent 65%);pointer-events:none"></div>
+  <div style="max-width:1100px;margin:0 auto;display:none">
+    <div style="display:flex;align-items:center;gap:11px"><div style="width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#0E1A30,#070D1C);box-shadow:0 0 0 1px rgba(203,164,94,0.22)"><dc-import name="Raccoon" size="28" mood="approved" head="#8C9AB2" mask="#0C1525" ear="#C4A090" eye="#CBA45E" pupil="#04080F" hint-size="28px,28px"></dc-import></div><span style="font-family:'Playfair Display',serif;font-size:21px;font-weight:900">Move</span></div>
+    <a href="#" style="padding:10px 18px;border-radius:11px;background:linear-gradient(135deg,#DCBC7C,#CBA45E);color:#0A0F1C;font-size:13px;font-weight:700">Get the app</a>
+  </div>
+  <div style="max-width:720px;margin:0 auto;padding:70px 28px 40px;text-align:center;position:relative">
+    <div style="color:#CBA45E;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase">Why it's free</div>
+    <h1 class="why-hero" style="font-family:'Playfair Display',serif;font-size:46px;font-weight:900;line-height:1.08;margin-top:12px">Moving is stressful enough. The app shouldn't cost you.</h1>
+    <p style="color:#8A99B6;font-size:17px;line-height:1.65;margin-top:18px">Move is 100% free — no subscription, no trial, no credit card. We earn a small, optional referral when you choose a provider through us. You’re never required to, and your plan is identical either way.</p>
+  </div>
+  <div class="why-grid" style="max-width:760px;margin:0 auto;padding:0 28px 30px;display:grid;grid-template-columns:repeat(2,1fr);gap:13px">
+    <sc-for list="{{ points }}" as="p" hint-placeholder-count="4">
+      <div style="display:flex;gap:12px;align-items:flex-start;padding:18px;border-radius:16px;background:#121B2D;border:1px solid rgba(110,150,225,0.12)">
+        <span style="width:24px;height:24px;flex-shrink:0;border-radius:50%;background:rgba(84,203,126,0.16);color:#54CB7E;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <div style="font-size:14.5px;font-weight:600">{{ p }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="max-width:760px;margin:0 auto;padding:30px 28px 70px;text-align:center">
+    <a href="#" style="display:inline-block;padding:16px 30px;border-radius:14px;background:linear-gradient(135deg,#DCBC7C,#CBA45E,#B0852F);color:#0A0F1C;font-size:15px;font-weight:700;box-shadow:0 10px 30px rgba(203,164,94,0.28)">Start your move — free</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  renderVals(){ return { points:[
+    'Every feature included — no paywalls',
+    'No subscription and no free-trial countdown',
+    'No credit card to get started',
+    'Your data is yours — export or delete anytime',
+  ]}; }
+}
+</script>
+</body>
+</html>
