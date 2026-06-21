@@ -26,18 +26,39 @@ const PLAN_DISPLAY_ORDER: BillingPlan[] = ["FREE_TRIAL", "INDIVIDUAL", "FAMILY",
 
 /**
  * Per-tier presentation facts that are admin-console concerns (accent
- * class, catalog tag) rather than product copy — everything else on the
+ * tone, catalog tag) rather than product copy — everything else on the
  * card renders straight from the shared BILLING_PLAN_DEFINITIONS so a
- * pricing or entitlement change in packages/shared flows through.
+ * pricing or entitlement change in packages/shared flows through. Tones
+ * map to the Move admin semantic tone tokens used across the console.
  */
 const PLAN_PRESENTATION: Record<
   BillingPlan,
-  { accentClass: string; tag: string; featured: boolean }
+  { dotClass: string; tagClass: string; tag: string; featured: boolean }
 > = {
-  FREE_TRIAL: { accentClass: "au-plan-free", tag: "Free", featured: false },
-  INDIVIDUAL: { accentClass: "au-plan-individual", tag: "Base", featured: false },
-  FAMILY: { accentClass: "au-plan-family", tag: "Popular", featured: true },
-  PRO: { accentClass: "au-plan-pro", tag: "Premium", featured: false },
+  FREE_TRIAL: {
+    dotClass: "bg-tone-slate-fg",
+    tagClass: "bg-tone-slate-bg text-muted-foreground",
+    tag: "Free",
+    featured: false,
+  },
+  INDIVIDUAL: {
+    dotClass: "bg-tone-sky-fg",
+    tagClass: "bg-tone-sky-bg text-tone-sky-fg",
+    tag: "Base",
+    featured: false,
+  },
+  FAMILY: {
+    dotClass: "bg-primary",
+    tagClass: "bg-primary/10 text-primary",
+    tag: "Popular",
+    featured: true,
+  },
+  PRO: {
+    dotClass: "bg-tone-honey-fg",
+    tagClass: "bg-tone-honey-bg text-tone-honey-fg",
+    tag: "Premium",
+    featured: false,
+  },
 };
 
 interface TierStats {
@@ -125,16 +146,23 @@ export default async function PlansPage() {
           return (
             <article
               key={plan}
-              className={`au-plancard ${pres.accentClass} ${
-                pres.featured ? "au-plancard--featured" : ""
-              } p-5`}
+              className={`flex flex-col rounded-2xl border bg-card p-5 transition-shadow hover:shadow-lg ${
+                pres.featured ? "border-primary/40 ring-1 ring-primary/20" : "border-border"
+              }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="au-plancard__dot" aria-hidden="true" />
-                <h2 className="text-sm font-semibold text-foreground">
+                <span
+                  className={`h-2 w-2 rounded-full ${pres.dotClass}`}
+                  aria-hidden="true"
+                />
+                <h2 className="font-display text-base font-bold text-foreground">
                   {def.displayName}
                 </h2>
-                <span className="au-plancard__tag ml-auto">{pres.tag}</span>
+                <span
+                  className={`ml-auto rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.14em] ${pres.tagClass}`}
+                >
+                  {pres.tag}
+                </span>
               </div>
 
               <div className="mt-4 flex items-baseline gap-1">
@@ -145,7 +173,7 @@ export default async function PlansPage() {
                   {def.isPaid ? def.periodLabel : "forever"}
                 </span>
               </div>
-              <p className="mt-0.5 text-[11px] font-mono text-muted-foreground">
+              <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
                 {def.yearlyPriceLabel
                   ? `${def.yearlyPriceLabel} billed annually`
                   : "No payment method required"}
@@ -158,14 +186,14 @@ export default async function PlansPage() {
               <ul className="mt-4 space-y-2 border-t border-border pt-4">
                 {def.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-xs text-foreground/85">
-                    <Check className="au-plancard__check mt-0.5 h-3.5 w-3.5" aria-hidden="true" />
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
 
               <div className="mt-auto flex items-baseline justify-between gap-2 border-t border-border pt-4">
-                <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground">
+                <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">
                   Live
                 </span>
                 <span className="text-xs text-muted-foreground">
@@ -195,12 +223,16 @@ export default async function PlansPage() {
             const mrr = tierStats[plan]?.mrrUsd ?? 0;
             const widthPct = maxMrr > 0 ? Math.max((mrr / maxMrr) * 100, mrr > 0 ? 2 : 0) : 0;
             return (
-              <div key={plan} className={`flex items-center gap-4 ${pres.accentClass}`}>
+              <div key={plan} className="flex items-center gap-4">
                 <span className="w-24 shrink-0 text-xs text-muted-foreground">
                   {def.displayName}
                 </span>
-                <div className="au-planbar flex-1">
-                  <i style={{ width: `${widthPct}%` }} aria-hidden="true" />
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                  <i
+                    className={`block h-full rounded-full ${pres.dotClass}`}
+                    style={{ width: `${widthPct}%` }}
+                    aria-hidden="true"
+                  />
                 </div>
                 <span className="w-24 shrink-0 text-right font-mono text-xs font-semibold text-foreground">
                   {fmtUsd(mrr)}

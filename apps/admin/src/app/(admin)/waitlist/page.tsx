@@ -187,7 +187,7 @@ export default function WaitlistPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <AdminPageHeader
         eyebrow="Growth"
         title="<em>Waitlist</em>"
@@ -195,7 +195,7 @@ export default function WaitlistPage() {
         actions={
           <button
             onClick={openExport}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+            className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <Download className="h-4 w-4" /> Export CSV
           </button>
@@ -213,21 +213,24 @@ export default function WaitlistPage() {
         {TARGETS.map((target) => {
           const meta = TARGET_META[target];
           const Icon = meta.icon;
+          const isActive = targetFilter === target;
           return (
             <button
               key={target}
               onClick={() => setTargetFilter(targetFilter === target ? "all" : target)}
-              className={`rounded-xl border p-4 text-left transition ${
-                targetFilter === target
+              className={`rounded-2xl border p-4 text-left transition-colors ${
+                isActive
                   ? "border-primary bg-primary/5"
                   : "border-border bg-card hover:border-primary/40"
               }`}
             >
               <div className="flex items-center justify-between">
                 <Icon className={`h-4 w-4 ${meta.color}`} />
-                <span className="text-xs text-muted-foreground">{meta.label}</span>
+                <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  {meta.label}
+                </span>
               </div>
-              <p className="mt-2 text-2xl font-bold text-foreground">
+              <p className="mt-2 font-display text-3xl font-extrabold leading-none text-foreground">
                 {stats[target] ?? 0}
               </p>
             </button>
@@ -235,21 +238,21 @@ export default function WaitlistPage() {
         })}
       </div>
 
-      <div className="flex flex-wrap gap-3 rounded-xl border border-border bg-card p-4">
+      <div className="flex flex-wrap gap-3 rounded-2xl border border-border bg-card p-4">
         <input
           type="text"
           placeholder="Search by email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && load()}
-          className="min-w-[220px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          className="min-w-[220px] flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
         <select
           value={notifiedFilter}
           onChange={(e) =>
             setNotifiedFilter(e.target.value as "all" | "true" | "false")
           }
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
         >
           <option value="all">All outreach</option>
           <option value="false">Pending</option>
@@ -260,7 +263,7 @@ export default function WaitlistPage() {
           onChange={(e) =>
             setConvertedFilter(e.target.value as "all" | "true" | "false")
           }
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
         >
           <option value="all">All conversion states</option>
           <option value="false">Not converted</option>
@@ -269,7 +272,7 @@ export default function WaitlistPage() {
         <select
           value={sourceFilter}
           onChange={(e) => setSourceFilter(e.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
         >
           <option value="all">All sources</option>
           {sources.map((source) => (
@@ -280,21 +283,21 @@ export default function WaitlistPage() {
         </select>
         <button
           onClick={load}
-          className="rounded-lg border border-border bg-card px-4 py-2 text-sm hover:bg-accent"
+          className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          <RotateCcw className="mr-1 inline h-4 w-4" /> Refresh
+          <RotateCcw className="h-4 w-4" /> Refresh
         </button>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground">
+      <div className="rounded-2xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
         {activeSourceCount > 0
           ? `Tracking ${activeSourceCount} active waitlist sources.`
           : "No source segmentation data recorded yet."}
       </div>
 
-      <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-card">
+      <div className="overflow-x-auto overscroll-x-contain rounded-2xl border border-border bg-card">
         {loading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Loading...</div>
+          <div className="py-20 text-center text-sm text-muted-foreground">Loading...</div>
         ) : signups.length === 0 ? (
           <EmptyState
             icon={Mail}
@@ -303,27 +306,27 @@ export default function WaitlistPage() {
           />
         ) : (
           <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+            <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Target</th>
-                <th className="px-4 py-3">Source</th>
-                <th className="px-4 py-3">Linked User</th>
-                <th className="px-4 py-3">Signed Up</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Notes</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Email</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Target</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Source</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Linked User</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Signed Up</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Notes</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border">
               {signups.map((signup) => {
                 const meta = TARGET_META[signup.target];
                 const Icon = meta.icon;
                 return (
-                  <tr key={signup.id} className="border-t border-border">
-                    <td className="px-4 py-3 font-mono text-xs">{signup.email}</td>
+                  <tr key={signup.id} className="transition-colors hover:bg-accent/50">
+                    <td className="px-4 py-3 font-mono text-xs text-foreground">{signup.email}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5 text-xs">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-foreground">
                         <Icon className={`h-3.5 w-3.5 ${meta.color}`} />
                         {meta.label}
                       </span>
@@ -343,22 +346,25 @@ export default function WaitlistPage() {
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                       {new Date(signup.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1.5">
                         {signup.notifiedAt ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-tone-sage-fg">
+                          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-tone-sage-bg px-2 py-0.5 text-[11px] font-semibold text-tone-sage-fg">
+                            <span className="h-1.5 w-1.5 rounded-full bg-tone-sage-fg" />
                             <Bell className="h-3 w-3" /> Notified
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-tone-slate-bg px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                             Pending outreach
                           </span>
                         )}
                         {signup.convertedAt ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-tone-sky-fg">
+                          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-tone-sky-bg px-2 py-0.5 text-[11px] font-semibold text-tone-sky-fg">
+                            <span className="h-1.5 w-1.5 rounded-full bg-tone-sky-fg" />
                             <Check className="h-3 w-3" /> Converted
                           </span>
                         ) : null}
@@ -375,7 +381,7 @@ export default function WaitlistPage() {
                               notified: !Boolean(signup.notifiedAt),
                             })
                           }
-                          className="rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-accent"
+                          className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
                           {signup.notifiedAt ? "Unmark notified" : "Mark notified"}
                         </button>
@@ -385,7 +391,7 @@ export default function WaitlistPage() {
                               converted: !Boolean(signup.convertedAt),
                             })
                           }
-                          className="rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-accent"
+                          className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
                           {signup.convertedAt ? "Unmark converted" : "Mark converted"}
                         </button>
@@ -421,9 +427,9 @@ export default function WaitlistPage() {
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-1.5 font-display text-3xl font-extrabold leading-none text-foreground">{value}</p>
     </div>
   );
 }
