@@ -9,7 +9,7 @@ import { useAppTheme } from "@/lib/theme";
  * Distinct from the kawaii household {@link RaccoonMascot} (dad/mom/kid): this
  * is the brand mark used in the AI briefing, splash, route card, subscription
  * and onboarding. Colors default to the active theme's `raccoon` tokens with
- * the eye on the Sapphire accent; pass overrides to match a specific surface.
+ * the eye on the Gold accent; pass overrides to match a specific surface.
  */
 export type RaccoonMood = "calm" | "alert" | "happy" | "thinking" | "approved";
 

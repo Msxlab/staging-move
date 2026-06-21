@@ -101,7 +101,7 @@ const config: Config = {
           DEFAULT: "var(--sage)",
         },
         // Orange scale — preserved for legacy `bg-orange-500` usage.
-        // Values now point at the rose scale via CSS custom properties.
+        // Values now point at the Gold scale via CSS custom properties.
         orange: {
           50: "var(--orange-50)",
           100: "var(--orange-100)",

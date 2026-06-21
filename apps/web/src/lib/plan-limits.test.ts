@@ -70,6 +70,31 @@ describe("plan limits setup grace", () => {
     await expect(canCreateMovingPlan("user_1")).resolves.toMatchObject({ allowed: true });
   });
 
+  it("CONSUMER_FREE on: top-tier abuse caps do not ask users to upgrade", async () => {
+    mocks.isFeatureEnabled.mockResolvedValue(true);
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.serviceCount.mockResolvedValue(1000);
+    mocks.addressCount.mockResolvedValue(25);
+
+    const serviceResult = await canCreateService("user_1");
+    expect(serviceResult).toMatchObject({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      limit: 1000,
+      reason: expect.stringContaining("maximum"),
+    });
+    expect(serviceResult.upgradeRequired).toBeUndefined();
+
+    const addressResult = await canCreateAddress("user_1");
+    expect(addressResult).toMatchObject({
+      allowed: false,
+      code: "ADDRESS_LIMIT_REACHED",
+      limit: 25,
+      reason: expect.stringContaining("maximum"),
+    });
+    expect(addressResult.upgradeRequired).toBeUndefined();
+  });
+
   it("allows completed free users to add services under the thin-Free 10 cap", async () => {
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
     mocks.serviceCount.mockResolvedValue(2);

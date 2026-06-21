@@ -56,7 +56,7 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { useAuthStore } from "@/lib/auth-store";
-import { serviceLimitForPlan } from "@/lib/plan-comparison";
+import { isHighestConsumerPlan, serviceLimitForPlan } from "@/lib/plan-comparison";
 import {
   SERVICE_CATEGORIES,
   generateChecklist,
@@ -387,7 +387,20 @@ export default function ServicesScreen() {
   const totalMonthly = filtered.reduce((sum, s) => sum + (s.monthlyCost || 0), 0);
   const selectedAddress = selectedAddressId ? addresses.find((address) => address.id === selectedAddressId) : null;
   const serviceLimit = serviceLimitForPlan(planTier);
-  const serviceLimitReached = totalServiceCount >= serviceLimit;
+  const serviceLimitReached = planTier != null && totalServiceCount >= serviceLimit;
+  const serviceAtTopTierLimit = serviceLimitReached && isHighestConsumerPlan(planTier);
+  const serviceLimitBody = () =>
+    serviceAtTopTierLimit
+      ? t("services.safetyLimitWithCount", {
+          current: totalServiceCount,
+          limit: serviceLimit,
+          defaultValue: `You've reached the safety limit of ${serviceLimit} services for this account. Archive old services or contact support if you need more.`,
+        })
+      : t("services.limitReachedWithCount", {
+          current: totalServiceCount,
+          limit: serviceLimit,
+          defaultValue: `Your plan includes ${serviceLimit} services. Upgrade to add more.`,
+        });
   const categories = [...new Set(services.map((s) => getMergedDisplayCategoryKey(s.category)))].sort((a, b) => serviceCategoryLabel(a).localeCompare(serviceCategoryLabel(b)));
   const uncostedCount = filtered.filter((service) => !service.monthlyCost || service.monthlyCost <= 0).length;
 
@@ -521,15 +534,13 @@ export default function ServicesScreen() {
     if (serviceLimitReached) {
       Alert.alert(
         t("services.limitReachedTitle", { defaultValue: "Service limit reached" }),
-        t("services.limitReachedWithCount", {
-          current: totalServiceCount,
-          limit: serviceLimit,
-          defaultValue: `Your plan includes ${serviceLimit} services. Upgrade to add more.`,
-        }),
-        [
-          { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-          { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
-        ],
+        serviceLimitBody(),
+        serviceAtTopTierLimit
+          ? [{ text: t("common.ok", { defaultValue: "OK" }) }]
+          : [
+              { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+              { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+            ],
       );
       return;
     }

@@ -111,7 +111,7 @@ import { ObCoach } from "@/components/ui/ObCoach";
 import { coachCopyKeys } from "@/components/ui/ob-coach-state";
 import { computeOnboardingDataQuality } from "@/lib/onboarding-data-quality";
 import { NotificationPrimingCard } from "@/components/onboarding/NotificationPrimingCard";
-import { serviceLimitForPlan } from "@/lib/plan-comparison";
+import { isHighestConsumerPlan, serviceLimitForPlan } from "@/lib/plan-comparison";
 import { trackEvent } from "@/lib/analytics";
 
 const STEP_KEYS = [
@@ -259,6 +259,7 @@ export default function OnboardingScreen() {
   );
   const user = useAuthStore((s) => s.user);
   const planTier = useAuthStore((s) => s.planTier);
+  const setGlobalPlanTier = useAuthStore((s) => s.setPlanTier);
   const [step, setStep] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
@@ -443,6 +444,8 @@ export default function OnboardingScreen() {
       {
         const ent = res.data?.entitlement;
         const sub = res.data?.subscription || {};
+        const planValue = ent?.plan || sub.plan || null;
+        setGlobalPlanTier(planValue);
         const hasPremium = ent
           ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
           : Boolean(
@@ -515,7 +518,7 @@ export default function OnboardingScreen() {
     };
     loadOnboardingState().catch(() => {});
     return () => { cancelled = true; };
-  }, [router]);
+  }, [router, setGlobalPlanTier]);
 
   // Fetch providers when entering step 2
   const fetchProviders = useCallback(async () => {
@@ -580,13 +583,21 @@ export default function OnboardingScreen() {
     setMovingForm((prev) => applyAddressAutocompleteResult(prev, result));
   };
 
-  const serviceSelectionLimit = serviceLimitForPlan(planTier);
+  const planForServiceLimit = planTier || (isPremium ? "PRO" : "FREE_TRIAL");
+  const serviceSelectionLimit = serviceLimitForPlan(planForServiceLimit);
+  const serviceSelectionAtTopTier = isHighestConsumerPlan(planForServiceLimit);
   const serviceLimitMessage = useCallback(() =>
-    t("services.limitReachedWithCount", {
-      current: serviceSelectionLimit,
-      limit: serviceSelectionLimit,
-      defaultValue: `Your plan includes ${serviceSelectionLimit} services. Upgrade to add more.`,
-    }), [serviceSelectionLimit, t]);
+    serviceSelectionAtTopTier
+      ? t("services.safetyLimitWithCount", {
+          current: serviceSelectionLimit,
+          limit: serviceSelectionLimit,
+          defaultValue: `You've reached the safety limit of ${serviceSelectionLimit} services for this account. Add the essentials now and archive old services later if you need more.`,
+        })
+      : t("services.limitReachedWithCount", {
+          current: serviceSelectionLimit,
+          limit: serviceSelectionLimit,
+          defaultValue: `Your plan includes ${serviceSelectionLimit} services. Upgrade to add more.`,
+        }), [serviceSelectionAtTopTier, serviceSelectionLimit, t]);
 
   const toggleProvider = (provider: ScoredProvider) => {
     const alreadySelected = selectedProviders.has(provider.id);
@@ -1879,9 +1890,11 @@ export default function OnboardingScreen() {
                   </Text>
                   {essentialSelectionLimited && (
                     <Text style={[styles.recoSubtle, { color: theme.colors.amber.text, marginTop: 4 }]}>
-                      {t("onboarding.providers_limitHint", {
+                      {t(serviceSelectionAtTopTier ? "onboarding.providers_safetyLimitHint" : "onboarding.providers_limitHint", {
                         limit: serviceSelectionLimit,
-                        defaultValue: `Your plan includes ${serviceSelectionLimit} services. Choose the essentials now; upgrade for the rest.`,
+                        defaultValue: serviceSelectionAtTopTier
+                          ? `You can add up to ${serviceSelectionLimit} services. Choose the essentials now; add the rest later.`
+                          : `Your plan includes ${serviceSelectionLimit} services. Choose the essentials now; upgrade for the rest.`,
                       })}
                     </Text>
                   )}

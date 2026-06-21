@@ -282,6 +282,15 @@ export async function canCreateAddress(userId: string, scope: PlanLimitScope = {
   }
 
   if (count >= userPlan.limits.maxAddresses) {
+    if (userPlan.plan === "PRO") {
+      return {
+        allowed: false,
+        code: "ADDRESS_LIMIT_REACHED",
+        reason: `You've reached the maximum of ${userPlan.limits.maxAddresses} addresses for this account. Archive an old address or contact support if you need more.`,
+        current: count,
+        limit: userPlan.limits.maxAddresses,
+      };
+    }
     return {
       allowed: false,
       code: "ADDRESS_LIMIT_REACHED",
@@ -326,6 +335,15 @@ export async function canCreateService(userId: string, scope: PlanLimitScope = {
   }
 
   if (count >= userPlan.limits.maxServices) {
+    if (userPlan.plan === "PRO") {
+      return {
+        allowed: false,
+        code: "SERVICE_LIMIT_REACHED",
+        reason: `You've reached the maximum of ${userPlan.limits.maxServices} services for this account. Archive old services or contact support if you need more.`,
+        current: count,
+        limit: userPlan.limits.maxServices,
+      };
+    }
     return {
       allowed: false,
       code: "SERVICE_LIMIT_REACHED",

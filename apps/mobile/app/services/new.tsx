@@ -35,7 +35,7 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
-import { serviceLimitForPlan } from "@/lib/plan-comparison";
+import { isHighestConsumerPlan, serviceLimitForPlan } from "@/lib/plan-comparison";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import {
@@ -126,7 +126,7 @@ export default function NewServiceScreen() {
   // Address state
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [selectedAddress, setSelectedAddress] = useState("");
-  const [serviceGate, setServiceGate] = useState<{ current: number; limit: number } | null>(null);
+  const [serviceGate, setServiceGate] = useState<{ current: number; limit: number; plan: string | null } | null>(null);
 
   // Provider state
   const [allProviders, setAllProviders] = useState<ScoredProvider[]>([]);
@@ -203,7 +203,7 @@ export default function NewServiceScreen() {
         profileRes.data?.subscription?.plan ||
         "FREE_TRIAL";
       const current = servicesRes.data?.services?.length || 0;
-      setServiceGate({ current, limit: serviceLimitForPlan(plan) });
+      setServiceGate({ current, limit: serviceLimitForPlan(plan), plan });
     })();
   }, [requestedAddressId]);
 
@@ -362,7 +362,7 @@ export default function NewServiceScreen() {
     }
     if (failed > 0) {
       hapticError();
-      // A plan-limit / inactive-subscription gate gets an Upgrade affordance.
+      // A plan-limit / inactive-subscription gate gets a clear access-review path.
       if (gateCode) {
         showServiceLimitAlert();
       } else {
@@ -469,22 +469,32 @@ export default function NewServiceScreen() {
 
   const selectedCount = selectedProviders.size;
   const serviceLimitReached = serviceGate != null && serviceGate.current >= serviceGate.limit;
+  const serviceAtTopTierLimit = serviceLimitReached && isHighestConsumerPlan(serviceGate?.plan);
+  const serviceLimitBody = () =>
+    serviceAtTopTierLimit
+      ? t("services.safetyLimitWithCount", {
+          current: serviceGate?.current ?? 0,
+          limit: serviceGate?.limit ?? 0,
+          defaultValue: `You've reached the safety limit of ${serviceGate?.limit ?? 0} services for this account. Archive old services or contact support if you need more.`,
+        })
+      : t("services.limitReachedWithCount", {
+          current: serviceGate?.current ?? 0,
+          limit: serviceGate?.limit ?? 0,
+          defaultValue: `Your plan includes ${serviceGate?.limit ?? 0} services. Upgrade to add more.`,
+        });
   const smartSetupLanding = mode === "browse" && (prefillProviderIds.length > 0 || Boolean(guideParam));
   const smartSetupSelectedCount = prefillProviderIds.filter((id) => selectedProviders.has(id)).length;
   const showServiceLimitAlert = (message?: string) => {
     hapticError();
     Alert.alert(
       t("services.limitReachedTitle", { defaultValue: "Service limit reached" }),
-      message ||
-        t("services.limitReachedWithCount", {
-          current: serviceGate?.current ?? 0,
-          limit: serviceGate?.limit ?? 0,
-          defaultValue: `Your plan includes ${serviceGate?.limit ?? 0} services. Upgrade to add more.`,
-        }),
-      [
-        { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-        { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
-      ],
+      message || serviceLimitBody(),
+      serviceAtTopTierLimit
+        ? [{ text: t("common.ok", { defaultValue: "OK" }) }]
+        : [
+            { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+          ],
     );
   };
   const categoryLabel = useCallback(
@@ -583,15 +593,11 @@ export default function NewServiceScreen() {
                   {t("services.limitReachedTitle", { defaultValue: "Service limit reached" })}
                 </Text>
                 <Text style={styles.limitBody}>
-                  {t("services.limitReachedWithCount", {
-                    current: serviceGate?.current ?? 0,
-                    limit: serviceGate?.limit ?? 0,
-                    defaultValue: `Your plan includes ${serviceGate?.limit ?? 0} services. Upgrade to add more.`,
-                  })}
+                  {serviceLimitBody()}
                 </Text>
                 <TouchableOpacity
                   style={styles.limitCta}
-                  onPress={() => router.push("/settings/subscription")}
+                  onPress={() => serviceAtTopTierLimit ? router.back() : router.push("/settings/subscription")}
                   activeOpacity={0.85}
                 >
                   <LinearGradient
@@ -600,7 +606,11 @@ export default function NewServiceScreen() {
                     end={{ x: 1, y: 0 }}
                     style={styles.limitCtaGrad}
                   >
-                    <Text style={styles.limitCtaText}>{t("subscription.upgrade", { defaultValue: "Upgrade" })}</Text>
+                    <Text style={styles.limitCtaText}>
+                      {serviceAtTopTierLimit
+                        ? t("services.backToServices", { defaultValue: "Back to services" })
+                        : t("subscription.upgrade", { defaultValue: "Upgrade" })}
+                    </Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>

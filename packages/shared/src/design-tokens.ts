@@ -52,7 +52,7 @@ export const brandColors = {
 } as const;
 
 /**
- * Cool scale — Aurora primary. The legacy `orangeScale` / `roseScale`
+ * Gold scale - Move Gold primary. The legacy `orangeScale` / `roseScale`
  * exports point at *this* scale so `bg-orange-500`, `text-orange-400`,
  * `tokens.orange[500]`, etc. flip palette without touching component
  * code. The 500 step is the brand pin color.
@@ -90,7 +90,7 @@ export const foilScale = {
 export const orangeScale = roseScale;
 
 // ────────────────────────────────────────────────────────────────────
-// Surfaces — Aurora deep navy on dark, soft sky on light
+// Surfaces - deep navy on dark, soft sky on light
 // ────────────────────────────────────────────────────────────────────
 
 export const surfaceDark = {
@@ -110,7 +110,7 @@ export const surfaceLight = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Foreground / text — Aurora ink ramp (cool-tinted whites/blacks)
+// Foreground / text - Move ink ramp
 // ────────────────────────────────────────────────────────────────────
 
 export const textDark = {

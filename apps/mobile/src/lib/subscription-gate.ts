@@ -1,7 +1,7 @@
 /**
  * Backend gate codes (apps/web api-gates + plan-limits) that mean "this action
- * needs a higher plan / an active subscription", as opposed to a transient
- * error. The mobile create flows branch on these to show an Upgrade affordance
+ * needs access review / an active subscription", as opposed to a transient
+ * error. The mobile create flows branch on these to show a clear access path
  * instead of a generic "Try again" alert that dead-ends the user.
  */
 export const UPSELL_GATE_CODES: string[] = [
@@ -14,8 +14,7 @@ export const UPSELL_GATE_CODES: string[] = [
   "SETUP_SERVICE_LIMIT_REACHED",
   "SETUP_MOVING_PLAN_LIMIT_REACHED",
   "SETUP_CUSTOM_PROVIDER_LIMIT_REACHED",
-  // Freemium re-architecture: the moving plan is a paid unlock. A FREE user who
-  // POSTs /api/moving (e.g. a stale "Start a move" entry point) gets this code;
-  // surfacing the Upgrade affordance is far better than a dead-end "Try again".
+  // Legacy freemium gate: stale clients can still hit this code when the server
+  // refuses plan creation; surface access review instead of a dead-end retry.
   "MOVING_PLAN_UPGRADE_REQUIRED",
 ];

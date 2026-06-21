@@ -1,15 +1,15 @@
 import type { Config } from "tailwindcss";
 
-// Edition VII · Aurora. The mobile NativeWind palette is sourced from
+// Edition VIII - Move Gold. The mobile NativeWind palette is sourced from
 // packages/shared/src/design-tokens.ts so `bg-primary-500` / `bg-primary`
-// / `bg-surface` resolve to the cool/violet/mint Aurora values shipped
+// / `bg-surface` resolve to the Gold, teal, and green values shipped
 // system-wide.
 //
 // Legacy names (rose, foil, sage, primary, surface) are preserved on
 // purpose: existing `bg-primary-500` / `bg-rose` / `bg-foil` call sites
-// keep rendering, the values just flip to Aurora. New code should
-// prefer the semantic aliases (`bg-rose`/cool, `bg-foil`/violet,
-// `bg-sage`/mint).
+// keep rendering, the values just flip to Move Gold. New code should
+// prefer the semantic aliases (`bg-rose`/gold, `bg-foil`/gold,
+// `bg-sage`/green).
 export default {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -19,7 +19,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Aurora mobile palette aligned with packages/shared/src/design-tokens.ts.
+        // Move Gold mobile palette aligned with packages/shared/src/design-tokens.ts.
         // NativeWind className colors are a fixed (dark) palette; runtime
         // light/dark theming is driven by src/lib/theme.ts (useAppTheme).
         // Legacy keys (rose/foil/sage/primary/surface) are kept so existing
@@ -39,7 +39,7 @@ export default {
           800: "#9A7325",
           900: "#86631A",
         },
-        // Aurora-named aliases.
+        // Legacy aliases retained for existing class names.
         rose: {
           DEFAULT: "#E25C5C",
           light: "#F08A8A",
@@ -63,7 +63,7 @@ export default {
           hover: "#16203A",
         },
         accent: "#CBA45E",
-        // Semantic shorthands — Aurora mint / amber / coral / cool.
+        // Semantic shorthands - green / amber / coral / teal.
         success: "#54CB7E",
         warning: "#E0A85A",
         danger: "#E25C5C",
