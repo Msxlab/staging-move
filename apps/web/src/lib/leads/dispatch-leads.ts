@@ -118,13 +118,25 @@ export async function drainLeadDispatches(opts: { now?: Date; batchSize?: number
 
   for (const d of due) {
     try {
-      // Resolve the recipient email by partner kind: a mover application or a
-      // generic Partner (R4). Both expose contactEmail.
-      const contactEmail =
+      // Resolve the recipient by partner kind: a mover application or a generic
+      // Partner (R4). Both expose contactEmail + status. The dispatch may have sat
+      // QUEUED since the lead was created, so RE-CHECK approval at send time: an
+      // admin can reject/needs-info a partner in the interim, and we must NOT
+      // deliver a consumer's PII (or accrue a CPL) to a de-authorized recipient
+      // (audit P1-1). Fail-closed + terminal.
+      const recipient =
         d.partnerKind === "partner"
-          ? (await prisma.partner.findUnique({ where: { id: d.partnerId }, select: { contactEmail: true } }))?.contactEmail
-          : (await prisma.moverApplication.findUnique({ where: { id: d.partnerId }, select: { contactEmail: true } }))?.contactEmail;
-      const to = contactEmail?.trim();
+          ? await prisma.partner.findUnique({ where: { id: d.partnerId }, select: { contactEmail: true, status: true } })
+          : await prisma.moverApplication.findUnique({ where: { id: d.partnerId }, select: { contactEmail: true, status: true } });
+      if (!recipient || recipient.status !== "APPROVED") {
+        await prisma.leadDispatch.update({
+          where: { id: d.id },
+          data: { status: "FAILED", lastErrorCode: "NOT_APPROVED", attemptCount: { increment: 1 } },
+        });
+        failed++;
+        continue;
+      }
+      const to = recipient.contactEmail?.trim();
       if (!to) {
         // No deliverable contact — terminal, don't retry forever.
         await prisma.leadDispatch.update({
