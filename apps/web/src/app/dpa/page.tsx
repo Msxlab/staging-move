@@ -49,7 +49,7 @@ export default function DpaPage() {
         <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           DPA contact:{" "}
-          <a href={mailto(LEGAL_CONTACTS.dpa, "LocateFlow DPA inquiry")} className="text-primary underline">
+          <a href={mailto(LEGAL_CONTACTS.dpa, "Move DPA inquiry")} className="text-primary underline">
             {LEGAL_CONTACTS.dpa}
           </a>
         </p>
@@ -102,7 +102,7 @@ export default function DpaPage() {
           Known subprocessor categories include hosting/database providers, Cloudflare R2 or object storage, Stripe, Apple App Store, Google Play, Resend or email delivery providers, Google Analytics/Google Tag Manager when configured, Google Maps/address autocomplete when configured, Expo or push notification providers, and Sentry/GlitchTip or error-monitoring providers when configured.
         </p>
         <p>
-          A production subprocessor list with legal names, locations, and processing purposes must be finalized before full business launch. Subprocessor questions can be sent to <a href={mailto(LEGAL_CONTACTS.dpa, "LocateFlow subprocessor inquiry")} className="text-primary underline">{LEGAL_CONTACTS.dpa}</a>.
+          A production subprocessor list with legal names, locations, and processing purposes must be finalized before full business launch. Subprocessor questions can be sent to <a href={mailto(LEGAL_CONTACTS.dpa, "Move subprocessor inquiry")} className="text-primary underline">{LEGAL_CONTACTS.dpa}</a>.
         </p>
       </PublicSection>
 

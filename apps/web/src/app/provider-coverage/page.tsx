@@ -80,12 +80,12 @@ export default function ProviderCoveragePage() {
       >
         <PublicSection title="How provider information is used">
           <p className="text-foreground/90">
-            LocateFlow helps users keep a personal record of the providers connected
+            Move helps users keep a personal record of the providers connected
             to their addresses. When provider suggestions or public-source details are
             shown, they are meant to help users remember what to check next.
           </p>
           <p className="text-foreground/90">
-            LocateFlow does not act as a broker, reseller, mover, utility company, or
+            Move does not act as a broker, reseller, mover, utility company, or
             provider marketplace. It does not complete provider account updates on a
             user&apos;s behalf.
           </p>

@@ -62,7 +62,7 @@ export default function TermsPage() {
         <p className="mt-2">Legal entity: {displayLegalEntityName()}</p>
         <p>
           Legal notices:{" "}
-          <a href={mailto(LEGAL_CONTACTS.legal, "LocateFlow legal notice")} className="text-primary underline">
+          <a href={mailto(LEGAL_CONTACTS.legal, "Move legal notice")} className="text-primary underline">
             {LEGAL_CONTACTS.legal}
           </a>
         </p>

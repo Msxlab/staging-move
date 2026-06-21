@@ -102,7 +102,7 @@ export default function BillingPolicyPage() {
 
       <PublicSection title="Billing questions">
         <p>
-          For billing support, email <a href={mailto(LEGAL_CONTACTS.billing, "LocateFlow billing request")} className="text-primary underline">{LEGAL_CONTACTS.billing}</a>. See the <Link href="/refund" className="text-primary underline">Refund Policy</Link> for refund request windows and exclusions.
+          For billing support, email <a href={mailto(LEGAL_CONTACTS.billing, "Move billing request")} className="text-primary underline">{LEGAL_CONTACTS.billing}</a>. See the <Link href="/refund" className="text-primary underline">Refund Policy</Link> for refund request windows and exclusions.
         </p>
       </PublicSection>
     </PublicPageShell>

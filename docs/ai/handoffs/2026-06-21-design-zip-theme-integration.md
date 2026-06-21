@@ -55,6 +55,14 @@
 - Old cool-blue palette scan over app/package TS/TSX/CSS/JSON/SVG sources: clean.
 - Visible page/component old-brand scan over web/admin/mobile routes/components/i18n/legal/help: clean.
 
+## Post-deploy correction
+
+- Dokploy staging rebuilt branch `codex/staging-audit-2026-06-21` at commit `767e348d`.
+- That live commit included `525bb485` plus a later merge from `main` / Claude reskin work.
+- A post-deploy scan found old visible `LocateFlow` copy reintroduced in public policy/provider pages (`/terms`, `/privacy`, `/provider-coverage`, `/acceptable-use`, `/dpa`, `/billing-policy`, `/data-deletion`) through link subjects and page paragraphs.
+- These were corrected back to `Move`; source scans for visible routes/components and old cool-blue palette are clean again.
+- Re-validation after the correction: web `tsc --noEmit`, `legal-content-regression`, `seo-launch-regression`, `seo.test`, and `git diff --check` passed.
+
 ## Remaining runtime checks
 
 - Browser QA must compare staging/home, `/features`, `/why-free`, `/blog`, `/sign-in`, `/onboarding`, app dashboard, mobile web-embed surfaces, and admin overview/users/moves/analytics/providers/support/settings.
