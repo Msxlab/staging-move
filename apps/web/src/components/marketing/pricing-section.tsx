@@ -391,6 +391,10 @@ const COMING_SOON_OFFERS: ComingSoonOffer[] = [
   },
 ];
 
+// Module-scoped: dedupe offer_viewed impressions to once per offer per page
+// session, so SPA re-mounts don't flood analytics (audit P2-12).
+const firedOfferImpressions = new Set<string>();
+
 function ComingSoonCard({ offer }: { offer: ComingSoonOffer }) {
   const [interested, setInterested] = useState(false);
   const Icon = offer.icon;
@@ -447,10 +451,14 @@ function ConsumerFreePricing({
   const Heading = headingLevel;
 
   useEffect(() => {
-    // One impression per coming-soon offer when the section mounts.
-    COMING_SOON_OFFERS.forEach((offer) =>
-      trackEvent("offer_viewed", { offer_key: offer.key, surface: "pricing" }),
-    );
+    // One impression per coming-soon offer PER PAGE SESSION — guard against
+    // re-mounts (SPA navigation, StrictMode double-invoke) flooding UserEvent
+    // rows on a high-traffic page (audit P2-12).
+    COMING_SOON_OFFERS.forEach((offer) => {
+      if (firedOfferImpressions.has(offer.key)) return;
+      firedOfferImpressions.add(offer.key);
+      trackEvent("offer_viewed", { offer_key: offer.key, surface: "pricing" });
+    });
   }, []);
 
   return (
