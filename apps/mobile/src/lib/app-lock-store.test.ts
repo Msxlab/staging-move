@@ -69,7 +69,7 @@ describe("app lock store", () => {
     expect(useAppLockStore.getState().locked).toBe(false);
   });
 
-  it("stays locked but is recoverable via disable when no auth method is available", async () => {
+  it("stays locked and refuses disable while no auth method is available", async () => {
     // No biometrics AND no device passcode → authenticate fails.
     (LocalAuthentication.authenticateAsync as any).mockResolvedValueOnce({
       success: false,
@@ -87,9 +87,22 @@ describe("app lock store", () => {
     expect(result.success).toBe(false);
     expect(useAppLockStore.getState().locked).toBe(true);
 
-    // Recovery escape: disabling the non-functional lock keeps the user in
-    // their session instead of forcing a full sign-out.
-    await useAppLockStore.getState().disable();
+    const disableResult = await useAppLockStore.getState().disable();
+    expect(disableResult).toEqual({
+      success: false,
+      reason: "authentication_required",
+    });
+    expect(useAppLockStore.getState().locked).toBe(true);
+    expect(useAppLockStore.getState().enabled).toBe(true);
+  });
+
+  it("allows explicit local cleanup to reset a locked app lock after sign-out", async () => {
+    storage.set("locateflow.appLock.enabled", "true");
+
+    await useAppLockStore.getState().hydrate();
+    const result = await useAppLockStore.getState().disable({ allowWhileLocked: true });
+
+    expect(result.success).toBe(true);
     expect(useAppLockStore.getState().locked).toBe(false);
     expect(useAppLockStore.getState().enabled).toBe(false);
   });

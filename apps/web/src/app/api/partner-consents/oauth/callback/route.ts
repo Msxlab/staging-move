@@ -10,6 +10,8 @@ import {
   upsertGrantedConsent,
   userHasApiConnectorEntitlement,
 } from "@/lib/connector-oauth";
+import { ApiGateError } from "@/lib/api-gates";
+import { assertWorkspaceAction, resolveWorkspaceDataScope } from "@/lib/workspace-data-scope";
 
 export const runtime = "nodejs";
 
@@ -62,7 +64,21 @@ export async function GET(request: NextRequest) {
     return fail("/dashboard?connector_error=state-mismatch");
   }
   if (!isValidConnectorKey(connectorKey)) return fail("/dashboard?connector_error=invalid-connector");
-  if (!(await userHasApiConnectorEntitlement(session.userId))) {
+
+  let entitlementUserId = session.userId;
+  try {
+    const scope = await resolveWorkspaceDataScope(request, session.userId);
+    assertWorkspaceAction(scope, "addressChange.initiate", { resourceUserId: session.userId });
+    entitlementUserId = scope.workspaceId ? scope.ownerUserId : session.userId;
+  } catch (error) {
+    if (error instanceof ApiGateError) {
+      const code = error.code === "STALE_WORKSPACE_SELECTION" ? "stale-workspace" : "workspace-forbidden";
+      return fail(`/dashboard?connector_error=${code}`);
+    }
+    throw error;
+  }
+
+  if (!(await userHasApiConnectorEntitlement(entitlementUserId))) {
     return fail("/dashboard?connector_error=plan-not-entitled");
   }
   if (!(await isConnectorEnabled(connectorKey))) {

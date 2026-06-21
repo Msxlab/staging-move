@@ -244,6 +244,40 @@ HTTP responses and masked/indirect Dokploy state.
 - Codex Security config preflight ran with bundled Python and returned `status: incomplete` because active multi-agent mode/capacity is unknown; this parent-agent audit cannot honestly claim the full delegated repository-wide Codex Security scan workflow is complete.
 - Broad staging audit prompt updated with the latest pre-install static gates and branch-specific re-check list.
 
+## 2026-06-21 Dokploy Staging Runtime + Fix Pass
+
+- Dokploy staging app `staging-move-phkdb4` was deployed under the LocateFlow project from branch `codex/staging-audit-2026-06-21` using `docker-compose.dokploy.yml`.
+- Cloudflare DNS-only A records were attached for `staging.locateflow.com`, `admin-staging.locateflow.com`, and `img-staging.locateflow.com`.
+- Dokploy domains were mapped to web `3000`, admin `3001`, and imgproxy `8080`.
+- Initial deploy succeeded and live smoke checks passed for web `/api/health`, web `/api/ready`, admin `/api/healthz`, imgproxy `/`, public web pages, admin login redirect, noindex headers, and build-info endpoints.
+- Found and fixed Dokploy cron startup risk by keeping `cron` behind the explicit `cron` Compose profile; the old first-deploy cron container was stopped manually in Dokploy.
+- Found and fixed live homepage H1 accessibility spacing by adding an explicit `aria-label` and regression test.
+- Found and fixed build-info branch drift by preferring generated `.build-info.json` deployment identity over stale runtime branch env. Temp `.git` regression check proved stale `SOURCE_BRANCH=main` no longer overrides `codex/staging-audit-2026-06-21`.
+- Closed shared package verification gap: root `verify:typecheck` and `verify:tests` now include `@locateflow/shared`; shared got a direct `test` script and Vitest dependency.
+- Fixed mobile staging-preview/preview EAS profiles so internal QA builds target `https://staging.locateflow.com/api` rather than production.
+- Fixed stale mobile workspace header behavior: server returns structured `STALE_WORKSPACE_SELECTION` 409 instead of silently falling back to another workspace; mobile clears `locateflow.selectedWorkspaceId` on that response.
+- Fixed app-lock recovery bypass: locked state can no longer disable the app lock without successful auth; logout/local cleanup uses explicit `allowWhileLocked`.
+- Narrowed default mobile OAuth HTTPS callback allowlist to canonical `locateflow.com` to match native app-link config; alternate hosts require explicit `MOBILE_OAUTH_REDIRECT_URIS`.
+- Fixed admin forced password-change endpoint so only admins with `mustChangePassword=true` can use it; normal admin password changes remain on the step-up route.
+- Hardened admin invite set-password URL generation: production/staging require configured HTTPS admin URL and fail before admin/token creation if config is insecure or missing.
+- Fixed connector OAuth entitlement mismatch: workspace-member OAuth initiate/callback now checks the workspace owner entitlement while still storing consent on the acting user.
+- Shifted CI migration job from `prisma migrate deploy` to `prisma migrate status`; deploy environment remains migration owner.
+- Made `docker/migrate.Dockerfile` migrate-only by default and moved `seed-admin` to an explicit `bootstrap` profile in `docker-compose.prod.yml`.
+- Parameterized Dokploy DB prep/copy compose project/container/volume names and require explicit staging/prod identifiers to prevent volume/container collisions.
+- Added non-leaky admin `/api/ready`, changed Dokploy/prod web/admin healthchecks to readiness endpoints, and made web `/api/ready` return only counts/status publicly.
+- Added `CRON_SCHEDULER_OWNER` guards for GitHub cron and Ofelia cron runner so only the declared scheduler owner fires production cron endpoints.
+
+### Verification Completed After Docker Node 22 Setup
+
+- Docker Node 22 install path used named `node_modules` volumes and `pnpm install --frozen-lockfile`; host Node remains `v24.12.0`, so local host runtime is still not the canonical test runtime.
+- Focused regression tests passed for shared build-info/API client, web readiness/API gates/workspace/mobile OAuth/connector OAuth/landing a11y, admin force-password-change/team/ready, and mobile release-config/API/app-lock/OAuth handoff.
+- Full `pnpm verify:typecheck` passed in Docker Node 22.
+- Full `pnpm verify:tests` passed in Docker Node 22.
+- `pnpm --filter @locateflow/db exec prisma validate` passed with a dummy syntactic `DATABASE_URL`.
+- `git diff --check` passed; only expected CRLF warnings were printed.
+- `docker compose -f docker-compose.dokploy-dbprep.yml config` and `docker compose -f docker-compose.dokploy-dbcopy.yml config` were checked with staging identifiers and produced distinct `locateflow-staging-*` containers plus `locateflow-staging_mysql_data`.
+- `docker compose -f docker-compose.prod.yml config` was checked with dummy env and showed migrate runs only `prisma migrate deploy`; inactive `seed-admin` no longer makes base config require seed env.
+
 ## Minimum Env Categories Needed For Real Tests
 
 Do not paste values into chat. Set locally.

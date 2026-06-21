@@ -75,6 +75,7 @@ jobs:
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
       BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
       CRON_SCHEDULER_DISABLED: ${{ vars.CRON_SCHEDULER_DISABLED }}
+      CRON_SCHEDULER_OWNER: ${{ vars.CRON_SCHEDULER_OWNER }}
       SCHED: ${{ github.event.schedule }}
     steps:
       - name: Trigger cron endpoints
@@ -82,6 +83,10 @@ jobs:
           set -uo pipefail
           if [ "${CRON_SCHEDULER_DISABLED:-}" = "true" ] && [ "${GITHUB_EVENT_NAME:-}" != "workflow_dispatch" ]; then
             echo "CRON_SCHEDULER_DISABLED=true; skipping scheduled GitHub cron because another scheduler owns production."
+            exit 0
+          fi
+          if [ "${GITHUB_EVENT_NAME:-}" != "workflow_dispatch" ] && [ "${CRON_SCHEDULER_OWNER:-}" != "github" ]; then
+            echo "CRON_SCHEDULER_OWNER is not github; skipping scheduled GitHub cron."
             exit 0
           fi
           if [ -z "${CRON_SECRET}" ]; then

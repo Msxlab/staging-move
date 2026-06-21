@@ -8,6 +8,10 @@ function usable(value) {
   return normalized && normalized.toLowerCase() !== UNKNOWN ? normalized : "";
 }
 
+function usableBranch(value) {
+  return usable(value).replace(/^refs\/heads\//, "").replace(/^origin\//, "");
+}
+
 function readText(path) {
   try {
     return readFileSync(path, "utf8").trim();
@@ -43,8 +47,8 @@ function readGitMetadata() {
 
 const git = readGitMetadata();
 const info = {
-  commitSha: usable(process.env.BUILD_COMMIT_SHA) || usable(process.env.COMMIT_SHA) || usable(process.env.GIT_SHA) || usable(process.env.GITHUB_SHA) || usable(process.env.SOURCE_COMMIT) || usable(git.commitSha) || UNKNOWN,
-  sourceBranch: usable(process.env.BUILD_SOURCE_BRANCH) || usable(process.env.SOURCE_BRANCH) || usable(process.env.GIT_BRANCH) || usable(process.env.GITHUB_REF_NAME) || usable(git.sourceBranch) || UNKNOWN,
+  commitSha: usable(git.commitSha) || usable(process.env.BUILD_COMMIT_SHA) || usable(process.env.COMMIT_SHA) || usable(process.env.GIT_SHA) || usable(process.env.GITHUB_SHA) || usable(process.env.SOURCE_COMMIT) || UNKNOWN,
+  sourceBranch: usableBranch(git.sourceBranch) || usableBranch(process.env.BUILD_SOURCE_BRANCH) || usableBranch(process.env.DOKPLOY_GIT_BRANCH) || usableBranch(process.env.DOKPLOY_BRANCH) || usableBranch(process.env.GITHUB_REF_NAME) || usableBranch(process.env.VERCEL_GIT_COMMIT_REF) || usableBranch(process.env.CF_PAGES_BRANCH) || usableBranch(process.env.SOURCE_BRANCH) || usableBranch(process.env.GIT_BRANCH) || UNKNOWN,
   builtAt: usable(process.env.BUILD_CREATED_AT) || usable(process.env.BUILD_DATE) || new Date().toISOString(),
   environment: usable(process.env.APP_ENV) || usable(process.env.NODE_ENV) || "production",
 };

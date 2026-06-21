@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   getConnectorOAuthConfig: vi.fn(),
   exchangeConnectorCode: vi.fn(),
   upsertGrantedConsent: vi.fn(),
+  resolveWorkspaceDataScope: vi.fn(),
+  assertWorkspaceAction: vi.fn(),
 }));
 
 vi.mock("@/lib/oauth", () => ({
@@ -30,6 +32,10 @@ vi.mock("@/lib/connector-oauth", () => ({
   upsertGrantedConsent: (...a: unknown[]) => mocks.upsertGrantedConsent(...a),
   userHasApiConnectorEntitlement: (...a: unknown[]) => mocks.userHasApiConnectorEntitlement(...a),
 }));
+vi.mock("@/lib/workspace-data-scope", () => ({
+  resolveWorkspaceDataScope: (...a: unknown[]) => mocks.resolveWorkspaceDataScope(...a),
+  assertWorkspaceAction: (...a: unknown[]) => mocks.assertWorkspaceAction(...a),
+}));
 
 function callbackRequest(cookie = "pc_oauth_state=state-1; pc_oauth_pkce=verifier-1; pc_oauth_connector=usps") {
   return new NextRequest("https://locateflow.com/api/partner-consents/oauth/callback?code=code-1&state=state-1", {
@@ -45,6 +51,15 @@ describe("partner consent OAuth callback", () => {
     mocks.getUserSession.mockResolvedValue({ userId: "user_1" });
     mocks.isApiConnectorsEnabled.mockResolvedValue(true);
     mocks.userHasApiConnectorEntitlement.mockResolvedValue(true);
+    mocks.resolveWorkspaceDataScope.mockResolvedValue({
+      actorUserId: "user_1",
+      ownerUserId: "user_1",
+      workspaceId: null,
+      workspaceMode: false,
+      memberRole: null,
+      memberStatus: null,
+    });
+    mocks.assertWorkspaceAction.mockReturnValue(undefined);
     mocks.isConnectorEnabled.mockResolvedValue(true);
     mocks.getConnectorOAuthConfig.mockResolvedValue({ scopes: ["addresses"] });
     mocks.exchangeConnectorCode.mockResolvedValue({ accessToken: "at", refreshToken: "rt" });
@@ -80,6 +95,32 @@ describe("partner consent OAuth callback", () => {
 
     expect(res.headers.get("location")).toBe("https://locateflow.com/dashboard?connector_connected=usps");
     expect(mocks.exchangeConnectorCode).toHaveBeenCalled();
+    expect(mocks.upsertGrantedConsent).toHaveBeenCalledWith(expect.objectContaining({
+      userId: "user_1",
+      connectorKey: "usps",
+    }));
+  });
+
+  it("uses workspace owner entitlement while storing consent for the acting user", async () => {
+    mocks.resolveWorkspaceDataScope.mockResolvedValue({
+      actorUserId: "user_1",
+      ownerUserId: "owner_1",
+      workspaceId: "ws_1",
+      workspaceMode: true,
+      memberRole: "MEMBER",
+      memberStatus: "ACTIVE",
+    });
+    const { GET } = await import("./route");
+
+    const res = await GET(callbackRequest());
+
+    expect(res.headers.get("location")).toBe("https://locateflow.com/dashboard?connector_connected=usps");
+    expect(mocks.userHasApiConnectorEntitlement).toHaveBeenCalledWith("owner_1");
+    expect(mocks.assertWorkspaceAction).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: "ws_1", ownerUserId: "owner_1" }),
+      "addressChange.initiate",
+      { resourceUserId: "user_1" },
+    );
     expect(mocks.upsertGrantedConsent).toHaveBeenCalledWith(expect.objectContaining({
       userId: "user_1",
       connectorKey: "usps",

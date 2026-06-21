@@ -52,6 +52,7 @@ describe("api gate helpers", () => {
     ["SUBSCRIPTION_REQUIRED", 403],
     ["FORBIDDEN", 403],
     ["NOT_FOUND", 404],
+    ["STALE_WORKSPACE_SELECTION", 409],
   ] as const)("maps %s to a structured response", async (code, status) => {
     const response = apiGateErrorResponse(new Error(code))!;
     const body = await response.json();

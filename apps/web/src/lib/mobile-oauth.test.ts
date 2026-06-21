@@ -66,9 +66,11 @@ describe("mobile OAuth handoff codes", () => {
   it("validates mobile redirect URIs against an allowlist", () => {
     expect(normalizeMobileOAuthRedirectUri("locateflow://oauth")).toBe("locateflow://oauth");
     expect(normalizeMobileOAuthRedirectUri("locateflow:///oauth")).toBe("locateflow:///oauth");
-    expect(normalizeMobileOAuthRedirectUri("https://app.locateflow.com/mobile/oauth")).toBe(
-      "https://app.locateflow.com/mobile/oauth",
+    expect(normalizeMobileOAuthRedirectUri("https://locateflow.com/mobile/oauth")).toBe(
+      "https://locateflow.com/mobile/oauth",
     );
+    expect(normalizeMobileOAuthRedirectUri("https://app.locateflow.com/mobile/oauth")).toBeNull();
+    expect(normalizeMobileOAuthRedirectUri("https://locateflow.app/mobile/oauth")).toBeNull();
     expect(normalizeMobileOAuthRedirectUri("exp://192.168.1.5:8081/--/oauth")).toBe(
       "exp://192.168.1.5:8081/--/oauth",
     );
@@ -76,9 +78,12 @@ describe("mobile OAuth handoff codes", () => {
   });
 
   it("uses the configured redirect allowlist when one is present", () => {
-    process.env.MOBILE_OAUTH_REDIRECT_URIS = "locateflow://oauth";
+    process.env.MOBILE_OAUTH_REDIRECT_URIS = "locateflow://oauth,https://app.locateflow.com/mobile/oauth";
 
     expect(normalizeMobileOAuthRedirectUri("locateflow://oauth")).toBe("locateflow://oauth");
+    expect(normalizeMobileOAuthRedirectUri("https://app.locateflow.com/mobile/oauth")).toBe(
+      "https://app.locateflow.com/mobile/oauth",
+    );
     expect(normalizeMobileOAuthRedirectUri("locateflow:///oauth")).toBeNull();
     expect(normalizeMobileOAuthRedirectUri("exp://192.168.1.5:8081/--/oauth")).toBeNull();
   });

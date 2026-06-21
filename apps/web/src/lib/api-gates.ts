@@ -14,7 +14,8 @@ export type ApiGateCode =
   | "LEGAL_ACCEPTANCE_REQUIRED"
   | "SUBSCRIPTION_REQUIRED"
   | "FORBIDDEN"
-  | "NOT_FOUND";
+  | "NOT_FOUND"
+  | "STALE_WORKSPACE_SELECTION";
 
 const GATE_RESPONSES: Record<ApiGateCode, { status: number; error: string }> = {
   UNAUTHORIZED: { status: 401, error: "Please sign in again." },
@@ -23,6 +24,7 @@ const GATE_RESPONSES: Record<ApiGateCode, { status: number; error: string }> = {
   SUBSCRIPTION_REQUIRED: { status: 403, error: "An active subscription is required to continue." },
   FORBIDDEN: { status: 403, error: "You do not have permission to perform this action." },
   NOT_FOUND: { status: 404, error: "Not found." },
+  STALE_WORKSPACE_SELECTION: { status: 409, error: "Your selected workspace is no longer available." },
 };
 
 const SUBSCRIPTION_CODES = new Set(["SUBSCRIPTION_REQUIRED", "SUBSCRIPTION_INACTIVE", "TRIAL_EXPIRED"]);

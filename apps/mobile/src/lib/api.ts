@@ -91,7 +91,7 @@ function resolveWebAppUrl() {
 const APP_WEB_URL = resolveWebAppUrl();
 
 import { getToken as getStoreToken, useAuthStore } from "@/lib/auth-store";
-import { getSelectedWorkspaceId } from "@/lib/workspace-selection";
+import { getSelectedWorkspaceId, setSelectedWorkspaceId } from "@/lib/workspace-selection";
 
 if (__DEV__) {
   console.info("[API] mobile base URL", API_URL);
@@ -117,6 +117,11 @@ export const api = new ApiClient({
     return workspaceId ? { "x-workspace-id": workspaceId } : {};
   },
   timeoutMs: 20_000,
+  onResponseError: async (error) => {
+    if (error.code === "STALE_WORKSPACE_SELECTION") {
+      await setSelectedWorkspaceId(null).catch(() => {});
+    }
+  },
   onUnauthorized: async () => {
     // Token invalid — wipe it so the user is routed back to sign-in.
     await useAuthStore.getState().clearSession().catch(() => {});

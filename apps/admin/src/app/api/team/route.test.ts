@@ -70,6 +70,9 @@ const validBody = {
 describe("admin team create", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.APP_ENV;
+    delete process.env.ADMIN_APP_URL;
+    delete process.env.NEXT_PUBLIC_ADMIN_URL;
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
     mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
     mocks.adminFindUnique.mockResolvedValue(null);
@@ -175,5 +178,25 @@ describe("admin team create", () => {
       }),
     );
     expect(body.setPasswordUrl).toBe("https://admin-staging.example.com/set-password?token=invite-token");
+  });
+
+  it("rejects insecure invite URL config in production-like runtimes before creating the admin", async () => {
+    process.env.APP_ENV = "staging";
+    mocks.getAdminRuntimeConfigValues.mockResolvedValue({
+      ADMIN_APP_URL: "http://admin-staging.locateflow.com",
+    });
+
+    const response = await POST(request({
+      email: "new-admin@example.com",
+      firstName: "New",
+      lastName: "Admin",
+      role: "ADMIN",
+      confirmPassword: "admin-password",
+    }));
+
+    expect(response.status).toBe(500);
+    expect(mocks.adminCreate).not.toHaveBeenCalled();
+    expect(mocks.issueSetPasswordToken).not.toHaveBeenCalled();
+    expect(mocks.sendAdminInviteEmail).not.toHaveBeenCalled();
   });
 });

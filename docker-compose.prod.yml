@@ -61,8 +61,37 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
-      ADMIN_SEED_EMAIL: ${ADMIN_SEED_EMAIL:?ADMIN_SEED_EMAIL is required}
-      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:?ADMIN_SEED_PASSWORD is required}
+    command:
+      - sh
+      - -lc
+      - pnpm --filter @locateflow/db exec prisma migrate deploy
+    restart: "no"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  seed-admin:
+    profiles:
+      - bootstrap
+    build:
+      context: .
+      dockerfile: docker/migrate.Dockerfile
+    container_name: locateflow-seed-admin
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      ADMIN_SEED_EMAIL: ${ADMIN_SEED_EMAIL:-}
+      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:-}
+    command:
+      - sh
+      - -lc
+      - ': "$${ADMIN_SEED_EMAIL:?ADMIN_SEED_EMAIL is required}"; : "$${ADMIN_SEED_PASSWORD:?ADMIN_SEED_PASSWORD is required}"; pnpm --filter @locateflow/db exec tsx prisma/seed-admin.ts'
     restart: "no"
     logging:
       driver: json-file
@@ -79,6 +108,7 @@ services:
         BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
         BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
         BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
+        NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:?NEXT_PUBLIC_ADMIN_URL is required}
     container_name: locateflow-web
     restart: unless-stopped
     depends_on:
@@ -90,12 +120,14 @@ services:
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
       APP_URL: ${APP_URL:-}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
+      NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:?NEXT_PUBLIC_ADMIN_URL is required}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
       SITE_URL: ${SITE_URL:-}
       APP_ENV: ${APP_ENV:-production}
       BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
       BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
       BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
+      CRON_SCHEDULER_OWNER: ${CRON_SCHEDULER_OWNER:-}
       SITE_LAST_MODIFIED: ${SITE_LAST_MODIFIED:-}
       GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
       FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?FIELD_ENCRYPTION_KEY is required}
@@ -140,6 +172,12 @@ services:
       NEXT_PUBLIC_IMGPROXY_URL: ${NEXT_PUBLIC_IMGPROXY_URL:-}
     expose:
       - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/ready"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
     logging:
       driver: json-file
       options:
@@ -158,6 +196,7 @@ services:
         BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
         BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
         BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
+        NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:?NEXT_PUBLIC_ADMIN_URL is required}
     container_name: locateflow-admin
     restart: unless-stopped
     depends_on:
@@ -175,9 +214,11 @@ services:
       BACKUP_CRON_SECRET: ${BACKUP_CRON_SECRET:-}
       APP_URL: ${APP_URL:-}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:?NEXT_PUBLIC_ADMIN_URL is required}
       BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
       BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
       BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
+      CRON_SCHEDULER_OWNER: ${CRON_SCHEDULER_OWNER:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
       UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-}
@@ -195,6 +236,12 @@ services:
       NEXT_PUBLIC_IMGPROXY_URL: ${NEXT_PUBLIC_IMGPROXY_URL:-}
     expose:
       - "3001"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/ready"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
     logging:
       driver: json-file
       options:

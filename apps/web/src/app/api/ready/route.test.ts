@@ -82,7 +82,9 @@ describe("/api/ready", () => {
     const body = await response.json();
 
     expect(response.status).toBe(503);
-    expect(body.failures.some((failure: { key: string }) => failure.key === "USER_JWT_SECRET")).toBe(true);
+    expect(body.requiredOk).toBe(false);
+    expect(body.missingRequiredCount).toBeGreaterThan(0);
+    expect(JSON.stringify(body)).not.toContain("USER_JWT_SECRET");
   });
 
   it("fails with 503 when Upstash is missing in production", async () => {
@@ -93,7 +95,9 @@ describe("/api/ready", () => {
     const body = await response.json();
 
     expect(response.status).toBe(503);
-    expect(body.failures.some((failure: { key: string }) => failure.key === "UPSTASH_REDIS")).toBe(true);
+    expect(body.requiredOk).toBe(false);
+    expect(body.missingRequiredCount).toBeGreaterThan(0);
+    expect(JSON.stringify(body)).not.toContain("UPSTASH_REDIS");
   });
 
   it("can return a 200 diagnostic body without changing readiness status semantics", async () => {
@@ -106,6 +110,7 @@ describe("/api/ready", () => {
     expect(body.soft).toBe(true);
     expect(body.ready).toBe(false);
     expect(body.readinessStatus).toBe(503);
-    expect(body.failures.some((failure: { key: string }) => failure.key === "USER_JWT_SECRET")).toBe(true);
+    expect(body.missingRequiredCount).toBeGreaterThan(0);
+    expect(JSON.stringify(body)).not.toContain("USER_JWT_SECRET");
   });
 });

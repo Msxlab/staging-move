@@ -115,12 +115,11 @@ jobs:
         run: pnpm --filter @locateflow/mobile test
 
   migrate:
-    name: Prisma Migrate (deploy)
+    name: Prisma Migrate (status only)
     runs-on: ubuntu-latest
-    # Only apply migrations to the production schema AFTER lint/typecheck,
-    # tests, and security checks have all passed. Previously this ran inside
-    # lint-and-typecheck with no dependency on `test`/`security`, so a red
-    # test suite could not stop an irreversible migration from hitting prod.
+    # CI is not the production migration owner. It only verifies that the
+    # checked-in migrations are in a deployable state; the deploy environment
+    # owns `prisma migrate deploy` so schema and app rollout stay coupled.
     needs: [lint-and-typecheck, test, security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
@@ -135,8 +134,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Prisma migrate (deploy)
-        run: pnpm --filter @locateflow/db exec prisma migrate deploy
+      - name: Prisma migrate status
+        run: pnpm --filter @locateflow/db exec prisma migrate status
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

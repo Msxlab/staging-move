@@ -24,6 +24,7 @@ export interface ApiClientConfig {
   userAgent?: string;
   getAdditionalHeaders?: () => Promise<Record<string, ApiHeaderValue>> | Record<string, ApiHeaderValue>;
   onUnauthorized?: () => void | Promise<void>;
+  onResponseError?: (error: { status: number; code?: string; message: string }) => void | Promise<void>;
   onError?: (error: Error) => void;
   timeoutMs?: number;
 }
@@ -160,7 +161,9 @@ export class ApiClient {
         await this.config.onUnauthorized?.();
       }
       const code = typeof body?.code === "string" ? body.code : "UNAUTHORIZED";
-      return { error: buildApiErrorMessage(response.status, body), code };
+      const message = buildApiErrorMessage(response.status, body);
+      await this.config.onResponseError?.({ status: response.status, code, message });
+      return { error: message, code };
     }
 
     if (response.status === 429) {
@@ -175,12 +178,16 @@ export class ApiClient {
       try {
         const body: any = await response.json();
         const code = typeof body?.code === "string" ? body.code : undefined;
+        const message = buildApiErrorMessage(response.status, body);
+        await this.config.onResponseError?.({ status: response.status, ...(code ? { code } : {}), message });
         return {
-          error: buildApiErrorMessage(response.status, body),
+          error: message,
           ...(code ? { code } : {}),
         };
       } catch {
-        return { error: `Request failed with status ${response.status}` };
+        const message = `Request failed with status ${response.status}`;
+        await this.config.onResponseError?.({ status: response.status, message });
+        return { error: message };
       }
     }
 

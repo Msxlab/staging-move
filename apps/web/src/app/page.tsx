@@ -107,6 +107,10 @@ export default async function LandingPage() {
   const t = await getTranslations("landing");
   const tErrors = await getTranslations("errors");
   const tPricing = await getTranslations("pricing");
+  const heroPrefix = t("heroPrefix");
+  const heroAccent = t("heroAccent");
+  const heroSuffix = t("heroSuffix");
+  const heroTitle = `${heroPrefix} ${heroAccent} ${heroSuffix}`;
   // CONSUMER_FREE: the trial/cancel/refund Q&As (also emitted as FAQ structured
   // data) are meaningless when everything is free — drop them under the flag.
   const billingFaqs = consumerFree
@@ -210,10 +214,15 @@ export default async function LandingPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" />
               {t("hero_eyebrow")}
             </div>
-            <h1 className="display-tight font-display text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.04] tracking-tight">
-              {t("heroPrefix")}{" "}
-              <span className="text-primary">{t("heroAccent")}</span>{" "}
-              {t("heroSuffix")}
+            <h1
+              aria-label={heroTitle}
+              className="display-tight font-display text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.04] tracking-tight"
+            >
+              <span aria-hidden="true">
+                {heroPrefix}{" "}
+                <span className="text-primary">{heroAccent}</span>{" "}
+                {heroSuffix}
+              </span>
             </h1>
             <p className="measure text-lg md:text-xl text-foreground/90 leading-relaxed">
               {t("heroDescription")}

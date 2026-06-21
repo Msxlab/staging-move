@@ -29,6 +29,12 @@ function firstNonEmpty(env: BuildInfoEnv, keys: string[], fallback?: string): st
   return UNKNOWN;
 }
 
+function firstNonEmptyWithFallbackFirst(env: BuildInfoEnv, keys: string[], fallback?: string): string {
+  const fallbackValue = usableValue(fallback);
+  if (fallbackValue) return fallbackValue;
+  return firstNonEmpty(env, keys);
+}
+
 export function readBuildInfo(
   service: BuildInfoService,
   env: BuildInfoEnv = process.env,
@@ -36,7 +42,7 @@ export function readBuildInfo(
 ): BuildInfo {
   return {
     service,
-    commitSha: firstNonEmpty(env, [
+    commitSha: firstNonEmptyWithFallbackFirst(env, [
       "BUILD_COMMIT_SHA",
       "COMMIT_SHA",
       "GIT_SHA",
@@ -44,14 +50,14 @@ export function readBuildInfo(
       "VERCEL_GIT_COMMIT_SHA",
       "SOURCE_COMMIT",
     ], fallback.commitSha),
-    sourceBranch: firstNonEmpty(env, [
+    sourceBranch: firstNonEmptyWithFallbackFirst(env, [
       "BUILD_SOURCE_BRANCH",
       "SOURCE_BRANCH",
       "GIT_BRANCH",
       "GITHUB_REF_NAME",
       "VERCEL_GIT_COMMIT_REF",
     ], fallback.sourceBranch),
-    builtAt: firstNonEmpty(env, ["BUILD_CREATED_AT", "BUILD_DATE", "SOURCE_BUILD_AT"], fallback.builtAt),
+    builtAt: firstNonEmptyWithFallbackFirst(env, ["BUILD_CREATED_AT", "BUILD_DATE", "SOURCE_BUILD_AT"], fallback.builtAt),
     environment: firstNonEmpty(env, ["APP_ENV", "NODE_ENV"], fallback.environment),
   };
 }

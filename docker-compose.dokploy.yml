@@ -28,6 +28,7 @@ x-app-env: &app-env
   BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
   BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
   TRUSTED_PROXY_HEADERS: ${TRUSTED_PROXY_HEADERS:-standard}
+  CRON_SCHEDULER_OWNER: ${CRON_SCHEDULER_OWNER:-}
 
   APP_URL: ${APP_URL:?APP_URL is required}
   NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
@@ -277,7 +278,7 @@ services:
       - default
       - dokploy-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/ready"]
       interval: 30s
       timeout: 5s
       start_period: 30s
@@ -323,7 +324,7 @@ services:
       - default
       - dokploy-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/healthz"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/ready"]
       interval: 30s
       timeout: 5s
       start_period: 30s

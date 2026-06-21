@@ -4,6 +4,7 @@ const captured = vi.hoisted(() => ({
   config: null as any,
   clearSession: vi.fn(),
   getSelectedWorkspaceId: vi.fn((): Promise<string | null> => Promise.resolve("ws_123")),
+  setSelectedWorkspaceId: vi.fn((): Promise<void> => Promise.resolve()),
 }));
 
 vi.mock("@locateflow/shared", () => ({
@@ -41,6 +42,7 @@ vi.mock("@/lib/auth-store", () => ({
 
 vi.mock("@/lib/workspace-selection", () => ({
   getSelectedWorkspaceId: captured.getSelectedWorkspaceId,
+  setSelectedWorkspaceId: captured.setSelectedWorkspaceId,
 }));
 
 describe("mobile api client", () => {
@@ -50,6 +52,7 @@ describe("mobile api client", () => {
     captured.config = null;
     captured.clearSession.mockResolvedValue(undefined);
     captured.getSelectedWorkspaceId.mockResolvedValue("ws_123");
+    captured.setSelectedWorkspaceId.mockResolvedValue(undefined);
     vi.stubGlobal("__DEV__", false);
     process.env.EXPO_PUBLIC_API_URL = "https://locateflow.com/api";
     process.env.EXPO_PUBLIC_ENV = "production";
@@ -76,6 +79,18 @@ describe("mobile api client", () => {
     await import("./api");
 
     expect(await captured.config.getAdditionalHeaders()).toEqual({});
+  });
+
+  it("clears a stale mobile workspace selection when the API rejects it", async () => {
+    await import("./api");
+
+    await captured.config.onResponseError({
+      status: 409,
+      code: "STALE_WORKSPACE_SELECTION",
+      message: "Your selected workspace is no longer available.",
+    });
+
+    expect(captured.setSelectedWorkspaceId).toHaveBeenCalledWith(null);
   });
 
   it("keeps non-dev production-like builds on HTTPS", async () => {

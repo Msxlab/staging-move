@@ -5,6 +5,11 @@ target="${1:-}"
 path="${2:-}"
 method="${3:-GET}"
 
+if [ "${CRON_SCHEDULER_OWNER:-}" != "ofelia" ]; then
+  echo "cron runner: CRON_SCHEDULER_OWNER is not ofelia; skipping" >&2
+  exit 0
+fi
+
 case "$target" in
   web)
     port="3000"

@@ -35,7 +35,7 @@ export async function clearSensitiveLocalState(queryClient?: QueryClient) {
   // Reset the biometric app-lock so the next account on this device doesn't
   // inherit (and get gated behind) the previous user's lock — the flag is
   // device-keyed, not user-keyed.
-  await useAppLockStore.getState().disable().catch(() => {});
+  await useAppLockStore.getState().disable({ allowWhileLocked: true }).catch(() => {});
   await Promise.all(SENSITIVE_ASYNC_STORAGE_KEYS.map((key) => AsyncStorage.removeItem(key))).catch(() => {});
   // Offline list caches (Services/Moving "last-known data") are device-keyed
   // and echo the prior user's data — wipe them all by prefix on logout/delete.

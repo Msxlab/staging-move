@@ -70,7 +70,7 @@ function parseOAuthUrl(url: string | null): { code?: string; error?: string } | 
     pathParts.includes(OAUTH_CALLBACK_PATH);
   const isHttpsCallback =
     parsed.protocol === "https:" &&
-    ["locateflow.com", "locateflow.app", "app.locateflow.com"].includes(host) &&
+    host === "locateflow.com" &&
     (path === "mobile/oauth" || path === OAUTH_CALLBACK_PATH);
 
   if (!isLocateFlowCallback && !isExpoCallback && !isHttpsCallback) return null;
