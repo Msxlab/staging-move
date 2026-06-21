@@ -64,11 +64,26 @@ export async function POST(request: NextRequest) {
     const ip = resolveClientIpFromHeaders(request.headers);
     const consentHashes = getRequestHashSnapshot(request);
 
-    // Stable dedupe key: an identical request (same user, route, date, contact)
-    // resubmitted (double-tap / retry) maps to the same lead.
+    // Stable dedupe key: an identical request (double-tap / retry) maps to the
+    // same lead. Detail-bearing fields (home size, name, phone, notes) are part of
+    // the key so a CORRECTED resubmit creates a fresh lead instead of colliding
+    // with the stale original and being silently dropped (audit P2).
     const idempotencyKey = (
       hashForSnapshot(
-        [userId, d.category, d.fromZip, d.toZip, d.fromState, d.toState, d.moveDate, d.contactEmail]
+        [
+          userId,
+          d.category,
+          d.fromZip,
+          d.toZip,
+          d.fromState,
+          d.toState,
+          d.moveDate,
+          d.homeSize,
+          d.contactName,
+          d.contactEmail,
+          d.contactPhone,
+          d.notes,
+        ]
           .map((v) => (v || "").toString().trim().toUpperCase())
           .join("|"),
       ) || `${userId}:${Date.now()}`

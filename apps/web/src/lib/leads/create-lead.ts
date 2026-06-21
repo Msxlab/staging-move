@@ -1,3 +1,4 @@
+import { Prisma } from "@locateflow/db";
 import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/shared-encryption";
 import { matchPartnersForLead } from "@/lib/leads/match-partners";
@@ -75,40 +76,53 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     }),
   );
 
-  const created = await prisma.lead.create({
-    data: {
-      category,
-      userId: input.userId,
-      status: matches.length > 0 ? "MATCHED" : "NEW",
-      fromZip: input.fromZip || null,
-      toZip: input.toZip || null,
-      fromState,
-      toState,
-      moveDate: input.moveDate || null,
-      homeSize: input.homeSize || null,
-      payloadEncrypted,
-      source: input.source || null,
-      clickToken: input.clickToken || null,
-      matchedCount: matches.length,
-      idempotencyKey: input.idempotencyKey,
-      ipHash: input.ipHash || null,
-      userAgent: input.userAgent || null,
-      locale: input.locale || null,
-      consentAcceptedAt: input.consentAcceptedAt,
-      consentIpHash: input.consentIpHash || null,
-      consentUserAgentHash: input.consentUserAgentHash || null,
-      termsVersion: input.termsVersion || null,
-      dispatches: {
-        create: matches.map((m) => ({
-          partnerKind: m.partnerKind,
-          partnerId: m.partnerId,
-          status: "QUEUED",
-          idempotencyKey: `${input.idempotencyKey}:${m.partnerKind}:${m.partnerId}`,
-        })),
+  try {
+    const created = await prisma.lead.create({
+      data: {
+        category,
+        userId: input.userId,
+        status: matches.length > 0 ? "MATCHED" : "NEW",
+        fromZip: input.fromZip || null,
+        toZip: input.toZip || null,
+        fromState,
+        toState,
+        moveDate: input.moveDate || null,
+        homeSize: input.homeSize || null,
+        payloadEncrypted,
+        source: input.source || null,
+        clickToken: input.clickToken || null,
+        matchedCount: matches.length,
+        idempotencyKey: input.idempotencyKey,
+        ipHash: input.ipHash || null,
+        userAgent: input.userAgent || null,
+        locale: input.locale || null,
+        consentAcceptedAt: input.consentAcceptedAt,
+        consentIpHash: input.consentIpHash || null,
+        consentUserAgentHash: input.consentUserAgentHash || null,
+        termsVersion: input.termsVersion || null,
+        dispatches: {
+          create: matches.map((m) => ({
+            partnerKind: m.partnerKind,
+            partnerId: m.partnerId,
+            status: "QUEUED",
+            idempotencyKey: `${input.idempotencyKey}:${m.partnerKind}:${m.partnerId}`,
+          })),
+        },
       },
-    },
-    select: { id: true },
-  });
-
-  return { leadId: created.id, matchedCount: matches.length, deduped: false };
+      select: { id: true },
+    });
+    return { leadId: created.id, matchedCount: matches.length, deduped: false };
+  } catch (error) {
+    // Lost a concurrent create race on the unique idempotencyKey (two near-
+    // simultaneous submits both passed the findUnique check). Re-query and return
+    // the winner as a dedupe instead of surfacing a 500 (audit P2).
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const winner = await prisma.lead.findUnique({
+        where: { idempotencyKey: input.idempotencyKey },
+        select: { id: true, matchedCount: true },
+      });
+      if (winner) return { leadId: winner.id, matchedCount: winner.matchedCount, deduped: true };
+    }
+    throw error;
+  }
 }
