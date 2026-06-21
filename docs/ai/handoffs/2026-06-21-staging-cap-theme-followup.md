@@ -14,7 +14,12 @@ Live health/readiness after env copy:
 - Web `/api/health`: healthy, `ready: true`, `requiredOk: true`, `missingRequiredCount: 0`.
 - Admin `/api/ready`: `ready: true`, `requiredOk: true`, `missingRequiredCount: 0`, DB ready.
 
-Important: the local fixes below are not deployed yet. Live still needs a push/redeploy after this follow-up patch is committed.
+Follow-up commit `9d9ae9643c19eb2c24948f0bc85d6d1e5795d842` was pushed and manually redeployed in Dokploy.
+
+Post-redeploy live build-info:
+
+- Web: `9d9ae9643c19eb2c24948f0bc85d6d1e5795d842`, branch `codex/staging-audit-2026-06-21`, built `2026-06-21T21:36:38.196Z`.
+- Admin: `9d9ae9643c19eb2c24948f0bc85d6d1e5795d842`, branch `codex/staging-audit-2026-06-21`, built `2026-06-21T21:36:38.203Z`.
 
 ## Theme Decision
 
@@ -32,7 +37,7 @@ If the intended new design is not Gold, the operator must provide the exact newe
 
 ## Local Fixes Prepared After Live Deploy
 
-These changes are in the working tree and should be committed/pushed/redeployed:
+These changes are now deployed on staging:
 
 - Web plan-limit APIs no longer tell top-tier `PRO` / consumer-free users to upgrade when they hit abuse caps. Address/service caps now return safety-limit language with no `upgradeRequired`.
 - Web `/api/moving` now returns a neutral `CONCURRENT_PLAN_LIMIT` payload under consumer-free instead of an upgrade teaser when the active moving-plan cap is hit.
@@ -55,6 +60,15 @@ Host Node is still `v24.12.0` while repo engines request Node `22.x`; pnpm print
 - `pnpm audit:providers:readiness` produced no provider-data diff beyond a timestamp-only generated report, so that timestamp churn was not kept.
 - `git diff --check` passed with only CRLF warnings.
 
+Post-deploy runtime smoke:
+
+- Web public `/`, `/features`, `/why-free`, `/blog`, `/sign-in`: `200`.
+- Web auth-gated `/dashboard`, `/onboarding`: `307` to sign-in as expected when unauthenticated.
+- Admin public `/login`, `/api/healthz`: `200`.
+- Admin auth-gated `/users`: `307` to `/login` as expected when unauthenticated.
+- Playwright public visual/token smoke: web and admin login render dark, primary token `39 51% 58%`, body background dark, no console/page errors.
+- Public screenshots/results saved under `tmp-live-qa-9d9ae964/`.
+
 Latest full `verify:tests` totals:
 
 - Web: 324 files / 2758 tests passed.
@@ -67,10 +81,7 @@ Latest full `verify:tests` totals:
 
 Agent should:
 
-- Commit and push the prepared local fixes.
-- Redeploy Dokploy staging and verify `/api/build-info` advances beyond `ad9276b11321bf3846b98e62046fa90d7718ad56`.
-- Re-run live health/readiness after deploy.
-- Use the existing open Chrome/Mustafa session for runtime QA; do not open a fresh Chrome profile unless the operator asks.
+- Use the existing open Chrome/Mustafa session for authenticated runtime QA; do not open a fresh Chrome profile unless the operator asks.
 - QA authenticated web: dashboard, moving, services, providers, settings/subscription, workspace, route-map/media, export flows.
 - QA authenticated admin: overview, users, moves, providers, leads, affiliate/subscriptions, settings, backups/security. Operator may need to complete password/2FA interactively.
 - QA mobile/emulator or mobile runtime path: tabs, onboarding, services/providers, moving create/caps, settings/subscription, connections/export/workspace, OAuth handoff, app-lock, staging API config, visual theme.
@@ -79,6 +90,6 @@ Agent should:
 
 Operator should:
 
-- Provide only interactive credentials/2FA when Chrome asks.
+- Provide interactive web/admin credentials and 2FA in Chrome when asked. Current Chrome did not have a web staging dashboard session, and the admin login password was not filled.
 - Provide the exact newer design zip/source if the intended default palette is not Gold.
 - No extra env action is needed right now for staging health; env is already sufficient for readiness.
