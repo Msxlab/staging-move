@@ -374,7 +374,7 @@ export default function ServiceDetailScreen() {
         )}
 
         {/* Info Rows */}
-        <Card variant="default" style={{ marginTop: 16 }}>
+        <MoveCard style={{ marginTop: 16 }}>
           {infoRows.map((row, i) => {
             const Icon = row.icon;
             return (
@@ -398,15 +398,15 @@ export default function ServiceDetailScreen() {
               </TouchableOpacity>
             );
           })}
-        </Card>
+        </MoveCard>
 
         {/* Notes */}
         {service.notes ? (
           <>
             <Text style={styles.sectionTitle}>{t("services.notes")}</Text>
-            <Card variant="default">
+            <MoveCard>
               <Text style={styles.notes}>{service.notes}</Text>
-            </Card>
+            </MoveCard>
           </>
         ) : null}
 
