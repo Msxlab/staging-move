@@ -249,7 +249,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   secondary: {
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    // Aurora cool 30% — matches `theme.colors.primary` (#CBA45E).
+    // Move Gold 30% — matches `theme.colors.primary` (#CBA45E).
     borderColor: "rgba(203, 164, 94, 0.30)",
   },
   ghost: {

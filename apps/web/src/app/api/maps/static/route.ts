@@ -19,7 +19,7 @@ import { requestHasPlanFeature } from "@/lib/request-entitlements";
  *                  for retina density)
  *   theme          dark | light — Aurora-styled muted navy/ink palettes
  *   accent         optional RRGGBB plan-accent override (validated hex);
- *                  defaults to the Aurora cool-blue accent per theme
+ *                  defaults to the Move Gold accent per theme
  *
  * Cost / cache posture: responses are immutable per (coords, size, theme,
  * accent) so they get long private cache headers, plus a small in-process

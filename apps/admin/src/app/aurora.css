@@ -377,7 +377,7 @@ html:not(.dark) .adm-aurora .au-pill.neutral { background: rgba(20,32,47,0.05); 
 }
 .adm-aurora .au-btn:hover  { background: var(--au-pane-3); border-color: var(--au-rule-2); }
 .adm-aurora .au-btn:active { transform: translateY(1px); }
-/* Primary action — flat solid corporate blue in both themes. */
+/* Primary action — flat solid Move Gold in both themes. */
 .adm-aurora .au-btn.primary {
   background: var(--au-accent);
   border-color: transparent;
@@ -520,7 +520,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --card-foreground:      214 40% 98%;
   --popover:              218 22% 19%;
   --popover-foreground:   214 40% 98%;
-  /* Primary = corporate blue #CBA45E (honey is warn/premium only). */
+  /* Primary = Move Gold #CBA45E (honey is warn/premium only). */
   --primary:              39 51% 58%;
   --primary-foreground:   215 45% 8%;
   --secondary:            215 24% 82%;
@@ -536,8 +536,8 @@ html:not(.dark) .adm-aurora .admin-panel {
   --ring:                 39 51% 58%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect — anything still calling --rose gets the Aurora
-     cool primary; --foil-* stays honey/champagne for premium moments. */
+  /* Brand-token redirect — anything still calling --rose gets the Move Gold
+     primary; --foil-* stays honey/champagne for premium moments. */
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
   --rose-deep:   var(--au-cool-2);
@@ -585,7 +585,7 @@ html:not(.dark) .adm-aurora {
   --card-foreground:      216 33% 15%;
   --popover:              0 0% 100%;
   --popover-foreground:   216 33% 15%;
-  --primary:              41 68% 31%;   /* #765514 corporate blue */
+  --primary:              41 68% 31%;   /* #765514 Move Gold */
   --primary-foreground:   0 0% 100%;
   --secondary:            216 14% 41%;   /* #5A6678 slate */
   --secondary-foreground: 0 0% 100%;
@@ -599,7 +599,7 @@ html:not(.dark) .adm-aurora {
   --input:                217 25% 90%;
   --ring:                 41 68% 31%;
 
-  /* Brand-token redirect (light) — mirror the dark scope: cool primary,
+  /* Brand-token redirect (light) — mirror the dark scope: Move Gold primary,
      honey/champagne foil. */
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
@@ -657,7 +657,7 @@ html:not(.dark) .adm-aurora aside.bg-card {
   border-right: 1px solid var(--au-rule);
 }
 
-/* Foil text → Aurora cool gradient. Affects sidebar wordmark + any inline
+/* Foil text → Move Gold gradient. Affects sidebar wordmark + any inline
    `<em>` titles via `.foil-text`, plus h1/h2/h3 `<em>` segments. */
 .adm-aurora .foil-text,
 .adm-aurora h1 em,
@@ -784,7 +784,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
 }
 
 /* Tables inside admin-panel — zebra rows + clearer header + roomier cells.
-   Zebra gives quiet row separation at rest; hover keeps the Aurora cool tint
+   Zebra gives quiet row separation at rest; hover keeps the Move Gold tint
    on top. Header reads one tier brighter (ink-2) so columns scan cleanly. */
 .adm-aurora .admin-panel table tbody tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.025);
@@ -839,7 +839,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
 }
 
 /* Sidebar nav active state — already uses bg-primary/10, which now reads
-   corporate blue. Add a subtle inner border ring like the prototype. */
+   Move Gold. Add a subtle inner border ring like the prototype. */
 .adm-aurora aside a.bg-primary\/10 {
   border: 1px solid var(--au-accent-line);
 }
@@ -854,7 +854,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
    Each card gets ONE accent custom property (--plan-accent) resolved
    from the --au-* system, so the markup never carries raw hex:
      Free       → coral   (the $0 identity chip)
-     Individual → corporate blue (cool)
+     Individual → Move Gold
      Family     → teal, featured/POPULAR border
      Pro        → honey (premium — the only honey on the page)
    Card chrome stays slate-enterprise: flat solid surface, 1px hairline,
@@ -1483,7 +1483,7 @@ html:not(.dark) .adm-aurora {
    segmented range control, the x-axis label strip, and the audit feed.
    Ported from the design system's .adp-chartwrap/.adp-seg/.adp-feed
    (admin-pro.css). Everything binds to the --au-* token system — accent is
-   the corporate blue (#765514 light / #CBA45E dark); honey appears only via
+   Move Gold (#765514 light / #CBA45E dark); honey appears only via
    the warn tone on audit dots.
    ========================================================================= */
 

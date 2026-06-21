@@ -266,7 +266,7 @@ function formatDateLabel(value?: string | null) {
  */
 function planAccentColor(scheme: "light" | "dark", planKey: string): string {
   const base = scheme === "light" ? baseLightTheme : baseDarkTheme;
-  // Individual (and unknown) carry no plan tint — base Aurora cool primary,
+  // Individual (and unknown) carry no plan tint — base Move Gold primary,
   // matching the web table where Individual gets no .plan-* class.
   return applyPlanPalette(base, scheme, planKey).colors.primary;
 }

@@ -460,9 +460,9 @@
   --ring:                 39 51% 58%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect — anything still calling --rose gets the Aurora
-     cool primary; --foil-* resolves to the HONEY/champagne premium accent
-     (Edition VII canon — honey is reserved for premium, no purple). The SVG
+  /* Brand-token redirect — anything still calling --rose gets the Move Gold
+     primary; --foil-* resolves to the HONEY/champagne premium accent
+     (Edition VIII canon — honey is reserved for premium, no purple). The SVG
      sidebar logo sets its own gradients via inline `<defs>`, so it's not
      affected. */
   --rose:        var(--au-cool);
@@ -545,7 +545,7 @@
     var(--au-base-2);
 }
 
-/* Foil text → Aurora cool gradient. Affects sidebar wordmark + any inline
+/* Foil text → Move Gold gradient. Affects sidebar wordmark + any inline
    `<em>` titles via `.foil-text`, plus h1/h2/h3 `<em>` segments. */
 .lf-aurora .foil-text,
 .lf-aurora h1 em,
@@ -675,7 +675,7 @@
   box-shadow: 0 0 0 2px rgba(203, 164, 94, 0.20);
 }
 
-/* Tables inside admin-panel — slim hover with Aurora cool tint. */
+/* Tables inside admin-panel — slim hover with Move Gold tint. */
 .lf-aurora .admin-panel table tbody tr:hover {
   background: var(--au-cool-soft);
 }
@@ -715,7 +715,7 @@
 }
 
 /* Sidebar nav active state — already uses bg-primary/10, which now reads
-   Aurora cool. Add a subtle inner border ring like the prototype. */
+   Move Gold. Add a subtle inner border ring like the prototype. */
 .lf-aurora aside a.bg-primary\/10 {
   border: 1px solid rgba(203, 164, 94, 0.22);
 }

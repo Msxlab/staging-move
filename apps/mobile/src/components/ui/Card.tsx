@@ -99,7 +99,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   glow: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
-    // Aurora cool ring (Edition VII) — matches `--line-foil` on web.
+    // Move Gold ring (Edition VIII) — matches `--line-foil` on web.
     borderColor: "rgba(203, 164, 94, 0.30)",
     ...theme.shadow.glow,
   },

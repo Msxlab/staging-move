@@ -9,12 +9,12 @@
    tokens at runtime) and mobile (which does) render the same palette.
    The legacy `--brand-orange` and `--orange-*` names are intentionally
    preserved — every Tailwind utility (`bg-orange-500`, `text-amber-400`,
-   `border-orange-300`, …) resolves to the Aurora cool/violet/mint values,
+   `border-orange-300`, …) resolves to the Move Gold / teal / green values,
    so the palette flips without touching component code.
    ========================================================================= */
 :root,
 .dark {
-  /* ─────────────── Brand core — Aurora cool primary, violet accent ─────── */
+  /* ─────────────── Brand core — Move Gold primary, teal + green accents ─── */
   --rose:          #CBA45E;
   --rose-light:    #DCBC7C;
   --rose-deep:     #B0852F;
@@ -32,13 +32,13 @@
   --sage:          #54CB7E;
   --sage-soft:     #8BE3A8;
 
-  /* Legacy brand aliases — flipped to Aurora cool / honey */
+  /* Legacy brand aliases — flipped to Move Gold / honey */
   --brand-orange:        #CBA45E;
   --brand-orange-light:  #DCBC7C;
   --brand-orange-dark:   #B0852F;
   --brand-amber:         #E0A85A;
 
-  /* "orange" scale — now the Aurora cool scale (kept for `bg-orange-500` etc.) */
+  /* "orange" scale — now the Move Gold scale (kept for `bg-orange-500` etc.) */
   --orange-50:  #FCF7EA;
   --orange-100: #F6E9C8;
   --orange-200: #EBD39B;
@@ -58,7 +58,7 @@
   --surface-3:     #16203A;
   --elevated:      #1D2943;
 
-  /* ─────────────── Foreground — Aurora cool ink ramp ───────────────────── */
+  /* ─────────────── Foreground — Move dark ink ramp ─────────────────────── */
   --fg:            #EFF3FA;
   --fg-1:          rgba(239, 243, 250, 1);
   --fg-2:          rgba(239, 243, 250, 0.66);
@@ -232,7 +232,7 @@
   --glass-border:  rgba(20, 32, 47, 0.06);
   --glass-hover:   rgba(255, 255, 255, 0.92);
 
-  /* Accents — darker Aurora cool / honey on paper for AA contrast */
+  /* Accents — darker Move Gold / honey on paper for AA contrast */
   --rose:          #765514;
   --rose-light:    #AD8534;
   --rose-deep:     #765514;
@@ -309,7 +309,7 @@
 
 /* =========================================================================
    shadcn HSL tokens — drive every `bg-primary`, `text-foreground`,
-   `border-border` utility. HSL of #CBA45E ≈ 39 51% 58% (Aurora cool).
+   `border-border` utility. HSL of #CBA45E ≈ 39 51% 58% (Move Gold).
    Backgrounds match the navy canvas above (HSL of #0A0F18 ≈ 218 43% 6%).
    Mirrors the values in apps/web/src/styles/aurora.css `.lf-aurora` so
    the palette is consistent whether or not a subtree opts into the
@@ -361,7 +361,7 @@
 
   /* Per-plan accent — additive; AppShell adds .plan-free / .plan-family /
      .plan-pro per member tier. Dark is the default; a .light ancestor switches
-     to the light values. Absent class (Individual) = base Aurora theme.
+     to the light values. Absent class (Individual) = base Move Gold theme.
      Canonical plan hexes (design handoff, additions.css): Free #FF9DB2/#A8324F,
      Family #4FD1B5/#0F6B50, Pro #CBA45E/#765514. */
   .plan-free { --primary: 347 100% 81%; --ring: 347 100% 81%; }
@@ -1242,7 +1242,7 @@
  * The orchestrated chip travel / bounce / counter / raccoon are driven in
  * the component via framer-motion. All of it is gated off under
  * prefers-reduced-motion, where the component renders the static end state.
- * Colors use the token ramp (--primary cool-blue, --success sage mint) so
+ * Colors use the token ramp (--primary Move Gold, --success sage mint) so
  * the scene tracks light/dark and the per-plan accent automatically.
  * -------------------------------------------------------------------- */
 .lf-hero-aura {

@@ -156,7 +156,7 @@ export function HeroMoveAnimation({ className }: { className?: string }) {
         className="relative w-full overflow-visible"
         style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}`, containerType: "inline-size" }}
       >
-        {/* Soft ambient wash — cool-blue + a hint of mint, matches the hero glow */}
+        {/* Soft ambient wash — Move Gold + a hint of mint, matches the hero glow */}
         <div
           className="pointer-events-none absolute inset-0 -z-10 rounded-[40px]"
           style={{
@@ -334,7 +334,7 @@ function ChipGlyph({
 function Raccoon({ className }: { className?: string }) {
   // Reuse the existing welcoming mover-raccoon illustration (box-hugging pose).
   // It themes off --primary/--foreground tokens already, so it tracks the
-  // cool-blue homepage look. Width scales with the stage.
+  // Move Gold homepage look. Width scales with the stage.
   return (
     <RaccoonHero
       size={118}

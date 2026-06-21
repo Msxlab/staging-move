@@ -21,6 +21,16 @@ Post-redeploy live build-info:
 - Web: `9d9ae9643c19eb2c24948f0bc85d6d1e5795d842`, branch `codex/staging-audit-2026-06-21`, built `2026-06-21T21:36:38.196Z`.
 - Admin: `9d9ae9643c19eb2c24948f0bc85d6d1e5795d842`, branch `codex/staging-audit-2026-06-21`, built `2026-06-21T21:36:38.203Z`.
 
+Latest recheck after the operator said staging was deployed:
+
+- Checked at `2026-06-21T22:02Z`.
+- Web `/api/build-info`: still `9d9ae9643c19eb2c24948f0bc85d6d1e5795d842`, branch `codex/staging-audit-2026-06-21`, built `2026-06-21T21:36:38.196Z`.
+- Admin `/api/build-info`: still `9d9ae9643c19eb2c24948f0bc85d6d1e5795d842`, branch `codex/staging-audit-2026-06-21`, built `2026-06-21T21:36:38.203Z`.
+- Web `/api/health`: `healthy`, `ready: true`, `requiredOk: true`, `missingRequiredCount: 0`.
+- Admin `/api/ready`: `ready: true`, `requiredOk: true`, `missingRequiredCount: 0`, DB ready.
+- Local branch HEAD is `e09bd6990de7c357bc12f383ef01f62e3be5110b`, but that commit is memory/docs-only. No runtime redeploy difference is expected beyond `9d9ae964`.
+- Existing Chrome profile/window is present as `LocateFlow Admin - Google Chrome`; do not open a fresh Chrome profile for authenticated QA.
+
 ## Theme Decision
 
 The latest committed zip set in `design-src/handoffs/*.zip` resolves to Gold as the default accent.
@@ -34,6 +44,13 @@ Evidence:
 - A local contact sheet exists at `tmp-theme-zip-contact-sheet.png` showing the Gold default plus Sapphire/Emerald variants.
 
 If the intended new design is not Gold, the operator must provide the exact newer zip/source package. Do not infer Emerald or Sapphire from memory alone; compare the exact artifact first.
+
+Source comment cleanup prepared after the color dispute:
+
+- Stale comments saying `corporate blue`, `Aurora cool`, `cool-blue`, or `Sapphire gradient` were aligned to `Move Gold` across web, admin, and mobile source comments. Runtime token values were not changed.
+- `apps/web/src/lib/plan-limits.ts` comments now distinguish the flag-off paid ladder from `CONSUMER_FREE`, where eligible consumers resolve to PRO/hasPremium before moving-plan checks.
+- Post-cleanup source scan over `apps/web`, `apps/admin`, `apps/mobile`, and `packages/shared/src` has no remaining color-claim hits for `corporate blue`, `cool-blue`, `Aurora cool`, `cool primary`, `cool scale`, or `Sapphire gradient`. Remaining `base Aurora theme` comments are only the theme-system name, not a palette claim.
+- `git diff --check` passed after the cleanup with only the repo's existing CRLF warnings.
 
 ## Local Fixes Prepared After Live Deploy
 
