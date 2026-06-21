@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   dispatchFindMany: vi.fn(),
   dispatchUpdate: vi.fn(),
+  dispatchUpdateMany: vi.fn(),
   moverFindUnique: vi.fn(),
   partnerFindUnique: vi.fn(),
   sendLoggedEmail: vi.fn(),
@@ -12,7 +13,11 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/db", () => ({
   prisma: {
-    leadDispatch: { findMany: mocks.dispatchFindMany, update: mocks.dispatchUpdate },
+    leadDispatch: {
+      findMany: mocks.dispatchFindMany,
+      update: mocks.dispatchUpdate,
+      updateMany: mocks.dispatchUpdateMany,
+    },
     moverApplication: { findUnique: mocks.moverFindUnique },
     partner: { findUnique: mocks.partnerFindUnique },
   },
@@ -33,6 +38,7 @@ const dispatch = (over: Record<string, unknown> = {}) => ({
   idempotencyKey: "lead1:mover_application:app1",
   attemptCount: 0,
   lead: {
+    category: "moving",
     fromZip: "90001",
     toZip: "78701",
     fromState: "CA",
@@ -51,6 +57,9 @@ describe("drainLeadDispatches", () => {
     mocks.moverFindUnique.mockResolvedValue({ contactEmail: "mover@co.com", status: "APPROVED" });
     mocks.partnerFindUnique.mockResolvedValue({ contactEmail: "cleaner@co.com", status: "APPROVED" });
     mocks.dispatchUpdate.mockResolvedValue({});
+    // Atomic claim (QUEUED→DISPATCHING) and the stale-sweep both go through
+    // updateMany; default to a winning claim so processing proceeds.
+    mocks.dispatchUpdateMany.mockResolvedValue({ count: 1 });
     mocks.accruePartnerLeadCharge.mockResolvedValue({ accrued: false, amountCents: 0 });
   });
 
@@ -90,12 +99,51 @@ describe("drainLeadDispatches", () => {
     );
   });
 
-  it("a deduped send still counts as delivered (SENT)", async () => {
+  it("a true already-SENT dedupe counts as delivered (SENT)", async () => {
     mocks.dispatchFindMany.mockResolvedValue([dispatch()]);
-    mocks.sendLoggedEmail.mockResolvedValue({ success: false, skipped: true });
+    // email-service returns success=true for a dedupe hit on an already-SENT log.
+    mocks.sendLoggedEmail.mockResolvedValue({ success: true, skipped: true });
     const res = await drainLeadDispatches({ now: NOW });
     expect(res.sent).toBe(1);
-    expect(mocks.dispatchUpdate.mock.calls[0][0].data.status).toBe("SENT");
+    expect(mocks.dispatchUpdate.mock.calls.at(-1)![0].data.status).toBe("SENT");
+  });
+
+  it("a kill-switch / orphaned-PENDING skip RETRIES instead of a false SENT (audit P2)", async () => {
+    mocks.dispatchFindMany.mockResolvedValue([dispatch()]);
+    // success=false + skipped=true: suppressed or orphaned, NOT delivered.
+    mocks.sendLoggedEmail.mockResolvedValue({ success: false, skipped: true });
+    const res = await drainLeadDispatches({ now: NOW });
+    expect(res.sent).toBe(0);
+    expect(res.retried).toBe(1);
+    const data = mocks.dispatchUpdate.mock.calls.at(-1)![0].data;
+    expect(data.status).toBe("QUEUED");
+    expect(data.status).not.toBe("SENT");
+  });
+
+  it("never sends an undecryptable lead — terminal DECRYPT_FAILED, no email, no CPL (audit P2)", async () => {
+    mocks.dispatchFindMany.mockResolvedValue([
+      dispatch({ partnerKind: "partner", partnerId: "ptr1", idempotencyKey: "lead1:partner:ptr1" }),
+    ]);
+    mocks.decrypt.mockImplementation(() => {
+      throw new Error("bad key");
+    });
+    const res = await drainLeadDispatches({ now: NOW });
+    expect(res.failed).toBe(1);
+    expect(mocks.dispatchUpdate.mock.calls.at(-1)![0].data).toMatchObject({
+      status: "FAILED",
+      lastErrorCode: "DECRYPT_FAILED",
+    });
+    expect(mocks.sendLoggedEmail).not.toHaveBeenCalled();
+    expect(mocks.accruePartnerLeadCharge).not.toHaveBeenCalled();
+  });
+
+  it("skips a row it loses the atomic claim on (another tick took it)", async () => {
+    mocks.dispatchFindMany.mockResolvedValue([dispatch()]);
+    mocks.dispatchUpdateMany.mockResolvedValue({ count: 0 }); // claim lost
+    const res = await drainLeadDispatches({ now: NOW });
+    expect(res).toMatchObject({ processed: 1, sent: 0, failed: 0, retried: 0 });
+    expect(mocks.sendLoggedEmail).not.toHaveBeenCalled();
+    expect(mocks.dispatchUpdate).not.toHaveBeenCalled();
   });
 
   it("marks NO_CONTACT FAILED (terminal) when the partner has no email", async () => {
@@ -133,9 +181,10 @@ describe("drainLeadDispatches", () => {
 
     // attempt 4 (5th) -> terminal FAILED
     vi.clearAllMocks();
-    mocks.decrypt.mockReturnValue("{}");
+    mocks.decrypt.mockReturnValue(JSON.stringify({ contactEmail: "pat@x.com" }));
     mocks.moverFindUnique.mockResolvedValue({ contactEmail: "mover@co.com", status: "APPROVED" });
     mocks.dispatchUpdate.mockResolvedValue({});
+    mocks.dispatchUpdateMany.mockResolvedValue({ count: 1 });
     mocks.dispatchFindMany.mockResolvedValue([dispatch({ attemptCount: 4 })]);
     mocks.sendLoggedEmail.mockResolvedValue({ success: false, skipped: false });
     res = await drainLeadDispatches({ now: NOW });
