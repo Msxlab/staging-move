@@ -89,7 +89,7 @@ export function FoilEmptyState({
       ) : null}
       <h3
         className="text-2xl md:text-3xl font-light mb-2 max-w-md"
-        style={{ fontFamily: "var(--font-display, Fraunces, Georgia, serif)" }}
+        style={{ fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)' }}
       >
         {title}
       </h3>

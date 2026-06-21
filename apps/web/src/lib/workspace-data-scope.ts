@@ -64,6 +64,9 @@ export async function resolveWorkspaceDataScope(request: Request, userId: string
       if (error.code === "WORKSPACE_NOT_FOUND") {
         throw new ApiGateError("NOT_FOUND", error.message);
       }
+      if (error.code === "STALE_WORKSPACE_SELECTION") {
+        throw new ApiGateError("STALE_WORKSPACE_SELECTION", error.message);
+      }
       throw new ApiGateError("FORBIDDEN", error.message);
     }
     throw error;

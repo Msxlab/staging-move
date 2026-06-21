@@ -45,17 +45,56 @@ const ROLE_LABELS: Record<string, string> = {
   VIEWER: "Viewer",
 };
 
-async function resolveAdminAppUrl(): Promise<string> {
+function normalizeBaseUrl(value: string | null | undefined): string | null {
+  const trimmed = value?.trim().replace(/\/+$/, "");
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString().replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
+
+function isProductionLikeRuntime(): boolean {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return ["production", "staging", "preview"].includes(appEnv) || (!appEnv && process.env.NODE_ENV === "production");
+}
+
+function isHttpsUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+async function resolveAdminAppUrl(request: NextRequest): Promise<string> {
   const values = await getAdminRuntimeConfigValues(["ADMIN_APP_URL", "NEXT_PUBLIC_ADMIN_URL"]);
-  const configured =
+  const productionLike = isProductionLikeRuntime();
+  const configured = normalizeBaseUrl(
     values.ADMIN_APP_URL ||
     values.NEXT_PUBLIC_ADMIN_URL ||
     process.env.ADMIN_APP_URL ||
     process.env.NEXT_PUBLIC_ADMIN_URL ||
-    "";
-  const trimmed = configured.trim().replace(/\/+$/, "");
-  if (trimmed) return trimmed;
-  return process.env.NODE_ENV === "production" ? "https://admin.locateflow.com" : "http://localhost:3001";
+    "",
+  );
+  if (configured) {
+    if (productionLike && !isHttpsUrl(configured)) {
+      throw new Error("ADMIN_APP_URL_HTTPS_REQUIRED");
+    }
+    return configured;
+  }
+
+  if (productionLike) {
+    throw new Error("ADMIN_APP_URL_REQUIRED");
+  }
+
+  const requestOrigin = normalizeBaseUrl(request.nextUrl.origin);
+  if (requestOrigin) return requestOrigin;
+
+  return "http://localhost:3001";
 }
 
 export async function GET() {
@@ -203,6 +242,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const inviteAppUrl = isInvite ? await resolveAdminAppUrl(request) : null;
+
     const existing = await prisma.adminUser.findUnique({ where: { email: body.email } });
     if (existing) {
       return NextResponse.json({ error: "Email already in use" }, { status: 409 });
@@ -248,14 +289,14 @@ export async function POST(request: NextRequest) {
     let inviteExpiresAt: Date | undefined;
     let inviteSetPasswordUrl: string | undefined;
     if (isInvite) {
+      if (!inviteAppUrl) throw new Error("ADMIN_APP_URL_REQUIRED");
       const { token, expiresAt } = await issueSetPasswordToken({
         adminUserId: admin.id,
         purpose: "INVITE",
         createdBy: session.adminId,
       });
       inviteExpiresAt = expiresAt;
-      const appUrl = await resolveAdminAppUrl();
-      const setPasswordUrl = `${appUrl}/set-password?token=${encodeURIComponent(token)}`;
+      const setPasswordUrl = `${inviteAppUrl}/set-password?token=${encodeURIComponent(token)}`;
       inviteEmailSent = await sendAdminInviteEmail({
         to: admin.email,
         inviterName: `${session.email}`,

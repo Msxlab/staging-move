@@ -1,4 +1,4 @@
-﻿/* =========================================================================
+/* =========================================================================
    LocateFlow Web - AURORA
    Glass / Frost evolution: aurora background + multi-pane shell + glass cards.
    Scoped to `.lf-aurora`. Theme follows `.light` class for opt-in light mode.
@@ -24,27 +24,27 @@
   --au-rule:      rgba(255, 255, 255, 0.06);
   --au-rule-2:    rgba(255, 255, 255, 0.10);
 
-  --au-cool:      #7FB6E8;
-  --au-cool-2:    #5C9DDC;
-  --au-cool-soft: rgba(127, 182, 232, 0.14);
+  --au-cool:      #CBA45E;
+  --au-cool-2:    #B0852F;
+  --au-cool-soft: rgba(203, 164, 94, 0.14);
   /* Legacy name — holds HONEY since Edition VII killed purple ("mor yok").
      Kept so old class names keep compiling; never reintroduce violet here. */
-  --au-violet:    #F2C46C;
-  --au-violet-soft: rgba(242, 196, 108, 0.14);
+  --au-violet:    #CBA45E;
+  --au-violet-soft: rgba(203, 164, 94, 0.14);
   /* Family plan teal (canonical #4FD1B5 / light #0F6B50). */
   --au-family:    #4FD1B5;
   --au-family-soft: rgba(79, 209, 181, 0.14);
-  --au-mint:      #87DDC0;
-  --au-mint-soft: rgba(135, 221, 192, 0.14);
-  --au-amber:     #F2C46C;
-  --au-amber-soft:rgba(242, 196, 108, 0.14);
-  --au-coral:     #F08C8E;
-  --au-coral-soft:rgba(240, 140, 142, 0.16);
+  --au-mint:      #54CB7E;
+  --au-mint-soft: rgba(84, 203, 126, 0.14);
+  --au-amber:     #E0A85A;
+  --au-amber-soft:rgba(224, 168, 90, 0.14);
+  --au-coral:     #E25C5C;
+  --au-coral-soft:rgba(226, 92, 92, 0.16);
   --au-rose:      #F0A0B8;
 
-  --au-aurora-1:  rgba(127, 182, 232, 0.18);
-  --au-aurora-2:  rgba(242, 196, 108, 0.10);
-  --au-aurora-3:  rgba(135, 221, 192, 0.10);
+  --au-aurora-1:  rgba(203, 164, 94, 0.18);
+  --au-aurora-2:  rgba(203, 164, 94, 0.10);
+  --au-aurora-3:  rgba(84, 203, 126, 0.10);
   --au-aurora-4:  rgba(240, 160, 184, 0.08);
 
   --au-row: 44px;
@@ -72,21 +72,21 @@
   --au-rule:      rgba(20, 32, 47, 0.08);
   --au-rule-2:    rgba(20, 32, 47, 0.14);
 
-  --au-cool:      #1F5FA0;
-  --au-cool-2:    #17518D;
-  --au-cool-soft: rgba(31, 95, 160, 0.10);
-  --au-violet:    #7A5418;
+  --au-cool:      #765514;
+  --au-cool-2:    #6D5014;
+  --au-cool-soft: rgba(134, 99, 26, 0.10);
+  --au-violet:    #765514;
   --au-violet-soft: rgba(122, 84, 24, 0.10);
   --au-family:    #0F6B50;
   --au-family-soft: rgba(15, 107, 80, 0.10);
   --au-mint:      #0F6B50;
   --au-mint-soft: rgba(15, 107, 80, 0.10);
-  --au-amber:     #7A5418;
-  --au-amber-soft:rgba(122, 84, 24, 0.10);
-  --au-coral:     #A23B3F;
+  --au-amber:     #765514;
+  --au-amber-soft:rgba(138, 91, 22, 0.10);
+  --au-coral:     #A83333;
   --au-coral-soft:rgba(162, 59, 63, 0.10);
 
-  --au-aurora-1:  rgba(31, 95, 160, 0.18);
+  --au-aurora-1:  rgba(134, 99, 26, 0.18);
   --au-aurora-2:  rgba(122, 84, 24, 0.10);
   --au-aurora-3:  rgba(15, 107, 80, 0.10);
   --au-aurora-4:  rgba(162, 59, 63, 0.06);
@@ -235,7 +235,7 @@
 }
 .lf-aurora .au-card.au-card--reflex:hover::before { opacity: 1; }
 .lf-aurora .au-card.au-card--reflex:hover {
-  border-color: rgba(127, 182, 232, 0.22);
+  border-color: rgba(203, 164, 94, 0.22);
   transform: translateY(-1px);
 }
 
@@ -250,7 +250,7 @@
 .lf-aurora .au-eyebrow.violet { color: var(--au-violet); }
 
 .lf-aurora .au-display {
-  font-family: var(--font-display, Fraunces, Georgia, serif);
+  font-family: var(--font-display, "Playfair Display", Didot, Georgia, serif);
   font-weight: 400;
   font-variation-settings: "opsz" 96, "SOFT" 30;
   letter-spacing: 0;
@@ -258,14 +258,14 @@
 }
 .lf-aurora .au-display em {
   font-style: italic;
-  background-image: linear-gradient(180deg, #DDE7F5 0%, #7FB6E8 60%, #5C9DDC 100%);
+  background-image: linear-gradient(180deg, #DDE7F5 0%, #CBA45E 60%, #B0852F 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
   font-variation-settings: "opsz" 96, "SOFT" 60;
 }
 .light .lf-aurora .au-display em {
-  background-image: linear-gradient(180deg, #1F5FA0 0%, #17518D 100%);
+  background-image: linear-gradient(180deg, #765514 0%, #6D5014 100%);
 }
 
 .lf-aurora .au-pill {
@@ -300,22 +300,22 @@
 .lf-aurora .au-btn:hover  { background: var(--au-pane-3); border-color: var(--au-cool); }
 .lf-aurora .au-btn:active { transform: translateY(1px); }
 .lf-aurora .au-btn.primary {
-  background: linear-gradient(180deg, rgba(127,182,232,0.30), rgba(127,182,232,0.18));
-  border-color: rgba(127, 182, 232, 0.40);
+  background: linear-gradient(180deg, rgba(203, 164, 94,0.30), rgba(203, 164, 94,0.18));
+  border-color: rgba(203, 164, 94, 0.40);
   color: var(--au-ink);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.18),
-              0 6px 18px -8px rgba(127,182,232,0.50);
+              0 6px 18px -8px rgba(203, 164, 94,0.50);
 }
 .light .lf-aurora .au-btn.primary {
-  background: linear-gradient(180deg, #1F5FA0, #17518D);
+  background: linear-gradient(180deg, #765514, #6D5014);
   color: white;
-  border-color: rgba(31, 95, 160, 0.40);
+  border-color: rgba(134, 99, 26, 0.40);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.20),
-              0 6px 18px -8px rgba(31,95,160,0.50);
+              0 6px 18px -8px rgba(134, 99, 26,0.50);
 }
 .lf-aurora .au-btn.icon   { width: 34px; padding: 0; justify-content: center; }
 .lf-aurora .au-btn.sm     { height: 28px; padding: 0 10px; font-size: 12px; }
-.lf-aurora .au-btn.danger { color: var(--au-coral); border-color: rgba(240,140,142,0.30); }
+.lf-aurora .au-btn.danger { color: var(--au-coral); border-color: rgba(226, 92, 92,0.30); }
 
 .lf-aurora .au-input {
   width: 100%; height: 34px;
@@ -366,7 +366,7 @@
 .lf-aurora .au-nav-item.active {
   background: var(--au-cool-soft);
   color: var(--au-ink);
-  border-color: rgba(127,182,232,0.22);
+  border-color: rgba(203, 164, 94,0.22);
   font-weight: 500;
 }
 .lf-aurora .au-nav-item.active svg { color: var(--au-cool); }
@@ -406,7 +406,7 @@
     0 12px 28px -16px rgba(20, 32, 47, 0.18);
 }
 .lf-aurora .admin-panel:hover {
-  border-color: rgba(127, 182, 232, 0.22);
+  border-color: rgba(203, 164, 94, 0.22);
   box-shadow:
     inset 0 1px 0 var(--au-edge),
     0 1px 0 rgba(0, 0, 0, 0.30),
@@ -416,12 +416,12 @@
   border-bottom: 1px solid var(--au-rule);
 }
 .lf-aurora .admin-panel-flagship {
-  border-color: rgba(127, 182, 232, 0.22);
+  border-color: rgba(203, 164, 94, 0.22);
 }
 .lf-aurora .admin-panel-flagship::before {
   background: radial-gradient(
     600px 140px at 50% 0%,
-    rgba(127, 182, 232, 0.10),
+    rgba(203, 164, 94, 0.10),
     transparent 60%
   );
 }
@@ -445,7 +445,7 @@
   --card-foreground:      214 36% 95%;
   --popover:              217 41% 9%;
   --popover-foreground:   214 36% 95%;
-  --primary:              207 67% 70%;
+  --primary:              39 51% 58%;
   --primary-foreground:   218 43% 6%;
   --secondary:            215 22% 72%;
   --secondary-foreground: 218 43% 6%;
@@ -457,7 +457,7 @@
   --destructive-foreground: 218 43% 6%;
   --border:               217 32% 18%;
   --input:                217 32% 18%;
-  --ring:                 207 67% 70%;
+  --ring:                 39 51% 58%;
   --radius:               0.625rem;
 
   /* Brand-token redirect — anything still calling --rose gets the Aurora
@@ -468,11 +468,11 @@
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
   --rose-deep:   var(--au-cool-2);
-  --foil-a:      #FBE7BD;
-  --foil-b:      var(--au-amber);
-  --foil-c:      #D99A4E;
-  --foil:        var(--au-amber);
-  --foil-ink:    var(--au-amber);
+  --foil-a:      #DCBC7C;
+  --foil-b:      var(--au-cool);
+  --foil-c:      #B0852F;
+  --foil:        var(--au-cool);
+  --foil-ink:    var(--au-cool);
   --sage:        var(--au-mint);
   --brand-orange:       var(--au-cool);
   --brand-orange-light: var(--au-cool);
@@ -482,25 +482,25 @@
   /* Tone tokens — every page that uses bg-tone-rose-bg / text-tone-sage-fg
      etc. now reads Aurora colors. Mappings preserve semantic intent
      (rose=warning/attention, sage=positive, honey=caution, slate=neutral). */
-  --tone-rose-bg:    rgba(127, 182, 232, 0.10); --tone-rose-br:    rgba(127, 182, 232, 0.22); --tone-rose-fg:    var(--au-cool);
-  --tone-foil-bg:    rgba(242, 196, 108, 0.10); --tone-foil-br:    rgba(242, 196, 108, 0.22); --tone-foil-fg:    var(--au-amber);
-  --tone-sage-bg:    rgba(135, 221, 192, 0.10); --tone-sage-br:    rgba(135, 221, 192, 0.22); --tone-sage-fg:    var(--au-mint);
-  --tone-honey-bg:   rgba(242, 196, 108, 0.10); --tone-honey-br:   rgba(242, 196, 108, 0.22); --tone-honey-fg:   var(--au-amber);
-  --tone-umber-bg:   rgba(242, 196, 108, 0.10); --tone-umber-br:   rgba(242, 196, 108, 0.22); --tone-umber-fg:   var(--au-amber);
+  --tone-rose-bg:    rgba(226, 92, 92, 0.16); --tone-rose-br:    rgba(226, 92, 92, 0.28); --tone-rose-fg:    var(--au-coral);
+  --tone-foil-bg:    rgba(203, 164, 94, 0.10); --tone-foil-br:    rgba(203, 164, 94, 0.22); --tone-foil-fg:    var(--au-cool);
+  --tone-sage-bg:    rgba(84, 203, 126, 0.10); --tone-sage-br:    rgba(84, 203, 126, 0.22); --tone-sage-fg:    var(--au-mint);
+  --tone-honey-bg:   rgba(224, 168, 90, 0.16); --tone-honey-br:   rgba(224, 168, 90, 0.24); --tone-honey-fg:   var(--au-amber);
+  --tone-umber-bg:   rgba(203, 164, 94, 0.10); --tone-umber-br:   rgba(203, 164, 94, 0.22); --tone-umber-fg:   var(--au-amber);
   --tone-slate-bg:   rgba(168, 181, 201, 0.10); --tone-slate-br:   rgba(168, 181, 201, 0.22); --tone-slate-fg:   var(--au-ink-2);
-  --tone-orange-bg:  rgba(127, 182, 232, 0.10); --tone-orange-br:  rgba(127, 182, 232, 0.22); --tone-orange-fg:  var(--au-cool);
-  --tone-emerald-bg: rgba(135, 221, 192, 0.10); --tone-emerald-br: rgba(135, 221, 192, 0.22); --tone-emerald-fg: var(--au-mint);
-  --tone-amber-bg:   rgba(242, 196, 108, 0.10); --tone-amber-br:   rgba(242, 196, 108, 0.22); --tone-amber-fg:   var(--au-amber);
-  --tone-sky-bg:     rgba(127, 182, 232, 0.10); --tone-sky-br:     rgba(127, 182, 232, 0.22); --tone-sky-fg:     var(--au-cool);
-  --tone-cyan-bg:    rgba(127, 182, 232, 0.10); --tone-cyan-br:    rgba(127, 182, 232, 0.22); --tone-cyan-fg:    var(--au-cool);
+  --tone-orange-bg:  rgba(203, 164, 94, 0.10); --tone-orange-br:  rgba(203, 164, 94, 0.22); --tone-orange-fg:  var(--au-cool);
+  --tone-emerald-bg: rgba(84, 203, 126, 0.10); --tone-emerald-br: rgba(84, 203, 126, 0.22); --tone-emerald-fg: var(--au-mint);
+  --tone-amber-bg:   rgba(224, 168, 90, 0.16); --tone-amber-br:   rgba(224, 168, 90, 0.24); --tone-amber-fg:   var(--au-amber);
+  --tone-sky-bg:     rgba(55, 194, 201, 0.14); --tone-sky-br:     rgba(55, 194, 201, 0.24); --tone-sky-fg:     #37C2C9;
+  --tone-cyan-bg:    rgba(55, 194, 201, 0.14); --tone-cyan-br:    rgba(55, 194, 201, 0.24); --tone-cyan-fg:    #37C2C9;
 
   --line:      var(--au-rule);
   --line-2:    var(--au-rule-2);
-  --line-foil: rgba(127, 182, 232, 0.22);
-  --border-focus: rgba(127, 182, 232, 0.55);
-  --shadow-glow: 0 0 20px rgba(127, 182, 232, 0.28);
-  --shadow-rose: 0 0 20px rgba(127, 182, 232, 0.28);
-  --shadow-foil: 0 0 30px rgba(242, 196, 108, 0.16);
+  --line-foil: rgba(203, 164, 94, 0.22);
+  --border-focus: rgba(203, 164, 94, 0.55);
+  --shadow-glow: 0 0 20px rgba(203, 164, 94, 0.28);
+  --shadow-rose: 0 0 20px rgba(203, 164, 94, 0.28);
+  --shadow-foil: 0 0 30px rgba(203, 164, 94, 0.16);
 }
 
 /* --- Light theme overrides ----------------------------------------- */
@@ -511,7 +511,7 @@
   --card-foreground:      213 39% 13%;
   --popover:              218 21% 96%;
   --popover-foreground:   213 39% 13%;
-  --primary:              210 68% 37%;
+  --primary:              41 68% 31%;
   --primary-foreground:   0 0% 100%;
   --secondary:            214 22% 38%;
   --secondary-foreground: 0 0% 100%;
@@ -523,7 +523,7 @@
   --destructive-foreground: 0 0% 100%;
   --border:               213 18% 82%;
   --input:                213 18% 82%;
-  --ring:                 210 68% 37%;
+  --ring:                 41 68% 31%;
 }
 
 /* --- Aurora-flavored chrome upgrades for legacy classes ------------- */
@@ -591,7 +591,7 @@
     0 12px 28px -16px rgba(20, 32, 47, 0.18);
 }
 .lf-aurora .kpi-foil:hover {
-  border-color: rgba(127, 182, 232, 0.34);
+  border-color: rgba(203, 164, 94, 0.34);
   box-shadow:
     inset 0 1px 0 var(--au-edge),
     0 1px 0 rgba(0, 0, 0, 0.30),
@@ -611,22 +611,22 @@
 /* Health pill — keep semantic green/amber/red, but use Aurora ramp. */
 .lf-aurora .health-pill.tone-sage {
   background: var(--au-mint-soft);
-  border-color: rgba(135, 221, 192, 0.28);
+  border-color: rgba(84, 203, 126, 0.28);
   color: var(--au-mint);
 }
 .lf-aurora .health-pill.tone-sage .health-dot {
   background: var(--au-mint);
-  box-shadow: 0 0 0 3px rgba(135, 221, 192, 0.18);
+  box-shadow: 0 0 0 3px rgba(84, 203, 126, 0.18);
 }
 .lf-aurora .health-pill.tone-honey {
   background: var(--au-amber-soft);
-  border-color: rgba(242, 196, 108, 0.28);
+  border-color: rgba(224, 168, 90, 0.28);
   color: var(--au-amber);
 }
 .lf-aurora .health-pill.tone-honey .health-dot { background: var(--au-amber); }
 .lf-aurora .health-pill.tone-rose {
   background: var(--au-coral-soft);
-  border-color: rgba(240, 140, 142, 0.32);
+  border-color: rgba(226, 92, 92, 0.32);
   color: var(--au-coral);
 }
 .lf-aurora .health-pill.tone-rose .health-dot {
@@ -636,7 +636,7 @@
 /* Tier stamps in tables. */
 .lf-aurora .tier-stamp.tier-individual {
   background: var(--au-cool-soft);
-  border-color: rgba(127, 182, 232, 0.32);
+  border-color: rgba(203, 164, 94, 0.32);
   color: var(--au-cool);
 }
 .lf-aurora .tier-stamp.tier-family {
@@ -645,14 +645,14 @@
   color: var(--au-family);
 }
 .lf-aurora .tier-stamp.tier-pro {
-  background: linear-gradient(135deg, rgba(242, 196, 108, 0.18), rgba(251, 231, 189, 0.20));
-  border-color: rgba(242, 196, 108, 0.40);
+  background: linear-gradient(135deg, rgba(203, 164, 94, 0.18), rgba(251, 231, 189, 0.20));
+  border-color: rgba(203, 164, 94, 0.40);
   color: var(--au-ink);
-  box-shadow: 0 0 0 1px rgba(242, 196, 108, 0.14) inset;
+  box-shadow: 0 0 0 1px rgba(203, 164, 94, 0.14) inset;
 }
 .lf-aurora .tier-stamp.tier-trial {
   background: var(--au-amber-soft);
-  border-color: rgba(242, 196, 108, 0.32);
+  border-color: rgba(203, 164, 94, 0.32);
   color: var(--au-amber);
 }
 
@@ -661,8 +661,8 @@
 .lf-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
 .lf-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), #2FB89C); }
 .lf-aurora .tier-bar-seg-pro {
-  background: linear-gradient(90deg, #FBE7BD 0%, var(--au-amber) 100%);
-  box-shadow: 0 0 8px rgba(242, 196, 108, 0.4);
+  background: linear-gradient(90deg, #DCBC7C 0%, var(--au-amber) 100%);
+  box-shadow: 0 0 8px rgba(203, 164, 94, 0.4);
 }
 
 /* Inputs / search fields — anything using `bg-background` + `border-input`
@@ -672,7 +672,7 @@
 .lf-aurora select:focus-visible {
   border-color: var(--au-cool);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(127, 182, 232, 0.20);
+  box-shadow: 0 0 0 2px rgba(203, 164, 94, 0.20);
 }
 
 /* Tables inside admin-panel — slim hover with Aurora cool tint. */
@@ -717,7 +717,7 @@
 /* Sidebar nav active state — already uses bg-primary/10, which now reads
    Aurora cool. Add a subtle inner border ring like the prototype. */
 .lf-aurora aside a.bg-primary\/10 {
-  border: 1px solid rgba(127, 182, 232, 0.22);
+  border: 1px solid rgba(203, 164, 94, 0.22);
 }
 
 /* The shared sidebar logo SVG keeps its champagne-and-rose gradient

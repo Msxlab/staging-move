@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
   if (isMobileOAuthClient(client) && !mobileRedirectUri) {
     return NextResponse.json({ error: "Invalid mobile OAuth redirect URI." }, { status: 400 });
   }
-  // PKCE challenge from the mobile client. Optional during the
-  // backwards-compat window — see google/route.ts for rationale.
+  // PKCE challenge from the mobile client. Mobile OAuth init requires it so the
+  // callback can mint a handoff code that later verifies the native client.
   const mobileCodeChallenge = isMobileOAuthClient(client)
     ? normalizeMobileOAuthCodeChallenge(request.nextUrl.searchParams.get("mobileCodeChallenge"))
     : null;

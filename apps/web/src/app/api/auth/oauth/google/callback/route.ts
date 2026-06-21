@@ -16,6 +16,7 @@ import {
   createUserSession,
   findOrLinkOAuthUserWithStatus,
   generateFingerprint,
+  shouldUseSecureSessionCookies,
 } from "@/lib/user-auth";
 import { sendSecurityNoticeEmail, sendWelcomeEmail } from "@/lib/email-service";
 import { prisma } from "@/lib/db";
@@ -40,16 +41,27 @@ const GOOGLE_ISSUER = "https://accounts.google.com";
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 const LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE = "oauth_legal_acceptance";
 
+function expireOAuthCookie(response: NextResponse, name: string) {
+  response.cookies.set(name, "", {
+    httpOnly: true,
+    secure: shouldUseSecureSessionCookies(),
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    expires: new Date(0),
+  });
+}
+
 function clearGoogleOAuthCookies(response: NextResponse) {
-  response.cookies.delete("oauth_state_google");
-  response.cookies.delete("oauth_pkce_google");
-  response.cookies.delete("oauth_redirect_uri_google");
-  response.cookies.delete("oauth_redirect");
-  response.cookies.delete(MOBILE_OAUTH_CLIENT_COOKIE);
-  response.cookies.delete(MOBILE_OAUTH_REDIRECT_COOKIE);
-  response.cookies.delete(MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE);
-  response.cookies.delete(MOBILE_OAUTH_STATE_COOKIE);
-  response.cookies.delete(LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE);
+  expireOAuthCookie(response, "oauth_state_google");
+  expireOAuthCookie(response, "oauth_pkce_google");
+  expireOAuthCookie(response, "oauth_redirect_uri_google");
+  expireOAuthCookie(response, "oauth_redirect");
+  expireOAuthCookie(response, MOBILE_OAUTH_CLIENT_COOKIE);
+  expireOAuthCookie(response, MOBILE_OAUTH_REDIRECT_COOKIE);
+  expireOAuthCookie(response, MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE);
+  expireOAuthCookie(response, MOBILE_OAUTH_STATE_COOKIE);
+  expireOAuthCookie(response, LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
 }
 
@@ -180,9 +192,8 @@ export async function GET(request: NextRequest) {
       );
     }
     try {
-      // Pull the PKCE challenge stored at init time. May be null for
-      // older mobile builds; consumeMobileOAuthExchangeCode treats null
-      // as legacy-mode and skips the verifier check.
+      // Pull the PKCE challenge stored at init time. Missing/invalid challenge
+      // means the mobile handoff cannot prove native-client possession.
       const mobileCodeChallenge = normalizeMobileOAuthCodeChallenge(
         request.cookies.get(MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE)?.value,
       );

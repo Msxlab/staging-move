@@ -13,7 +13,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const caller = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const isManager = caller.role === "OWNER" || caller.role === "ADMIN";
 

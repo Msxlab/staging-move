@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -576,7 +576,7 @@ export default function PrivacySettingsScreen() {
                 </Text>
                 <Text style={styles.actionDesc}>
                   {t("settings.termsOfUse_description", {
-                    defaultValue: "Open LocateFlow's terms of use.",
+                    defaultValue: "Open Move's terms of use.",
                   })}
                 </Text>
               </View>
@@ -593,7 +593,7 @@ export default function PrivacySettingsScreen() {
                 </Text>
                 <Text style={styles.actionDesc}>
                   {t("settings.privacyPolicy_description", {
-                    defaultValue: "Open LocateFlow's privacy policy.",
+                    defaultValue: "Open Move's privacy policy.",
                   })}
                 </Text>
               </View>

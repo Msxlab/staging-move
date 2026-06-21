@@ -54,7 +54,7 @@ const ASSIGNABLE_STATUSES = ["ACTIVE", "SUSPENDED"]; // OVERFLOW is seat-driven,
 
 async function resolvePair(workspaceId: string, memberId: string, callerUserId: string) {
   const [caller, target] = await Promise.all([
-    prisma.workspaceMember.findFirst({ where: { workspaceId, userId: callerUserId } }),
+    prisma.workspaceMember.findFirst({ where: { workspaceId, userId: callerUserId, workspace: { deletedAt: null } } }),
     prisma.workspaceMember.findFirst({ where: { id: memberId, workspaceId } }),
   ]);
   return { caller, target };

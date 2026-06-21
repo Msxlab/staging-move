@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "LocateFlow - Address and moving management";
+export const alt = "Move - Address and moving management";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -18,8 +18,8 @@ export default function OpengraphImage() {
           height: "100%",
           padding: "80px",
           background:
-            "linear-gradient(135deg, #0A0F18 0%, #0E1521 50%, #131C2C 100%)",
-          color: "#ECF1F8",
+            "linear-gradient(135deg, #070B14 0%, #121B2D 50%, #18233A 100%)",
+          color: "#EFF3FA",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
@@ -36,24 +36,24 @@ export default function OpengraphImage() {
               width: 72,
               height: 72,
               borderRadius: 18,
-              background: "linear-gradient(135deg, #A5C9F0 0%, #5C9DDC 100%)",
+              background: "linear-gradient(135deg, #DCBC7C 0%, #B0852F 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 40px rgba(127, 182, 232, 0.40)",
+              boxShadow: "0 0 40px rgba(203, 164, 94, 0.40)",
             }}
           >
-            <span style={{ fontSize: 40, fontWeight: 800, color: "#ECF1F8" }}>L</span>
+            <span style={{ fontSize: 40, fontWeight: 800, color: "#EFF3FA" }}>M</span>
           </div>
           <span
             style={{
               fontSize: 44,
               fontWeight: 800,
-              letterSpacing: -1.5,
-              color: "#ECF1F8",
+              letterSpacing: 0,
+              color: "#EFF3FA",
             }}
           >
-            LocateFlow
+            Move
           </span>
         </div>
         <div
@@ -61,9 +61,9 @@ export default function OpengraphImage() {
             fontSize: 72,
             fontWeight: 800,
             lineHeight: 1.05,
-            letterSpacing: -2.5,
+            letterSpacing: 0,
             marginBottom: 24,
-            color: "#ECF1F8",
+            color: "#EFF3FA",
             maxWidth: 1000,
           }}
         >
@@ -72,7 +72,7 @@ export default function OpengraphImage() {
         <div
           style={{
             fontSize: 28,
-            color: "rgba(236, 241, 248, 0.62)",
+            color: "rgba(239, 243, 250, 0.62)",
             lineHeight: 1.3,
             maxWidth: 900,
           }}
@@ -87,8 +87,8 @@ export default function OpengraphImage() {
             marginTop: 48,
             padding: "12px 20px",
             borderRadius: 999,
-            background: "rgba(127, 182, 232, 0.10)",
-            border: "1px solid rgba(127, 182, 232, 0.30)",
+            background: "rgba(203, 164, 94, 0.10)",
+            border: "1px solid rgba(203, 164, 94, 0.30)",
           }}
         >
           <div
@@ -96,10 +96,10 @@ export default function OpengraphImage() {
               width: 8,
               height: 8,
               borderRadius: "50%",
-              background: "#7FB6E8",
+              background: "#CBA45E",
             }}
           />
-          <span style={{ fontSize: 20, color: "#A5C9F0", fontWeight: 600 }}>
+          <span style={{ fontSize: 20, color: "#DCBC7C", fontWeight: 600 }}>
             locateflow.com
           </span>
         </div>

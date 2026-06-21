@@ -25,12 +25,12 @@ const highlights = [
   {
     icon: Ban,
     title: "Do Not Sell or Share",
-    description: "LocateFlow does not sell user-entered relocation data and provides an opt-out path for sale/share requests.",
+    description: "Move does not sell user-entered relocation data and provides an opt-out path for sale/share requests.",
   },
   {
     icon: MailMinus,
     title: "Non-discrimination",
-    description: "LocateFlow will not discriminate against you for exercising California privacy rights.",
+    description: "Move will not discriminate against you for exercising California privacy rights.",
   },
 ] as const;
 
@@ -71,7 +71,7 @@ export default function CcpaNoticePage() {
 
       <PublicSection title="Sources, purposes, and recipients">
         <p>
-          Sources include you, your device, product interactions, support communications, payment processors, app stores, authentication providers, address/map providers, analytics tools when consented, and service providers that operate LocateFlow.
+          Sources include you, your device, product interactions, support communications, payment processors, app stores, authentication providers, address/map providers, analytics tools when consented, and service providers that operate Move.
         </p>
         <p>
           We use personal information to provide the service, process subscriptions, secure accounts, prevent abuse, provide support, send notices, maintain records, comply with law, debug errors, and improve reliability.
@@ -83,7 +83,7 @@ export default function CcpaNoticePage() {
 
       <PublicSection title="Do Not Sell or Share">
         <p>
-          LocateFlow does not sell user-entered relocation data for money or broker-style resale. LocateFlow also configures analytics to avoid ad personalization by default. Because California law defines "share" broadly, you may submit a Do Not Sell or Share request below.
+          Move does not sell user-entered relocation data for money or broker-style resale. Move also configures analytics to avoid ad personalization by default. Because California law defines "share" broadly, you may submit a Do Not Sell or Share request below.
         </p>
         <CcpaOptOutControls />
       </PublicSection>
@@ -102,7 +102,7 @@ export default function CcpaNoticePage() {
 
       <PublicSection title="How to submit a request">
         <p>
-          Signed-in users can use Settings - Privacy and Security - Privacy tools where available. You can also email <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow California privacy request")} className="underline">{LEGAL_CONTACTS.privacy}</a>.
+          Signed-in users can use Settings - Privacy and Security - Privacy tools where available. You can also email <a href={mailto(LEGAL_CONTACTS.privacy, "Move California privacy request")} className="underline">{LEGAL_CONTACTS.privacy}</a>.
         </p>
         <p>
           We will verify your identity before acting on access, deletion, or correction requests. Authorized agents must provide written proof of authorization, and we may require the consumer to verify directly.
@@ -111,7 +111,7 @@ export default function CcpaNoticePage() {
 
       <PublicSection title="Retention">
         <p>
-          LocateFlow retains personal information for as long as needed to provide the service and for security, billing, legal, tax, dispute, audit, backup, fraud-prevention, and operational purposes. See the <Link href="/privacy" className="underline">Privacy Policy</Link> for more context.
+          Move retains personal information for as long as needed to provide the service and for security, billing, legal, tax, dispute, audit, backup, fraud-prevention, and operational purposes. See the <Link href="/privacy" className="underline">Privacy Policy</Link> for more context.
         </p>
       </PublicSection>
     </PublicPageShell>

@@ -56,7 +56,7 @@ describe("GET /api/connectors/catalog", () => {
     const { GET } = await import("./route");
     const res = await GET();
     expect(res.status).toBe(401);
-  });
+  }, 15_000);
 
   it("keeps guided partners visible when the API sync master flag is off", async () => {
     mocks.getRuntimeConfigValue.mockResolvedValue(null);

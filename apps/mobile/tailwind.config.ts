@@ -19,51 +19,51 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Move design — single uniform Sapphire accent on navy. These
+        // Aurora mobile palette aligned with packages/shared/src/design-tokens.ts.
         // NativeWind className colors are a fixed (dark) palette; runtime
         // light/dark theming is driven by src/lib/theme.ts (useAppTheme).
         // Legacy keys (rose/foil/sage/primary/surface) are kept so existing
-        // className call sites keep rendering — values just flip to Move.
+        // className call sites keep rendering.
         primary: {
-          DEFAULT: "#5B8DEF", // Sapphire
-          light: "#83AAF5",
-          dark: "#3D6FD6",
-          50: "#EEF3FE",
-          100: "#D9E5FC",
-          200: "#B7CEF9",
-          300: "#92B2F4",
-          400: "#83AAF5",
-          500: "#5B8DEF",
-          600: "#3D6FD6",
-          700: "#2E5FB0",
-          800: "#244C90",
-          900: "#1B3A6E",
+          DEFAULT: "#CBA45E",
+          light: "#DCBC7C",
+          dark: "#B0852F",
+          50: "#FCF7EA",
+          100: "#F6E9C8",
+          200: "#EBD39B",
+          300: "#DCBC7C",
+          400: "#CBA45E",
+          500: "#CBA45E",
+          600: "#B89142",
+          700: "#B0852F",
+          800: "#9A7325",
+          900: "#86631A",
         },
-        // Aurora-named aliases — all now resolve to the Sapphire accent.
+        // Aurora-named aliases.
         rose: {
-          DEFAULT: "#5B8DEF",
-          light: "#83AAF5",
-          deep: "#3D6FD6",
-          dark: "#2E5FB0",
+          DEFAULT: "#E25C5C",
+          light: "#F08A8A",
+          deep: "#C84E51",
+          dark: "#A83333",
         },
         foil: {
-          DEFAULT: "#5B8DEF",
-          highlight: "#83AAF5",
-          shadow: "#3D6FD6",
-          ink: "#2E5FB0",
+          DEFAULT: "#CBA45E",
+          highlight: "#DCBC7C",
+          shadow: "#B0852F",
+          ink: "#86631A",
         },
         sage: {
-          DEFAULT: "#54CB7E", // Move green
-          soft: "#7FE0A0",
+          DEFAULT: "#54CB7E",
+          soft: "#8BE3A8",
         },
         surface: {
-          DEFAULT: "#0A0F1C", // Move bg
-          elevated: "#121B2D", // surface
-          card: "#121B2D",
-          hover: "#18233A", // surface2
+          DEFAULT: "#070B14",
+          elevated: "#1D2943",
+          card: "#18233A",
+          hover: "#16203A",
         },
-        accent: "#5B8DEF", // Sapphire accent
-        // Semantic shorthands — Move green / amber / red / teal.
+        accent: "#CBA45E",
+        // Semantic shorthands — Aurora mint / amber / coral / cool.
         success: "#54CB7E",
         warning: "#E0A85A",
         danger: "#E25C5C",

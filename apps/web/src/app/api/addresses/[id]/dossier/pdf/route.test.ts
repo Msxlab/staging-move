@@ -120,7 +120,21 @@ describe("GET /api/addresses/:id/dossier/pdf — dossierPdf gate (Pro only)", ()
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("application/pdf");
     expect(res.headers.get("Content-Disposition")).toContain("home-dossier-addr-1.pdf");
+    expect(res.headers.get("Content-Disposition")).toContain("filename*=UTF-8''");
     expect(mockGenerate).toHaveBeenCalledWith(ENTITLED_DOSSIER, "Ada Lovelace");
+  });
+
+  it("sanitizes hostile address ids before emitting PDF download headers", async () => {
+    const res = await GET(req(), ctx('addr-1"\r\nInjected: yes'));
+    const contentDisposition = res.headers.get("Content-Disposition") || "";
+
+    expect(res.status).toBe(200);
+    expect(contentDisposition).toMatch(
+      /^attachment; filename="[A-Za-z0-9._-]+\.pdf"; filename\*=UTF-8''[A-Za-z0-9._~-]+\.pdf$/,
+    );
+    expect(contentDisposition).not.toContain("\r");
+    expect(contentDisposition).not.toContain("\n");
+    expect(contentDisposition).not.toContain("Injected:");
   });
 
   it("passes a non-200 dossier outcome (e.g. 404) straight through", async () => {

@@ -61,6 +61,7 @@ describe("admin connector consents bulk revoke", () => {
       where: { connectorKey: "usps", status: "GRANTED" },
       data: expect.objectContaining({
         status: "REVOKED",
+        activeGrantKey: null,
         tokenEncrypted: null,
         refreshTokenEncrypted: null,
       }),

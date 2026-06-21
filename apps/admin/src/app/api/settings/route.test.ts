@@ -118,6 +118,7 @@ describe("admin settings billing actions", () => {
       provider: "ADMIN",
       premiumNote: "raw premium reason",
       purchaseToken: "raw-token",
+      purchaseTokenEncrypted: "enc_v1:encrypted-token",
       purchaseTokenHash: "hash-token",
     });
     mocks.subscriptionUpdate.mockResolvedValue({});
@@ -266,6 +267,7 @@ describe("admin settings billing actions", () => {
 
     expect(response.status).toBe(200);
     expect(body.subscription).not.toHaveProperty("purchaseToken");
+    expect(body.subscription).not.toHaveProperty("purchaseTokenEncrypted");
     expect(body.subscription).not.toHaveProperty("purchaseTokenHash");
     expect(body.subscription).not.toHaveProperty("premiumNote");
     expect(serializedAudit).toContain("noteLength");

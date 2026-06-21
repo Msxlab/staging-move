@@ -14,7 +14,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const member = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const member = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!can(member.role as WorkspaceRole, "workspace.rename", { status: member.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Only the owner can rename the workspace." }, { status: 403 });

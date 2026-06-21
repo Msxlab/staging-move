@@ -218,7 +218,7 @@ export default function ServiceDetailPage() {
       <div className="flex justify-end">
         <ConfirmDialog
           title="Remove from my services"
-          description="This removes the service from your account/address. It does not delete the provider from LocateFlow."
+          description="This removes the service from your account/address. It does not delete the provider from Move."
           confirmLabel="Remove from my services"
           loadingLabel="Removing..."
           onConfirm={handleDelete}

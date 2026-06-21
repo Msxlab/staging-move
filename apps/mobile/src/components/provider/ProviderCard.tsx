@@ -127,7 +127,7 @@ export function ProviderCard({
             logoSize={30}
             borderRadius={10}
             backgroundColor={theme.colors.primaryFaded}
-            borderColor="rgba(127, 182, 232,0.2)"
+            borderColor="rgba(203, 164, 94,0.2)"
             fallbackFontSize={16}
           />
           {selectedForCompare ? (
@@ -193,7 +193,7 @@ export function ProviderCard({
           logoSize={32}
           borderRadius={12}
           backgroundColor={theme.colors.primaryFaded}
-          borderColor="rgba(127, 182, 232,0.2)"
+          borderColor="rgba(203, 164, 94,0.2)"
           fallbackFontSize={18}
         />
         <View style={{ flex: 1 }}>
@@ -327,7 +327,7 @@ const makeCompactStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 10,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.2)",
+    borderColor: "rgba(203, 164, 94,0.2)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -413,7 +413,7 @@ const makeFullStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 12,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.2)",
+    borderColor: "rgba(203, 164, 94,0.2)",
     alignItems: "center",
     justifyContent: "center",
   },

@@ -24,9 +24,8 @@ import {
   isNoIndexEnvironment,
 } from "@/lib/seo";
 
-// Edition VI · Geist for UI, Fraunces variable for display, Geist Mono for meta.
-// `display: "swap"` so the umber canvas paints immediately and Fraunces
-// joins when ready — the brand survives a missed font, but the canvas can't.
+// Legacy Geist/Fraunces variables stay loaded for older references while the
+// current Move design system below provides canonical CSS vars.
 const geistSans = Geist({
   subsets: ["latin"],
   display: "swap",
@@ -41,9 +40,8 @@ const geistMono = Geist_Mono({
   fallback: ["JetBrains Mono", "Consolas", "monospace"],
 });
 
-// Fraunces is a variable font — passing `axes` enables the opsz + SOFT
-// axes Next.js otherwise strips. `weight` must be omitted (or set to
-// "variable") when `axes` is present; setting both throws at build time.
+// Fraunces remains as a compatibility display fallback. Passing `axes` keeps
+// old styles that still reference opsz/SOFT build-safe during migration.
 const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
@@ -183,7 +181,7 @@ export default async function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="LocateFlow" />
+        <meta name="apple-mobile-web-app-title" content="Move" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
@@ -195,7 +193,7 @@ export default async function RootLayout({
          * favicon.svg (sizes="any") plus the PNG apple-touch/manifest icons.
          */}
         <link rel="icon" type="image/svg+xml" href="/favicon-small.svg" sizes="16x16 32x32" />
-        <link rel="mask-icon" href="/logo-mark.svg" color="#7FB6E8" />
+        <link rel="mask-icon" href="/logo-mark.svg" color="#CBA45E" />
         {/*
          * iOS Safari smart app banner. Shows a system-rendered "OPEN / VIEW
          * IN APP STORE" strip above the page on iPhone/iPad. Becomes a no-op

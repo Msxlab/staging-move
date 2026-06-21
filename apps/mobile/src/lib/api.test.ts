@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const captured = vi.hoisted(() => ({
   config: null as any,
   clearSession: vi.fn(),
+  getSelectedWorkspaceId: vi.fn((): Promise<string | null> => Promise.resolve("ws_123")),
+  setSelectedWorkspaceId: vi.fn((): Promise<void> => Promise.resolve()),
 }));
 
 vi.mock("@locateflow/shared", () => ({
@@ -38,12 +40,19 @@ vi.mock("@/lib/auth-store", () => ({
   },
 }));
 
+vi.mock("@/lib/workspace-selection", () => ({
+  getSelectedWorkspaceId: captured.getSelectedWorkspaceId,
+  setSelectedWorkspaceId: captured.setSelectedWorkspaceId,
+}));
+
 describe("mobile api client", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
     captured.config = null;
     captured.clearSession.mockResolvedValue(undefined);
+    captured.getSelectedWorkspaceId.mockResolvedValue("ws_123");
+    captured.setSelectedWorkspaceId.mockResolvedValue(undefined);
     vi.stubGlobal("__DEV__", false);
     process.env.EXPO_PUBLIC_API_URL = "https://locateflow.com/api";
     process.env.EXPO_PUBLIC_ENV = "production";
@@ -58,9 +67,30 @@ describe("mobile api client", () => {
     expect(captured.config.clientVersion).toBe("0.0.0");
     expect(captured.config.userAgent).toBe("LocateFlow/0.0.0 (iOS; Expo)");
     expect(captured.config.timeoutMs).toBe(20_000);
+    expect(await captured.config.getAdditionalHeaders()).toEqual({ "x-workspace-id": "ws_123" });
 
     await captured.config.onUnauthorized();
     expect(captured.clearSession).toHaveBeenCalled();
+  });
+
+  it("omits the workspace header when no mobile workspace is selected", async () => {
+    captured.getSelectedWorkspaceId.mockResolvedValue(null);
+
+    await import("./api");
+
+    expect(await captured.config.getAdditionalHeaders()).toEqual({});
+  });
+
+  it("clears a stale mobile workspace selection when the API rejects it", async () => {
+    await import("./api");
+
+    await captured.config.onResponseError({
+      status: 409,
+      code: "STALE_WORKSPACE_SELECTION",
+      message: "Your selected workspace is no longer available.",
+    });
+
+    expect(captured.setSelectedWorkspaceId).toHaveBeenCalledWith(null);
   });
 
   it("keeps non-dev production-like builds on HTTPS", async () => {

@@ -17,8 +17,8 @@ const TRUST_CONFIRMATION_ACTION_TYPES = new Set([
   "UPDATE_ADDRESS",
 ]);
 
-export const MOVE_TASK_TRUST_BADGE_LABEL = "LocateFlow only";
-export const MOVE_TASK_TRUST_BADGE_LABEL_V1 = "LocateFlow only — your provider account is unchanged";
+export const MOVE_TASK_TRUST_BADGE_LABEL = "Move only";
+export const MOVE_TASK_TRUST_BADGE_LABEL_V1 = "Move only — your provider account is unchanged";
 
 export interface MoveTaskTrustInput {
   actionType?: string | null;

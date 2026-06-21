@@ -19,16 +19,16 @@ export const OWNERSHIP_TYPES = [
 // ==================== SERVICE CATEGORIES ====================
 
 export const SERVICE_CATEGORIES = [
-  { value: "GOVERNMENT", label: "Government", color: "#ef4444" },
-  { value: "UTILITY", label: "Utilities", color: "#f59e0b" },
-  { value: "FINANCIAL", label: "Financial", color: "#10b981" },
-  { value: "HOUSING", label: "Housing", color: "#0ea5e9" },
-  { value: "HEALTHCARE", label: "Healthcare", color: "#f43f5e" },
-  { value: "TRANSPORTATION", label: "Transportation", color: "#3b82f6" },
-  { value: "KIDS", label: "Kids & Education", color: "#a855f7" },
-  { value: "FITNESS", label: "Fitness", color: "#f97316" },
-  { value: "SHOPPING", label: "Shopping", color: "#ec4899" },
-  { value: "OTHER", label: "Other", color: "#6b7280" },
+  { value: "GOVERNMENT", label: "Government", color: "#E25C5C" },
+  { value: "UTILITY", label: "Utilities", color: "#CBA45E" },
+  { value: "FINANCIAL", label: "Financial", color: "#54CB7E" },
+  { value: "HOUSING", label: "Housing", color: "#CBA45E" },
+  { value: "HEALTHCARE", label: "Healthcare", color: "#F0A0B8" },
+  { value: "TRANSPORTATION", label: "Transportation", color: "#B0852F" },
+  { value: "KIDS", label: "Kids & Education", color: "#B0852F" },
+  { value: "FITNESS", label: "Fitness", color: "#CBA45E" },
+  { value: "SHOPPING", label: "Shopping", color: "#F0A0B8" },
+  { value: "OTHER", label: "Other", color: "#6E7C92" },
 ] as const;
 
 export const BILLING_CYCLES = [
@@ -58,10 +58,10 @@ export function isCanceledMovingPlanStatus(status: string | null | undefined): b
 }
 
 export const MOVING_STATUSES = [
-  { value: "PLANNING", label: "Planning", color: "#6b7280" },
-  { value: "IN_PROGRESS", label: "In Progress", color: "#3b82f6" },
-  { value: "COMPLETED", label: "Completed", color: "#10b981" },
-  { value: "CANCELED", label: "Canceled", color: "#ef4444" },
+  { value: "PLANNING", label: "Planning", color: "#6E7C92" },
+  { value: "IN_PROGRESS", label: "In Progress", color: "#CBA45E" },
+  { value: "COMPLETED", label: "Completed", color: "#54CB7E" },
+  { value: "CANCELED", label: "Canceled", color: "#E25C5C" },
 ] as const;
 
 // ==================== DOCUMENT ====================
@@ -149,12 +149,12 @@ export const IMMIGRATION_STATUSES = [
 // ==================== RELOCATION PHASES ====================
 
 export const RELOCATION_PHASES = [
-  { phase: 0, label: "Before the Move", shortLabel: "Pre-Move", daysOffset: -14, icon: "📦", color: "#6b7280" },
-  { phase: 1, label: "Move Week", shortLabel: "Move Week", daysOffset: 0, icon: "🚚", color: "#f59e0b" },
-  { phase: 2, label: "First 10 Days", shortLabel: "Days 1-10", daysOffset: 10, icon: "⚡", color: "#ef4444" },
-  { phase: 3, label: "First 30 Days", shortLabel: "Days 11-30", daysOffset: 30, icon: "📋", color: "#3b82f6" },
-  { phase: 4, label: "First 60 Days", shortLabel: "Days 31-60", daysOffset: 60, icon: "🔧", color: "#8b5cf6" },
-  { phase: 5, label: "Settling In", shortLabel: "60+ Days", daysOffset: 90, icon: "🏠", color: "#10b981" },
+  { phase: 0, label: "Before the Move", shortLabel: "Pre-Move", daysOffset: -14, icon: "📦", color: "#6E7C92" },
+  { phase: 1, label: "Move Week", shortLabel: "Move Week", daysOffset: 0, icon: "🚚", color: "#CBA45E" },
+  { phase: 2, label: "First 10 Days", shortLabel: "Days 1-10", daysOffset: 10, icon: "⚡", color: "#E25C5C" },
+  { phase: 3, label: "First 30 Days", shortLabel: "Days 11-30", daysOffset: 30, icon: "📋", color: "#CBA45E" },
+  { phase: 4, label: "First 60 Days", shortLabel: "Days 31-60", daysOffset: 60, icon: "🔧", color: "#B0852F" },
+  { phase: 5, label: "Settling In", shortLabel: "60+ Days", daysOffset: 90, icon: "🏠", color: "#54CB7E" },
 ] as const;
 
 export function getCurrentRelocationPhase(daysSinceMove: number): number {
@@ -718,21 +718,21 @@ export const STATE_DMV_DEADLINES: Record<string, { licenseDays: number; registra
 // ==================== THEME COLORS ====================
 
 export const COLORS = {
-  primary: "#7c3aed",
-  primaryLight: "#8b5cf6",
-  primaryDark: "#6d28d9",
-  accent: "#06b6d4",
-  success: "#10b981",
-  warning: "#f59e0b",
-  error: "#ef4444",
-  info: "#3b82f6",
-  surface: "#0a0a0f",
-  surfaceElevated: "#12121a",
+  primary: "#CBA45E",
+  primaryLight: "#DCBC7C",
+  primaryDark: "#B0852F",
+  accent: "#CBA45E",
+  success: "#54CB7E",
+  warning: "#E0A85A",
+  error: "#E25C5C",
+  info: "#37C2C9",
+  surface: "#070B14",
+  surfaceElevated: "#18233A",
   surfaceCard: "rgba(255, 255, 255, 0.05)",
   border: "rgba(255, 255, 255, 0.1)",
-  borderFocus: "rgba(124, 58, 237, 0.5)",
-  textPrimary: "#ffffff",
-  textSecondary: "rgba(255, 255, 255, 0.7)",
-  textTertiary: "rgba(255, 255, 255, 0.4)",
-  textMuted: "rgba(255, 255, 255, 0.25)",
+  borderFocus: "rgba(203, 164, 94, 0.55)",
+  textPrimary: "#EFF3FA",
+  textSecondary: "rgba(239, 243, 250, 0.66)",
+  textTertiary: "rgba(239, 243, 250, 0.43)",
+  textMuted: "rgba(239, 243, 250, 0.30)",
 } as const;

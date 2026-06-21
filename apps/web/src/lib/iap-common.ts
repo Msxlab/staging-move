@@ -38,6 +38,7 @@ import {
   isMissingDbColumnError,
   warnSchemaCompatibilityFallback,
 } from "@/lib/db-schema-compat";
+import { decrypt, encrypt } from "@/lib/shared-encryption";
 
 export type IapPlatform = "ios" | "android";
 export type IapBillingInterval = "MONTH" | "YEAR";
@@ -104,6 +105,40 @@ function isPurchaseTokenHashCompatError(error: unknown): boolean {
 function withoutPurchaseTokenHash<T extends { purchaseTokenHash?: unknown }>(data: T) {
   const { purchaseTokenHash: _purchaseTokenHash, ...legacyData } = data;
   return legacyData;
+}
+
+function isPurchaseTokenEncryptedCompatError(error: unknown): boolean {
+  const message = String((error as { message?: string })?.message || "");
+  return (
+    isMissingDbColumnError(error, "purchaseTokenEncrypted") ||
+    message.includes("Unknown argument `purchaseTokenEncrypted`") ||
+    message.includes("Unknown arg `purchaseTokenEncrypted`")
+  );
+}
+
+function withoutPurchaseTokenEncrypted<T extends { purchaseTokenEncrypted?: unknown }>(data: T) {
+  const { purchaseTokenEncrypted: _purchaseTokenEncrypted, ...legacyData } = data;
+  return legacyData;
+}
+
+function encryptPurchaseTokenForStorage(purchaseToken: string | null | undefined): string | null {
+  const normalized = purchaseToken?.trim();
+  return normalized ? encrypt(normalized) : null;
+}
+
+export function decryptStoredPurchaseToken(subscription: {
+  purchaseToken?: string | null;
+  purchaseTokenEncrypted?: string | null;
+}): string | null {
+  if (subscription.purchaseTokenEncrypted) return decrypt(subscription.purchaseTokenEncrypted);
+  return subscription.purchaseToken ? decrypt(subscription.purchaseToken) : null;
+}
+
+export function hasStoredPurchaseToken(subscription: {
+  purchaseToken?: string | null;
+  purchaseTokenEncrypted?: string | null;
+}): boolean {
+  return Boolean(subscription.purchaseTokenEncrypted || subscription.purchaseToken);
 }
 
 async function findSubscriptionByPurchaseTokenIdentifiers(
@@ -542,6 +577,7 @@ export async function applyIapStateToUser(opts: {
 }) {
   const { userId, state } = opts;
   const purchaseTokenHash = hashPurchaseToken(state.purchaseToken);
+  const purchaseTokenEncrypted = encryptPurchaseTokenForStorage(state.purchaseToken);
 
   // Guard: if another user already owns this originalTransactionId, refuse.
   const existingByTxn = state.originalTransactionId
@@ -569,7 +605,6 @@ export async function applyIapStateToUser(opts: {
       provider: true,
       accessType: true,
       originalTransactionId: true,
-      purchaseToken: true,
       stripeSubscriptionId: true,
     },
   });
@@ -606,7 +641,8 @@ export async function applyIapStateToUser(opts: {
     stripeCurrentPeriodEnd: null,
     originalTransactionId: state.originalTransactionId,
     latestTransactionId: state.latestTransactionId,
-    purchaseToken: state.purchaseToken,
+    purchaseToken: null,
+    purchaseTokenEncrypted,
     purchaseTokenHash,
     currentPeriodEndsAt: state.expiresAt,
     trialEndsAt: state.status === "TRIALING" ? state.expiresAt : null,
@@ -663,6 +699,30 @@ export async function applyIapStateToUser(opts: {
         where: { userId },
         create: { userId, ...legacyData },
         update: legacyData,
+      });
+      await reconcileSeatsForOwner(userId).catch(() => {});
+      await sendIapLifecycleEmail({
+        userId,
+        subscriptionId: subscription.id,
+        state,
+        previousStatus: existingByUser?.status,
+      }).catch((err) => {
+        console.error("[IAP] lifecycle email lookup failed:", err);
+      });
+      return subscription;
+    }
+    if (isPurchaseTokenEncryptedCompatError(error)) {
+      warnSchemaCompatibilityFallback("iap:purchase-token-encrypted-write", error);
+      // If the encrypted column has not landed yet, keep the old column
+      // encrypted rather than reintroducing plaintext storage.
+      const legacyStorageData = withoutPurchaseTokenEncrypted({
+        ...data,
+        purchaseToken: purchaseTokenEncrypted,
+      });
+      const subscription = await prisma.subscription.upsert({
+        where: { userId },
+        create: { userId, ...legacyStorageData },
+        update: legacyStorageData,
       });
       await reconcileSeatsForOwner(userId).catch(() => {});
       await sendIapLifecycleEmail({

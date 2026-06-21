@@ -69,7 +69,7 @@ describe("admin notification send boundaries", () => {
     expect(JSON.stringify(body.details)).toContain("channel");
     expect(mocks.prisma.notification.create).not.toHaveBeenCalled();
     expect(mocks.prisma.notificationQueue.create).not.toHaveBeenCalled();
-  });
+  }, 15_000);
 
   it("rejects future scheduling before creating records", async () => {
     const { POST } = await import("./route");

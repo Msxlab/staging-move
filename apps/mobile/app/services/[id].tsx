@@ -53,9 +53,9 @@ function getServiceCategoryLabel(category: string): string {
 // Aurora categorical palette — the same hue map the Services tab hero uses, so
 // a category reads as the same color on the list and on its detail screen.
 const catColors: Record<string, string> = {
-  GOVERNMENT: "#F08C8E", UTILITY: "#F2C46C", FINANCIAL: "#87DDC0",
-  HOUSING: "#7FB6E8", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#5C9DDC",
-  KIDS: "#D99A4E", FITNESS: "#F2C46C", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
+  GOVERNMENT: "#E25C5C", UTILITY: "#CBA45E", FINANCIAL: "#54CB7E",
+  HOUSING: "#CBA45E", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#B0852F",
+  KIDS: "#B0852F", FITNESS: "#CBA45E", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
 };
 
 function getServiceCategoryColor(category: string): string {

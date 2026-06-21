@@ -112,7 +112,8 @@ export async function POST(
         status: true,
         originalTransactionId: true,
         latestTransactionId: true,
-        purchaseToken: true,
+        purchaseTokenEncrypted: true,
+        purchaseTokenHash: true,
         lastValidatedAt: true,
       },
     });
@@ -141,7 +142,7 @@ export async function POST(
     const credentialPresent =
       subscription.provider === "APP_STORE"
         ? Boolean(subscription.originalTransactionId || subscription.latestTransactionId)
-        : Boolean(subscription.purchaseToken);
+        : Boolean(subscription.purchaseTokenEncrypted || subscription.purchaseTokenHash);
 
     if (!credentialPresent) {
       // Stored credential is gone — record the unhealthy result, DON'T stamp
@@ -215,7 +216,7 @@ export async function POST(
         maskedCredentialId: maskProviderIdentifier(
           subscription.provider === "APP_STORE"
             ? subscription.latestTransactionId || subscription.originalTransactionId
-            : subscription.purchaseToken,
+            : "stored-play-token-present",
         ),
         before,
         after: auditSnapshot(updated),

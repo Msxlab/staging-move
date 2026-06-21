@@ -3,37 +3,38 @@
 @tailwind utilities;
 
 /* =========================================================================
-   LocateFlow Admin — Edition VII · Aurora
-   Mirrors apps/web/src/styles/globals.css (Aurora cool/violet/mint).
+   Move Admin — Edition VIII · Move Gold
+   Mirrors apps/web/src/styles/globals.css (Aurora cool / honey / mint).
    Source of truth for numeric values: packages/shared/src/design-tokens.ts.
    ========================================================================= */
 :root,
 .dark {
-  --rose:        #F2C46C;
-  --rose-light:  #FBE7BD;
-  --rose-deep:   #D99A4E;
-  --foil-a:      #FBE7BD;
-  --foil-b:      #F2C46C;
-  --foil-c:      #D99A4E;
-  --foil:        #F2C46C;
-  --foil-ink:    #B0781E;
-  --sage:        #87DDC0;
+  --rose:        #CBA45E;
+  --rose-light:  #DCBC7C;
+  --rose-deep:   #B0852F;
+  --rose-dark:   #9A7325;
+  --foil-a:      #DCBC7C;
+  --foil-b:      #CBA45E;
+  --foil-c:      #B0852F;
+  --foil:        #CBA45E;
+  --foil-ink:    #765514;
+  --sage:        #54CB7E;
 
-  --brand-orange:       #F2C46C;
-  --brand-orange-light: #FBE7BD;
-  --brand-orange-dark:  #D99A4E;
-  --brand-amber:        #F2C46C;
+  --brand-orange:       #CBA45E;
+  --brand-orange-light: #DCBC7C;
+  --brand-orange-dark:  #B0852F;
+  --brand-amber:        #E0A85A;
 
-  --orange-50:  #EFF5FB;
-  --orange-100: #DDE7F5;
-  --orange-200: #BDD2EE;
-  --orange-300: #9CBDDD;
-  --orange-400: #7FB6E8;
-  --orange-500: #7FB6E8;
-  --orange-600: #6BA5D9;
-  --orange-700: #5C9DDC;
-  --orange-800: #3D7AB8;
-  --orange-900: #1F5FA0;
+  --orange-50:  #FCF7EA;
+  --orange-100: #F6E9C8;
+  --orange-200: #EBD39B;
+  --orange-300: #E4C68B;
+  --orange-400: #CBA45E;
+  --orange-500: #CBA45E;
+  --orange-600: #B89142;
+  --orange-700: #B0852F;
+  --orange-800: #9A7325;
+  --orange-900: #765514;
 
   --bg:        #171E2B;
   --surface:   #1C2535;
@@ -42,62 +43,64 @@
 
   --line:        rgba(255, 255, 255, 0.10);
   --line-2:      rgba(255, 255, 255, 0.16);
-  --line-foil:   rgba(242, 196, 108, 0.22);
-  --border-focus: rgba(242, 196, 108, 0.55);
+  --line-foil:   rgba(203, 164, 94, 0.22);
+  --border-focus: rgba(203, 164, 94, 0.55);
 
-  --tone-rose-bg: rgba(127, 182, 232, 0.16); --tone-rose-br: rgba(127, 182, 232, 0.32); --tone-rose-fg: #9CC6F0;
-  --tone-foil-bg: rgba(242, 196, 108, 0.16); --tone-foil-br: rgba(242, 196, 108, 0.32); --tone-foil-fg: #F5CE82;
-  --tone-sage-bg: rgba(135, 221, 192, 0.16); --tone-sage-br: rgba(135, 221, 192, 0.32); --tone-sage-fg: #A0EAD2;
-  --tone-honey-bg: rgba(242, 196, 108, 0.16); --tone-honey-br: rgba(242, 196, 108, 0.32); --tone-honey-fg: #F5CE82;
+  --tone-rose-bg: rgba(226, 92, 92, 0.16); --tone-rose-br: rgba(226, 92, 92, 0.32); --tone-rose-fg: #E25C5C;
+  --tone-foil-bg: rgba(203, 164, 94, 0.16); --tone-foil-br: rgba(203, 164, 94, 0.32); --tone-foil-fg: #DCBC7C;
+  --tone-sage-bg: rgba(84, 203, 126, 0.16); --tone-sage-br: rgba(84, 203, 126, 0.32); --tone-sage-fg: #A0EAD2;
+  --tone-honey-bg: rgba(224, 168, 90, 0.16); --tone-honey-br: rgba(224, 168, 90, 0.32); --tone-honey-fg: #E0A85A;
   --tone-umber-bg: rgba(217, 154, 78, 0.16); --tone-umber-br: rgba(217, 154, 78, 0.32); --tone-umber-fg: #E2B873;
   --tone-slate-bg: rgba(168, 181, 201, 0.16); --tone-slate-br: rgba(168, 181, 201, 0.32); --tone-slate-fg: #C3CEDD;
-  --tone-orange-bg: rgba(127, 182, 232, 0.16); --tone-orange-br: rgba(127, 182, 232, 0.32); --tone-orange-fg: #9CC6F0;
-  --tone-emerald-bg: rgba(135, 221, 192, 0.16); --tone-emerald-br: rgba(135, 221, 192, 0.32); --tone-emerald-fg: #A0EAD2;
-  --tone-amber-bg: rgba(242, 196, 108, 0.16); --tone-amber-br: rgba(242, 196, 108, 0.32); --tone-amber-fg: #F5CE82;
-  --tone-sky-bg: rgba(127, 182, 232, 0.16); --tone-sky-br: rgba(127, 182, 232, 0.32); --tone-sky-fg: #9CC6F0;
-  --tone-cyan-bg: rgba(127, 182, 232, 0.16); --tone-cyan-br: rgba(127, 182, 232, 0.32); --tone-cyan-fg: #9CC6F0;
+  --tone-orange-bg: rgba(203, 164, 94, 0.16); --tone-orange-br: rgba(203, 164, 94, 0.32); --tone-orange-fg: #CBA45E;
+  --tone-emerald-bg: rgba(84, 203, 126, 0.16); --tone-emerald-br: rgba(84, 203, 126, 0.32); --tone-emerald-fg: #A0EAD2;
+  --tone-amber-bg: rgba(224, 168, 90, 0.16); --tone-amber-br: rgba(224, 168, 90, 0.32); --tone-amber-fg: #E0A85A;
+  --tone-sky-bg: rgba(55, 194, 201, 0.14); --tone-sky-br: rgba(55, 194, 201, 0.28); --tone-sky-fg: #37C2C9;
+  --tone-cyan-bg: rgba(55, 194, 201, 0.14); --tone-cyan-br: rgba(55, 194, 201, 0.28); --tone-cyan-fg: #37C2C9;
 
-  --shadow-glow: 0 0 10px rgba(242, 196, 108, 0.12);
-  --shadow-rose: 0 0 10px rgba(242, 196, 108, 0.12);
-  --shadow-foil: 0 0 14px rgba(242, 196, 108, 0.07);
+  --shadow-glow: 0 0 10px rgba(203, 164, 94, 0.16);
+  --shadow-rose: 0 0 10px rgba(203, 164, 94, 0.16);
+  --shadow-foil: 0 0 14px rgba(203, 164, 94, 0.07);
 
   /* Semantic — Aurora ramp. Consumed by Tailwind `bg-success` etc. */
-  --success:       #87DDC0;
-  --success-soft:  rgba(135, 221, 192, 0.14);
-  --warning:       #F2C46C;
-  --warning-soft:  rgba(242, 196, 108, 0.14);
-  --danger:        #F08C8E;
-  --danger-soft:   rgba(240, 140, 142, 0.16);
-  --info:          #7FB6E8;
-  --info-soft:     rgba(127, 182, 232, 0.14);
+  --success:       #54CB7E;
+  --success-soft:  rgba(84, 203, 126, 0.14);
+  --warning:       #E0A85A;
+  --warning-soft:  rgba(224, 168, 90, 0.16);
+  --danger:        #E25C5C;
+  --danger-soft:   rgba(226, 92, 92, 0.16);
+  --info:          #37C2C9;
+  --info-soft:     rgba(55, 194, 201, 0.14);
 }
 
 /* ─────────────── Light mode — Aurora soft sky paper ─────────────── */
 .light {
-  --rose:        #B0781E;
-  --rose-light:  #D99A4E;
-  --rose-deep:   #8A5E14;
-  --foil-a:      #FBE7BD;
-  --foil-b:      #B0781E;
-  --foil-c:      #D99A4E;
-  --foil:        #B0781E;
-  --foil-ink:    #B0781E;
-  --sage:        #2E9B79;
+  --rose:        #9A7325;
+  --rose-light:  #AD8534;
+  --rose-deep:   #765514;
+  --rose-dark:   #4F3A0E;
+  --foil-a:      #DCBC7C;
+  --foil-b:      #765514;
+  --foil-c:      #B0852F;
+  --foil:        #765514;
+  --foil-ink:    #765514;
+  --sage:        #0F6B50;
 
-  --brand-orange:       #B0781E;
-  --brand-orange-light: #D99A4E;
-  --brand-orange-dark:  #8A5E14;
+  --brand-orange:       #9A7325;
+  --brand-orange-light: #AD8534;
+  --brand-orange-dark:  #765514;
+  --brand-amber:        #765514;
 
-  --orange-50:  #EFF5FB;
-  --orange-100: #DDE7F5;
-  --orange-200: #BDD2EE;
-  --orange-300: #9CBDDD;
-  --orange-400: #4D8FCE;
-  --orange-500: #2D7BC4;
-  --orange-600: #2670B6;
-  --orange-700: #1F5FA0;
-  --orange-800: #184A7F;
-  --orange-900: #0F345C;
+  --orange-50:  #FCF7EA;
+  --orange-100: #F6E9C8;
+  --orange-200: #EBD39B;
+  --orange-300: #E4C68B;
+  --orange-400: #AD8534;
+  --orange-500: #9A7325;
+  --orange-600: #765514;
+  --orange-700: #765514;
+  --orange-800: #6D5014;
+  --orange-900: #4F3A0E;
 
   --bg:        #F2F4F8;
   --surface:   #FFFFFF;
@@ -106,33 +109,33 @@
 
   --line:        rgba(20, 32, 47, 0.06);
   --line-2:      rgba(20, 32, 47, 0.14);
-  --line-foil:   rgba(176, 120, 30, 0.30);
-  --border-focus: rgba(176, 120, 30, 0.55);
+  --line-foil:   rgba(134, 99, 26, 0.30);
+  --border-focus: rgba(154, 115, 37, 0.55);
 
-  --tone-rose-bg: rgba(45, 123, 196, 0.10); --tone-rose-br: rgba(45, 123, 196, 0.22); --tone-rose-fg: #2D7BC4;
-  --tone-foil-bg: rgba(176, 120, 30, 0.10); --tone-foil-br: rgba(176, 120, 30, 0.22); --tone-foil-fg: #B0781E;
-  --tone-sage-bg: rgba(46, 155, 121, 0.10); --tone-sage-br: rgba(46, 155, 121, 0.22); --tone-sage-fg: #2E9B79;
-  --tone-honey-bg: rgba(185, 131, 24, 0.10); --tone-honey-br: rgba(185, 131, 24, 0.22); --tone-honey-fg: #B98318;
-  --tone-umber-bg: rgba(176, 120, 30, 0.10); --tone-umber-br: rgba(176, 120, 30, 0.22); --tone-umber-fg: #B0781E;
+  --tone-rose-bg: rgba(168, 51, 51, 0.10); --tone-rose-br: rgba(168, 51, 51, 0.22); --tone-rose-fg: #A83333;
+  --tone-foil-bg: rgba(134, 99, 26, 0.10); --tone-foil-br: rgba(134, 99, 26, 0.22); --tone-foil-fg: #765514;
+  --tone-sage-bg: rgba(15, 107, 80, 0.10); --tone-sage-br: rgba(15, 107, 80, 0.22); --tone-sage-fg: #0F6B50;
+  --tone-honey-bg: rgba(185, 131, 24, 0.10); --tone-honey-br: rgba(185, 131, 24, 0.22); --tone-honey-fg: #765514;
+  --tone-umber-bg: rgba(134, 99, 26, 0.10); --tone-umber-br: rgba(134, 99, 26, 0.22); --tone-umber-fg: #765514;
   --tone-slate-bg: rgba(74, 92, 117, 0.10); --tone-slate-br: rgba(74, 92, 117, 0.22); --tone-slate-fg: #4A5C75;
-  --tone-orange-bg: rgba(45, 123, 196, 0.10); --tone-orange-br: rgba(45, 123, 196, 0.22); --tone-orange-fg: #2D7BC4;
-  --tone-emerald-bg: rgba(46, 155, 121, 0.10); --tone-emerald-br: rgba(46, 155, 121, 0.22); --tone-emerald-fg: #2E9B79;
-  --tone-amber-bg: rgba(185, 131, 24, 0.10); --tone-amber-br: rgba(185, 131, 24, 0.22); --tone-amber-fg: #B98318;
-  --tone-sky-bg: rgba(45, 123, 196, 0.10); --tone-sky-br: rgba(45, 123, 196, 0.22); --tone-sky-fg: #2D7BC4;
-  --tone-cyan-bg: rgba(45, 123, 196, 0.10); --tone-cyan-br: rgba(45, 123, 196, 0.22); --tone-cyan-fg: #2D7BC4;
+  --tone-orange-bg: rgba(154, 115, 37, 0.10); --tone-orange-br: rgba(154, 115, 37, 0.22); --tone-orange-fg: #9A7325;
+  --tone-emerald-bg: rgba(15, 107, 80, 0.10); --tone-emerald-br: rgba(15, 107, 80, 0.22); --tone-emerald-fg: #0F6B50;
+  --tone-amber-bg: rgba(185, 131, 24, 0.10); --tone-amber-br: rgba(185, 131, 24, 0.22); --tone-amber-fg: #765514;
+  --tone-sky-bg: rgba(22, 102, 107, 0.10); --tone-sky-br: rgba(22, 102, 107, 0.22); --tone-sky-fg: #16666B;
+  --tone-cyan-bg: rgba(22, 102, 107, 0.10); --tone-cyan-br: rgba(22, 102, 107, 0.22); --tone-cyan-fg: #16666B;
 
-  --shadow-glow: 0 0 20px rgba(176, 120, 30, 0.20);
-  --shadow-rose: 0 0 20px rgba(176, 120, 30, 0.20);
-  --shadow-foil: 0 0 30px rgba(176, 120, 30, 0.14);
+  --shadow-glow: 0 0 20px rgba(154, 115, 37, 0.18);
+  --shadow-rose: 0 0 20px rgba(154, 115, 37, 0.18);
+  --shadow-foil: 0 0 30px rgba(134, 99, 26, 0.14);
 
-  --success:       #2E9B79;
-  --success-soft:  rgba(46, 155, 121, 0.10);
-  --warning:       #B98318;
+  --success:       #0F6B50;
+  --success-soft:  rgba(15, 107, 80, 0.10);
+  --warning:       #765514;
   --warning-soft:  rgba(185, 131, 24, 0.10);
-  --danger:        #C84E51;
-  --danger-soft:   rgba(200, 78, 81, 0.10);
-  --info:          #2D7BC4;
-  --info-soft:     rgba(45, 123, 196, 0.10);
+  --danger:        #A83333;
+  --danger-soft:   rgba(168, 51, 51, 0.10);
+  --info:          #16666B;
+  --info-soft:     rgba(22, 102, 107, 0.10);
 }
 
 @layer base {
@@ -144,7 +147,7 @@
     --card-foreground: 213 39% 13%;
     --popover: 218 21% 96%;
     --popover-foreground: 213 39% 13%;
-    --primary: 38 71% 40%;
+    --primary: 41 68% 31%;
     --primary-foreground: 0 0% 100%;
     --secondary: 214 22% 38%;
     --secondary-foreground: 0 0% 100%;
@@ -156,7 +159,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 213 18% 82%;
     --input: 213 18% 82%;
-    --ring: 38 71% 40%;
+    --ring: 41 68% 31%;
     --radius: 0.5rem;
   }
 
@@ -170,7 +173,7 @@
     --card-foreground: 220 16% 98%;
     --popover: 218 22% 19%;
     --popover-foreground: 220 16% 98%;
-    --primary: 41 85% 68%;
+    --primary: 39 51% 58%;
     --primary-foreground: 222 40% 8%;
     --secondary: 220 10% 82%;
     --secondary-foreground: 222 40% 8%;
@@ -182,7 +185,7 @@
     --destructive-foreground: 222 40% 8%;
     --border: 217 20% 30%;
     --input: 217 20% 30%;
-    --ring: 41 85% 68%;
+    --ring: 39 51% 58%;
   }
 }
 
@@ -265,32 +268,32 @@
   position: relative;
 }
 .health-pill.tone-sage {
-  background: rgba(135, 221, 192, 0.14);
-  border-color: rgba(135, 221, 192, 0.28);
-  color: #87DDC0;
+  background: rgba(84, 203, 126, 0.14);
+  border-color: rgba(84, 203, 126, 0.28);
+  color: #54CB7E;
 }
 .health-pill.tone-sage .health-dot {
-  background: #87DDC0;
-  box-shadow: 0 0 0 3px rgba(135, 221, 192, 0.18);
+  background: #54CB7E;
+  box-shadow: 0 0 0 3px rgba(84, 203, 126, 0.18);
 }
 .health-pill.tone-honey {
-  background: rgba(242, 196, 108, 0.14);
-  border-color: rgba(242, 196, 108, 0.28);
-  color: #F2C46C;
+  background: rgba(224, 168, 90, 0.16);
+  border-color: rgba(224, 168, 90, 0.28);
+  color: #E0A85A;
 }
-.health-pill.tone-honey .health-dot { background: #F2C46C; }
+.health-pill.tone-honey .health-dot { background: #E0A85A; }
 .health-pill.tone-rose {
-  background: rgba(240, 140, 142, 0.16);
-  border-color: rgba(240, 140, 142, 0.32);
-  color: #F08C8E;
+  background: rgba(226, 92, 92, 0.16);
+  border-color: rgba(226, 92, 92, 0.32);
+  color: #E25C5C;
 }
 .health-pill.tone-rose .health-dot {
-  background: #F08C8E;
+  background: #E25C5C;
   animation: health-pulse 1.6s ease-out infinite;
 }
 @keyframes health-pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(240, 140, 142, 0.5); }
-  100% { box-shadow: 0 0 0 8px rgba(240, 140, 142, 0); }
+  0%   { box-shadow: 0 0 0 0   rgba(226, 92, 92, 0.5); }
+  100% { box-shadow: 0 0 0 8px rgba(226, 92, 92, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .health-pill.tone-rose .health-dot { animation: none; }
@@ -316,9 +319,9 @@
 }
 .tier-stamp svg { display: block; }
 .tier-stamp.tier-individual {
-  background: rgba(127, 182, 232, 0.10);
-  border-color: rgba(127, 182, 232, 0.32);
-  color: #7FB6E8;
+  background: rgba(203, 164, 94, 0.10);
+  border-color: rgba(203, 164, 94, 0.32);
+  color: #CBA45E;
 }
 .tier-stamp.tier-family {
   background: rgba(52, 216, 166, 0.10);
@@ -329,16 +332,16 @@
   background: linear-gradient(
     135deg,
     rgba(251, 231, 189, 0.18),
-    rgba(242, 196, 108, 0.22)
+    rgba(203, 164, 94, 0.22)
   );
-  border-color: rgba(242, 196, 108, 0.40);
-  color: #F5CE82;
-  box-shadow: 0 0 0 1px rgba(242, 196, 108, 0.14) inset;
+  border-color: rgba(203, 164, 94, 0.40);
+  color: #DCBC7C;
+  box-shadow: 0 0 0 1px rgba(203, 164, 94, 0.14) inset;
 }
 .tier-stamp.tier-trial {
-  background: rgba(242, 196, 108, 0.10);
-  border-color: rgba(242, 196, 108, 0.32);
-  color: #F2C46C;
+  background: rgba(203, 164, 94, 0.10);
+  border-color: rgba(203, 164, 94, 0.32);
+  color: #CBA45E;
 }
 
 /* =========================================================================
@@ -348,7 +351,7 @@
 .foil-text {
   font-style: italic;
   font-weight: 400;
-  background: linear-gradient(135deg, #FBE7BD 0%, #F2C46C 50%, #D99A4E 100%);
+  background: linear-gradient(135deg, #DCBC7C 0%, #CBA45E 50%, #B0852F 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -371,7 +374,7 @@
     box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .admin-panel:hover {
-  border-color: rgba(242, 196, 108, 0.32);
+  border-color: rgba(203, 164, 94, 0.32);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.30);
 }
 .admin-panel-head {
@@ -385,9 +388,9 @@
 }
 
 .admin-panel-flagship {
-  border-color: rgba(242, 196, 108, 0.30);
+  border-color: rgba(203, 164, 94, 0.30);
   box-shadow:
-    0 0 0 1px rgba(242, 196, 108, 0.10) inset,
+    0 0 0 1px rgba(203, 164, 94, 0.10) inset,
     0 8px 24px rgba(0, 0, 0, 0.30);
 }
 .admin-panel-flagship::before {
@@ -396,7 +399,7 @@
   inset: 0;
   background: radial-gradient(
     600px 140px at 50% 0%,
-    rgba(242, 196, 108, 0.08),
+    rgba(203, 164, 94, 0.08),
     transparent 60%
   );
   pointer-events: none;
@@ -414,7 +417,7 @@
     transform 200ms ease;
 }
 .kpi-foil:hover {
-  border-color: rgba(242, 196, 108, 0.34);
+  border-color: rgba(203, 164, 94, 0.34);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.30);
   transform: translateY(-1px);
 }
@@ -445,9 +448,9 @@
   background: rgba(236, 241, 248, 0.06);
 }
 .light .tier-bar { background: rgba(20, 32, 47, 0.06); }
-.tier-bar-seg-individual { background: linear-gradient(90deg, #7FB6E8, #5C9DDC); }
+.tier-bar-seg-individual { background: linear-gradient(90deg, #CBA45E, #B0852F); }
 .tier-bar-seg-family     { background: linear-gradient(90deg, #34D8A6, #1FB98A); }
 .tier-bar-seg-pro {
-  background: linear-gradient(90deg, #FBE7BD 0%, #F2C46C 60%, #D99A4E 100%);
-  box-shadow: 0 0 8px rgba(242, 196, 108, 0.4);
+  background: linear-gradient(90deg, #DCBC7C 0%, #CBA45E 60%, #B0852F 100%);
+  box-shadow: 0 0 8px rgba(203, 164, 94, 0.4);
 }

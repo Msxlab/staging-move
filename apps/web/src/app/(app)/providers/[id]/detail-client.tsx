@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo } from "react";
 import Link from "next/link";
@@ -224,7 +224,7 @@ export function ProviderDetailClient({
             {coverageConfidence?.message || "Availability may vary by address. Confirm with the official provider before acting."}
           </p>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Adding this provider only creates a LocateFlow service record; it does not update your address with the provider.
+            Adding this provider only creates a Move service record; it does not update your address with the provider.
           </p>
           {provider.coverageNote && (
             <p className="text-[11px] text-muted-foreground mt-2">{provider.coverageNote}</p>
@@ -244,7 +244,7 @@ export function ProviderDetailClient({
               {primaryAddress?.state ? ` in ${primaryAddress.state}` : ""} use this provider
             </p>
             <p className="text-xs text-muted-foreground">
-              Popularity-based signal from LocateFlow users
+              Popularity-based signal from Move users
             </p>
           </div>
         </div>

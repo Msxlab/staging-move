@@ -16,8 +16,6 @@ const DEFAULT_MOBILE_REDIRECT_URIS = [
   "locateflow://oauth",
   "locateflow:///oauth",
   "https://locateflow.com/mobile/oauth",
-  "https://locateflow.app/mobile/oauth",
-  "https://app.locateflow.com/mobile/oauth",
 ];
 
 // PKCE code_challenge constraints. RFC 7636 requires base64url

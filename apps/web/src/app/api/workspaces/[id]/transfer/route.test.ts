@@ -71,6 +71,9 @@ describe("POST /api/workspaces/[id]/transfer", () => {
     memberFind.mockResolvedValue(null);
     const res = await POST(req({ toUserId: "u-2" }), params);
     expect(res.status).toBe(404);
+    expect(memberFind).toHaveBeenCalledWith({
+      where: { workspaceId: "ws-1", userId: CALLER, workspace: { deletedAt: null } },
+    });
   });
 
   it("403s when the caller is not the OWNER (real can() gate)", async () => {

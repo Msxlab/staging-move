@@ -14,10 +14,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const member = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const member = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const workspace = await prisma.workspace.findUnique({ where: { id } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, deletedAt: null } });
   if (!workspace) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json(
@@ -47,7 +49,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const member = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const member = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!can(member.role as WorkspaceRole, "workspace.rename", { status: member.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Only the owner can rename this workspace." }, { status: 403 });
@@ -59,6 +63,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Name must be between 1 and 60 characters." }, { status: 422 });
   }
 
-  const updated = await prisma.workspace.update({ where: { id }, data: { name }, select: { id: true, name: true } });
-  return NextResponse.json({ id: updated.id, name: updated.name });
+  const updated = await prisma.workspace.updateMany({ where: { id, deletedAt: null }, data: { name } });
+  if (updated.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json({ id, name });
 }

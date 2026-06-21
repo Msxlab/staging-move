@@ -33,7 +33,7 @@ import { daysUntilDue, dueUrgencyTone, resolveToneColors } from "@/lib/semantic-
  *   - Self-hides when there is no active plan or no open tasks (renders null), so
  *     it never adds an empty card to the dashboard.
  *
- * Honesty note: completion is LOCAL ONLY — it updates LocateFlow records, never
+ * Honesty note: completion is LOCAL ONLY — it updates Move records, never
  * external provider accounts. We don't show the full local-only modal here (the
  * plan screen does); the strip is the fast path for users who already know what
  * "complete" means. The plan screen keeps the explanatory confirm.

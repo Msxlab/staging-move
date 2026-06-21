@@ -13,6 +13,7 @@ import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { verifyUserStepUp } from "@/lib/user-step-up";
 import { getRequestEntitlement } from "@/lib/request-entitlements";
+import { contentDispositionAttachment } from "@/lib/http-download";
 
 /**
  * GET /api/export/pdf?type=address&addressId=xxx
@@ -225,7 +226,7 @@ function pdfResponse(buffer: Buffer, filename: string): NextResponse {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": contentDispositionAttachment(filename, "locateflow-export.pdf"),
       "Content-Length": String(buffer.length),
       "Cache-Control": "private, no-store",
     },

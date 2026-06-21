@@ -14,6 +14,10 @@ vi.mock("@/lib/auth", () => ({
   getUserSession: vi.fn(),
 }));
 
+vi.mock("@/lib/user-auth", () => ({
+  shouldUseSecureSessionCookies: vi.fn(),
+}));
+
 vi.mock("@/lib/rate-limit", () => ({
   getRateLimitKey: () => "rate-key",
   rateLimit: vi.fn(),
@@ -27,11 +31,13 @@ vi.mock("@/i18n/config", () => ({
 
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/auth";
+import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { POST } from "./route";
 
 const mockUser = (prisma as unknown as { user: { update: Mock; findUnique: Mock } }).user;
 const mockGetUserSession = getUserSession as unknown as Mock;
+const mockShouldUseSecureSessionCookies = shouldUseSecureSessionCookies as unknown as Mock;
 const mockRateLimit = rateLimit as unknown as Mock;
 
 function postRequest(body: unknown) {
@@ -47,6 +53,7 @@ describe("user locale route", () => {
     vi.clearAllMocks();
     mockRateLimit.mockResolvedValue({ success: true });
     mockGetUserSession.mockResolvedValue({ userId: "user-1" });
+    mockShouldUseSecureSessionCookies.mockReturnValue(true);
     mockUser.update.mockResolvedValue({});
   });
 
@@ -59,6 +66,7 @@ describe("user locale route", () => {
       data: { preferredLocale: "es" },
     });
     expect(response.cookies.get("NEXT_LOCALE")?.value).toBe("es");
+    expect(response.headers.get("set-cookie") || "").toContain("Secure");
   });
 
   it("rejects an unsupported locale without touching the database", async () => {

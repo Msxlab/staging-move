@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { redactBackupSecretText } from "@/lib/backup-metadata";
 import {
@@ -18,6 +18,14 @@ const MAX_BACKUPS_KEEP = 50;
 // Cap the per-object result list embedded in the response/audit log so
 // a large backlog can't bloat the audit row. Counts stay exact.
 const MAX_OFFSITE_RESULTS_REPORTED = 50;
+
+function noStoreJson(body: Record<string, unknown>, init: ResponseInit = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("Cache-Control", "no-store");
+  headers.set("Pragma", "no-cache");
+  headers.set("Expires", "0");
+  return NextResponse.json(body, { ...init, headers });
+}
 
 interface OffsiteCandidate {
   id: string;
@@ -150,7 +158,7 @@ export async function POST(request: NextRequest) {
   let dryRun = false;
 
   try {
-    isCron = verifyInternalAuth(request.headers.get("authorization"), "cron");
+    isCron = verifyInternalAuth(request.headers.get("authorization"), "backup");
     if (!isCron) {
       session = await requirePermission("settings", "canDelete", {
         minimumRole: "SUPER_ADMIN",
@@ -162,6 +170,40 @@ export async function POST(request: NextRequest) {
       body?.dryRun === true ||
       request.nextUrl.searchParams.get("dryRun") === "true" ||
       request.nextUrl.searchParams.get("dryRun") === "1";
+
+    if (!isCron && !dryRun) {
+      const confirm = await requirePasswordConfirm(session!, body?.confirmPassword, {
+        operation: "backup_retention_cleanup",
+        requireMfa: true,
+        mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : undefined,
+        backupCode: typeof body?.backupCode === "string" ? body.backupCode : undefined,
+        ipAddress: request.headers.get("x-forwarded-for") ?? undefined,
+        userAgent: request.headers.get("user-agent") ?? undefined,
+      });
+      if (!confirm.confirmed) {
+        await writeBackupAudit({
+          session,
+          action: "BACKUP_RETENTION_FAILED",
+          entityId: "retention",
+          request,
+          metadata: {
+            trigger: "manual",
+            dryRun,
+            reasonCode: confirm.requiresMfa ? "mfa_required_or_invalid" : "step_up_failed",
+            requiresMfa: Boolean(confirm.requiresMfa),
+          },
+          error: confirm.error || "backup retention step-up failed",
+        });
+        return noStoreJson(
+          {
+            error: confirm.error || "Password and MFA confirmation required",
+            requiresPassword: true,
+            requiresMfa: confirm.requiresMfa || undefined,
+          },
+          { status: confirm.rateLimited ? 429 : 403 },
+        );
+      }
+    }
 
     const now = new Date();
     const completedCutoff = new Date(

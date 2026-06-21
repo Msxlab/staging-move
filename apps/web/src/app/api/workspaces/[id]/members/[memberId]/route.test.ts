@@ -95,6 +95,9 @@ describe("PATCH /api/workspaces/[id]/members/[memberId] — role change", () => 
     pair({ id: "m-caller", userId: CALLER, role: "OWNER" }, { id: "m-target", userId: "u-t", role: "MEMBER" });
     const res = await PATCH(patchReq("ADMIN"), params);
     expect(res.status).toBe(200);
+    expect(memberMock).toHaveBeenCalledWith({
+      where: { workspaceId: "ws-1", userId: CALLER, workspace: { deletedAt: null } },
+    });
     expect(updateMock).toHaveBeenCalledWith({ where: { id: "m-target" }, data: { role: "ADMIN" } });
   });
 
@@ -137,6 +140,9 @@ describe("DELETE /api/workspaces/[id]/members/[memberId] — remove", () => {
     pair({ id: "m-caller", userId: CALLER, role: "OWNER" }, { id: "m-target", userId: "u-t", role: "ADMIN" });
     const res = await DELETE(deleteReq(), params);
     expect(res.status).toBe(200);
+    expect(memberMock).toHaveBeenCalledWith({
+      where: { workspaceId: "ws-1", userId: CALLER, workspace: { deletedAt: null } },
+    });
     expect(deleteMock).toHaveBeenCalledWith({ where: { id: "m-target" } });
   });
 });

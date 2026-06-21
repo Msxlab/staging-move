@@ -58,7 +58,7 @@ describe("resolveToneColors", () => {
       success: "#0F6B50",
       warning: "#7A5418",
       error: "#A23B3F",
-      info: "#1F5FA0",
+      info: "#16666B",
       textTertiary: "#888888",
       errorFaded: "rgba(162,59,63,0.14)",
     },

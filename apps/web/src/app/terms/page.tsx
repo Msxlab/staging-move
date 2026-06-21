@@ -94,7 +94,7 @@ export default function TermsPage() {
 
       <PublicSection title="Related legal notice">
         <p>
-          The separate policies below explain user-entered data, third-party provider information, billing, refunds, privacy, acceptable use, and legal-risk allocation inside LocateFlow.
+          The separate policies below explain user-entered data, third-party provider information, billing, refunds, privacy, acceptable use, and legal-risk allocation inside Move.
         </p>
         <div className="flex flex-wrap gap-3">
           <Link href="/disclaimer" className="inline-flex rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-primary transition hover:border-primary/40">Disclaimer</Link>

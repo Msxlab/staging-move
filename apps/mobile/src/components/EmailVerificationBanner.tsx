@@ -73,8 +73,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     padding: 14,
     borderRadius: theme.radius.xl,
     borderWidth: 1,
-    // Aurora amber 30% — matches `theme.colors.warning` (#F2C46C).
-    borderColor: "rgba(242, 196, 108, 0.3)",
+    // Move amber 30% - matches `theme.colors.warning` (#E0A85A).
+    borderColor: "rgba(224, 168, 90, 0.3)",
     backgroundColor: theme.colors.warningFaded,
     marginBottom: 16,
   },

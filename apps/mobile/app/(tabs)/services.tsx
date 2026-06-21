@@ -81,9 +81,9 @@ function readServicesCache(raw: unknown): { services: unknown[]; addresses: unkn
 
 const catColors: Record<string, string> = {
   // Aurora-flavored categorical palette — distinct hues, all readable on dark navy.
-  GOVERNMENT: "#F08C8E", UTILITY: "#F2C46C", FINANCIAL: "#87DDC0",
-  HOUSING: "#7FB6E8", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#5C9DDC",
-  KIDS: "#D99A4E", FITNESS: "#F2C46C", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
+  GOVERNMENT: "#E25C5C", UTILITY: "#CBA45E", FINANCIAL: "#54CB7E",
+  HOUSING: "#CBA45E", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#B0852F",
+  KIDS: "#B0852F", FITNESS: "#CBA45E", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
 };
 
 const serviceCategoryValues = new Set<string>(SERVICE_CATEGORIES.map((c) => c.value));
@@ -892,7 +892,7 @@ export default function ServicesScreen() {
           const currentItems = checklist.phases.find((p) => p.phase === checklist.currentPhase);
           const pending = currentItems?.items.filter((i) => !i.isCompleted).slice(0, 3) || [];
           return (
-            <View style={{ marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)", backgroundColor: "rgba(127, 182, 232,0.04)", padding: 14 }}>
+            <View style={{ marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(203, 164, 94,0.2)", backgroundColor: "rgba(203, 164, 94,0.04)", padding: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <CategoryIcon emoji={phase?.icon || ""} size={16} color={theme.colors.primary} />

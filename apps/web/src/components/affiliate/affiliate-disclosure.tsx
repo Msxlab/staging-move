@@ -1,6 +1,6 @@
 /**
  * FTC material-connection disclosure for affiliate "Get started" CTAs
- * (docs/ai/free-pivot/19 §8). LocateFlow earns a commission on some sign-ups;
+ * (docs/ai/free-pivot/19 §8). Move earns a commission on some sign-ups;
  * the law requires a clear, conspicuous disclosure near the link. The copy also
  * states the ranking-integrity promise (§7): affiliate economics never affect
  * organic order.
@@ -13,7 +13,7 @@ export const AFFILIATE_DISCLOSURE_SHORT =
   "Affiliate link — we may earn a commission if you sign up, at no extra cost to you.";
 
 export const AFFILIATE_DISCLOSURE_LONG =
-  "Some “Get started” links are affiliate links: LocateFlow may earn a commission if you start service through them, at no extra cost to you. This never affects our rankings.";
+  "Some “Get started” links are affiliate links: Move may earn a commission if you start service through them, at no extra cost to you. This never affects our rankings.";
 
 export function AffiliateDisclosure({ className }: { className?: string }) {
   return (

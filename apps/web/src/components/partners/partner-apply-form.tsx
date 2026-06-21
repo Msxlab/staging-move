@@ -112,7 +112,7 @@ export function PartnerApplyForm() {
       <label className="flex items-start gap-2 text-[12px] text-muted-foreground">
         <input type="checkbox" className="mt-0.5" checked={form.consent} onChange={(e) => set("consent", e.target.checked)} aria-label="Consent to receive leads" />
         <span>
-          I agree to receive customer leads and to handle their contact details per LocateFlow&apos;s{" "}
+          I agree to receive customer leads and to handle their contact details per Move&apos;s{" "}
           <a href="/terms" className="underline hover:text-foreground">Terms</a> and{" "}
           <a href="/privacy" className="underline hover:text-foreground">Privacy Policy</a>.
         </span>

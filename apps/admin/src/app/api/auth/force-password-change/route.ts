@@ -58,6 +58,26 @@ export async function POST(request: NextRequest) {
   if (!admin || !admin.isActive) {
     return NextResponse.json({ error: "Account not available." }, { status: 403 });
   }
+  if (admin.mustChangePassword !== true) {
+    await writeAdminAudit(
+      { adminId: admin.id, email: admin.email, role: admin.role },
+      {
+        action: "ADMIN_FORCED_PASSWORD_ROTATION_REJECTED",
+        entityType: "AdminUser",
+        entityId: admin.id,
+        metadata: {
+          operation: "admin_force_password_change",
+          status: "failed",
+          reason: "not_flagged_for_forced_rotation",
+        },
+        request: getAuditRequestMeta(request),
+      },
+    );
+    return NextResponse.json(
+      { error: "Forced password rotation is not required for this account." },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 
   // Reject reusing the (temporary/seed) current password.
   const sameAsCurrent = await bcrypt.compare(newPassword, admin.password);

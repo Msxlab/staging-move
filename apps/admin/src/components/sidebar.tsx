@@ -274,8 +274,8 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
       <div className="adp-rail flex min-h-0 flex-col items-center border-r border-border/60 px-2 py-4">
         <a
           href="/"
-          title="LocateFlow Admin"
-          aria-label="LocateFlow Admin - Dashboard"
+          title="Move Admin"
+          aria-label="Move Admin - Dashboard"
           className="mark mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20 transition-colors hover:bg-accent"
         >
           <RailMark />
@@ -328,10 +328,8 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
             <RailMark />
           </span>
           <div className="flex min-w-0 flex-col leading-none">
-            <span
-              className="truncate font-display text-[19px] font-black text-foreground"
-            >
-              Locate<span className="foil-text">flow</span>
+            <span className="truncate font-display text-[19px] font-black text-foreground">
+              Move
             </span>
             <span className="mt-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.22em] text-primary">
               Operations

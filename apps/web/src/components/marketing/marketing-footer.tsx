@@ -20,7 +20,7 @@ export async function MarketingFooter() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <LogoMark size={24} />
-              <span className="font-display text-lg font-bold">LocateFlow</span>
+              <span className="font-display text-lg font-bold">Move</span>
             </div>
             <p className="text-sm text-muted-foreground">{tCommon("tagline")}</p>
           </div>
@@ -28,7 +28,8 @@ export async function MarketingFooter() {
             <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Product</h4>
             <div className="space-y-2 text-sm text-muted-foreground">
               <Link href="/about" className="block transition hover:text-primary">About</Link>
-              <Link href="/#features" className="block transition hover:text-primary">{tLanding("section_features_title")}</Link>
+              <Link href="/features" className="block transition hover:text-primary">{tLanding("section_features_title")}</Link>
+              <Link href="/why-free" className="block transition hover:text-primary">Why free</Link>
               <Link href="/pricing" className="block transition hover:text-primary">{tPricing("title")}</Link>
               <Link href="/how-it-works" className="block transition hover:text-primary">{tLanding("section_how_title")}</Link>
               <Link href="/provider-coverage" className="block transition hover:text-primary">Provider coverage</Link>
@@ -65,7 +66,7 @@ export async function MarketingFooter() {
         </div>
         <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-6 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} LocateFlow. {tCommon("privacy")}.
+            &copy; {new Date().getFullYear()} Move. {tCommon("privacy")}.
           </p>
           <div className="flex items-center gap-2">
             <LanguageSelector variant="icon" />

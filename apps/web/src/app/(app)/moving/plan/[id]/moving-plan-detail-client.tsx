@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { MovingPlanRecommendations } from "@/components/moving/plan-recommendations";
@@ -249,7 +249,7 @@ export default function MovingPlanDetailClient({
   const handleCompleteMoveTask = async (taskId: string) => {
     const ok = await updateMoveTask(taskId, "COMPLETE");
     if (!ok) return;
-    toast.success("Completed locally in LocateFlow", {
+    toast.success("Completed locally in Move", {
       description: "Provider accounts are not updated automatically.",
       duration: 5000,
       action: {
@@ -402,10 +402,12 @@ export default function MovingPlanDetailClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/moving">
-            <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
-              <ArrowLeft className="h-4 w-4" />
-            </button>
+          <Link
+            href="/moving"
+            className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition"
+            aria-label="Back to moving"
+          >
+            <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2 flex-wrap">
@@ -472,7 +474,7 @@ export default function MovingPlanDetailClient({
             </h2>
             <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
               Your provider migration steps and new-service to-dos, all in one place.
-              Items are tracked locally in LocateFlow — marking one done won't change anything at the provider.
+              Items are tracked locally in Move — marking one done won't change anything at the provider.
             </p>
           </div>
           <div className="flex flex-col items-start sm:items-end gap-2">
@@ -753,10 +755,11 @@ export default function MovingPlanDetailClient({
                         <p className="text-[10px] text-tone-orange-fg truncate">Rec: {item.recommendedProvider.name}</p>
                       )}
                     </div>
-                    <Link href={newHref}>
-                      <button className="shrink-0 px-2 py-1 rounded-lg bg-tone-orange-bg text-tone-orange-fg text-[10px] font-medium hover:bg-tone-orange-bg transition">
-                        Browse
-                      </button>
+                    <Link
+                      href={newHref}
+                      className="shrink-0 px-2 py-1 rounded-lg bg-tone-orange-bg text-tone-orange-fg text-[10px] font-medium hover:bg-tone-orange-bg transition"
+                    >
+                      Browse
                     </Link>
                   </div>
                 );

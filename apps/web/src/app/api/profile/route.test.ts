@@ -126,6 +126,7 @@ describe("profile route", () => {
       status: "ACTIVE",
       provider: "PLAY_STORE",
       purchaseToken: "raw-play-token",
+      purchaseTokenEncrypted: "enc_v1:encrypted-play-token",
       purchaseTokenHash: "hashed-play-token",
     });
 
@@ -140,6 +141,7 @@ describe("profile route", () => {
       provider: "PLAY_STORE",
     });
     expect(body.subscription).not.toHaveProperty("purchaseToken");
+    expect(body.subscription).not.toHaveProperty("purchaseTokenEncrypted");
     expect(body.subscription).not.toHaveProperty("purchaseTokenHash");
   });
 

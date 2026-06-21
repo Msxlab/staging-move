@@ -44,9 +44,9 @@ const DEFAULT_HEIGHT = 320;
 /** Aurora map palettes — hexes mirror web globals.css / mobile theme.ts. */
 const MAP_THEMES = {
   dark: {
-    // sage --sage #87DDC0, accent --rose / default --primary #7FB6E8
-    sage: "87DDC0",
-    accent: "7FB6E8",
+    // sage --sage #54CB7E, accent --rose / default --primary #CBA45E
+    sage: "54CB7E",
+    accent: "CBA45E",
     styles: [
       "element:geometry|color:0x0F1726",
       "element:labels.text.fill|color:0x8A99AD",
@@ -62,9 +62,9 @@ const MAP_THEMES = {
     ],
   },
   light: {
-    // light-mode tokens: --sage #2E9B79, --rose #2D7BC4
-    sage: "2E9B79",
-    accent: "2D7BC4",
+    // light-mode tokens: --sage #1F6F3E, --rose #765514
+    sage: "1F6F3E",
+    accent: "86631A",
     styles: [
       "element:geometry|color:0xEDF1F7",
       "element:labels.text.fill|color:0x5B6B7E",

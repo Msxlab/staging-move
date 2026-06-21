@@ -5,6 +5,13 @@ import { verifyTOTP } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
+function withNoStore(response: NextResponse) {
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
+}
+
 // POST /api/auth/mfa/verify — verify TOTP code to complete MFA setup
 export async function POST(request: NextRequest) {
   try {
@@ -60,7 +67,7 @@ export async function POST(request: NextRequest) {
     // MFA-setup gate lifts immediately — no logout/login round trip.
     await refreshSessionCookie(session, { mfaEnabled: true }).catch(() => null);
 
-    return NextResponse.json({ success: true, message: "MFA has been enabled successfully." });
+    return withNoStore(NextResponse.json({ success: true, message: "MFA has been enabled successfully." }));
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     console.error("MFA verify failed:", error);

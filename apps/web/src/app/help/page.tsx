@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const metadata = createPublicPageMetadata({
   title: "Help Center",
   description:
-    "Search LocateFlow help articles and FAQs about addresses, services, moving tasks, billing, privacy, account security, and support.",
+    "Search Move help articles and FAQs about addresses, services, moving tasks, billing, privacy, account security, and support.",
   path: "/help",
 });
 
@@ -27,13 +27,13 @@ async function getLoggedInShellState() {
 const HELP_PAGE_COPY = {
   en: {
     eyebrow: "Help Center",
-    title: "Search LocateFlow guides and FAQs.",
+    title: "Search Move guides and FAQs.",
     subtitle:
       "Public help for addresses, services, moving tasks, billing, privacy, account security, and support workflows.",
   },
   es: {
     eyebrow: "Centro de ayuda",
-    title: "Busca guias y preguntas frecuentes de LocateFlow.",
+    title: "Busca guias y preguntas frecuentes de Move.",
     subtitle:
       "Ayuda publica para direcciones, servicios, tareas de mudanza, facturacion, privacidad, seguridad de cuenta y soporte.",
   },

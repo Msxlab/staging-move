@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none" aria-hidden="true">
   <defs>
     <radialGradient id="og-tr" cx="0.15" cy="0.25" r="0.6">
-      <stop offset="0%" stop-color="#7FB6E8" stop-opacity="0.18"></stop>
-      <stop offset="100%" stop-color="#7FB6E8" stop-opacity="0"></stop>
+      <stop offset="0%" stop-color="#CBA45E" stop-opacity="0.18"></stop>
+      <stop offset="100%" stop-color="#CBA45E" stop-opacity="0"></stop>
     </radialGradient>
     <radialGradient id="og-br" cx="0.85" cy="0.8" r="0.5">
-      <stop offset="0%" stop-color="#7FB6E8" stop-opacity="0.12"></stop>
-      <stop offset="100%" stop-color="#7FB6E8" stop-opacity="0"></stop>
+      <stop offset="0%" stop-color="#CBA45E" stop-opacity="0.12"></stop>
+      <stop offset="100%" stop-color="#CBA45E" stop-opacity="0"></stop>
     </radialGradient>
   </defs>
   <rect width="1200" height="630" fill="#0A0F18"></rect>
@@ -29,7 +29,7 @@
     </linearGradient>
     <linearGradient id="ic-box" x1="26" y1="56" x2="74" y2="92" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#8FC0EE"></stop>
-      <stop offset="100%" stop-color="#5C9DDC"></stop>
+      <stop offset="100%" stop-color="#B0852F"></stop>
     </linearGradient>
   </defs>
 
@@ -74,6 +74,6 @@
   </g>
 
   </svg>
-  <text x="110" y="480" font-family="Fraunces, Georgia, serif" font-size="96" font-weight="500" fill="#ECF1F8" letter-spacing="0">Locate<tspan font-style="italic" font-weight="400" fill="#7FB6E8">flow</tspan></text>
-  <text x="110" y="540" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="36" font-weight="400" fill="#A5C9F0" letter-spacing="0">Home to somewhere new.</text>
+  <text x="110" y="480" font-family="Playfair Display, Didot, Georgia, serif" font-size="96" font-weight="500" fill="#ECF1F8" letter-spacing="0">Move</text>
+  <text x="110" y="540" font-family="Playfair Display, Didot, Georgia, serif" font-style="italic" font-size="36" font-weight="400" fill="#DCBC7C" letter-spacing="0">Home to somewhere new.</text>
 </svg>

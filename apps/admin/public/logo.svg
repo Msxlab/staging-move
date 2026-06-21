@@ -1,71 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 100" fill="none" aria-hidden="true">
-  <svg x="8" y="10" width="80" height="80" viewBox="0 0 64 64" fill="none">
-
-  <defs><linearGradient id="fv-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#131C2C"></stop><stop offset="100%" stop-color="#06080F"></stop></linearGradient></defs>
-  <rect width="64" height="64" rx="15" fill="url(#fv-bg)"></rect>
-  <g transform="translate(7 5.5) scale(0.5)">
-    <defs>
-    <linearGradient id="ic-mask" x1="22" y1="44" x2="78" y2="26" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#56A8F0"></stop>
-      <stop offset="100%" stop-color="#9CCBF2"></stop>
-    </linearGradient>
-    <linearGradient id="ic-fur" x1="50" y1="6" x2="50" y2="56" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#D9E2EE"></stop>
-      <stop offset="100%" stop-color="#9DAAC0"></stop>
-    </linearGradient>
-    <linearGradient id="ic-box" x1="26" y1="56" x2="74" y2="92" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#8FC0EE"></stop>
-      <stop offset="100%" stop-color="#5C9DDC"></stop>
-    </linearGradient>
-  </defs>
-
-
-  <path d="M33 24 Q24 4 43 16 Q40 22 33 24 Z" fill="url(#ic-fur)"></path>
-  <path d="M67 24 Q76 4 57 16 Q60 22 67 24 Z" fill="url(#ic-fur)"></path>
-  <path d="M35 21 Q29 9 42 16 Q39 19 35 21 Z" fill="#6B788E"></path>
-  <path d="M65 21 Q71 9 58 16 Q61 19 65 21 Z" fill="#6B788E"></path>
-
-  <path d="M50 13 C33 13 27 27 27 39 C27 52 38 60 50 60 C62 60 73 52 73 39 C73 27 67 13 50 13 Z" fill="url(#ic-fur)"></path>
-
-  <path d="M50 18 Q45 31 50 41 Q55 31 50 18 Z" fill="#EEF3FA"></path>
-  <ellipse cx="50" cy="48" rx="14" ry="11" fill="#EEF3FA"></ellipse>
-
-  <g fill="url(#ic-mask)">
-    <path d="M29 35 Q36 28 45 32 Q50 35 48 40 Q45 46 36 45 Q28 44 29 35 Z"></path>
-    <path d="M71 35 Q64 28 55 32 Q50 35 52 40 Q55 46 64 45 Q72 44 71 35 Z"></path>
-    <path d="M45 33 Q50 31 55 33 L55 39 Q50 36 45 39 Z"></path>
-  </g>
-
-  <circle cx="40" cy="37" r="5.4" fill="#0B1018"></circle>
-  <circle cx="60" cy="37" r="5.4" fill="#0B1018"></circle>
-  <circle cx="41.6" cy="35.4" r="2" fill="#EEF3FA"></circle>
-  <circle cx="61.6" cy="35.4" r="2" fill="#EEF3FA"></circle>
-
-  <path d="M50 44 q-3.6 0 -3.6 3 q0 3 3.6 3.7 q3.6 -0.7 3.6 -3.7 q0 -3 -3.6 -3 z" fill="#3D4A5E"></path>
-
-  <path d="M45 53 q5 4 10 0" stroke="#6B788E" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
-
-
-  <path d="M24 60 L50 56 L76 60 L76 64 L24 64 Z" fill="#B7D6F2"></path>
-  <path d="M24 64 L50 67 L50 90 L24 87 Z" fill="url(#ic-box)"></path>
-  <path d="M76 64 L50 67 L50 90 L76 87 Z" fill="#4E8CCB"></path>
-
-  <path d="M50 56 L50 90" stroke="#EAF2FB" stroke-width="2" stroke-linecap="round" opacity="0.85"></path>
-  <path d="M24 62 L50 65 L76 62" stroke="#EAF2FB" stroke-width="1.6" fill="none" opacity="0.7"></path>
-
-  <ellipse cx="30" cy="61" rx="6" ry="5" fill="#8A98AE"></ellipse>
-  <ellipse cx="70" cy="61" rx="6" ry="5" fill="#8A98AE"></ellipse>
-  <path d="M27 60 l1.6 0 M30 60 l1.6 0 M33 60 l1.6 0" stroke="#5E6B80" stroke-width="1" stroke-linecap="round"></path>
-  <path d="M67 60 l1.6 0 M70 60 l1.6 0 M73 60 l1.6 0" stroke="#5E6B80" stroke-width="1" stroke-linecap="round"></path>
-  </g>
-
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 78" fill="none" role="img" aria-label="Move Operations">
+  <svg x="8" y="10" width="56" height="56" viewBox="0 0 64 64" fill="none">
+    <rect width="64" height="64" rx="15" fill="#07101F"/>
+    <g transform="translate(4 4) scale(0.56)">
+      <path d="M18 40 L12 8 L34 24Z" fill="#8C9AB2"/>
+      <path d="M19 37 L15 14 L30 24Z" fill="#C4A090" opacity="0.9"/>
+      <path d="M82 40 L88 8 L66 24Z" fill="#8C9AB2"/>
+      <path d="M81 37 L85 14 L70 24Z" fill="#C4A090" opacity="0.9"/>
+      <ellipse cx="50" cy="58" rx="36" ry="31" fill="#8C9AB2"/>
+      <ellipse cx="50" cy="45" rx="24" ry="14" fill="#B8C2D0" opacity="0.42"/>
+      <ellipse cx="33" cy="51" rx="16" ry="13" fill="#0C1525" transform="rotate(-6 33 51)"/>
+      <ellipse cx="67" cy="51" rx="16" ry="13" fill="#0C1525" transform="rotate(6 67 51)"/>
+      <rect x="44" y="46" width="12" height="10" rx="5" fill="#0C1525"/>
+      <path d="M20 43 Q50 36 80 43" stroke="#0C1525" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="33" cy="51" r="8" fill="#CBA45E"/>
+      <circle cx="33" cy="51" r="5" fill="#04080F"/>
+      <circle cx="67" cy="51" r="8" fill="#CBA45E"/>
+      <circle cx="67" cy="51" r="5" fill="#04080F"/>
+      <path d="M46 66 L50 72 L54 66 Q50 63 46 66Z" fill="#0C1525"/>
+      <ellipse cx="50" cy="76" rx="17" ry="10" fill="#C8D0DC" opacity="0.3"/>
+    </g>
   </svg>
-  <defs>
-    <linearGradient id="lf-word-foil" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#DDE7F5"></stop>
-      <stop offset="100%" stop-color="#5C9DDC"></stop>
-    </linearGradient>
-  </defs>
-  <text x="112" y="66" font-family="Fraunces, Georgia, serif" font-size="44" font-weight="400" letter-spacing="0" fill="#ECF1F8" font-variation-settings="'opsz' 96, 'SOFT' 40">Locate<tspan font-style="italic" font-weight="400" fill="url(#lf-word-foil)">flow</tspan></text>
+  <text x="78" y="42" font-family="Playfair Display, Didot, Georgia, serif" font-size="32" font-weight="900" fill="#EFF3FA">Move</text>
+  <text x="80" y="58" font-family="DM Sans, Inter, system-ui, sans-serif" font-size="9" font-weight="800" letter-spacing="2.1" fill="#CBA45E">OPERATIONS</text>
 </svg>

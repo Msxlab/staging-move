@@ -193,4 +193,33 @@ describe("admin middleware public auth paths", () => {
     expect(isPublicPath("/api/build-info")).toBe(true);
     expect(isPublicPath("/api/build-info/extra")).toBe(false);
   });
+
+  it("lets readiness stay public without opening readiness child routes", () => {
+    expect(isPublicPath("/api/ready")).toBe(true);
+    expect(isPublicPath("/api/ready/deep")).toBe(false);
+  });
+});
+
+describe("admin middleware session expiry", () => {
+  it("expires invalid admin session cookies with the root path and secure attributes", () => {
+    const middlewareSource = readFileSync(join(process.cwd(), "src", "middleware.ts"), "utf8");
+
+    expect(middlewareSource).toContain('response.cookies.set("admin_session", ""');
+    expect(middlewareSource).toContain('httpOnly: true');
+    expect(middlewareSource).toContain('sameSite: "strict"');
+    expect(middlewareSource).toContain('path: "/"');
+    expect(middlewareSource).toContain('maxAge: 0');
+    expect(middlewareSource).toContain('expires: new Date(0)');
+  });
+});
+
+describe("admin middleware rate limiting", () => {
+  it("uses the distributed Upstash limiter path before falling back to memory", () => {
+    const middlewareSource = readFileSync(join(process.cwd(), "src", "middleware.ts"), "utf8");
+
+    expect(middlewareSource).toContain("UPSTASH_REDIS_REST_URL");
+    expect(middlewareSource).toContain("adminRedisCall(\"INCR\"");
+    expect(middlewareSource).toContain("ADMIN_RATE_LIMITER_UNAVAILABLE");
+    expect(middlewareSource).toContain("await applyAdminRouteRateLimit(request)");
+  });
 });

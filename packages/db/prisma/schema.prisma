@@ -121,12 +121,10 @@ model MobileOAuthCode {
   codeHash      String    @unique @db.VarChar(64)
   provider      String    @db.VarChar(20)
   redirectUri   String    @db.VarChar(500)
-  // PKCE code_challenge (base64url(SHA-256(verifier))). When set, the
-  // mobile client must present a matching code_verifier at the
-  // /api/mobile/auth/exchange step. NULL preserves backwards compat
-  // with mobile builds that pre-date P0-6 — they exchange without PKCE
-  // and continue to work until those builds age out.
-  codeChallenge String?   @db.VarChar(128)
+  // PKCE code_challenge (base64url(SHA-256(verifier))). The mobile client must
+  // present a matching code_verifier at /api/mobile/auth/exchange before a
+  // handoff code can mint a session.
+  codeChallenge String    @db.VarChar(128)
   expiresAt     DateTime
   usedAt        DateTime?
   createdAt     DateTime  @default(now())
@@ -250,6 +248,7 @@ model Subscription {
   originalTransactionId             String?                 @unique @db.VarChar(191)
   latestTransactionId               String?                 @db.VarChar(191)
   purchaseToken                     String?                 @db.Text
+  purchaseTokenEncrypted            String?                 @db.Text
   purchaseTokenHash                 String?                 @unique @db.VarChar(64)
   appStoreEnvironment               String?                 @db.VarChar(30)
   currentPeriodEndsAt               DateTime?
@@ -2011,6 +2010,7 @@ model PartnerConsent {
 
   status           String  @db.VarChar(20) // GRANTED | REVOKED | EXPIRED
   revocationReason String? @db.VarChar(40) // USER_REQUESTED | PARTNER_REVOKED | AUTO_EXPIRED | ADMIN_REVOKED | SECURITY_INCIDENT
+  activeGrantKey   String? @db.VarChar(20) // "GRANTED" only for active grants; NULL for historical rows so MySQL unique permits history
 
   grantedAt DateTime
   revokedAt DateTime?
@@ -2028,6 +2028,7 @@ model PartnerConsent {
 
   dispatches ConnectorDispatch[]
 
+  @@unique([userId, connectorKey, activeGrantKey])
   @@index([userId, status])
   @@index([connectorKey, status])
   @@index([status, expiresAt])
@@ -2677,8 +2678,8 @@ model MoverDocument {
 // to manage its own listing. The emailed link carries an opaque token (sha256
 // hash stored here, plaintext never persisted, same pattern as
 // EmailVerificationToken); the portal stores the raw token in an httpOnly
-// cookie and validates it per request. NOT single-use — it is the session, so
-// it has a multi-day TTL and is invalidated via revokedAt (logout) or expiry.
+// cookie and validates it per request. NOT single-use - it is the session, so
+// it has a short TTL and is invalidated via revokedAt (logout) or expiry.
 model MoverPortalToken {
   id              String        @id @default(cuid()) @db.VarChar(30)
   movingCompanyId String        @db.VarChar(30)

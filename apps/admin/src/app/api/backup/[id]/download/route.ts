@@ -12,6 +12,7 @@ import { redactBackupSecretText } from "@/lib/backup-metadata";
 import { writeBackupAudit } from "@/lib/backup-audit";
 import { MAX_BACKUP_DOWNLOAD_BYTES } from "@/lib/backup-policy";
 import { getAuditRequestMeta } from "@/lib/audit";
+import { contentDispositionAttachment } from "@/lib/http-download";
 
 export async function GET() {
   return NextResponse.json(
@@ -150,7 +151,7 @@ export async function POST(
       status: 200,
       headers: {
         "Content-Type": archive.contentType || "application/json; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Disposition": contentDispositionAttachment(fileName, `backup-${backup.id}.json`),
         "Cache-Control": "no-store",
       },
     });

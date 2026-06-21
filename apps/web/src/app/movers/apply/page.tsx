@@ -4,9 +4,9 @@ import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { MoverApplyForm } from "@/components/movers/mover-apply-form";
 
 export const metadata: Metadata = {
-  title: "List your moving company · LocateFlow",
+  title: "List your moving company · Move",
   description:
-    "Apply to be listed as a verified moving company on LocateFlow. Submit your USDOT registration, licensing, and coverage — our team verifies every applicant against the FMCSA register.",
+    "Apply to be listed as a verified moving company on Move. Submit your USDOT registration, licensing, and coverage — our team verifies every applicant against the FMCSA register.",
 };
 
 // Server-rendered so the MOVER_REGISTRATION_ENABLED gate is evaluated per request.

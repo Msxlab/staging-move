@@ -17,6 +17,10 @@ export interface AppLockResult {
   skipped?: boolean;
 }
 
+export interface DisableAppLockOptions {
+  allowWhileLocked?: boolean;
+}
+
 interface AppLockCapability {
   available: boolean;
   methodLabel: string;
@@ -33,7 +37,7 @@ interface AppLockState extends AppLockCapability {
   hydrate: () => Promise<void>;
   refreshCapability: () => Promise<AppLockCapability>;
   enable: (copy: AppLockPromptCopy) => Promise<AppLockResult>;
-  disable: () => Promise<void>;
+  disable: (options?: DisableAppLockOptions) => Promise<AppLockResult>;
   lock: () => void;
   unlock: (copy: AppLockPromptCopy) => Promise<AppLockResult>;
 }
@@ -153,9 +157,15 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
     return { success: true };
   },
 
-  async disable() {
+  async disable(options = {}) {
+    const state = get();
+    if (state.enabled && state.locked && !options.allowWhileLocked) {
+      set({ error: "authentication_required" });
+      return { success: false, reason: "authentication_required" };
+    }
     await AsyncStorage.setItem(APP_LOCK_ENABLED_KEY, "false");
     set({ enabled: false, locked: false, error: null });
+    return { success: true };
   },
 
   lock() {

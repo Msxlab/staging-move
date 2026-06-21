@@ -228,15 +228,19 @@ export function NotificationCenter() {
 
           {/* Footer */}
           <div className="border-t border-border px-4 py-2.5 flex items-center justify-between gap-2">
-            <Link href="/notifications" onClick={() => setOpen(false)}>
-              <button className="text-[11px] text-muted-foreground hover:text-foreground transition">
-                {t("viewAll")}
-              </button>
+            <Link
+              href="/notifications"
+              onClick={() => setOpen(false)}
+              className="text-[11px] text-muted-foreground hover:text-foreground transition"
+            >
+              {t("viewAll")}
             </Link>
-            <Link href="/settings/notifications" onClick={() => setOpen(false)}>
-              <button className="text-[11px] text-foreground/40 hover:text-foreground transition">
-                {tCommon("settings")}
-              </button>
+            <Link
+              href="/settings/notifications"
+              onClick={() => setOpen(false)}
+              className="text-[11px] text-foreground/40 hover:text-foreground transition"
+            >
+              {tCommon("settings")}
             </Link>
           </div>
         </div>

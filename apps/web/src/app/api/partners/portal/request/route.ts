@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       const html = renderLocateFlowEmail({
         preheader: "Your LocateFlow partner portal sign-in link.",
         title: "Sign in to your partner portal",
-        badge: "Link expires in 14 days",
+        badge: "Link expires in 24 hours",
         bodyHtml: `<p>Use the button below to view leads for <strong>${escapeHtml(issued.companyName)}</strong> on LocateFlow.</p>`,
         cta: { href: link, label: "Open partner portal" },
         linkFallback: true,

@@ -291,7 +291,7 @@ export default function ProviderDetailScreen() {
   // When FCC already confirmed it the confidence is AVAILABLE_AT_ADDRESS and
   // we suppress the link — there's nothing left to check. Requires a website
   // to open; otherwise we omit the button gracefully. The copy NEVER implies
-  // LocateFlow confirmed service — the provider's own site does.
+  // Move confirmed service — the provider's own site does.
   const coverageConfidence = trust.coverageConfidence.confidence;
   const showAddressCheck =
     LOCATION_SENSITIVE_PROVIDER_CATEGORIES.has(provider.category) &&

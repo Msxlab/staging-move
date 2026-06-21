@@ -38,12 +38,12 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "LocateFlow Admin",
-  description: "LocateFlow Administration Panel",
+  title: "Move Admin",
+  description: "Move Administration Panel",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "LocateFlow Admin",
+    title: "Move Admin",
     statusBarStyle: "black-translucent",
   },
   robots: {
@@ -87,7 +87,7 @@ export default async function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="LocateFlow Admin" />
+        <meta name="apple-mobile-web-app-title" content="Move Admin" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="format-detection" content="telephone=no" />
       </head>

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
 import {
   LOCALE_COOKIE,
   LOCALE_COOKIE_MAX_AGE,
@@ -25,7 +26,7 @@ export const runtime = "nodejs";
  *
  * The cookie is not `httpOnly` because the client needs to read it to
  * pre-render the UI before the first round trip. It IS `sameSite:lax`
- * and `secure` in production.
+ * and uses the shared staging/HTTPS secure-cookie policy.
  */
 
 const bodySchema = z.object({
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
   response.cookies.set(LOCALE_COOKIE, locale, {
     httpOnly: false,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookies(),
     maxAge: LOCALE_COOKIE_MAX_AGE,
     path: "/",
   });

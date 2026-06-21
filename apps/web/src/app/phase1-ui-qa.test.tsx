@@ -204,7 +204,7 @@ describe("Phase-1 UI QA automated-render verification", () => {
         const markup = renderToStaticMarkup(<MoveTaskTrustConfirmation {...input} />);
         expect(shouldShowMoveTaskTrustConfirmation(input)).toBe(true);
         expect(shouldShowMoveTaskTrustLegalLine(input)).toBe(true);
-        expect(markup).toContain("LocateFlow only");
+        expect(markup).toContain("Move only");
         expect(markup).toContain("provider account is unchanged");
       }
     }

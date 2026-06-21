@@ -193,7 +193,7 @@ function sanitizeAttribute(
     // Drop anything that looks like a navigation override.
     return attrValue
       .split(/\s+/)
-      .filter((tok) => /^(noopener|noreferrer|nofollow|external)$/i.test(tok))
+      .filter((tok) => /^(noopener|noreferrer|nofollow|external|ugc|sponsored)$/i.test(tok))
       .join(" ");
   }
   // Numeric / textual attributes — strip < and > to avoid attribute
@@ -340,18 +340,26 @@ export function sanitizeEmailHtml(input: string): string {
     const attrs = parseAttributes(rawAttrs);
     const safeAttrs: string[] = [];
     let hasTargetBlank = false;
-    let hasRel = false;
+    let relValue: string | null = null;
     for (const { name, value } of attrs) {
       const lowerName = name.toLowerCase();
       const cleaned = sanitizeAttribute(tagName, lowerName, value);
       if (cleaned === null) continue;
       if (lowerName === "target" && cleaned === "_blank") hasTargetBlank = true;
-      if (lowerName === "rel") hasRel = true;
+      if (lowerName === "rel") {
+        relValue = cleaned;
+        continue;
+      }
       safeAttrs.push(`${lowerName}="${cleaned.replace(/"/g, "&quot;")}"`);
     }
     // Force rel=noopener noreferrer on every <a target="_blank">.
-    if (tagName === "a" && hasTargetBlank && !hasRel) {
-      safeAttrs.push(`rel="noopener noreferrer"`);
+    if (tagName === "a" && hasTargetBlank) {
+      const relTokens = new Set((relValue || "").split(/\s+/).filter(Boolean));
+      relTokens.add("noopener");
+      relTokens.add("noreferrer");
+      safeAttrs.push(`rel="${[...relTokens].join(" ").replace(/"/g, "&quot;")}"`);
+    } else if (relValue !== null) {
+      safeAttrs.push(`rel="${relValue.replace(/"/g, "&quot;")}"`);
     }
 
     out.push(`<${tagName}${safeAttrs.length > 0 ? " " + safeAttrs.join(" ") : ""}${VOID_TAGS.has(tagName) ? " /" : ""}>`);

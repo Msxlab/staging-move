@@ -41,7 +41,7 @@ export const FALLBACK_HELP_ARTICLES: HelpArticleFallback[] = [
     viewCount: 0,
     helpfulYes: 0,
     helpfulNo: 0,
-    content: "Providers are listed directory entries or private custom entries, such as a utility, bank, dentist, or gym. Services are your actual tracked accounts tied to an address. Adding a provider creates a local LocateFlow service record; it does not contact or update the provider.",
+    content: "Providers are listed directory entries or private custom entries, such as a utility, bank, dentist, or gym. Services are your actual tracked accounts tied to an address. Adding a provider creates a local Move service record; it does not contact or update the provider.",
   },
   {
     id: "fallback-moving-tasks",
@@ -53,7 +53,7 @@ export const FALLBACK_HELP_ARTICLES: HelpArticleFallback[] = [
     viewCount: 0,
     helpfulYes: 0,
     helpfulNo: 0,
-    content: "Moving tasks help you track what to do before and after a move. Completing a task updates LocateFlow only. You still confirm deadlines, availability, account changes, and official requirements directly with the relevant provider or agency.",
+    content: "Moving tasks help you track what to do before and after a move. Completing a task updates Move only. You still confirm deadlines, availability, account changes, and official requirements directly with the relevant provider or agency.",
   },
   {
     id: "fallback-provider-disclaimer",
@@ -139,8 +139,8 @@ export const FALLBACK_FAQS: FaqFallback[] = [
   {
     id: "fallback-faq-moving-tasks",
     category: "Moving",
-    question: "Does LocateFlow complete provider tasks for me?",
-    answer: "No. LocateFlow tracks local checklist progress only; you complete external provider or agency steps yourself.",
+    question: "Does Move complete provider tasks for me?",
+    answer: "No. Move tracks local checklist progress only; you complete external provider or agency steps yourself.",
   },
   {
     id: "fallback-faq-export-delete",
@@ -173,7 +173,7 @@ export const FALLBACK_HELP_ARTICLES_ES: HelpArticleFallback[] = [
     viewCount: 0,
     helpfulYes: 0,
     helpfulNo: 0,
-    content: "Los proveedores son entradas del directorio o entradas personalizadas, como una compania de servicios publicos, banco, dentista o gimnasio. Los servicios son tus cuentas reales registradas y conectadas a una direccion. Agregar un proveedor crea un registro local en LocateFlow; no contacta ni actualiza al proveedor.",
+    content: "Los proveedores son entradas del directorio o entradas personalizadas, como una compania de servicios publicos, banco, dentista o gimnasio. Los servicios son tus cuentas reales registradas y conectadas a una direccion. Agregar un proveedor crea un registro local en Move; no contacta ni actualiza al proveedor.",
   },
   {
     id: "fallback-es-moving-tasks",
@@ -185,7 +185,7 @@ export const FALLBACK_HELP_ARTICLES_ES: HelpArticleFallback[] = [
     viewCount: 0,
     helpfulYes: 0,
     helpfulNo: 0,
-    content: "Las tareas de mudanza te ayudan a seguir lo que debes hacer antes y despues de mudarte. Completar una tarea solo actualiza LocateFlow. Siempre confirma fechas, disponibilidad, cambios de cuenta y requisitos oficiales directamente con el proveedor o agencia correspondiente.",
+    content: "Las tareas de mudanza te ayudan a seguir lo que debes hacer antes y despues de mudarte. Completar una tarea solo actualiza Move. Siempre confirma fechas, disponibilidad, cambios de cuenta y requisitos oficiales directamente con el proveedor o agencia correspondiente.",
   },
   {
     id: "fallback-es-provider-disclaimer",
@@ -271,8 +271,8 @@ export const FALLBACK_FAQS_ES: FaqFallback[] = [
   {
     id: "fallback-es-faq-moving-tasks",
     category: "Mudanza",
-    question: "LocateFlow completa las tareas de proveedores por mi?",
-    answer: "No. LocateFlow solo registra el progreso local de tu lista; tu completas los pasos externos con el proveedor o agencia.",
+    question: "Move completa las tareas de proveedores por mi?",
+    answer: "No. Move solo registra el progreso local de tu lista; tu completas los pasos externos con el proveedor o agencia.",
   },
   {
     id: "fallback-es-faq-export-delete",

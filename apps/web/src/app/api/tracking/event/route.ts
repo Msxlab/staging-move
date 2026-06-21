@@ -16,6 +16,15 @@ const SAFE_AGGREGATE_KEYS = new Set(["query_length"]);
 const EMAIL_VALUE_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LONG_DIGIT_PATTERN = /\d{7,}/;
 
+function safeString(value: unknown, maxLength: number): string | null {
+  if (typeof value !== "string") return null;
+  const safe = value
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .trim()
+    .slice(0, maxLength);
+  return safe || null;
+}
+
 function sanitizeMetadata(metadata: unknown) {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
   const safe: Record<string, string | number | boolean | Array<string | number | boolean>> = {};
@@ -69,14 +78,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
     const { event, page, sessionId, metadata } = body;
 
-    if (!event || typeof event !== "string") {
+    const eventName = safeString(event, 50);
+    if (!eventName) {
       return NextResponse.json({ error: "event is required" }, { status: 400 });
     }
 
-    const eventName = event.slice(0, 50);
     const samplingConfig = await getUserEventSamplingConfig();
     if (!shouldPersistUserEvent(eventName, samplingConfig)) {
       return NextResponse.json({ success: true, sampled: true });
@@ -87,9 +99,9 @@ export async function POST(request: NextRequest) {
     await prisma.userEvent.create({
       data: {
         userId: authSession.userId,
-        sessionId: sessionId || null,
+        sessionId: safeString(sessionId, 30),
         event: eventName,
-        page: page ? page.slice(0, 200) : null,
+        page: safeString(page, 200),
         metadata: safeMetadata ? JSON.stringify(safeMetadata).slice(0, 2000) : null,
       },
     });
@@ -114,8 +126,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const events: Array<{ event: string; page?: string; sessionId?: string; metadata?: any }> = body.events;
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    const events: Array<{ event?: unknown; page?: unknown; sessionId?: unknown; metadata?: any }> = (body as any).events;
 
     if (!Array.isArray(events) || events.length === 0) {
       return NextResponse.json({ error: "events array is required" }, { status: 400 });
@@ -126,7 +141,8 @@ export async function PUT(request: NextRequest) {
     const samplingConfig = await getUserEventSamplingConfig();
     let sampled = 0;
     const data = batch.flatMap((e) => {
-      const eventName = (e.event || "UNKNOWN").slice(0, 50);
+      if (!e || typeof e !== "object" || Array.isArray(e)) return [];
+      const eventName = safeString(e.event, 50) || "UNKNOWN";
       if (!shouldPersistUserEvent(eventName, samplingConfig)) {
         sampled += 1;
         return [];
@@ -134,9 +150,9 @@ export async function PUT(request: NextRequest) {
       const safeMetadata = sanitizeEventMetadata(eventName, e.metadata);
       return [{
         userId: authSession.userId,
-        sessionId: e.sessionId || null,
+        sessionId: safeString(e.sessionId, 30),
         event: eventName,
-        page: e.page ? e.page.slice(0, 200) : null,
+        page: safeString(e.page, 200),
         metadata: safeMetadata ? JSON.stringify(safeMetadata).slice(0, 2000) : null,
       }];
     });

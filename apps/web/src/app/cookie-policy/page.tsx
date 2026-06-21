@@ -7,7 +7,7 @@ import { createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
   title: "Cookie Policy",
-  description: "How LocateFlow uses cookies, local storage, consent records, analytics, and mobile analytics.",
+  description: "How Move uses cookies, local storage, consent records, analytics, and mobile analytics.",
   path: "/cookie-policy",
 });
 
@@ -39,7 +39,7 @@ export default function CookiePolicyPage() {
     <PublicPageShell
       eyebrow="Legal"
       title="Cookie Policy"
-      description="This page explains how LocateFlow uses cookies, browser storage, consent records, analytics tags, and similar technologies."
+      description="This page explains how Move uses cookies, browser storage, consent records, analytics tags, and similar technologies."
     >
       <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
 
@@ -63,7 +63,7 @@ export default function CookiePolicyPage() {
           <li>Necessary: sign-in, session, locale, security, CSRF, rate-limit, consent, and app routing storage.</li>
           <li>Preferences: theme, onboarding state, language, remembered product preferences, and install-prompt state.</li>
           <li>Analytics: Google Analytics or Google Tag Manager tags when configured and accepted, plus consent-gated internal signed-in usage events.</li>
-          <li>Marketing: LocateFlow does not currently load advertising cookies through the public cookie banner. If marketing tags are added later, this policy and consent UI should be updated before use.</li>
+          <li>Marketing: Move does not currently load advertising cookies through the public cookie banner. If marketing tags are added later, this policy and consent UI should be updated before use.</li>
         </ul>
       </PublicSection>
 
@@ -79,7 +79,7 @@ export default function CookiePolicyPage() {
 
       <PublicSection title="Google Analytics and Google Tag Manager">
         <p>
-          LocateFlow supports Google Analytics 4 and Google Tag Manager when configured. These tags should not load until analytics consent is accepted. Ad storage, ad user data, and ad personalization are set to denied by default in the current implementation.
+          Move supports Google Analytics 4 and Google Tag Manager when configured. These tags should not load until analytics consent is accepted. Ad storage, ad user data, and ad personalization are set to denied by default in the current implementation.
         </p>
         <p>
           Web analytics events are designed to avoid raw email, phone, address, name, provider account ID, Stripe ID, OAuth ID, token, support message, budget detail, and raw search query values.
@@ -103,7 +103,7 @@ export default function CookiePolicyPage() {
           You can use the controls above, browser settings, or device settings to clear or block storage. Blocking necessary storage may prevent sign-in, checkout, security checks, preferences, or app features from working.
         </p>
         <p>
-          Questions can be sent to <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow cookie question")} className="underline">{LEGAL_CONTACTS.privacy}</a>.
+          Questions can be sent to <a href={mailto(LEGAL_CONTACTS.privacy, "Move cookie question")} className="underline">{LEGAL_CONTACTS.privacy}</a>.
         </p>
       </PublicSection>
     </PublicPageShell>

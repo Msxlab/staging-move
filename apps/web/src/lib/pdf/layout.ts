@@ -15,7 +15,7 @@ import type PDFDocumentType from "pdfkit";
 
 export const PDF_THEME = {
   /** Aurora cool — used for the wordmark accent and primary highlights. */
-  accent: "#2D7BC4",
+  accent: "#765514",
   /** Soft brand background tint for cards. */
   accentSoft: "#EAF1F9",
   /** Default text color (matches `slate-800`). */

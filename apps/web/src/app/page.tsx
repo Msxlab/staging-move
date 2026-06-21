@@ -107,6 +107,10 @@ export default async function LandingPage() {
   const t = await getTranslations("landing");
   const tErrors = await getTranslations("errors");
   const tPricing = await getTranslations("pricing");
+  const heroPrefix = t("heroPrefix");
+  const heroAccent = t("heroAccent");
+  const heroSuffix = t("heroSuffix");
+  const heroTitle = `${heroPrefix} ${heroAccent} ${heroSuffix}`;
   // CONSUMER_FREE: the trial/cancel/refund Q&As (also emitted as FAQ structured
   // data) are meaningless when everything is free — drop them under the flag.
   const billingFaqs = consumerFree
@@ -121,20 +125,20 @@ export default async function LandingPage() {
     { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
     // Product / privacy entries — expanded for SEO and to answer the
     // questions the marketing review flagged. The provider-account answer
-    // is deliberately careful: per the legal posture, LocateFlow does NOT
+    // is deliberately careful: per the legal posture, Move does NOT
     // auto-update accounts. Keep this non-committal and flag-gated in spirit
     // even if connectors later ship behind FEATURE_API_CONNECTORS.
     {
-      q: "Does LocateFlow update my provider accounts?",
-      a: "No. LocateFlow does not log into or change your accounts with banks, utilities, government agencies, or any other provider on your behalf. What it does is help you track which services, subscriptions, and renewals are tied to each address, and guide you through the changes you need to make — with checklists, reminders, and links — so you can update each provider yourself through their official channel.",
+      q: "Does Move update my provider accounts?",
+      a: "No. Move does not log into or change your accounts with banks, utilities, government agencies, or any other provider on your behalf. What it does is help you track which services, subscriptions, and renewals are tied to each address, and guide you through the changes you need to make — with checklists, reminders, and links — so you can update each provider yourself through their official channel.",
     },
     {
-      q: "What exactly does LocateFlow do?",
-      a: "LocateFlow is an organizer for the chaos of moving and address changes. You keep your addresses, service providers, subscriptions, documents, and moving tasks in one place, and LocateFlow reminds you what still needs attention. It is an organizational and research aid — it does not act as a broker, agency, or provider, and it does not replace any of them.",
+      q: "What exactly does Move do?",
+      a: "Move is an organizer for the chaos of moving and address changes. You keep your addresses, service providers, subscriptions, documents, and moving tasks in one place, and Move reminds you what still needs attention. It is an organizational and research aid — it does not act as a broker, agency, or provider, and it does not replace any of them.",
     },
     {
-      q: "Will LocateFlow remind me before a service renews?",
-      a: "Yes. You can record renewal and key dates for the services tied to your addresses, and LocateFlow sends reminders ahead of time so a subscription doesn't quietly renew against an old address or lapse when you need it. You decide what to act on — LocateFlow surfaces the timing, you make the change.",
+      q: "Will Move remind me before a service renews?",
+      a: "Yes. You can record renewal and key dates for the services tied to your addresses, and Move sends reminders ahead of time so a subscription doesn't quietly renew against an old address or lapse when you need it. You decide what to act on — Move surfaces the timing, you make the change.",
     },
     {
       q: "Who can see my address and provider data?",
@@ -210,10 +214,15 @@ export default async function LandingPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" />
               {t("hero_eyebrow")}
             </div>
-            <h1 className="display-tight font-display text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.04] tracking-tight">
-              {t("heroPrefix")}{" "}
-              <span className="text-primary">{t("heroAccent")}</span>{" "}
-              {t("heroSuffix")}
+            <h1
+              aria-label={heroTitle}
+              className="display-tight font-display text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.04] tracking-tight"
+            >
+              <span aria-hidden="true">
+                {heroPrefix}{" "}
+                <span className="text-primary">{heroAccent}</span>{" "}
+                {heroSuffix}
+              </span>
             </h1>
             <p className="measure text-lg md:text-xl text-foreground/90 leading-relaxed">
               {t("heroDescription")}

@@ -22,7 +22,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const caller = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   if (!can(caller.role as WorkspaceRole, "member.leave", { status: caller.status as WorkspaceMemberStatus })) {

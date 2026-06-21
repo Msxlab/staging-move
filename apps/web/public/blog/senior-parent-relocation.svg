@@ -1,35 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none" role="img" aria-label="Relocating a senior parent">
   <defs>
     <linearGradient id="flow" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#5C9DDC"/>
-      <stop offset="60%" stop-color="#7FB6E8"/>
+      <stop offset="0%" stop-color="#B0852F"/>
+      <stop offset="60%" stop-color="#CBA45E"/>
       <stop offset="100%" stop-color="#DDE7F5"/>
     </linearGradient>
     <radialGradient id="tr" cx="0.15" cy="0.2" r="0.7">
-      <stop offset="0%" stop-color="#7FB6E8" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#7FB6E8" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#CBA45E" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#CBA45E" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="br" cx="0.9" cy="0.85" r="0.6">
-      <stop offset="0%" stop-color="#7FB6E8" stop-opacity="0.16"/>
-      <stop offset="100%" stop-color="#7FB6E8" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#CBA45E" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#CBA45E" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="1200" height="630" fill="#0A0F18"/>
   <rect width="1200" height="630" fill="url(#tr)"/>
   <rect width="1200" height="630" fill="url(#br)"/>
-  <rect x="110" y="150" width="40" height="3" rx="1.5" fill="#7FB6E8"/>
-  <text x="166" y="159" font-family="'Geist Mono', ui-monospace, monospace" font-size="22" letter-spacing="0.22em" fill="#A5C9F0">MOVING · SENIOR CARE</text>
-  <text x="110" y="306" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">Moving a</text>
-  <text x="110" y="392" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">parent</text>
+  <rect x="110" y="150" width="40" height="3" rx="1.5" fill="#CBA45E"/>
+  <text x="166" y="159" font-family="'Geist Mono', ui-monospace, monospace" font-size="22" letter-spacing="0.22em" fill="#DCBC7C">MOVING · SENIOR CARE</text>
+  <text x="110" y="306" font-family="Playfair Display, Didot, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">Moving a</text>
+  <text x="110" y="392" font-family="Playfair Display, Didot, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">parent</text>
   <g transform="translate(810,210)" stroke="url(#flow)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
     <path d="M6 96 L106 22 L206 96"/>
     <path d="M30 80 V 188 H 182 V 80"/>
   </g>
-  <path transform="translate(810,210)" d="M106 170 c -20 -18 -44 -34 -44 -60 a 24 24 0 0 1 44 -12 a 24 24 0 0 1 44 12 c 0 26 -24 42 -44 60 Z" fill="#7FB6E8"/>
+  <path transform="translate(810,210)" d="M106 170 c -20 -18 -44 -34 -44 -60 a 24 24 0 0 1 44 -12 a 24 24 0 0 1 44 12 c 0 26 -24 42 -44 60 Z" fill="#CBA45E"/>
   <g transform="translate(110,470)">
     <path d="M0 40 Q 12 8, 30 26 T 64 14" stroke="url(#flow)" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <circle cx="0" cy="40" r="5" fill="#5C9DDC"/>
-    <circle cx="64" cy="14" r="6" fill="#7FB6E8"/>
-    <text x="84" y="32" font-family="Fraunces, Georgia, serif" font-size="30" fill="#ECF1F8">LocateFlow</text>
+    <circle cx="0" cy="40" r="5" fill="#B0852F"/>
+    <circle cx="64" cy="14" r="6" fill="#CBA45E"/>
+    <text x="84" y="32" font-family="Playfair Display, Didot, Georgia, serif" font-size="30" fill="#ECF1F8">Move</text>
   </g>
 </svg>

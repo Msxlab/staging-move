@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Cookie, X } from "lucide-react";
 import { getStoredCookieConsent, setStoredCookieConsent } from "@/lib/consent";
 import { consentDenied, consentGranted } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 
 export default function CookieConsent({ analyticsNonce }: { analyticsNonce?: string }) {
   const [visible, setVisible] = useState(false);
+  const pathname = usePathname();
+  const compactSurface = ["/sign-in", "/sign-up", "/verify-email", "/reset-password"].some(
+    (path) => pathname === path || pathname?.startsWith(`${path}/`),
+  );
 
   useEffect(() => {
     const existing = getStoredCookieConsent();
@@ -32,16 +38,20 @@ export default function CookieConsent({ analyticsNonce }: { analyticsNonce?: str
 
   return (
     <div
-      role="dialog"
+      role="region"
       aria-label="Cookie consent"
-      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-50 animate-in slide-in-from-bottom-5 duration-300"
+      aria-live="polite"
+      className={cn(
+        "fixed bottom-3 left-3 right-3 z-50 mx-auto max-w-[22rem] animate-in slide-in-from-bottom-5 duration-300 sm:bottom-4 sm:left-auto sm:right-4 sm:mx-0 sm:max-w-sm",
+        compactSurface && "sm:max-w-xs",
+      )}
     >
-      <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-5 shadow-2xl">
-        <div className="flex items-start gap-3">
-          <Cookie className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+      <div className="max-h-[calc(100svh-1.5rem)] overflow-y-auto rounded-lg border border-border bg-card/95 p-4 shadow-2xl backdrop-blur-xl">
+        <div className="flex items-start gap-2.5">
+          <Cookie className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-foreground mb-1">Cookie Preferences</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <h3 className="mb-1 text-sm font-semibold text-foreground">Cookie Preferences</h3>
+            <p className="text-xs leading-relaxed text-muted-foreground">
               We use necessary storage to run the site and optional analytics to understand usage. You can accept analytics or decline non-essential analytics.{" "}
               <a href="/cookie-policy" className="text-primary hover:text-primary/80 underline">
                 Learn more
@@ -50,22 +60,22 @@ export default function CookieConsent({ analyticsNonce }: { analyticsNonce?: str
           </div>
           <button
             onClick={handleDecline}
-            className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition"
+            className="rounded-md p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
             aria-label="Dismiss cookie banner"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex items-center gap-3 mt-4">
+        <div className="mt-3 grid grid-cols-2 gap-2">
           <button
             onClick={handleDecline}
-            className="flex-1 px-4 py-2 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition"
+            className="min-h-9 rounded-md border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
           >
             Decline
           </button>
           <button
             onClick={handleAccept}
-            className="flex-1 px-4 py-2 rounded-xl bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 transition"
+            className="min-h-9 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
           >
             Accept All
           </button>

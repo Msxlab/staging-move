@@ -282,7 +282,7 @@ export default function ProviderCompareScreen() {
                       logoSize={36}
                       borderRadius={12}
                       backgroundColor={theme.colors.primaryFaded}
-                      borderColor={theme.colors.rose.border}
+                      borderColor={theme.colors.orange.border}
                       fallbackFontSize={20}
                     />
                     <TouchableOpacity

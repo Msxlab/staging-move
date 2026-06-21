@@ -27,7 +27,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   //    same 403 whether or not `invId` exists, so the blanket denial can't be
   //    used to probe which invitations exist.
   //  • Caller may manage invitations but this invId isn't in the workspace → 404.
-  const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const caller = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!can(caller.role as WorkspaceRole, "member.invite", { status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "You can't manage invitations for this workspace." }, { status: 403 });

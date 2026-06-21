@@ -41,6 +41,7 @@ vi.mock("@/lib/user-auth", () => ({
   createUserSession: (...args: unknown[]) => mocks.createUserSession(...args),
   findOrLinkOAuthUserWithStatus: (...args: unknown[]) => mocks.findOrLinkOAuthUserWithStatus(...args),
   generateFingerprint: (...args: unknown[]) => mocks.generateFingerprint(...args),
+  shouldUseSecureSessionCookies: vi.fn(() => true),
 }));
 
 vi.mock("@/lib/email-service", () => ({

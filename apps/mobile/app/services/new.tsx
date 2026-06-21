@@ -1347,6 +1347,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   addrChipTextActive: { color: theme.colors.primary },
 
   // Selected chips
+  selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.orange.border },
+  selectedChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: theme.colors.primary },
+  selectedChipText: { fontSize: 12, fontWeight: "600", color: "#fff" },
   selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: theme.radius.lg, backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder },
   selectedChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: theme.radius.full, backgroundColor: theme.colors.primary },
   selectedChipText: { fontSize: 12, fontFamily: fonts.sansSemibold, color: theme.colors.onAccent },

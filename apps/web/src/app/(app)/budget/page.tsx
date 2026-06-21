@@ -551,10 +551,12 @@ export default function BudgetPage() {
         <div className="border-b border-border bg-[linear-gradient(135deg,hsl(var(--background))_0%,hsl(var(--muted))_100%)] p-4 sm:p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div className="flex items-start gap-3">
-              <Link href="/settings">
-                <button className="rounded-xl border border-border bg-background/70 p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground" aria-label="Back to settings">
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
+              <Link
+                href="/settings"
+                className="rounded-xl border border-border bg-background/70 p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                aria-label="Back to settings"
+              >
+                <ArrowLeft className="h-4 w-4" />
               </Link>
               <div>
                 <p className="text-[10px] font-mono font-semibold uppercase tracking-[0.12em] text-primary">{copy.command}</p>

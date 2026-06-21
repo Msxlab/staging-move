@@ -2,16 +2,16 @@
 // Mirrors lib/mover-portal-auth.ts: an APPROVED partner requests a magic link by
 // email; the link carries an opaque token whose sha256 hash is stored
 // (PartnerPortalToken). The raw token lives in an httpOnly cookie and IS the
-// session (14-day TTL, invalidated by revokedAt/expiry or the partner losing
+// session (24-hour TTL, invalidated by revokedAt/expiry or the partner losing
 // APPROVED status). A login request never reveals whether an email matches a
 // partner (returns null silently; the route always answers generically).
 
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { generateOpaqueToken, hashOpaqueToken } from "@/lib/user-auth";
+import { generateOpaqueToken, hashOpaqueToken, shouldUseSecureSessionCookies } from "@/lib/user-auth";
 
 export const PARTNER_PORTAL_COOKIE = "partner_portal";
-const TOKEN_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const TOKEN_TTL_SEC = Math.floor(TOKEN_TTL_MS / 1000);
 
 export interface PartnerPortalSession {
@@ -22,7 +22,7 @@ export interface PartnerPortalSession {
 function cookieOptions() {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookies(),
     sameSite: "lax" as const,
     path: "/",
   };

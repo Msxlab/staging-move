@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { setAnalyticsEnabled } from "@/lib/analytics";
 import { useAppLockStore } from "@/lib/app-lock-store";
 import { clearAllOfflineCaches } from "@/lib/offline-cache";
+import { SELECTED_WORKSPACE_ID_KEY } from "@/lib/workspace-selection";
 
 const SENSITIVE_ASYNC_STORAGE_KEYS = [
   "locateflow.handledOAuthCodes",
@@ -25,6 +26,7 @@ const SENSITIVE_ASYNC_STORAGE_KEYS = [
   // resolves. Device-keyed, so wipe it or the next account could briefly seed
   // off the previous user's plan.
   "locateflow.lastPlan.v1",
+  SELECTED_WORKSPACE_ID_KEY,
 ];
 
 export async function clearSensitiveLocalState(queryClient?: QueryClient) {
@@ -33,7 +35,7 @@ export async function clearSensitiveLocalState(queryClient?: QueryClient) {
   // Reset the biometric app-lock so the next account on this device doesn't
   // inherit (and get gated behind) the previous user's lock — the flag is
   // device-keyed, not user-keyed.
-  await useAppLockStore.getState().disable().catch(() => {});
+  await useAppLockStore.getState().disable({ allowWhileLocked: true }).catch(() => {});
   await Promise.all(SENSITIVE_ASYNC_STORAGE_KEYS.map((key) => AsyncStorage.removeItem(key))).catch(() => {});
   // Offline list caches (Services/Moving "last-known data") are device-keyed
   // and echo the prior user's data — wipe them all by prefix on logout/delete.

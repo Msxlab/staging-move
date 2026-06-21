@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { getAuditRequestMeta } from "@/lib/audit";
 import { buildCsv } from "@/lib/csv-safety";
+import { contentDispositionAttachment } from "@/lib/http-download";
 
 // GET /api/affiliate/export?type=clicks|conversions
 //
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(body, {
       headers: {
         "Content-Type": "text/csv",
-        "Content-Disposition": `attachment; filename="locateflow-affiliate-${type}.csv"`,
+        "Content-Disposition": contentDispositionAttachment(`locateflow-affiliate-${type}.csv`),
       },
     });
   } catch (error: any) {

@@ -36,4 +36,18 @@ describe("web internal secrets", () => {
     expect(getInternalCallerSecret("cron")).toBe("cron-secret");
     expect(verifyInternalAuth("Bearer cron-secret", "cron")).toBe(true);
   });
+
+  it("falls back to CRON_SECRET for backup cron until BACKUP_CRON_SECRET is configured", () => {
+    vi.stubEnv("CRON_SECRET", "cron-secret");
+    expect(getInternalCallerSecret("backup")).toBe("cron-secret");
+    expect(verifyInternalAuth("Bearer cron-secret", "backup")).toBe(true);
+  });
+
+  it("uses BACKUP_CRON_SECRET for backup cron when configured", () => {
+    vi.stubEnv("CRON_SECRET", "cron-secret");
+    vi.stubEnv("BACKUP_CRON_SECRET", "backup-secret");
+    expect(getInternalCallerSecret("backup")).toBe("backup-secret");
+    expect(verifyInternalAuth("Bearer backup-secret", "backup")).toBe(true);
+    expect(verifyInternalAuth("Bearer cron-secret", "backup")).toBe(false);
+  });
 });

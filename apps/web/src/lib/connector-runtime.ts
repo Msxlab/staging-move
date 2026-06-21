@@ -8,8 +8,9 @@
  * connector with an allowlisted/breaker-wrapped client, then applies the
  * planner's decision (confirm / await / re-queue with backoff / fall back).
  *
- * All call sites are gated by FEATURE_API_CONNECTORS upstream; with no enabled
- * ConnectorConfig and no partner credentials this never does anything.
+ * Call sites gate FEATURE_API_CONNECTORS and plan entitlement upstream, and the
+ * enqueue boundary repeats those checks as defense-in-depth so a future caller
+ * cannot bypass the product contract by importing this helper directly.
  */
 
 import { createHash, randomUUID } from "crypto";
@@ -29,7 +30,11 @@ import { connectorRegistry } from "@/lib/connector-registry";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
-import { refreshConsentAccessToken } from "@/lib/connector-oauth";
+import {
+  isApiConnectorsEnabled,
+  refreshConsentAccessToken,
+  userHasApiConnectorEntitlement,
+} from "@/lib/connector-oauth";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendConnectorActionNeededEmail } from "@/lib/email-service";
 import { isWebNotificationEnabled } from "@/lib/notification-preferences";
@@ -177,6 +182,24 @@ export async function enqueueAddressChange(input: {
   fromAddressId?: string | null;
   workspaceId?: string | null;
 }): Promise<{ changeRef: string; created: number }> {
+  if (!(await isApiConnectorsEnabled())) {
+    throw new Error("CONNECTORS_DISABLED");
+  }
+
+  let entitlementUserId = input.userId;
+  if (input.workspaceId) {
+    const workspace = await prisma.workspace.findFirst({
+      where: { id: input.workspaceId, deletedAt: null },
+      select: { ownerUserId: true },
+    });
+    if (!workspace) throw new Error("WORKSPACE_NOT_FOUND");
+    entitlementUserId = workspace.ownerUserId;
+  }
+
+  if (!(await userHasApiConnectorEntitlement(entitlementUserId))) {
+    throw new Error("CONNECTORS_NOT_ENTITLED");
+  }
+
   const addressScope = input.workspaceId ? { workspaceId: input.workspaceId } : {};
   const [toAddress, fromAddress, user, consents, configs] = await Promise.all([
     prisma.address.findFirst({ where: { id: input.toAddressId, userId: input.userId, deletedAt: null, ...addressScope } }),

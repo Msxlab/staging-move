@@ -342,7 +342,7 @@ export function buildAreaPreferences(
   for (const row of rows) {
     if (!row.state || !row.providerId) continue;
     const state = row.state.toUpperCase();
-    const key = `${state} ${row.category} ${row.providerId}`;
+    const key = `${state}\u0000${row.category}\u0000${row.providerId}`;
     let group = groups.get(key);
     if (!group) {
       group = {

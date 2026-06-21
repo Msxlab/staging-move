@@ -38,7 +38,7 @@ export function isMobileOAuthCallbackUrl(url: string | null | undefined) {
     const pathParts = parsed.pathname.split("/").filter(Boolean);
     if (protocol === "locateflow:" && (host || path) === "oauth") return true;
     if ((protocol === "exp:" || protocol === "exps:") && pathParts.includes("oauth")) return true;
-    if (protocol === "https:" && ["locateflow.com", "locateflow.app", "app.locateflow.com"].includes(host)) {
+    if (protocol === "https:" && host === "locateflow.com") {
       return path === "mobile/oauth" || path === "oauth";
     }
     return false;

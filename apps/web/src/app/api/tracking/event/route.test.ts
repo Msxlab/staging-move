@@ -38,6 +38,14 @@ function request(method: "POST" | "PUT", body: unknown) {
   });
 }
 
+function rawRequest(method: "POST" | "PUT", body: string) {
+  return new NextRequest("https://locateflow.com/api/tracking/event", {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   userEventMock.create.mockResolvedValue({});
@@ -96,6 +104,13 @@ describe("/api/tracking/event", () => {
     });
   });
 
+  it("returns 400 for malformed event payloads instead of throwing", async () => {
+    const response = await POST(rawRequest("POST", "{"));
+
+    expect(response.status).toBe(400);
+    expect(userEventMock.create).not.toHaveBeenCalled();
+  });
+
   it("applies the same allowlist to batched phase 1 events", async () => {
     await PUT(request("PUT", {
       events: [
@@ -126,6 +141,32 @@ describe("/api/tracking/event", () => {
             experiment_flag: "ux_onboarding_teaser_v1",
             variant: "variant",
           }),
+        },
+      ],
+    });
+  });
+
+  it("falls back safely for malformed batched event fields", async () => {
+    await PUT(request("PUT", {
+      events: [
+        null,
+        {
+          event: 123,
+          page: 456,
+          sessionId: { bad: true },
+          metadata: { query_length: 14 },
+        },
+      ],
+    }));
+
+    expect(userEventMock.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          userId: "user_1",
+          sessionId: null,
+          event: "UNKNOWN",
+          page: null,
+          metadata: JSON.stringify({ query_length: 14 }),
         },
       ],
     });

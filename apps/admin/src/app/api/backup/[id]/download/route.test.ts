@@ -111,6 +111,9 @@ describe("backup archive download", () => {
 
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("{\"ok\":true}");
+    expect(response.headers.get("Content-Disposition")).toBe(
+      'attachment; filename="backup.json"; filename*=UTF-8\'\'backup.json',
+    );
     expect(mocks.downloadBackupArchive).toHaveBeenCalledWith({
       status: "stored",
       objectKey: "backups/2026-04-24/backup_1/backup.json",
@@ -124,6 +127,29 @@ describe("backup archive download", () => {
         ipAddress: "203.0.113.10",
       }),
     });
+  });
+
+  it("sanitizes hostile backup filenames before emitting download headers", async () => {
+    mocks.backupFindUnique.mockResolvedValueOnce({
+      id: "backup_1",
+      fileName: 'backup"\r\nInjected: yes.json',
+      errorMessage: "{}",
+    });
+    mocks.sanitizeBackupFileName.mockImplementationOnce((value: string) => value || "backup.json");
+
+    const response = await POST(
+      request({ confirmPassword: "admin-password" }),
+      { params: Promise.resolve({ id: "backup_1" }) },
+    );
+    const contentDisposition = response.headers.get("Content-Disposition") || "";
+
+    expect(response.status).toBe(200);
+    expect(contentDisposition).toMatch(
+      /^attachment; filename="[A-Za-z0-9._-]+\.json"; filename\*=UTF-8''[A-Za-z0-9._~-]+\.json$/,
+    );
+    expect(contentDisposition).not.toContain("\r");
+    expect(contentDisposition).not.toContain("\n");
+    expect(contentDisposition).not.toContain("Injected:");
   });
 
   it("rejects invalid offsite object keys before downloading", async () => {

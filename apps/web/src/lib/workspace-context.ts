@@ -78,11 +78,12 @@ export type WorkspaceContextCode =
   | "UNAUTHENTICATED"
   | "NO_WORKSPACE_ACCESS"
   | "WORKSPACE_NOT_FOUND"
-  | "MEMBER_SUSPENDED";
+  | "MEMBER_SUSPENDED"
+  | "STALE_WORKSPACE_SELECTION";
 
 export class WorkspaceContextError extends Error {
   constructor(
-    public readonly status: 401 | 403 | 404 | 410,
+    public readonly status: 401 | 403 | 404 | 409 | 410,
     public readonly code: WorkspaceContextCode,
     message: string,
   ) {
@@ -98,6 +99,7 @@ export async function isWorkspaceModelEnabled(): Promise<boolean> {
 }
 
 const ID_RE = /^[A-Za-z0-9_-]{1,30}$/;
+type WorkspaceSelectionSource = "header" | "cookie" | "none";
 
 function readCookie(request: Request, name: string): string | null {
   const raw = request.headers.get("cookie");
@@ -114,12 +116,18 @@ function readCookie(request: Request, name: string): string | null {
  * Returns null when neither is present (caller falls back to the DB default).
  * The `?workspace=` query override is admin-only and handled separately.
  */
-export function resolveWorkspaceIdFromRequest(request: Request): string | null {
+export function resolveWorkspaceSelectionFromRequest(
+  request: Request,
+): { workspaceId: string | null; source: WorkspaceSelectionSource } {
   const header = request.headers.get("x-workspace-id");
-  if (header && ID_RE.test(header)) return header;
+  if (header && ID_RE.test(header)) return { workspaceId: header, source: "header" };
   const cookie = readCookie(request, "lf_workspace_id");
-  if (cookie && ID_RE.test(cookie)) return cookie;
-  return null;
+  if (cookie && ID_RE.test(cookie)) return { workspaceId: cookie, source: "cookie" };
+  return { workspaceId: null, source: "none" };
+}
+
+export function resolveWorkspaceIdFromRequest(request: Request): string | null {
+  return resolveWorkspaceSelectionFromRequest(request).workspaceId;
 }
 
 /** Materialize the convenience flags for a resolved member. */
@@ -145,12 +153,21 @@ export async function requireWorkspaceContext(request: Request): Promise<Workspa
   }
   const userId = session.userId;
 
-  const requestedId = resolveWorkspaceIdFromRequest(request);
+  const requestedWorkspace = resolveWorkspaceSelectionFromRequest(request);
+  const requestedId = requestedWorkspace.workspaceId;
 
   // Find the member row for the explicitly requested workspace, if any.
   let member = requestedId
     ? await prisma.workspaceMember.findFirst({ where: { workspaceId: requestedId, userId } })
     : null;
+
+  if (!member && requestedId && requestedWorkspace.source === "header") {
+    throw new WorkspaceContextError(
+      409,
+      "STALE_WORKSPACE_SELECTION",
+      "Your selected workspace is no longer available. Choose another workspace.",
+    );
+  }
 
   // A requested workspace the user isn't a member of must NOT lock them out of
   // the whole app: the header/cookie can be stale (user removed from that

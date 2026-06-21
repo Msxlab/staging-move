@@ -448,7 +448,8 @@ export async function POST(request: NextRequest) {
           stripeSubscriptionId: true,
           originalTransactionId: true,
           latestTransactionId: true,
-          purchaseToken: true,
+          purchaseTokenHash: true,
+          purchaseTokenEncrypted: true,
         },
       });
       const liveProviderStatuses = new Set([
@@ -469,7 +470,8 @@ export async function POST(request: NextRequest) {
           existing.stripeSubscriptionId ||
             existing.originalTransactionId ||
             existing.latestTransactionId ||
-            existing.purchaseToken,
+            existing.purchaseTokenEncrypted ||
+            existing.purchaseTokenHash,
         );
       if (hasLiveProvider) {
         await writePremiumGrantAudit(session, request, {
@@ -538,6 +540,7 @@ export async function POST(request: NextRequest) {
           originalTransactionId: null,
           latestTransactionId: null,
           purchaseToken: null,
+          purchaseTokenEncrypted: null,
           appStoreEnvironment: null,
           gracePeriodEndsAt: null,
           trialEndsAt: null,
@@ -579,6 +582,7 @@ export async function POST(request: NextRequest) {
 
       const safeSub = { ...sub };
       delete safeSub.purchaseToken;
+      delete safeSub.purchaseTokenEncrypted;
       delete safeSub.purchaseTokenHash;
       delete safeSub.premiumNote;
       return NextResponse.json({ success: true, subscription: { ...safeSub, noteStored: Boolean(sub.premiumNote) } });

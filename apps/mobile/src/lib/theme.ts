@@ -3,6 +3,19 @@ import { Appearance, useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "@/lib/auth-store";
 import {
+  brandColors,
+  borderDark,
+  borderLight,
+  glassDark,
+  glassLight,
+  gradients,
+  roseScale,
+  semanticColors,
+  semanticColorsLight,
+  surfaceDark,
+  surfaceLight,
+  textDark,
+  textLight,
   tonesDark,
   tonesLight,
   spacing as tokenSpacing,
@@ -37,50 +50,52 @@ import {
 // reacts to OS theme flips immediately.
 // ──────────────────────────────────────────────────────────────────────
 
-// Sapphire accent — the single uniform brand accent (Move design).
-const ACCENT_DARK = "#5B8DEF";
-const ACCENT_DARK_LIGHT = "#83AAF5";
-const ACCENT_DARK_DEEP = "#3D6FD6";
-const ACCENT_LIGHT = "#2E5FB0";
-const ACCENT_LIGHT_LIGHT = "#3D74C8";
-const ACCENT_LIGHT_DEEP = "#244C90";
+// Canonical Aurora accents from shared design tokens.
+const ACCENT_DARK = brandColors.rose;
+const ACCENT_DARK_LIGHT = brandColors.roseLight;
+const ACCENT_DARK_DEEP = brandColors.roseDeep;
+const ACCENT_LIGHT = roseScale[900];
+const ACCENT_LIGHT_LIGHT = roseScale[700];
+const ACCENT_LIGHT_DEEP = roseScale[800];
+const FOIL_DARK = brandColors.foil;
+const FOIL_LIGHT = brandColors.foilInk;
 
 const darkColors = {
-  primary: ACCENT_DARK, // Sapphire #5B8DEF
-  primaryLight: ACCENT_DARK_LIGHT, // #83AAF5
-  primaryDark: ACCENT_DARK_DEEP, // #3D6FD6
-  primaryFaded: "rgba(91, 141, 239, 0.12)",
-  accent: ACCENT_DARK, // single accent — no separate honey accent
+  primary: ACCENT_DARK,
+  primaryLight: ACCENT_DARK_LIGHT,
+  primaryDark: ACCENT_DARK_DEEP,
+  primaryFaded: tonesDark.orange.bg,
+  accent: FOIL_DARK,
 
-  success: "#54CB7E", // Move green
-  successFaded: "rgba(84, 203, 126, 0.14)",
-  warning: "#E0A85A", // Move amber
-  warningFaded: "rgba(224, 168, 90, 0.16)",
-  error: "#E25C5C", // Move red
-  errorFaded: "rgba(226, 92, 92, 0.16)",
-  info: "#37C2C9", // Move teal
-  infoFaded: "rgba(55, 194, 201, 0.14)",
+  success: semanticColors.success,
+  successFaded: semanticColors.successLight,
+  warning: semanticColors.warning,
+  warningFaded: semanticColors.warningLight,
+  error: semanticColors.danger,
+  errorFaded: semanticColors.dangerLight,
+  info: semanticColors.info,
+  infoFaded: semanticColors.infoLight,
 
-  background: "#0A0F1C", // Move bg
-  surface: "#121B2D", // Move surface (cards)
-  card: "#121B2D",
-  cardHover: "#18233A", // surface2
-  elevated: "#1F2C47", // surface3
+  background: surfaceDark.background,
+  surface: surfaceDark.surface,
+  card: surfaceDark.card,
+  cardHover: surfaceDark.cardHover,
+  elevated: surfaceDark.elevated,
 
-  border: "rgba(110, 150, 225, 0.10)",
-  borderLight: "rgba(255, 255, 255, 0.10)",
-  borderFocus: "rgba(91, 141, 239, 0.55)",
+  border: borderDark.default,
+  borderLight: borderDark.strong,
+  borderFocus: borderDark.focus,
 
   glass: {
-    bg: "rgba(255, 255, 255, 0.03)",
-    border: "rgba(255, 255, 255, 0.05)",
-    highlight: "rgba(255, 255, 255, 0.08)",
+    bg: glassDark.bg,
+    border: glassDark.border,
+    highlight: glassDark.hover,
   },
 
-  text: "#EFF3FA", // Move text
-  textSecondary: "#8A99B6", // dim
-  textTertiary: "#42526F", // faint
-  textMuted: "#42526F",
+  text: textDark.primary,
+  textSecondary: textDark.secondary,
+  textTertiary: textDark.tertiary,
+  textMuted: textDark.muted,
 
   orange: tonesDark.orange,
   emerald: tonesDark.emerald,
@@ -90,35 +105,35 @@ const darkColors = {
   cyan: tonesDark.cyan,
 
   gradient: {
-    primary: ["#83AAF5", "#5B8DEF"] as readonly [string, string],
-    warm: ["#3D6FD6", "#5B8DEF"] as readonly [string, string],
-    glow: ["rgba(91, 141, 239, 0.40)", "rgba(91, 141, 239, 0.10)"] as readonly [string, string],
+    primary: gradients.primary,
+    warm: gradients.warm,
+    glow: gradients.glow,
   },
 
-  // ── Move design additions ───────────────────────────────────────────
-  bg2: "#0C1322",
-  surface2: "#18233A",
-  surface3: "#1F2C47",
-  dim: "#8A99B6",
-  faint: "#42526F",
-  onAccent: "#0A0F1C",
-  accentSoft: "rgba(91, 141, 239, 0.09)",
-  accentBorder: "rgba(91, 141, 239, 0.22)",
-  green: "#54CB7E",
-  red: "#E25C5C",
-  amberSolid: "#E0A85A",
-  teal: "#37C2C9",
-  amberSoft: "rgba(224, 168, 90, 0.16)",
-  amberLine: "rgba(224, 168, 90, 0.24)",
-  redSoft: "rgba(226, 92, 92, 0.16)",
-  redLine: "rgba(226, 92, 92, 0.22)",
+  // Back-compat aliases for older mobile components.
+  bg2: surfaceDark.surface,
+  surface2: surfaceDark.cardHover,
+  surface3: surfaceDark.elevated,
+  dim: textDark.secondary,
+  faint: textDark.muted,
+  onAccent: surfaceDark.background,
+  accentSoft: tonesDark.foil.bg,
+  accentBorder: tonesDark.foil.border,
+  green: semanticColors.success,
+  red: semanticColors.danger,
+  amberSolid: semanticColors.warning,
+  teal: semanticColors.info,
+  amberSoft: semanticColors.warningLight,
+  amberLine: tonesDark.foil.border,
+  redSoft: semanticColors.dangerLight,
+  redLine: tonesDark.rose.border,
   track: "rgba(255, 255, 255, 0.07)",
   handle: "rgba(255, 255, 255, 0.18)",
-  glassPane: "rgba(6, 11, 24, 0.62)",
-  heroGrad: ["#141C30", "#0C1220"] as readonly [string, string],
-  mapBg: ["#0d1830", "#0a1120"] as readonly [string, string],
-  mapGrid: "rgba(255, 255, 255, 0.06)",
-  mapRouteBase: "rgba(255, 255, 255, 0.10)",
+  glassPane: "rgba(6, 10, 18, 0.62)",
+  heroGrad: [surfaceDark.card, surfaceDark.background] as readonly [string, string],
+  mapBg: [surfaceDark.surface, surfaceDark.background] as readonly [string, string],
+  mapGrid: borderDark.default,
+  mapRouteBase: borderDark.strong,
   raccoon: {
     head: "#8C9AB2",
     mask: "#0C1525",
@@ -132,43 +147,42 @@ const darkColors = {
 const lightColors = {
   ...darkColors,
 
-  // Move light scope — warm greige paper, Sapphire accent darkened for AA
-  // contrast on the soft paper surface.
-  primary: ACCENT_LIGHT, // #2E5FB0
-  primaryLight: ACCENT_LIGHT_LIGHT, // #3D74C8
-  primaryDark: ACCENT_LIGHT_DEEP, // #244C90
-  accent: ACCENT_LIGHT,
-  primaryFaded: "rgba(46, 95, 176, 0.10)",
+  // Light scope mirrors the shared Aurora paper palette.
+  primary: ACCENT_LIGHT,
+  primaryLight: ACCENT_LIGHT_LIGHT,
+  primaryDark: ACCENT_LIGHT_DEEP,
+  accent: FOIL_LIGHT,
+  primaryFaded: tonesLight.orange.bg,
 
-  success: "#1C8A63",
-  successFaded: "rgba(28, 138, 99, 0.12)",
-  warning: "#A9761E",
-  warningFaded: "rgba(169, 118, 30, 0.12)",
-  error: "#C73838",
-  errorFaded: "rgba(199, 56, 56, 0.12)",
-  info: "#168E9C",
-  infoFaded: "rgba(22, 142, 156, 0.12)",
+  success: semanticColorsLight.success,
+  successFaded: semanticColorsLight.successLight,
+  warning: semanticColorsLight.warning,
+  warningFaded: semanticColorsLight.warningLight,
+  error: semanticColorsLight.danger,
+  errorFaded: semanticColorsLight.dangerLight,
+  info: semanticColorsLight.info,
+  infoFaded: semanticColorsLight.infoLight,
 
-  background: "#EFEADF", // greige paper
-  surface: "#FFFFFF",
-  card: "#FFFFFF",
-  cardHover: "#F5F0E7", // surface2
-  elevated: "#ECE6DA", // surface3
+  background: surfaceLight.background,
+  surface: surfaceLight.surface,
+  card: surfaceLight.surface,
+  cardHover: surfaceLight.cardHover,
+  elevated: surfaceLight.elevated,
 
-  border: "rgba(16, 29, 45, 0.10)",
-  borderLight: "rgba(16, 29, 45, 0.14)",
-  borderFocus: "rgba(46, 95, 176, 0.55)",
+  border: borderLight.default,
+  borderLight: borderLight.strong,
+  borderFocus: borderLight.focus,
 
   glass: {
-    bg: "rgba(255, 255, 255, 0.55)",
-    border: "rgba(20, 32, 47, 0.06)",
-    highlight: "rgba(20, 32, 47, 0.04)",
+    bg: glassLight.bg,
+    border: glassLight.border,
+    highlight: glassLight.hover,
   },
 
-  text: "#101D2D",
-  textSecondary: "#48566C", // dim
-  textTertiary: "#8794AC", // faint
-  textMuted: "#8794AC",
+  text: textLight.primary,
+  textSecondary: textLight.secondary,
+  textTertiary: textLight.tertiary,
+  textMuted: textLight.muted,
 
   orange: tonesLight.orange,
   emerald: tonesLight.emerald,
@@ -178,35 +192,35 @@ const lightColors = {
   cyan: tonesLight.cyan,
 
   gradient: {
-    primary: ["#3D74C8", "#2E5FB0"] as readonly [string, string],
-    warm: ["#244C90", "#2E5FB0"] as readonly [string, string],
-    glow: ["rgba(46, 95, 176, 0.30)", "rgba(46, 95, 176, 0.10)"] as readonly [string, string],
+    primary: gradients.primary,
+    warm: gradients.warm,
+    glow: gradients.glow,
   },
 
-  // ── Move design additions (light) ───────────────────────────────────
-  bg2: "#E7E1D4",
-  surface2: "#F5F0E7",
-  surface3: "#ECE6DA",
-  dim: "#48566C",
-  faint: "#8794AC",
+  // Back-compat aliases for older mobile components.
+  bg2: surfaceLight.card,
+  surface2: surfaceLight.cardHover,
+  surface3: surfaceLight.elevated,
+  dim: textLight.secondary,
+  faint: textLight.muted,
   onAccent: "#FFFFFF",
-  accentSoft: "rgba(46, 95, 176, 0.10)",
-  accentBorder: "rgba(46, 95, 176, 0.26)",
-  green: "#1C8A63",
-  red: "#C73838",
-  amberSolid: "#A9761E",
-  teal: "#168E9C",
-  amberSoft: "rgba(169, 118, 30, 0.12)",
-  amberLine: "rgba(169, 118, 30, 0.22)",
-  redSoft: "rgba(199, 56, 56, 0.12)",
-  redLine: "rgba(199, 56, 56, 0.22)",
+  accentSoft: tonesLight.foil.bg,
+  accentBorder: tonesLight.foil.border,
+  green: semanticColorsLight.success,
+  red: semanticColorsLight.danger,
+  amberSolid: semanticColorsLight.warning,
+  teal: semanticColorsLight.info,
+  amberSoft: semanticColorsLight.warningLight,
+  amberLine: tonesLight.foil.border,
+  redSoft: semanticColorsLight.dangerLight,
+  redLine: tonesLight.rose.border,
   track: "rgba(0, 0, 0, 0.08)",
   handle: "rgba(0, 0, 0, 0.14)",
-  glassPane: "rgba(255, 255, 255, 0.72)",
-  heroGrad: ["#FFFFFF", "#F4EFE5"] as readonly [string, string],
-  mapBg: ["#dde6ef", "#cdd8e6"] as readonly [string, string],
-  mapGrid: "rgba(12, 24, 40, 0.07)",
-  mapRouteBase: "rgba(12, 24, 40, 0.12)",
+  glassPane: glassLight.bg,
+  heroGrad: [surfaceLight.surface, surfaceLight.background] as readonly [string, string],
+  mapBg: [surfaceLight.card, surfaceLight.cardHover] as readonly [string, string],
+  mapGrid: borderLight.default,
+  mapRouteBase: borderLight.strong,
   raccoon: {
     head: "#7E8EA6",
     mask: "#0F1D2D",
@@ -237,7 +251,7 @@ export const lightTheme = {
 } as unknown as Theme;
 
 /**
- * Move design type faces — explicit font-family constants for use in
+ * Mobile type faces — explicit font-family constants for use in
  * StyleSheet `fontFamily`. React Native maps a weight to a *distinct*
  * loaded font file, so pick the exact constant rather than relying on
  * `fontWeight`. Playfair Display = serif/display, DM Sans = UI, DM Mono =
@@ -278,9 +292,9 @@ export type ResolvedScheme = "light" | "dark";
 // ──────────────────────────────────────────────────────────────────────
 // Plan accent theming — RETIRED
 //
-// The Move design ships a single uniform Sapphire accent for every plan;
-// the whole app reads as one premium ("Pro-like") surface. The former
-// per-plan tinting (Free coral / Family mint / Pro honey) was removed.
+// Plan palette is currently a pass-through: shared Aurora tokens define
+// the app-wide accent system, while plan-specific treatment stays in
+// dedicated billing/upgrade components.
 // `applyPlanPalette` is kept as a pass-through so existing callers
 // (e.g. ThemeProvider) don't need to change.
 // ──────────────────────────────────────────────────────────────────────

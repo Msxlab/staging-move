@@ -116,10 +116,12 @@ export default function SupportTicketPage() {
     <div className="space-y-5 pb-8 max-w-3xl">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Link href="/support">
-          <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition mt-0.5">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
+        <Link
+          href="/support"
+          className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition mt-0.5"
+          aria-label="Back to support"
+        >
+          <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">

@@ -29,11 +29,12 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 # 4. Verify
 docker compose -f docker-compose.prod.yml ps
 curl -fsS https://app.yourdomain.com/api/health | jq '.status'
-curl -fsS https://admin.yourdomain.com/api/health | jq '.status'
+curl -fsS https://admin.yourdomain.com/api/healthz | jq '.ok'
 ```
 
-Both should return `"healthy"`. If Caddy is still provisioning TLS, wait ~30
-seconds and retry — the first boot requests Let's Encrypt certs.
+The web command should return `"healthy"` and the admin liveness command should
+return `true`. If Caddy is still provisioning TLS, wait ~30 seconds and retry
+— the first boot requests Let's Encrypt certs.
 
 ## DigitalOcean Managed MySQL
 
@@ -73,6 +74,20 @@ Dokploy service/domain mapping:
 - `web` on port `3000` -> `locateflow.com`
 - `admin` on port `3001` -> `admin.locateflow.com`
 - `imgproxy` on port `8080` -> `img.locateflow.com`
+
+When running a staging stack next to an existing production stack on the same
+Dokploy server, set a unique compose project name and container prefix in that
+Dokploy app's environment before deploying:
+
+```bash
+DOKPLOY_COMPOSE_PROJECT_NAME=staging-move
+DOKPLOY_CONTAINER_PREFIX=staging-move
+```
+
+Production can omit these values and will keep the existing `locateflow`
+defaults. A second stack must not reuse the production defaults because
+Compose project names, container names, and generated volumes would collide on
+the host.
 
 Before cutover, follow the full runbook in
 `docs/runbooks/dokploy-migration.md`. The migration is whole-MySQL-dump based;
@@ -118,12 +133,17 @@ Internet ──▶ Caddy (:443) ──┬─▶ web:3000      (Next.js standalon
 - **migrate** — one-shot service; runs `prisma migrate deploy` then
   `seed-admin`. Exits 0. Other services wait for it via `depends_on`.
 - **web** and **admin** — each Next.js app shipped as a Node.js
-  `standalone` bundle. Non-root user, healthcheck on `/api/health`.
+  `standalone` bundle. Non-root user; web healthcheck uses `/api/health`,
+  admin container liveness uses `/api/healthz`.
 - **caddy** — automatic Let's Encrypt TLS, strips spoofable forwarded
   headers, forwards real client IP. Certs cached in `caddy_data` volume.
 - **cron** — [mcuadros/ofelia](https://github.com/mcuadros/ofelia) runs
   scheduled commands inside the web/admin containers using `docker exec`.
-  Schedules live in `docker/ofelia.ini`.
+  Schedules live in `docker/ofelia.ini`. Use this scheduler only for a
+  self-hosted Docker deployment. If the same production domain is targeted by
+  GitHub Actions cron (`.github/workflows/cron.yml`), disable the GitHub
+  scheduled runs with repository variable `CRON_SCHEDULER_DISABLED=true` or stop
+  Ofelia; never run both against the same app.
 
 ## Common operations
 
@@ -195,6 +215,8 @@ docker compose -f docker-compose.prod.yml exec -T mysql \
       `https://errors.yourdomain.com`.
 - [ ] `IMPERSONATION_HANDOFF_SECRET` is set on both web and admin. Do not
       reuse `CRON_SECRET` for impersonation.
+- [ ] `BACKUP_CRON_SECRET` is set on admin when backup cron should be isolated
+      from the broader scheduler secret.
 - [ ] Root SSH login disabled after a non-root `deploy` user has been tested.
 
 ## Host SSH hardening
@@ -313,6 +335,7 @@ Keys that are especially important to set at deploy time:
 - `USER_JWT_SECRET`
 - `FIELD_ENCRYPTION_KEY`
 - `CRON_SECRET`
+- `BACKUP_CRON_SECRET` (recommended for admin backup cron)
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
@@ -325,6 +348,7 @@ Keys that are especially important to set at deploy time:
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
 - `GOOGLE_MAPS_API_KEY`
+- `GEOAPIFY_API_KEY`
 
 Optional but supported offsite backup settings:
 

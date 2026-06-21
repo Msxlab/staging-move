@@ -7,7 +7,7 @@ import { LEGAL_CONTACTS, mailto, policyLastUpdatedLabel } from "@/lib/legal-info
 export const metadata = createPublicPageMetadata({
   title: "Data Export and Deletion",
   description:
-    "How LocateFlow users can request account data export or deletion, and what records may need to be retained.",
+    "How Move users can request account data export or deletion, and what records may need to be retained.",
   path: "/data-deletion",
 });
 
@@ -24,7 +24,7 @@ export default function DataDeletionPage() {
       <PublicPageShell
         eyebrow="Privacy"
         title="Data export and deletion"
-        description="LocateFlow provides account export and deletion workflows, with practical limits for backups, billing, audit, legal, security, and processor records."
+        description="Move provides account export and deletion workflows, with practical limits for backups, billing, audit, legal, security, and processor records."
       >
         <div className="rounded-2xl border border-border bg-card p-5 text-sm leading-6 text-muted-foreground">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
@@ -43,7 +43,7 @@ export default function DataDeletionPage() {
           <p>
             Signed-in users can request account deletion from account settings where
             the workflow is available. Account-specific requests may require sign-in
-            so LocateFlow can confirm the account and protect against unauthorized
+            so Move can confirm the account and protect against unauthorized
             deletion.
           </p>
           <p>
@@ -51,7 +51,7 @@ export default function DataDeletionPage() {
             <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow data deletion request")} className="text-primary underline">
               {LEGAL_CONTACTS.privacy}
             </a>{" "}
-            with enough information for LocateFlow to review the request without
+            with enough information for Move to review the request without
             sending passwords, payment card numbers, private keys, or unnecessary
             sensitive records.
           </p>
@@ -73,7 +73,7 @@ export default function DataDeletionPage() {
 
         <PublicSection title="Store subscriptions">
           <p>
-            Deleting a LocateFlow account does not necessarily cancel subscriptions
+            Deleting a Move account does not necessarily cancel subscriptions
             managed by Apple App Store or Google Play. Store subscriptions must be
             managed through the applicable store. Web subscriptions can be managed
             through supported account settings or the Stripe billing portal.

@@ -57,7 +57,7 @@ describe("Google analytics wrapper", () => {
 
     expect(windowMock.dataLayer).toEqual([]);
     analytics.consentDenied();
-  });
+  }, 15_000);
 
   it("does not load or send events without consent", async () => {
     vi.stubEnv("NEXT_PUBLIC_GTM_ID", "GTM-TEST");

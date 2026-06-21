@@ -368,10 +368,12 @@ export default function PrivacyPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
       <div className="flex items-center gap-4">
-        <Link href="/settings">
-          <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition" aria-label="Back">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
+        <Link
+          href="/settings"
+          className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition"
+          aria-label="Back"
+        >
+          <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">{copy.title}</h1>
@@ -710,10 +712,11 @@ export default function PrivacyPage() {
               <p className="text-sm text-foreground/80">{copy.downloadData}</p>
               <p className="text-[11px] text-foreground/40">{copy.exportData}</p>
             </div>
-            <Link href="/settings/export">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-                <Download className="h-3 w-3" />{copy.export}
-              </button>
+            <Link
+              href="/settings/export"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+            >
+              <Download className="h-3 w-3" />{copy.export}
             </Link>
           </div>
         </div>

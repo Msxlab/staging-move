@@ -50,11 +50,9 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   const authenticating = useAppLockStore((s) => s.authenticating);
   const methodLabel = useAppLockStore((s) => s.methodLabel);
   const lockError = useAppLockStore((s) => s.error);
-  const available = useAppLockStore((s) => s.available);
   const hydrate = useAppLockStore((s) => s.hydrate);
   const lock = useAppLockStore((s) => s.lock);
   const unlock = useAppLockStore((s) => s.unlock);
-  const disableLock = useAppLockStore((s) => s.disable);
   const lastBackgroundAt = useRef<number | null>(null);
   const promptedForCurrentLock = useRef(false);
   const authenticatingRef = useRef(false);
@@ -126,19 +124,6 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
     router.replace("/(auth)/sign-in");
   };
 
-  const handleDisableLock = async () => {
-    // Recovery escape: only offered when the lock cannot authenticate (biometrics
-    // gone and no device passcode). Disabling keeps the user in their existing
-    // authenticated session instead of forcing a full sign-out and re-login.
-    await disableLock();
-  };
-
-  // Show the disable-recovery only once hydration has settled and the lock is
-  // genuinely non-functional (capability unavailable). On a device where
-  // biometrics/passcode work, `available` is true and this never renders, so a
-  // working lock can't be bypassed.
-  const showDisableRecovery = hydrated && !authenticating && !available;
-
   return (
     <>
       {children}
@@ -168,18 +153,6 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
               <Text style={styles.primaryButtonText}>{t("settings.appLock_unlockButton")}</Text>
             </TouchableOpacity>
           )}
-          {showDisableRecovery ? (
-            <TouchableOpacity
-              style={styles.textButton}
-              onPress={handleDisableLock}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-            >
-              <Text style={styles.textButtonLabel}>
-                {t("settings.appLock_disableAndContinue", { defaultValue: "Disable app lock & continue" })}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
           <TouchableOpacity
             style={styles.textButton}
             onPress={handleSignOut}

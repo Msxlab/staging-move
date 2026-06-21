@@ -36,7 +36,7 @@ function hasMissingStoreIdentifier(subscription: any) {
   }
 
   if (subscription.provider === "PLAY_STORE") {
-    return !subscription.purchaseToken;
+    return !(subscription.purchaseTokenEncrypted || subscription.purchaseTokenHash || subscription.purchaseToken);
   }
 
   return false;
@@ -67,12 +67,16 @@ function redactDeletedBillingUser(user: any) {
 function sanitizeBillingSubscription(subscription: any) {
   const safeSubscription = { ...subscription };
   delete safeSubscription.purchaseToken;
+  delete safeSubscription.purchaseTokenEncrypted;
+  delete safeSubscription.purchaseTokenHash;
   delete safeSubscription.campaignSnapshot;
   delete safeSubscription.checkoutConsentSnapshot;
   delete safeSubscription.premiumNote;
   return {
     ...safeSubscription,
-    purchaseTokenPresent: Boolean(subscription.purchaseToken),
+    purchaseTokenPresent: Boolean(
+      subscription.purchaseTokenEncrypted || subscription.purchaseTokenHash || subscription.purchaseToken,
+    ),
     user: redactDeletedBillingUser(subscription.user),
   };
 }
@@ -102,7 +106,8 @@ export async function GET(req: NextRequest) {
         billingProductId: true,
         originalTransactionId: true,
         latestTransactionId: true,
-        purchaseToken: true,
+        purchaseTokenEncrypted: true,
+        purchaseTokenHash: true,
         currentPeriodEndsAt: true,
         gracePeriodEndsAt: true,
         lastValidatedAt: true,

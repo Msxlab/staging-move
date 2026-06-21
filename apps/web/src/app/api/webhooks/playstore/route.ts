@@ -35,6 +35,7 @@ import { alertWebhookSignatureFailure } from "@/lib/security-alerts";
 import {
   applyIapStateToUser,
   findUserByIapIdentifier,
+  hashPurchaseToken,
   refreshGoogleSubscriptionFor,
   sendIapCancellationNotice,
 } from "@/lib/iap-common";
@@ -85,6 +86,17 @@ function isProductionLikeRuntime() {
     appEnv === "staging" ||
     appEnv === "preview"
   );
+}
+
+function playStoreTokenWhere(userId: string, purchaseToken: string) {
+  const purchaseTokenHash = hashPurchaseToken(purchaseToken);
+  return {
+    userId,
+    OR: [
+      ...(purchaseTokenHash ? [{ purchaseTokenHash }] : []),
+      { purchaseToken },
+    ],
+  };
 }
 
 function emitPlaystoreFailure(reason: string, context: Record<string, unknown> = {}) {
@@ -253,7 +265,7 @@ export async function POST(request: NextRequest) {
         const owner = await findUserByIapIdentifier({ purchaseToken: voidNotif.purchaseToken });
         if (owner) {
           await prisma.subscription.updateMany({
-            where: { userId: owner.userId, purchaseToken: voidNotif.purchaseToken },
+            where: playStoreTokenWhere(owner.userId, voidNotif.purchaseToken),
             data: {
               status: "CANCELED",
               canceledAt: new Date(),
@@ -289,7 +301,7 @@ export async function POST(request: NextRequest) {
       if (!refreshed) {
         // Purchase revoked server-side — mark canceled.
         await prisma.subscription.updateMany({
-          where: { userId: owner.userId, purchaseToken: subNotif.purchaseToken },
+          where: playStoreTokenWhere(owner.userId, subNotif.purchaseToken),
           data: {
             status: "CANCELED",
             canceledAt: new Date(),

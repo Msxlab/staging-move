@@ -1,4 +1,4 @@
-﻿/**
+/**
  * /blog/preview/<token> — short-lived signed preview of a draft post.
  *
  * The admin "Preview" button hits the admin webhook
@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "Preview · LocateFlow",
+  title: "Preview · Move",
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 };
 
@@ -45,7 +45,7 @@ export default async function PreviewPage({
   });
   if (!post) notFound();
 
-  const authorName = `${post.author.firstName ?? ""} ${post.author.lastName ?? ""}`.trim() || "LocateFlow";
+  const authorName = `${post.author.firstName ?? ""} ${post.author.lastName ?? ""}`.trim() || "Move";
   let cover: string | null = null;
   if (post.ogImageKey) {
     try {

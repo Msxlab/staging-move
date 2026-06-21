@@ -12,12 +12,14 @@
 #   img.locateflow.com -> service imgproxy, port 8080
 # - Add web, admin, and imgproxy to dokploy-network so Traefik can reach
 #   them. Internal services stay on the default project network only.
+# - For a second stack on the same host, set DOKPLOY_COMPOSE_PROJECT_NAME and
+#   DOKPLOY_CONTAINER_PREFIX to unique values before deploying.
 # - The cron service is behind the `cron` Compose profile. Keep it disabled
 #   during rehearsal deploys; enable it only after final cutover health checks
 #   and after GitHub scheduled cron has been disabled.
 # ---------------------------------------------------------------
 
-name: locateflow
+name: ${DOKPLOY_COMPOSE_PROJECT_NAME:-locateflow}
 
 x-app-env: &app-env
   NODE_ENV: production
@@ -26,6 +28,7 @@ x-app-env: &app-env
   BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
   BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
   TRUSTED_PROXY_HEADERS: ${TRUSTED_PROXY_HEADERS:-standard}
+  CRON_SCHEDULER_OWNER: ${CRON_SCHEDULER_OWNER:-}
 
   APP_URL: ${APP_URL:?APP_URL is required}
   NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
@@ -191,7 +194,7 @@ x-app-env: &app-env
 services:
   mysql:
     image: mysql:8.0
-    container_name: locateflow-mysql
+    container_name: ${DOKPLOY_CONTAINER_PREFIX:-locateflow}-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
@@ -223,7 +226,7 @@ services:
     build:
       context: .
       dockerfile: docker/migrate.Dockerfile
-    container_name: locateflow-migrate
+    container_name: ${DOKPLOY_CONTAINER_PREFIX:-locateflow}-migrate
     depends_on:
       mysql:
         condition: service_healthy
@@ -257,7 +260,7 @@ services:
         BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
         BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
         BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
-    container_name: locateflow-web
+    container_name: ${DOKPLOY_CONTAINER_PREFIX:-locateflow}-web
     restart: unless-stopped
     depends_on:
       mysql:
@@ -275,7 +278,7 @@ services:
       - default
       - dokploy-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/ready"]
       interval: 30s
       timeout: 5s
       start_period: 30s
@@ -303,7 +306,7 @@ services:
         BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
         BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
         BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
-    container_name: locateflow-admin
+    container_name: ${DOKPLOY_CONTAINER_PREFIX:-locateflow}-admin
     restart: unless-stopped
     depends_on:
       mysql:
@@ -337,7 +340,7 @@ services:
 
   imgproxy:
     image: darthsim/imgproxy:latest
-    container_name: locateflow-imgproxy
+    container_name: ${DOKPLOY_CONTAINER_PREFIX:-locateflow}-imgproxy
     restart: unless-stopped
     environment:
       IMGPROXY_KEY: ${IMGPROXY_KEY:?IMGPROXY_KEY is required}
@@ -363,8 +366,10 @@ services:
         max-file: "3"
 
   cron:
+    profiles:
+      - cron
     image: mcuadros/ofelia:latest
-    container_name: locateflow-cron
+    container_name: ${DOKPLOY_CONTAINER_PREFIX:-locateflow}-cron
     restart: unless-stopped
     depends_on:
       - web

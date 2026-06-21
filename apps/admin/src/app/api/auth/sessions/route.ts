@@ -7,6 +7,13 @@ import { maskEmail, maskIpAddress } from "@/lib/privacy";
 
 const REVOKE_HANDLE_TTL_MS = 5 * 60 * 1000;
 
+function withNoStore(response: NextResponse) {
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
+}
+
 function getRevokeHandleSecret() {
   return process.env.ADMIN_SESSION_HANDLE_SECRET
     || process.env.ADMIN_JWT_SECRET
@@ -136,7 +143,7 @@ export async function GET(request: NextRequest) {
       request: requestMeta,
     });
 
-    return NextResponse.json({
+    return withNoStore(NextResponse.json({
       sessions: sessions.map((s: any) => ({
         displayId: displayIdFromSessionId(s.id),
         revokeHandle: createRevokeHandle(s, session.adminId, all),
@@ -158,7 +165,7 @@ export async function GET(request: NextRequest) {
       })),
       currentAdminId: session.adminId,
       isSuperAdmin,
-    });
+    }));
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     console.error("Sessions fetch error:", error);
@@ -202,14 +209,14 @@ export async function POST(request: NextRequest) {
         },
         request: requestMeta,
       });
-      return NextResponse.json(
+      return withNoStore(NextResponse.json(
         {
           error: confirm.error || "Password and MFA confirmation required",
           requiresPassword: true,
           requiresMfa: confirm.requiresMfa || undefined,
         },
         { status: confirm.rateLimited ? 429 : 403 },
-      );
+      ));
     };
 
     if (action === "revoke" && sessionHandle) {
@@ -252,7 +259,7 @@ export async function POST(request: NextRequest) {
         request: requestMeta,
       });
 
-      const response = NextResponse.json({ success: true });
+      const response = withNoStore(NextResponse.json({ success: true }));
       return currentSessionRevoked
         ? expireAdminSessionCookies(response, request.headers.get("host"))
         : response;
@@ -292,7 +299,7 @@ export async function POST(request: NextRequest) {
         request: requestMeta,
       });
 
-      const response = NextResponse.json({ success: true, revoked: result.count });
+      const response = withNoStore(NextResponse.json({ success: true, revoked: result.count }));
       return currentSessionRevoked
         ? expireAdminSessionCookies(response, request.headers.get("host"))
         : response;

@@ -32,7 +32,7 @@ DigitalOcean App Platform settings:
 - Source directory: repository root
 - HTTP port: `8080`
 - Build command: empty
-- Run command: empty uses the image `CMD`. To bypass inline migrations, the operator can set `sh -c 'export DATABASE_URL="${DATABASE_URL:-$MYSQL_DATABASE_URL}"; exec node apps/web/server.js'` only after a separate migration step exists and has been verified.
+- Run command: empty uses the image `CMD`, which starts only the web server after confirming `DATABASE_URL`/`MYSQL_DATABASE_URL` is present. Run migrations as a separate controlled deploy step before smoke tests.
 - Runtime env: keep the existing web env values. `DATABASE_URL` should be set to the managed MySQL connection string; the image also falls back to `MYSQL_DATABASE_URL` when `DATABASE_URL` is absent.
 
 Docker build args, if overriding the defaults:
@@ -56,12 +56,11 @@ pnpm --filter @locateflow/web build
 ```
 
 It copies the Next standalone server, `apps/web/.next/static`, and
-`apps/web/public` into the runtime image. The current Dockerfile default `CMD`
-exports `DATABASE_URL`, runs `prisma migrate deploy`, and then starts
-`apps/web/server.js`. If DigitalOcean uses an empty run command, this inline
-migration path is active and a database or migration failure can block web boot.
-Operator action required: verify whether production uses the Dockerfile `CMD`
-or an explicit run command before treating migration risk as resolved.
+`apps/web/public` into the runtime image. The Dockerfile default `CMD` exports
+`DATABASE_URL`, verifies a database URL is present, and starts
+`apps/web/server.js`; it does not run migrations during app startup. Operator
+action required: keep `prisma migrate deploy` in a separate one-shot deploy step
+before web smoke tests.
 
 ## Web Buildpack Option
 
@@ -74,13 +73,11 @@ DATABASE_URL="$MYSQL_DATABASE_URL" pnpm db:generate && DATABASE_URL="$MYSQL_DATA
 Run command:
 
 ```bash
-DATABASE_URL="$MYSQL_DATABASE_URL" pnpm db:migrate:deploy && DATABASE_URL="$MYSQL_DATABASE_URL" HOSTNAME=0.0.0.0 PORT=$PORT node apps/web/.next/standalone/apps/web/server.js
+DATABASE_URL="$MYSQL_DATABASE_URL" HOSTNAME=0.0.0.0 PORT=$PORT node apps/web/.next/standalone/apps/web/server.js
 ```
 
-This buildpack run command also runs migrations inline before the web server
-boots. Prefer a separate deploy-phase migration job when available; otherwise
-monitor deployment logs closely because a migration failure can surface as a
-public 5xx until the app is redeployed with a healthy runtime.
+This buildpack run command starts only the web server. Run migrations through a
+separate deploy-phase migration job before smoke tests.
 
 Required public URL env:
 
@@ -268,7 +265,8 @@ After deploy, smoke test:
 - `https://locateflow.com/dashboard`
 - `https://locateflow.com/api/auth/me`
 - `https://admin.locateflow.com/login`
-- `https://admin.locateflow.com/api/health`
+- `https://admin.locateflow.com/api/healthz`
+- authenticated admin `/api/health` from the admin UI after login
 - one `/_next/static/...` CSS or JS URL from each domain in browser dev tools
 - `https://locateflow.com/robots.txt` allows public routes and references `https://locateflow.com/sitemap.xml`
 - `https://locateflow.com/sitemap.xml` contains the public marketing/legal URLs

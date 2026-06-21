@@ -19,7 +19,7 @@
  *   - Self-hides when there is no active plan or no open tasks (and no pending
  *     undo), so it never adds an empty card to the dashboard.
  *
- * Honesty note: completion is LOCAL ONLY — it updates LocateFlow records, never
+ * Honesty note: completion is LOCAL ONLY — it updates Move records, never
  * external provider accounts. This strip is the fast path for users who already
  * know what "complete" means; the plan screen keeps the explanatory confirm.
  */

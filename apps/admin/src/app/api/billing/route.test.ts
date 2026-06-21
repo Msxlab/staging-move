@@ -130,6 +130,7 @@ describe("admin billing response privacy", () => {
       subscription({
         provider: "PLAY_STORE",
         purchaseToken: "raw-play-token",
+        purchaseTokenEncrypted: "enc_v1:encrypted-play-token",
         purchaseTokenHash: "hash-only",
       }),
     ]);
@@ -141,7 +142,9 @@ describe("admin billing response privacy", () => {
 
     expect(response.status).toBe(200);
     expect(serialized).not.toContain("raw-play-token");
+    expect(serialized).not.toContain("encrypted-play-token");
     expect(serialized).not.toContain("hash-only");
+    expect(serialized).not.toContain("purchaseTokenEncrypted");
     expect(serialized).not.toContain("purchaseTokenHash");
     expect(mocks.auditCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ action: "BILLING_DASHBOARD_VIEWED", entityType: "Subscription" }),

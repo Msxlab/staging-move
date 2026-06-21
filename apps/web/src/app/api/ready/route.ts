@@ -20,7 +20,6 @@ import { prisma } from "@/lib/db";
 import {
   buildReadinessReport,
   getReadinessConfigKeys,
-  summarizeReadinessForResponse,
 } from "@/lib/production-readiness";
 import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
 
@@ -62,12 +61,15 @@ export async function GET(request: NextRequest) {
   const dbReady = (await withTimeout(probeDatabase(), READINESS_PROBE_TIMEOUT_MS)) === true;
 
   const overallReady = report.ready && dbReady;
-  const summary = summarizeReadinessForResponse(report);
   const soft = request.nextUrl.searchParams.get("soft") === "1";
 
   return NextResponse.json(
     {
-      ...summary,
+      ready: overallReady,
+      productionLike: report.productionLike,
+      requiredOk: report.failCount === 0,
+      missingRequiredCount: report.failCount,
+      warningCount: report.warnCount,
       database: dbReady ? "ready" : "unavailable",
       ...(soft ? { soft: true, readinessStatus: overallReady ? 200 : 503 } : {}),
       timestamp: new Date().toISOString(),

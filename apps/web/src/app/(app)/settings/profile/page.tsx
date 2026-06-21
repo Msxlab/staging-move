@@ -242,10 +242,11 @@ export default function ProfileSettingsPage() {
   if (loadError) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 py-12">
-        <Link href="/settings">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-            <ArrowLeft className="h-4 w-4" />{copy.back}
-          </button>
+        <Link
+          href="/settings"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />{copy.back}
         </Link>
         <div className="rounded-2xl border border-destructive bg-destructive/5 p-6">
           <h1 className="text-xl font-semibold text-foreground">{copy.unavailable}</h1>
@@ -264,10 +265,11 @@ export default function ProfileSettingsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
       <div className="flex items-center gap-4">
-        <Link href="/settings">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-            <ArrowLeft className="h-4 w-4" />{copy.back}
-          </button>
+        <Link
+          href="/settings"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />{copy.back}
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">{copy.title}</h1>

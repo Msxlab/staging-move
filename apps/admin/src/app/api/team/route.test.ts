@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
   adminCreate: vi.fn(),
   permissionCreateMany: vi.fn(),
   auditCreate: vi.fn(),
+  issueSetPasswordToken: vi.fn(),
+  sendAdminInviteEmail: vi.fn(),
+  getAdminRuntimeConfigValues: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -34,10 +37,22 @@ vi.mock("bcryptjs", () => ({
   default: { hash: vi.fn(() => Promise.resolve("hashed-admin-password")) },
 }));
 
+vi.mock("@/lib/admin-invite", () => ({
+  issueSetPasswordToken: (...args: unknown[]) => mocks.issueSetPasswordToken(...args),
+}));
+
+vi.mock("@/lib/email", () => ({
+  sendAdminInviteEmail: (...args: unknown[]) => mocks.sendAdminInviteEmail(...args),
+}));
+
+vi.mock("@/lib/runtime-config", () => ({
+  getAdminRuntimeConfigValues: (...args: unknown[]) => mocks.getAdminRuntimeConfigValues(...args),
+}));
+
 import { POST } from "./route";
 
-function request(body: Record<string, unknown>) {
-  return new NextRequest("https://admin.locateflow.com/api/team", {
+function request(body: Record<string, unknown>, url = "https://admin.locateflow.com/api/team") {
+  return new NextRequest(url, {
     method: "POST",
     headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.10" },
     body: JSON.stringify(body),
@@ -55,6 +70,9 @@ const validBody = {
 describe("admin team create", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.APP_ENV;
+    delete process.env.ADMIN_APP_URL;
+    delete process.env.NEXT_PUBLIC_ADMIN_URL;
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
     mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
     mocks.adminFindUnique.mockResolvedValue(null);
@@ -67,6 +85,12 @@ describe("admin team create", () => {
     });
     mocks.permissionCreateMany.mockResolvedValue({});
     mocks.auditCreate.mockResolvedValue({});
+    mocks.issueSetPasswordToken.mockResolvedValue({
+      token: "invite-token",
+      expiresAt: new Date("2026-06-22T12:00:00.000Z"),
+    });
+    mocks.sendAdminInviteEmail.mockResolvedValue(true);
+    mocks.getAdminRuntimeConfigValues.mockResolvedValue({});
   });
 
   it("requires password confirmation before creating an admin", async () => {
@@ -127,5 +151,52 @@ describe("admin team create", () => {
         entityId: "admin_2",
       }),
     });
+  });
+
+  it("builds invite set-password links from the current admin origin when no admin URL is configured", async () => {
+    const response = await POST(request(
+      {
+        email: "new-admin@example.com",
+        firstName: "New",
+        lastName: "Admin",
+        role: "ADMIN",
+        confirmPassword: "admin-password",
+      },
+      "https://admin-staging.example.com/api/team",
+    ));
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(mocks.issueSetPasswordToken).toHaveBeenCalledWith({
+      adminUserId: "admin_2",
+      purpose: "INVITE",
+      createdBy: "admin_1",
+    });
+    expect(mocks.sendAdminInviteEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        setPasswordUrl: "https://admin-staging.example.com/set-password?token=invite-token",
+      }),
+    );
+    expect(body.setPasswordUrl).toBe("https://admin-staging.example.com/set-password?token=invite-token");
+  });
+
+  it("rejects insecure invite URL config in production-like runtimes before creating the admin", async () => {
+    process.env.APP_ENV = "staging";
+    mocks.getAdminRuntimeConfigValues.mockResolvedValue({
+      ADMIN_APP_URL: "http://admin-staging.locateflow.com",
+    });
+
+    const response = await POST(request({
+      email: "new-admin@example.com",
+      firstName: "New",
+      lastName: "Admin",
+      role: "ADMIN",
+      confirmPassword: "admin-password",
+    }));
+
+    expect(response.status).toBe(500);
+    expect(mocks.adminCreate).not.toHaveBeenCalled();
+    expect(mocks.issueSetPasswordToken).not.toHaveBeenCalled();
+    expect(mocks.sendAdminInviteEmail).not.toHaveBeenCalled();
   });
 });

@@ -29,7 +29,7 @@ COPY packages/db ./packages/db
 
 RUN pnpm --filter @locateflow/db exec prisma generate
 
-# Default command runs migrations then the admin seed.
+# Default command is migrate-only. Run admin bootstrap explicitly when needed;
 # Data seed (master) is intentionally NOT run in prod — operators decide.
-# The admin seed is required because admin login depends on an AdminUser row.
-CMD ["sh", "-lc", "pnpm --filter @locateflow/db exec prisma migrate deploy && pnpm --filter @locateflow/db exec tsx prisma/seed-admin.ts"]
+# deploys must never reset or reactivate an admin account as a side effect.
+CMD ["sh", "-lc", "pnpm --filter @locateflow/db exec prisma migrate deploy"]

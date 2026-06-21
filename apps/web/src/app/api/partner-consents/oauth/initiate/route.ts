@@ -9,6 +9,8 @@ import {
   isValidConnectorKey,
   userHasApiConnectorEntitlement,
 } from "@/lib/connector-oauth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
+import { assertWorkspaceAction, resolveWorkspaceDataScope } from "@/lib/workspace-data-scope";
 
 export const runtime = "nodejs";
 
@@ -31,7 +33,19 @@ export async function GET(request: NextRequest) {
   if (!(await isApiConnectorsEnabled())) {
     return NextResponse.json({ error: "Connectors are not enabled." }, { status: 503 });
   }
-  if (!(await userHasApiConnectorEntitlement(session.userId))) {
+
+  let entitlementUserId = session.userId;
+  try {
+    const scope = await resolveWorkspaceDataScope(request, session.userId);
+    assertWorkspaceAction(scope, "addressChange.initiate", { resourceUserId: session.userId });
+    entitlementUserId = scope.workspaceId ? scope.ownerUserId : session.userId;
+  } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
+    throw error;
+  }
+
+  if (!(await userHasApiConnectorEntitlement(entitlementUserId))) {
     return NextResponse.json({ error: "Your plan doesn't include partner API sync." }, { status: 403 });
   }
 

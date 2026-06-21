@@ -23,7 +23,7 @@ vi.mock("lucide-react", () => {
 });
 
 vi.mock("@/components/marketing/logo", () => ({
-  Wordmark: () => <span>LocateFlow</span>,
+  Wordmark: () => <span>Move</span>,
 }));
 
 vi.mock("@/lib/db", () => ({

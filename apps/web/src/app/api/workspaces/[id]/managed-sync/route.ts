@@ -20,7 +20,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const member = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const member = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json({
@@ -36,7 +38,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const member = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const member = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!statusAllowsMutation(member.status as WorkspaceMemberStatus)) {
     return NextResponse.json({ error: "Your workspace access is read-only right now." }, { status: 403 });

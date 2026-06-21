@@ -985,6 +985,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     validation: "minimum 32 characters",
   },
   {
+    key: "BACKUP_CRON_SECRET",
+    label: "Backup Cron Secret",
+    description:
+      "Optional narrower bearer secret for admin backup and backup-retention cron routes. When set, those routes reject CRON_SECRET and require this value.",
+    scope: "ADMIN",
+    category: "CRON",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    runtimeEditable: false,
+    usedBy: ["admin app", "backup cron/worker"],
+    validation: "minimum 32 characters when set",
+  },
+  {
     key: "INTERNAL_WEBHOOK_SECRET",
     label: "Internal Webhook Secret",
     description:
@@ -2179,6 +2193,7 @@ export function validateRuntimeConfigValueShape(
     USER_JWT_SECRET: 32,
     ADMIN_JWT_SECRET: 32,
     CRON_SECRET: 32,
+    BACKUP_CRON_SECRET: 32,
     INTERNAL_WEBHOOK_SECRET: 32,
     IMPERSONATION_HANDOFF_SECRET: 32,
     BACKUP_HMAC_SECRET: 32,

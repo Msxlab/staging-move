@@ -55,4 +55,28 @@ describe("readBuildInfo", () => {
       environment: "production",
     });
   });
+
+  it("prefers generated deployment identity over stale runtime env values", () => {
+    expect(readBuildInfo(
+      "web",
+      {
+        BUILD_COMMIT_SHA: "old-main-commit",
+        BUILD_SOURCE_BRANCH: "main",
+        BUILD_CREATED_AT: "2026-06-18T17:00:00Z",
+        APP_ENV: "staging",
+      },
+      {
+        commitSha: "57e6b6241a3d36d5a0cd086f1d8da6ddc50b4a24",
+        sourceBranch: "codex/staging-audit-2026-06-21",
+        builtAt: "2026-06-21T14:18:31.521Z",
+        environment: "production",
+      },
+    )).toEqual({
+      service: "web",
+      commitSha: "57e6b6241a3d36d5a0cd086f1d8da6ddc50b4a24",
+      sourceBranch: "codex/staging-audit-2026-06-21",
+      builtAt: "2026-06-21T14:18:31.521Z",
+      environment: "staging",
+    });
+  });
 });

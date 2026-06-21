@@ -161,11 +161,12 @@ const config: Config = {
         "2xl": "28px",
       },
       fontFamily: {
-        // Edition VI · Geist for UI, Fraunces for display, Geist Mono for meta.
-        sans: ["Geist", "Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
-        display: ["Fraunces", "Didot", "Georgia", "serif"],
-        serif: ["Fraunces", "Didot", "Georgia", "serif"],
-        mono: ["Geist Mono", "JetBrains Mono", "Consolas", "Courier New", "monospace"],
+        // Move design system: DM Sans for UI, Playfair Display for display,
+        // DM Mono for numerals/meta. CSS vars are populated in app/layout.tsx.
+        sans: ["var(--font-sans)", '"DM Sans"', "Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        display: ["var(--font-display)", '"Playfair Display"', "Didot", "Georgia", "serif"],
+        serif: ["var(--font-display)", '"Playfair Display"', "Didot", "Georgia", "serif"],
+        mono: ["var(--font-mono)", '"DM Mono"', "Geist Mono", "JetBrains Mono", "Consolas", "Courier New", "monospace"],
       },
       fontSize: {
         // Canonical type scale — Edition VI (px values match colors_and_type.css).

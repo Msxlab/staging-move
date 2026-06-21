@@ -595,10 +595,11 @@ export function ServicesClient({
                 ))}
               </div>
             </div>
-            <Link href={providerGapHref} className="shrink-0">
-              <button className="inline-flex items-center gap-2 rounded-xl border border-tone-honey-br bg-background px-4 py-2 text-sm font-semibold text-tone-honey-fg transition hover:bg-tone-honey-bg">
-                Add recommended picks <ArrowRight className="h-4 w-4" />
-              </button>
+            <Link
+              href={providerGapHref}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-tone-honey-br bg-background px-4 py-2 text-sm font-semibold text-tone-honey-fg transition hover:bg-tone-honey-bg"
+            >
+              Add recommended picks <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           {providerGapItems.length > 0 && (
