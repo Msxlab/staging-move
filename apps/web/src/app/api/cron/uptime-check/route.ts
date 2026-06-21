@@ -89,16 +89,26 @@ export function evaluateProbeResponse(
 }
 
 /**
- * Probe targets. Hard-coded to the public production surfaces by design (the
- * monitor exists to see what a real visitor sees); UPTIME_*_BASE_URL env
- * overrides exist for staging/local smoke tests only.
+ * Probe targets. Explicit production defaults to the public production
+ * surfaces (what a real visitor sees). Staging/preview/local should provide
+ * UPTIME_* overrides and otherwise fall back to localhost so a misconfigured
+ * staging cron never probes production by accident.
  */
+function isExplicitProductionUptimeRuntime(): boolean {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return appEnv === "production" || (!appEnv && process.env.NODE_ENV === "production");
+}
+
 export function buildTargets(): UptimeTarget[] {
-  const webBase = (process.env.UPTIME_WEB_BASE_URL || "https://locateflow.com").replace(/\/+$/, "");
+  const productionRuntime = isExplicitProductionUptimeRuntime();
+  const webBase = (
+    process.env.UPTIME_WEB_BASE_URL ||
+    (productionRuntime ? "https://locateflow.com" : "http://localhost:3000")
+  ).replace(/\/+$/, "");
   const adminBase = (
     process.env.UPTIME_ADMIN_BASE_URL ||
     process.env.NEXT_PUBLIC_ADMIN_URL ||
-    "https://admin.locateflow.com"
+    (productionRuntime ? "https://admin.locateflow.com" : "http://localhost:3001")
   ).replace(/\/+$/, "");
   return [
     {

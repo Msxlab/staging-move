@@ -402,10 +402,12 @@ export default function MovingPlanDetailClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/moving">
-            <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
-              <ArrowLeft className="h-4 w-4" />
-            </button>
+          <Link
+            href="/moving"
+            className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition"
+            aria-label="Back to moving"
+          >
+            <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2 flex-wrap">
@@ -753,10 +755,11 @@ export default function MovingPlanDetailClient({
                         <p className="text-[10px] text-tone-orange-fg truncate">Rec: {item.recommendedProvider.name}</p>
                       )}
                     </div>
-                    <Link href={newHref}>
-                      <button className="shrink-0 px-2 py-1 rounded-lg bg-tone-orange-bg text-tone-orange-fg text-[10px] font-medium hover:bg-tone-orange-bg transition">
-                        Browse
-                      </button>
+                    <Link
+                      href={newHref}
+                      className="shrink-0 px-2 py-1 rounded-lg bg-tone-orange-bg text-tone-orange-fg text-[10px] font-medium hover:bg-tone-orange-bg transition"
+                    >
+                      Browse
                     </Link>
                   </div>
                 );

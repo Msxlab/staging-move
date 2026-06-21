@@ -1,6 +1,6 @@
 # Project Map
 
-Updated: 2026-06-15
+Updated: 2026-06-21
 
 Evidence basis: generated inventory, manifests, config, source, Prisma schema/migrations, tests list, CI, Docker. Existing docs were not used as audit evidence.
 
@@ -33,6 +33,7 @@ Evidence basis: generated inventory, manifests, config, source, Prisma schema/mi
 - Middleware: auth edge check, public path allowlists, CSRF, body limits, rate limits, cron/internal prelimits, CSP, security headers, noindex.
 - Auth: user password login, OAuth, mobile Bearer sessions, email verification, MFA, password reset, account restore/delete.
 - Product flows: addresses, services, budget, moving plans, move tasks, providers, recommendations, exports, notifications, tickets, workspaces, movers.
+- Partner/mover self-service portal magic links are hashed DB tokens stored in httpOnly cookies with a 24-hour TTL and active-status revalidation on each request.
 - Billing: Stripe checkout/portal/webhooks, mobile IAP products/verify, subscription actions.
 - Integrations: provider catalog, maps/static proxy, partner consents/connectors, cron jobs, internal webhooks.
 
@@ -48,6 +49,7 @@ Evidence basis: generated inventory, manifests, config, source, Prisma schema/mi
 - Auth token stored through SecureStore-backed auth store.
 - API client enforces HTTPS/default production API in release builds.
 - OAuth PKCE stored in SecureStore and exchanged server-side.
+- Mobile OAuth handoff rows require a stored PKCE `codeChallenge`; exchange requires the matching verifier before session creation.
 - IAP uses expo-iap and server-side verification before finishing transactions.
 - App-lock uses platform local authentication.
 
@@ -62,8 +64,8 @@ Evidence basis: generated inventory, manifests, config, source, Prisma schema/mi
 
 - CI runs lint/typecheck, package tests, dependency audit, gitleaks, Prisma validate, provider audits, and gated production migrate.
 - Scheduled cron workflow calls production `/api/cron/*` endpoints with `CRON_SECRET`.
-- Dockerfile runtime currently runs `prisma migrate deploy` before starting web server.
-- Production compose also models a one-shot migrate service before app services.
+- Root Dockerfile and root `pnpm start` now start the web server without running migrations.
+- Production compose and `docker/migrate.Dockerfile` model a one-shot migrate service before app services.
 
 ## First-Pass Incomplete Areas
 

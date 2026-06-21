@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOAuthRedirectUri, getOAuthResponseUrl } from "@/lib/oauth";
-import { getUserSession } from "@/lib/user-auth";
+import { getUserSession, shouldUseSecureSessionCookies } from "@/lib/user-auth";
 import {
   exchangeConnectorCode,
   getConnectorOAuthConfig,
@@ -15,10 +15,21 @@ export const runtime = "nodejs";
 
 const CALLBACK_PATH = "/api/partner-consents/oauth/callback";
 
+function expireOAuthCookie(res: NextResponse, name: string) {
+  res.cookies.set(name, "", {
+    httpOnly: true,
+    secure: shouldUseSecureSessionCookies(),
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    expires: new Date(0),
+  });
+}
+
 function clearCookies(res: NextResponse): NextResponse {
-  res.cookies.delete("pc_oauth_state");
-  res.cookies.delete("pc_oauth_pkce");
-  res.cookies.delete("pc_oauth_connector");
+  expireOAuthCookie(res, "pc_oauth_state");
+  expireOAuthCookie(res, "pc_oauth_pkce");
+  expireOAuthCookie(res, "pc_oauth_connector");
   return res;
 }
 

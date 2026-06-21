@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 vi.mock("@/lib/db", () => ({
   prisma: {
     workspaceMember: { findFirst: vi.fn(), count: vi.fn() },
-    workspace: { findUnique: vi.fn(), update: vi.fn() },
+    workspace: { findFirst: vi.fn(), updateMany: vi.fn() },
   },
 }));
 vi.mock("@/lib/user-auth", () => ({ getUserSession: vi.fn() }));
@@ -16,8 +16,8 @@ import { GET, PATCH } from "./route";
 
 const memberMock = prisma.workspaceMember.findFirst as unknown as Mock;
 const countMock = prisma.workspaceMember.count as unknown as Mock;
-const wsFindMock = prisma.workspace.findUnique as unknown as Mock;
-const wsUpdateMock = prisma.workspace.update as unknown as Mock;
+const wsFindMock = prisma.workspace.findFirst as unknown as Mock;
+const wsUpdateMock = prisma.workspace.updateMany as unknown as Mock;
 const sessionMock = getUserSession as unknown as Mock;
 const gateMock = workspaceFeatureGate as unknown as Mock;
 const planLabelMock = planLabelForOwner as unknown as Mock;
@@ -38,7 +38,7 @@ describe("PATCH /api/workspaces/[id] — rename household", () => {
     vi.clearAllMocks();
     gateMock.mockResolvedValue(null);
     sessionMock.mockResolvedValue({ userId: CALLER });
-    wsUpdateMock.mockImplementation(({ where, data }: any) => Promise.resolve({ id: where.id, name: data.name }));
+    wsUpdateMock.mockResolvedValue({ count: 1 });
   });
 
   it("404s when the workspace feature is off (gate short-circuits)", async () => {
@@ -92,7 +92,26 @@ describe("PATCH /api/workspaces/[id] — rename household", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.name).toBe("The Smiths");
-    expect(wsUpdateMock).toHaveBeenCalledWith({ where: { id: "ws-1" }, data: { name: "The Smiths" }, select: { id: true, name: true } });
+    expect(memberMock).toHaveBeenCalledWith({
+      where: { workspaceId: "ws-1", userId: CALLER, workspace: { deletedAt: null } },
+    });
+    expect(wsUpdateMock).toHaveBeenCalledWith({
+      where: { id: "ws-1", deletedAt: null },
+      data: { name: "The Smiths" },
+    });
+  });
+
+  it("404s instead of renaming a soft-deleted workspace", async () => {
+    memberMock.mockResolvedValue({ id: "m", userId: CALLER, role: "OWNER", status: "ACTIVE" });
+    wsUpdateMock.mockResolvedValueOnce({ count: 0 });
+
+    const res = await PATCH(patchReq({ name: "Archived" }), params);
+
+    expect(res.status).toBe(404);
+    expect(wsUpdateMock).toHaveBeenCalledWith({
+      where: { id: "ws-1", deletedAt: null },
+      data: { name: "Archived" },
+    });
   });
 });
 
@@ -118,5 +137,19 @@ describe("GET /api/workspaces/[id]", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toMatchObject({ id: "ws-1", name: "Home", role: "OWNER", memberCount: 3, planLabel: "Family" });
+    expect(memberMock).toHaveBeenCalledWith({
+      where: { workspaceId: "ws-1", userId: CALLER, workspace: { deletedAt: null } },
+    });
+    expect(wsFindMock).toHaveBeenCalledWith({ where: { id: "ws-1", deletedAt: null } });
+  });
+
+  it("404s when the membership row remains but the workspace is soft-deleted", async () => {
+    memberMock.mockResolvedValue({ id: "m", userId: CALLER, role: "OWNER", status: "ACTIVE" });
+    wsFindMock.mockResolvedValue(null);
+
+    const res = await GET(new Request("http://localhost/api/workspaces/ws-1") as any, params);
+
+    expect(res.status).toBe(404);
+    expect(countMock).not.toHaveBeenCalled();
   });
 });

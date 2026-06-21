@@ -116,7 +116,6 @@ WORKDIR /app
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates openssl wget \
  && rm -rf /var/lib/apt/lists/* \
- && npm install -g prisma@5.22.0 \
  && groupadd --system --gid 1001 nodejs \
  && useradd --system --uid 1001 --gid nodejs nextjs
 
@@ -138,4 +137,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD wget -q --spider "http://127.0.0.1:${PORT:-8080}/api/health" || exit 1
 
-CMD ["sh", "-c", "export DATABASE_URL=\"${DATABASE_URL:-$MYSQL_DATABASE_URL}\"; if [ -z \"$DATABASE_URL\" ]; then echo 'DATABASE_URL or MYSQL_DATABASE_URL is required'; exit 1; fi; prisma migrate deploy --schema packages/db/prisma/schema.prisma && exec node apps/web/server.js"]
+CMD ["sh", "-c", "export DATABASE_URL=\"${DATABASE_URL:-$MYSQL_DATABASE_URL}\"; if [ -z \"$DATABASE_URL\" ]; then echo 'DATABASE_URL or MYSQL_DATABASE_URL is required'; exit 1; fi; exec node apps/web/server.js"]

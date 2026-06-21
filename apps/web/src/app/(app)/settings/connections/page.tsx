@@ -140,11 +140,12 @@ export default function ConnectionsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
       <div className="flex items-center gap-4">
-        <Link href="/settings">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
+        <Link
+          href="/settings"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Connections</h1>

@@ -89,8 +89,8 @@ describe("mobile OAuth exchange route", () => {
   });
 
   it("tolerates safe mobile retry bursts under the exchange policy", async () => {
-    await POST(request({ code: "a".repeat(32) }));
-    await POST(request({ code: "b".repeat(32) }));
+    await POST(request({ code: "a".repeat(32), code_verifier: "A".repeat(43) }));
+    await POST(request({ code: "b".repeat(32), code_verifier: "B".repeat(43) }));
 
     expect(mocks.createUserSession).toHaveBeenCalledTimes(2);
   });
@@ -102,7 +102,7 @@ describe("mobile OAuth exchange route", () => {
       policy: { userFacingErrorCode: "MOBILE_OAUTH_RATE_LIMITED" },
     });
 
-    const response = await POST(request({ code: "a".repeat(32) }));
+    const response = await POST(request({ code: "a".repeat(32), code_verifier: "A".repeat(43) }));
     const body = await response.json();
 
     expect(response.status).toBe(429);
@@ -126,16 +126,12 @@ describe("mobile OAuth exchange route", () => {
   });
 
   it("rejects exchanges without a PKCE verifier", async () => {
-    (mocks.consumeMobileOAuthExchangeCode as Mock).mockResolvedValue({
-      ok: false,
-      error: "PKCE_VERIFIER_REQUIRED",
-    });
-
     const response = await POST(request({ code: "a".repeat(32) }));
     const body = await response.json();
 
     expect(response.status).toBe(400);
-    expect(body.code).toBe("PKCE_VERIFIER_REQUIRED");
+    expect(body.error).toBe("Validation failed");
+    expect(mocks.consumeMobileOAuthExchangeCode).not.toHaveBeenCalled();
     expect(mocks.createUserSession).not.toHaveBeenCalled();
   });
 });

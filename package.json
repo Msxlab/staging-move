@@ -5,7 +5,7 @@
   "scripts": {
     "postinstall": "pnpm --filter @locateflow/db generate",
     "dev": "turbo dev",
-    "start": "pnpm db:migrate:deploy && pnpm --filter @locateflow/web start",
+    "start": "pnpm --filter @locateflow/web start",
     "web:prepare-standalone": "node scripts/prepare-web-standalone.mjs",
     "admin:prepare-standalone": "node scripts/prepare-admin-standalone.mjs",
     "build": "turbo build",

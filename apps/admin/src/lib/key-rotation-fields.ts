@@ -33,6 +33,8 @@ export const ENCRYPTED_MODELS: EncryptedModel[] = [
   { model: "adminUser", idField: "id", fields: ["mfaSecret"] },
   // Encrypted runtime config secrets (API keys, connector credentials).
   { model: "runtimeConfigEntry", idField: "id", fields: ["valueEncrypted"] },
+  // Mobile store purchase tokens are encrypted before persistence.
+  { model: "subscription", idField: "id", fields: ["purchaseTokenEncrypted"] },
   // Partner OAuth access/refresh tokens.
   { model: "partnerConsent", idField: "id", fields: ["tokenEncrypted", "refreshTokenEncrypted"] },
   // Connector outbox: partner confirmation numbers + the canonical payload snapshot.

@@ -1,5 +1,7 @@
 import type { ApiResponse } from "./types";
 
+type ApiHeaderValue = string | number | boolean | null | undefined;
+
 export interface ApiClientConfig {
   baseUrl: string;
   getToken: () => Promise<string | null>;
@@ -20,6 +22,7 @@ export interface ApiClientConfig {
    * forbid setting User-Agent (the X-Client-Platform header still works).
    */
   userAgent?: string;
+  getAdditionalHeaders?: () => Promise<Record<string, ApiHeaderValue>> | Record<string, ApiHeaderValue>;
   onUnauthorized?: () => void | Promise<void>;
   onError?: (error: Error) => void;
   timeoutMs?: number;
@@ -117,11 +120,21 @@ export class ApiClient {
     }
   }
 
+  private async applyAdditionalHeaders(headers: Record<string, string>): Promise<void> {
+    const extraHeaders = await this.config.getAdditionalHeaders?.();
+    if (!extraHeaders || typeof extraHeaders !== "object") return;
+    for (const [key, value] of Object.entries(extraHeaders)) {
+      if (!key || value === null || value === undefined || value === "") continue;
+      headers[key] = String(value);
+    }
+  }
+
   private async getHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
     this.applyClientHeaders(headers);
+    await this.applyAdditionalHeaders(headers);
     const token = await this.config.getToken();
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -289,6 +302,7 @@ export class ApiClient {
       const token = await this.config.getToken();
       const headers: Record<string, string> = {};
       this.applyClientHeaders(headers);
+      await this.applyAdditionalHeaders(headers);
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }

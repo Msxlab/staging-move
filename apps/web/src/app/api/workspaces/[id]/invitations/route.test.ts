@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   workspaceInvitationFindFirst: vi.fn(),
   workspaceInvitationCount: vi.fn(),
   workspaceInvitationCreate: vi.fn(),
-  workspaceFindUnique: vi.fn(),
+  workspaceFindFirst: vi.fn(),
   subscriptionFindUnique: vi.fn(),
   userFindUnique: vi.fn(),
   transaction: vi.fn(),
@@ -45,7 +45,7 @@ vi.mock("@/lib/db", () => ({
       count: (...args: unknown[]) => mocks.workspaceInvitationCount(...args),
       create: (...args: unknown[]) => mocks.workspaceInvitationCreate(...args),
     },
-    workspace: { findUnique: (...args: unknown[]) => mocks.workspaceFindUnique(...args) },
+    workspace: { findFirst: (...args: unknown[]) => mocks.workspaceFindFirst(...args) },
     subscription: { findUnique: (...args: unknown[]) => mocks.subscriptionFindUnique(...args) },
     user: { findUnique: (...args: unknown[]) => mocks.userFindUnique(...args) },
     $transaction: (...args: unknown[]) => mocks.transaction(...args),
@@ -87,7 +87,7 @@ beforeEach(() => {
     if (where.userId === "owner-1") return Promise.resolve({ id: "caller", role: "OWNER", status: "ACTIVE" });
     return Promise.resolve(null);
   });
-  mocks.workspaceFindUnique.mockResolvedValue({ ownerUserId: "owner-1", name: "Family Home" });
+  mocks.workspaceFindFirst.mockResolvedValue({ ownerUserId: "owner-1", name: "Family Home" });
   mocks.subscriptionFindUnique.mockResolvedValue({ plan: "FAMILY", status: "ACTIVE" });
   mocks.userFindUnique.mockImplementation(({ where }: any) => {
     if (where.email) return Promise.resolve({ id: "invitee-1", preferredLocale: "en" });
@@ -123,6 +123,13 @@ describe("POST /api/workspaces/[id]/invitations", () => {
     const res = await POST(req({ email: "Invitee@Example.com", role: "MEMBER" }), params);
 
     expect(res.status).toBe(200);
+    expect(mocks.workspaceMemberFindFirst).toHaveBeenCalledWith({
+      where: { workspaceId: "ws-1", userId: "owner-1", workspace: { deletedAt: null } },
+    });
+    expect(mocks.workspaceFindFirst).toHaveBeenCalledWith({
+      where: { id: "ws-1", deletedAt: null },
+      select: { ownerUserId: true, name: true },
+    });
     expect(txOptions()).toMatchObject({ isolationLevel: "Serializable" });
     expect(mocks.workspaceMemberCount).toHaveBeenCalledWith({
       where: { workspaceId: "ws-1", status: { not: "SUSPENDED" } },
@@ -144,6 +151,16 @@ describe("POST /api/workspaces/[id]/invitations", () => {
 
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({ error: "Workspace is at its seat limit." });
+    expect(mocks.workspaceInvitationCreate).not.toHaveBeenCalled();
+  });
+
+  it("404s without creating an invite when the active workspace lookup fails", async () => {
+    mocks.workspaceFindFirst.mockResolvedValue(null);
+
+    const res = await POST(req({ email: "invitee@example.com", role: "MEMBER" }), params);
+
+    expect(res.status).toBe(404);
+    expect(mocks.transaction).not.toHaveBeenCalled();
     expect(mocks.workspaceInvitationCreate).not.toHaveBeenCalled();
   });
 

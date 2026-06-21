@@ -39,7 +39,7 @@ function HexIndividual({ size = 80 }: SizeProps) {
         textAnchor="middle"
         fill="#fff"
         style={{
-          fontFamily: "var(--font-display, Fraunces, Georgia, serif)",
+          fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontSize: 22,
           fontWeight: 400,
           fontStyle: "italic",
@@ -75,7 +75,7 @@ function HexFamily({ size = 80 }: SizeProps) {
         textAnchor="middle"
         fill="#4FD1B5"
         style={{
-          fontFamily: "var(--font-display, Fraunces, Georgia, serif)",
+          fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontSize: 22,
           fontWeight: 400,
           fontStyle: "italic",
@@ -181,7 +181,7 @@ function MedalIndividual({ size = 80 }: SizeProps) {
         textAnchor="middle"
         fill="#fff"
         style={{
-          fontFamily: "var(--font-display, Fraunces, Georgia, serif)",
+          fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontSize: 22,
           fontStyle: "italic",
           fontWeight: 400,
@@ -224,7 +224,7 @@ function MedalFamily({ size = 80 }: SizeProps) {
         textAnchor="middle"
         fill="#4FD1B5"
         style={{
-          fontFamily: "var(--font-display, Fraunces, Georgia, serif)",
+          fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontSize: 22,
           fontStyle: "italic",
           fontWeight: 400,
@@ -456,7 +456,7 @@ function StampIndividual({ size = 80 }: SizeProps) {
         textAnchor="middle"
         fill="#fff"
         style={{
-          fontFamily: "var(--font-display, Fraunces, Georgia, serif)",
+          fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontSize: 16,
           fontStyle: "italic",
           fontWeight: 400,
@@ -502,7 +502,7 @@ function StampFamily({ size = 80 }: SizeProps) {
         textAnchor="middle"
         fill="#4FD1B5"
         style={{
-          fontFamily: "var(--font-display, Fraunces, Georgia, serif)",
+          fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontSize: 16,
           fontStyle: "italic",
           fontWeight: 400,

@@ -95,6 +95,7 @@ describe("admin auth sessions route", () => {
     }));
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     const body = await response.json();
     expect(body.sessions[0]).not.toHaveProperty("id");
     expect(body.sessions[0].displayId).toMatch(/^sess_/);
@@ -131,6 +132,7 @@ describe("admin auth sessions route", () => {
     }));
     const body = await response.json();
 
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body.sessions[0].adminUser.email).toBe("ad***@example.com");
     expect(body.sessions[0].ipAddress).toBe("198.51.100.0");
     expect(body.sessions[0]).not.toHaveProperty("id");
@@ -181,6 +183,7 @@ describe("admin auth sessions route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(403);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body.requiresMfa).toBe(true);
     expect(mocks.requireRole).toHaveBeenCalledWith("SUPER_ADMIN");
     expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
@@ -229,6 +232,7 @@ describe("admin auth sessions route", () => {
     const response = await POST(request({ action: "revoke", sessionHandle: revokeHandle }));
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(mocks.sessionUpdate).toHaveBeenCalledWith({
       where: { id: "session_current" },
       data: { isActive: false },
@@ -254,6 +258,7 @@ describe("admin auth sessions route", () => {
     }));
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(mocks.requireRole).toHaveBeenCalledWith("SUPER_ADMIN");
     expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ adminId: "admin_1" }),

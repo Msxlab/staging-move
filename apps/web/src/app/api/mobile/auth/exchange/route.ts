@@ -13,16 +13,14 @@ export const runtime = "nodejs";
 
 const exchangeSchema = z.object({
   code: z.string().min(16).max(300),
-  // Optional PKCE code_verifier. New mobile builds always send this;
-  // older builds omit it. The server enforces presence based on the
-  // MobileOAuthCode row's stored codeChallenge — see
-  // consumeMobileOAuthExchangeCode for the policy.
+  // Required PKCE code_verifier. Mobile OAuth init requires a code_challenge and
+  // every exchange must prove possession of the matching verifier before a
+  // session token can be minted.
   code_verifier: z
     .string()
     .min(43)
     .max(128)
-    .regex(/^[A-Za-z0-9_-]+$/)
-    .optional(),
+    .regex(/^[A-Za-z0-9_-]+$/),
 });
 
 export async function POST(request: NextRequest) {

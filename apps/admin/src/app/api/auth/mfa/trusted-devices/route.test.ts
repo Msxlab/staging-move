@@ -80,6 +80,7 @@ describe("admin MFA trusted devices route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body.devices[0]).toMatchObject({
       id: "device_1",
       deviceLabel: "Chrome on Windows",
@@ -103,6 +104,7 @@ describe("admin MFA trusted devices route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body).toMatchObject({ success: true, revoked: 1, currentDeviceRevoked: true });
     expect(mocks.updateMany).toHaveBeenCalledWith({
       where: { id: "device_1", revokedAt: null },

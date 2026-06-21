@@ -1,6 +1,6 @@
 # Active Deployment Environment Inventory
 
-Current branch: `pr/staging-qa-fixes`
+Current local audit branch: `codex/staging-audit-2026-06-21`
 
 Current active targets are DigitalOcean App Platform components on the real domains:
 
@@ -14,8 +14,16 @@ The temporary `https://locateflow-staging-owew7.ondigitalocean.app` URL is legac
 
 | Component | Domain | Purpose | Build command | Run command |
 |---|---|---|---|---|
-| `web-staging` | `locateflow.com`, `www.locateflow.com` | User app and API | `DATABASE_URL="$MYSQL_DATABASE_URL" pnpm db:generate && DATABASE_URL="$MYSQL_DATABASE_URL" pnpm --filter @locateflow/web build && pnpm web:prepare-standalone` | `DATABASE_URL="$MYSQL_DATABASE_URL" pnpm db:migrate:deploy && DATABASE_URL="$MYSQL_DATABASE_URL" HOSTNAME=0.0.0.0 PORT=$PORT node apps/web/.next/standalone/apps/web/server.js` |
+| `web-staging` | `locateflow.com`, `www.locateflow.com` | User app and API | `DATABASE_URL="$MYSQL_DATABASE_URL" pnpm db:generate && DATABASE_URL="$MYSQL_DATABASE_URL" pnpm --filter @locateflow/web build && pnpm web:prepare-standalone` | `DATABASE_URL="$MYSQL_DATABASE_URL" HOSTNAME=0.0.0.0 PORT=$PORT node apps/web/.next/standalone/apps/web/server.js` |
 | `admin-staging` | `admin.locateflow.com` | Admin console | `DATABASE_URL="${MYSQL_DATABASE_URL:-$DATABASE_URL}" pnpm db:generate && DATABASE_URL="${MYSQL_DATABASE_URL:-$DATABASE_URL}" pnpm --filter @locateflow/admin build && pnpm admin:prepare-standalone` | `DATABASE_URL="${MYSQL_DATABASE_URL:-$DATABASE_URL}" HOSTNAME=0.0.0.0 PORT=$PORT node apps/admin/.next/standalone/apps/admin/server.js` |
+
+## Cron Scheduler Owner
+
+For the active DigitalOcean App Platform domains, `.github/workflows/cron.yml`
+is the scheduler owner. If a self-hosted Docker/Ofelia deployment owns those
+same domains instead, set GitHub repository variable
+`CRON_SCHEDULER_DISABLED=true` or stop Ofelia. Do not run both schedulers
+against the same app.
 
 Required active URL values:
 
@@ -67,6 +75,7 @@ Use separate values for:
 - `FIELD_ENCRYPTION_KEY`
 - `INTERNAL_WEBHOOK_SECRET`
 - `CRON_SECRET`
+- `BACKUP_CRON_SECRET` (recommended for admin backup cron)
 - `IMPERSONATION_HANDOFF_SECRET`
 
 Place secrets in:
@@ -86,12 +95,13 @@ Place secrets in:
 | `ADMIN_JWT_SECRET` | Required if admin handoff validates admin JWT | Required | No | Required | Yes | Server-only | Admin auth fails. |
 | `FIELD_ENCRYPTION_KEY` | Required | Required | No | Required | Yes | Server-only | Production encryption/backup safety blocked. |
 | `NEXT_PUBLIC_APP_URL` | Required | Required for links/impersonation return URLs | No | Required | No | Public/client-safe | OAuth/email/portal links may point to wrong host. |
-| `NEXT_PUBLIC_ADMIN_URL` | Recommended for staging URL inventory | Recommended for admin staging URL inventory | No | Optional | No | Public/client-safe | Wrong or missing value can confuse operator links and future admin deep links. |
+| `NEXT_PUBLIC_ADMIN_URL` | Required for admin links/readiness | Required for admin links/readiness | No | Required | No | Public/client-safe | Admin digest/uptime/alert links may point to fallback hosts. |
 | `NODE_ENV` | Vercel sets | Vercel sets | EAS sets build env | Vercel sets | No | Server-only | Do not override unless needed. |
 | `APP_ENV` | Required: `production` on active real domains | Required: `production` on active admin domain | Not used | Required | No | Server-only | Controls billing/live-mode assumptions and SEO indexing; staging/preview blocks public indexing. |
 | `WEB_INTERNAL_URL` | No | Optional for admin-to-web internal calls | No | Recommended | No | Server-only | Admin impersonation may fall back to `NEXT_PUBLIC_APP_URL`. |
 | `INTERNAL_WEBHOOK_SECRET` | Required | Required | No | Required | Yes | Server-only | Internal webhooks disabled/fail closed. |
-| `CRON_SECRET` | Required for web cron | Required for admin backup cron | No | Required | Yes | Server-only | Scheduled jobs cannot run safely. |
+| `CRON_SECRET` | Required for web cron | Required fallback for admin backup cron | No | Required | Yes | Server-only | Scheduled jobs cannot run safely. |
+| `BACKUP_CRON_SECRET` | No | Recommended for admin backup/retention cron | No | Recommended | Yes | Server-only | If absent, backup cron falls back to the broader `CRON_SECRET`. |
 | `IMPERSONATION_HANDOFF_SECRET` | Required for web handoff endpoint | Required for admin handoff issuer | No | Required | Yes | Server-only | Admin impersonation unavailable. |
 | `GOOGLE_OAUTH_CLIENT_ID` | Optional staging | No | No native token handoff required for current preview | Optional | No | Public OAuth ID | Google sign-in stays disabled. |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | Optional staging | No | No | Optional | Yes | Server-only | Google sign-in stays disabled. |
@@ -120,6 +130,7 @@ Place secrets in:
 | `GOOGLE_PLAY_RTDN_AUDIENCE` | Required for production-like Play webhook tests | Admin readiness context | No | Required for live Android RTDN | No | URL | Production webhook rejects without it. |
 | `RESEND_API_KEY` | Required for email tests | Required for alert email delivery | No | Required | Yes | Server-only | Password reset/email verification cannot be fully tested. |
 | `EMAIL_FROM` | Required for email tests | Required if admin sends email | No | Required | No | Server-only config | Email sends may fail or use fallback. |
+| `SUPPORT_EMAIL` | Required for email/support copy | Required for email/support copy | No | Required | No | Server-only config | Email readiness fails or replies use fallback. |
 | `ALERT_EMAIL_FROM` | Optional | Required for alert sender test | No | Recommended | No | Server-only config | Alert email sender may be fallback. |
 | `ALERT_EMAIL_TO` | Optional | Required for alert delivery test | No | Recommended | No | Server-only config | Security/ops alert delivery cannot be validated. |
 | `NEXT_PUBLIC_SENTRY_DSN` | Optional staging, required for monitoring validation | Optional staging, required for monitoring validation | Optional, public | Recommended production | No | Public DSN | Error capture cannot be validated. |
@@ -129,6 +140,7 @@ Place secrets in:
 | `SENTRY_PROJECT` | Only needed for source map upload if configured | Same | No | Optional | No | CI/build-only | No source map release upload. |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Optional public fallback | Optional public fallback | No | Optional if maps shown client-side | No | Public/client-safe | Address autocomplete may be unavailable. |
 | `GOOGLE_MAPS_API_KEY` | Optional server-side address autocomplete | Optional admin fallback | No | Recommended | Yes | Server-only | Address autocomplete may be unavailable. |
+| `GEOAPIFY_API_KEY` | Optional route-map static proxy | Optional route-map static proxy | No | Optional, recommended for map QA | Yes | Server-only/runtime config | Route maps fall back to stylized placeholders. |
 | `PLACES_AUTOCOMPLETE_ENABLED` | Optional kill switch, default enabled | Optional visibility | No | Recommended | No | Server-only/runtime config | Set `false` to stop Google Places calls without redeploying. |
 | `PLACES_AUTOCOMPLETE_DAILY_USER_LIMIT` | Optional, default `250` | No | No | Recommended | No | Server-only | Controls per-user daily prediction calls. |
 | `PLACES_AUTOCOMPLETE_DAILY_IP_LIMIT` | Optional, default `1000` | No | No | Recommended | No | Server-only | Controls per-IP daily prediction calls. |

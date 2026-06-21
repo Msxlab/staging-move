@@ -25,8 +25,7 @@ export function LogoMark({
 
 /**
  * Full wordmark lockup — mark + "Locateflow" with italic foil "flow" segment.
- * Uses Fraunces variable font (loaded globally via --fraunces CSS var) to
- * match the editorial display in the design system.
+ * Uses the canonical display CSS variable from the Move design system.
  */
 export function Wordmark({
   href = "/",
@@ -43,8 +42,7 @@ export function Wordmark({
       <span
         className="text-[22px] leading-none text-foreground"
         style={{
-          fontFamily: "var(--fraunces), Didot, Georgia, serif",
-          fontVariationSettings: "'opsz' 96, 'SOFT' 40",
+          fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontWeight: 400,
         }}
       >

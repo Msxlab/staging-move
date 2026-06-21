@@ -3,8 +3,8 @@
 // An approved mover manages its own listing without a password: it requests a
 // magic link by email, and the link carries an opaque token. We store only the
 // token's sha256 hash (MoverPortalToken), put the raw token in an httpOnly
-// cookie, and validate it per request — the token IS the session (multi-day
-// TTL, invalidated by revokedAt or expiry). Reuses the same opaque-token
+// cookie, and validate it per request. The token IS the session (24-hour TTL,
+// invalidated by revokedAt or expiry). Reuses the same opaque-token
 // helpers the email-verification / password-reset flows use.
 //
 // Privacy: a login request NEVER reveals whether an email matches an approved
@@ -13,10 +13,10 @@
 
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { generateOpaqueToken, hashOpaqueToken } from "@/lib/user-auth";
+import { generateOpaqueToken, hashOpaqueToken, shouldUseSecureSessionCookies } from "@/lib/user-auth";
 
 export const MOVER_PORTAL_COOKIE = "mover_portal";
-const TOKEN_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const TOKEN_TTL_SEC = Math.floor(TOKEN_TTL_MS / 1000);
 
 export interface MoverPortalSession {
@@ -27,7 +27,7 @@ export interface MoverPortalSession {
 function cookieOptions() {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookies(),
     sameSite: "lax" as const,
     path: "/",
   };
@@ -62,6 +62,7 @@ export async function requestMoverPortalLink(
   if (!company || !company.active) return null;
 
   const { token, hash } = generateOpaqueToken();
+  await prisma.moverPortalToken.deleteMany({ where: { movingCompanyId: company.id } }).catch(() => {});
   await prisma.moverPortalToken.create({
     data: {
       movingCompanyId: company.id,
@@ -109,7 +110,7 @@ async function resolveTokenToSession(
   if (!record || record.revokedAt || record.expiresAt.getTime() < Date.now()) return null;
 
   // An admin can deactivate the linked company at any time; without this check a
-  // revoked mover keeps a valid 14-day session and sees a stale dashboard.
+  // revoked mover keeps a valid portal session and sees a stale dashboard.
   // Placement requests are separately eligibility-gated, but the session itself
   // must not outlive the company's active status.
   const company = await prisma.movingCompany

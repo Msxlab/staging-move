@@ -19,6 +19,7 @@ import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { openWebUrl } from "@/lib/in-app-browser";
 import { useAuthStore } from "@/lib/auth-store";
+import { getSelectedWorkspaceId, setSelectedWorkspaceId } from "@/lib/workspace-selection";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { HeroCard, SectionHeader, Pill } from "@/components/move";
@@ -97,6 +98,11 @@ export default function WorkspaceScreen() {
   const iAmManager = selected ? isManagerRole(selected.role) : false;
   const iAmOwner = selected ? selected.role === "OWNER" : false;
 
+  const selectWorkspace = useCallback((workspaceId: string | null) => {
+    setSelectedId(workspaceId);
+    void setSelectedWorkspaceId(workspaceId).catch(() => {});
+  }, []);
+
   const loadDetail = useCallback(async (workspaceId: string, manager: boolean) => {
     const memRes = await api.get<{ members: Member[] }>(`/api/workspaces/${workspaceId}/members`);
     setMembers(memRes.data?.members ?? []);
@@ -112,10 +118,14 @@ export default function WorkspaceScreen() {
 
   const load = useCallback(async () => {
     setLoadError(false);
-    const res = await api.get<{ workspaces: Workspace[] }>("/api/workspaces");
+    const [storedWorkspaceId, res] = await Promise.all([
+      getSelectedWorkspaceId(),
+      api.get<{ workspaces: Workspace[] }>("/api/workspaces"),
+    ]);
     if (res.code === "WORKSPACE_DISABLED") {
       // Feature is genuinely off for this environment (server gate).
       setFeatureOff(true);
+      selectWorkspace(null);
       setPageLoading(false);
       return;
     }
@@ -134,10 +144,13 @@ export default function WorkspaceScreen() {
     // data container. The empty, redundant personal-solo is already excluded
     // server-side, so it never appears in the switcher.
     if (list.length > 0) {
-      setSelectedId((cur) => cur ?? list.find((w) => !w.isPersonalSolo)?.id ?? list[0].id);
+      const stored = storedWorkspaceId ? list.find((w) => w.id === storedWorkspaceId)?.id ?? null : null;
+      selectWorkspace(stored ?? list.find((w) => !w.isPersonalSolo)?.id ?? list[0].id);
+    } else {
+      selectWorkspace(null);
     }
     setPageLoading(false);
-  }, []);
+  }, [selectWorkspace]);
 
   useEffect(() => {
     void load();
@@ -269,7 +282,7 @@ export default function WorkspaceScreen() {
             return;
           }
           hapticSuccess();
-          setSelectedId(null);
+          selectWorkspace(null);
           void load();
         },
       },
@@ -415,7 +428,7 @@ export default function WorkspaceScreen() {
                 {workspaces.map((w) => (
                   <TouchableOpacity
                     key={w.id}
-                    onPress={() => setSelectedId(w.id)}
+                    onPress={() => selectWorkspace(w.id)}
                     style={[styles.chip, w.id === selectedId && styles.chipActive]}
                   >
                     <Text style={[styles.chipText, w.id === selectedId && styles.chipTextActive]}>{w.name}</Text>

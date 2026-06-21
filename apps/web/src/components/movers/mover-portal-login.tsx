@@ -39,7 +39,7 @@ export function MoverPortalLogin({ invalidLink }: { invalidLink?: boolean }) {
         <h2 className="h2 mt-4 text-2xl text-foreground">Check your email</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           If <span className="font-medium text-foreground">{email}</span> is on file for an approved mover, we&apos;ve
-          sent a sign-in link. It expires in 14 days.
+          sent a sign-in link. It expires in 24 hours.
         </p>
       </div>
     );

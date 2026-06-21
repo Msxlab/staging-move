@@ -328,7 +328,7 @@ html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
 .adm-aurora .au-eyebrow.violet { color: var(--au-violet); }
 
 .adm-aurora .au-display {
-  font-family: var(--font-display, Fraunces, Georgia, serif);
+  font-family: var(--font-display, "Playfair Display", Didot, Georgia, serif);
   font-weight: 400;
   font-variation-settings: "opsz" 96, "SOFT" 30;
   letter-spacing: 0;
@@ -1630,7 +1630,7 @@ html:not(.dark) .adm-aurora .au-tip {
   width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--au-accent); color: var(--au-accent-ink);
-  font-family: var(--font-display, Fraunces, Georgia, serif);
+  font-family: var(--font-display, "Playfair Display", Didot, Georgia, serif);
   font-weight: 600; font-size: 18px;
   margin-bottom: 12px;
 }

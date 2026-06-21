@@ -199,10 +199,11 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
               <p className="mt-1 text-sm text-muted-foreground">{t("formSubtitle")}</p>
             </div>
           </div>
-          <Link href="/addresses/new">
-            <button className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90">
-              <Plus className="h-4 w-4" /> {t("newTitle")}
-            </button>
+          <Link
+            href="/addresses/new"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" /> {t("newTitle")}
           </Link>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">

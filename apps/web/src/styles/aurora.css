@@ -250,7 +250,7 @@
 .lf-aurora .au-eyebrow.violet { color: var(--au-violet); }
 
 .lf-aurora .au-display {
-  font-family: var(--font-display, Fraunces, Georgia, serif);
+  font-family: var(--font-display, "Playfair Display", Didot, Georgia, serif);
   font-weight: 400;
   font-variation-settings: "opsz" 96, "SOFT" 30;
   letter-spacing: 0;

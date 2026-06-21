@@ -88,6 +88,7 @@ describe("admin subscriptions response privacy", () => {
         originalTransactionId: "100000111122223333",
         latestTransactionId: "100000111122224444",
         purchaseToken: "raw-play-token",
+        purchaseTokenEncrypted: "enc_v1:encrypted-play-token",
         currentPeriodEndsAt: null,
         gracePeriodEndsAt: null,
         lastValidatedAt: null,
@@ -131,6 +132,8 @@ describe("admin subscriptions response privacy", () => {
     expect(serialized).not.toContain("cus_live_sensitive1234");
     expect(serialized).not.toContain("sub_live_sensitive5678");
     expect(serialized).not.toContain("raw-play-token");
+    expect(serialized).not.toContain("encrypted-play-token");
+    expect(serialized).not.toContain("purchaseTokenEncrypted");
     expect(serialized).not.toContain("purchaseTokenHash");
   });
 
@@ -154,6 +157,7 @@ describe("admin subscriptions response privacy", () => {
         originalTransactionId: null,
         latestTransactionId: null,
         purchaseToken: "raw-play-token",
+        purchaseTokenEncrypted: "enc_v1:encrypted-play-token",
         currentPeriodEndsAt: null,
         gracePeriodEndsAt: null,
         lastValidatedAt: null,
@@ -193,7 +197,9 @@ describe("admin subscriptions response privacy", () => {
     expect(body.subscriptions[0].stripeCustomerId).toBe("cus_live_sensitive1234");
     expect(body.subscriptions[0].stripeSubscriptionId).toBe("sub_live_sensitive5678");
     expect(body.subscriptions[0]).not.toHaveProperty("purchaseToken");
+    expect(body.subscriptions[0]).not.toHaveProperty("purchaseTokenEncrypted");
     expect(serialized).not.toContain("raw-play-token");
+    expect(serialized).not.toContain("encrypted-play-token");
   });
 
   it("audits subscription list reads without raw search text", async () => {

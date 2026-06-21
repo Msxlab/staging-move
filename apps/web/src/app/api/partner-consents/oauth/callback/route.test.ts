@@ -19,6 +19,7 @@ vi.mock("@/lib/oauth", () => ({
 }));
 vi.mock("@/lib/user-auth", () => ({
   getUserSession: (...a: unknown[]) => mocks.getUserSession(...a),
+  shouldUseSecureSessionCookies: vi.fn(() => true),
 }));
 vi.mock("@/lib/connector-oauth", () => ({
   exchangeConnectorCode: (...a: unknown[]) => mocks.exchangeConnectorCode(...a),

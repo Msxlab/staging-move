@@ -256,6 +256,42 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
+function shouldUseSecureAdminCookie(request: NextRequest): boolean {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  return (
+    request.nextUrl.protocol === "https:" ||
+    forwardedProto === "https" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    process.env.NODE_ENV === "production" ||
+    Boolean(process.env.DIGITALOCEAN_APP_ID)
+  );
+}
+
+function adminCookieDomainCandidates(): Array<string | undefined> {
+  const configured = (process.env.ADMIN_SESSION_COOKIE_DOMAIN || process.env.SESSION_COOKIE_DOMAIN || "").trim();
+  const candidates: Array<string | undefined> = [undefined];
+  if (configured) candidates.push(configured);
+  return Array.from(new Set(candidates));
+}
+
+function expireAdminSessionCookie(response: NextResponse, request: NextRequest): NextResponse {
+  for (const domain of adminCookieDomainCandidates()) {
+    response.cookies.set("admin_session", "", {
+      httpOnly: true,
+      secure: shouldUseSecureAdminCookie(request),
+      sameSite: "strict",
+      path: "/",
+      ...(domain ? { domain } : {}),
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  }
+  return response;
+}
+
 function nextWithCsp(request: NextRequest): NextResponse {
   if (isRscRequest(request)) {
     // App Router soft navigations carry internal RSC headers
@@ -391,6 +427,74 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
 }
 
 const adminRateLimitStore = new Map<string, { count: number; resetAt: number }>();
+const adminRedisUrl = process.env.UPSTASH_REDIS_REST_URL;
+const adminRedisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+const adminHasRedis = Boolean(
+  adminRedisUrl &&
+    adminRedisToken &&
+    !adminRedisUrl.includes("REPLACE") &&
+    !adminRedisToken.includes("REPLACE"),
+);
+const ADMIN_RATE_LIMIT_REDIS_DEGRADE_MS = 60_000;
+let adminRateLimitRedisDegradedUntil = 0;
+let adminRateLimitRedisWarned = false;
+let adminRateLimitMissingRedisWarned = false;
+
+function isProductionLikeAdminRuntime() {
+  const explicit = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    explicit === "production" ||
+    explicit === "staging" ||
+    Boolean(process.env.DIGITALOCEAN_APP_ID)
+  );
+}
+
+function sanitizeLimiterReason(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error || "Unknown limiter error");
+  return raw
+    .replace(/https?:\/\/\S+/gi, "[URL_REDACTED]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
+    .replace(/[A-Za-z0-9_\-]{32,}/g, "[TOKEN_REDACTED]")
+    .slice(0, 160);
+}
+
+function adminRedisTimeoutSignal(ms: number): AbortSignal | undefined {
+  if (typeof AbortSignal === "undefined") return undefined;
+  const maybeAbortSignal = AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  };
+  return maybeAbortSignal.timeout?.(ms);
+}
+
+async function adminRedisCall(...args: Array<string | number>): Promise<unknown> {
+  if (!adminHasRedis) throw new Error("REDIS_NOT_CONFIGURED");
+  const path = args.map((arg) => encodeURIComponent(String(arg))).join("/");
+  const res = await fetch(`${adminRedisUrl!.replace(/\/+$/, "")}/${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${adminRedisToken!}` },
+    cache: "no-store",
+    signal: adminRedisTimeoutSignal(1200),
+  });
+  if (!res.ok) throw new Error(`Redis HTTP ${res.status}`);
+  const json = (await res.json().catch(() => ({}))) as { result?: unknown; error?: string };
+  if (json.error) throw new Error(`Redis error: ${json.error}`);
+  return json.result;
+}
+
+function markAdminLimiterRedisDegraded(error: unknown) {
+  adminRateLimitRedisDegradedUntil = Date.now() + ADMIN_RATE_LIMIT_REDIS_DEGRADE_MS;
+  if (!adminRateLimitRedisWarned) {
+    adminRateLimitRedisWarned = true;
+    console.error("[ADMIN-RATE-LIMIT] Redis unavailable; failing closed in production-like runtimes:", sanitizeLimiterReason(error));
+  }
+}
+
+function warnAdminRateLimitMemoryFallbackOnce() {
+  if (adminRateLimitMissingRedisWarned || !isProductionLikeAdminRuntime()) return;
+  adminRateLimitMissingRedisWarned = true;
+  console.error("[ADMIN-RATE-LIMIT] Redis is not configured; using in-memory admin route limits");
+}
 
 function getAdminRouteRateLimit(req: NextRequest): { limit: number; windowMs: number; group: string } | null {
   const pathname = req.nextUrl?.pathname || "";
@@ -412,13 +516,29 @@ function getAdminRouteRateLimit(req: NextRequest): { limit: number; windowMs: nu
     : { limit: 90, windowMs: 60_000, group: "admin_write" };
 }
 
-function applyAdminRouteRateLimit(req: NextRequest): NextResponse | null {
-  const policy = getAdminRouteRateLimit(req);
-  if (!policy) return null;
+function adminRouteRateLimitResponse(
+  policy: { limit: number; windowMs: number; group: string },
+  resetAt: number,
+  code = "ADMIN_RATE_LIMITED",
+): NextResponse {
+  const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
+  return NextResponse.json(
+    {
+      error: "Too many requests. Please try again later.",
+      code,
+      routeGroup: policy.group,
+      retryAfterSeconds: retryAfter,
+    },
+    { status: 429, headers: { "Retry-After": String(retryAfter), "X-RateLimit-Group": policy.group } },
+  );
+}
 
+function applyAdminRouteMemoryRateLimit(
+  key: string,
+  policy: { limit: number; windowMs: number; group: string },
+): NextResponse | null {
+  warnAdminRateLimitMemoryFallbackOnce();
   const now = Date.now();
-  const routeKey = policy.group === "cron" ? req.nextUrl.pathname : `${req.method}:${req.nextUrl.pathname}`;
-  const key = `${policy.group}:${resolveClientIP(req)}:${routeKey}`;
   const entry = adminRateLimitStore.get(key);
   if (!entry || entry.resetAt <= now) {
     adminRateLimitStore.set(key, { count: 1, resetAt: now + policy.windowMs });
@@ -426,17 +546,42 @@ function applyAdminRouteRateLimit(req: NextRequest): NextResponse | null {
   }
   entry.count += 1;
   if (entry.count <= policy.limit) return null;
+  return adminRouteRateLimitResponse(policy, entry.resetAt);
+}
 
-  const retryAfter = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
-  return NextResponse.json(
-    {
-      error: "Too many requests. Please try again later.",
-      code: "ADMIN_RATE_LIMITED",
-      routeGroup: policy.group,
-      retryAfterSeconds: retryAfter,
-    },
-    { status: 429, headers: { "Retry-After": String(retryAfter), "X-RateLimit-Group": policy.group } },
-  );
+async function applyAdminRouteRateLimit(req: NextRequest): Promise<NextResponse | null> {
+  const policy = getAdminRouteRateLimit(req);
+  if (!policy) return null;
+
+  const routeKey = policy.group === "cron" ? req.nextUrl.pathname : `${req.method}:${req.nextUrl.pathname}`;
+  const key = `${policy.group}:${resolveClientIP(req)}:${routeKey}`;
+  const productionLike = isProductionLikeAdminRuntime();
+
+  if (adminHasRedis) {
+    if (productionLike && Date.now() < adminRateLimitRedisDegradedUntil) {
+      return adminRouteRateLimitResponse(policy, adminRateLimitRedisDegradedUntil, "ADMIN_RATE_LIMITER_UNAVAILABLE");
+    }
+    try {
+      const redisKey = `admin-route-rl:${key}`;
+      const count = Number(await adminRedisCall("INCR", redisKey));
+      if (count === 1) await adminRedisCall("EXPIRE", redisKey, Math.ceil(policy.windowMs / 1000));
+      const ttl = Number(await adminRedisCall("TTL", redisKey));
+      const resetAt = Date.now() + Math.max(1, Number.isFinite(ttl) ? ttl : Math.ceil(policy.windowMs / 1000)) * 1000;
+      if (count <= policy.limit) return null;
+      return adminRouteRateLimitResponse(policy, resetAt);
+    } catch (error) {
+      markAdminLimiterRedisDegraded(error);
+      if (productionLike) {
+        return adminRouteRateLimitResponse(
+          policy,
+          adminRateLimitRedisDegradedUntil,
+          "ADMIN_RATE_LIMITER_UNAVAILABLE",
+        );
+      }
+    }
+  }
+
+  return applyAdminRouteMemoryRateLimit(key, policy);
 }
 
 // Locale auto-detect: set NEXT_LOCALE cookie from Accept-Language on first
@@ -507,7 +652,7 @@ export async function middleware(request: NextRequest) {
   const bodySizeBlocked = applyBodySizeLimit(request);
   if (bodySizeBlocked) return hardenEarlyResponse(bodySizeBlocked);
 
-  const rateLimited = applyAdminRouteRateLimit(request);
+  const rateLimited = await applyAdminRouteRateLimit(request);
   if (rateLimited) return hardenEarlyResponse(rateLimited);
 
   // Allow internal and cron endpoints; their route handlers verify shared secrets.
@@ -635,11 +780,11 @@ export async function middleware(request: NextRequest) {
         // Fingerprint mismatch — possible session hijacking
         if (isApiRoute) {
           const resp = NextResponse.json({ error: "Session invalid. Please log in again." }, { status: 401 });
-          resp.cookies.delete("admin_session");
+          expireAdminSessionCookie(resp, request);
           return hardenEarlyResponse(resp);
         }
         const resp = NextResponse.redirect(new URL("/login", request.url));
-        resp.cookies.delete("admin_session");
+        expireAdminSessionCookie(resp, request);
         return hardenEarlyResponse(resp);
       }
     }
@@ -649,11 +794,11 @@ export async function middleware(request: NextRequest) {
     // Token invalid or expired — clear cookie
     if (isApiRoute) {
       const response = NextResponse.json({ error: "Session expired" }, { status: 401 });
-      response.cookies.delete("admin_session");
+      expireAdminSessionCookie(response, request);
       return hardenEarlyResponse(response);
     }
     const response = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.delete("admin_session");
+    expireAdminSessionCookie(response, request);
     return hardenEarlyResponse(response);
   }
 }

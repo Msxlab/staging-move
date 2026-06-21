@@ -35,18 +35,21 @@ export async function GET(request: NextRequest) {
     take: 25,
   });
 
-  return NextResponse.json({
-    devices: devices.map((device) => ({
-      id: device.id,
-      deviceLabel: device.deviceLabel,
-      ipAddress: device.ipAddress,
-      userAgent: device.userAgent,
-      lastUsedAt: device.lastUsedAt,
-      expiresAt: device.expiresAt,
-      createdAt: device.createdAt,
-      isCurrent: Boolean(currentTokenHash && currentTokenHash === device.tokenHash),
-    })),
-  });
+  return NextResponse.json(
+    {
+      devices: devices.map((device) => ({
+        id: device.id,
+        deviceLabel: device.deviceLabel,
+        ipAddress: device.ipAddress,
+        userAgent: device.userAgent,
+        lastUsedAt: device.lastUsedAt,
+        expiresAt: device.expiresAt,
+        createdAt: device.createdAt,
+        isCurrent: Boolean(currentTokenHash && currentTokenHash === device.tokenHash),
+      })),
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -110,7 +113,10 @@ export async function POST(request: NextRequest) {
     request: getAuditRequestMeta(request),
   });
 
-  const response = NextResponse.json({ success: true, revoked, currentDeviceRevoked });
+  const response = NextResponse.json(
+    { success: true, revoked, currentDeviceRevoked },
+    { headers: { "Cache-Control": "no-store" } },
+  );
   if (currentDeviceRevoked) {
     expireAdminMfaTrustCookie(response, request.headers.get("host"));
   }

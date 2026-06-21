@@ -71,7 +71,9 @@ describe("GET /api/movers/applications/:id/documents/:documentId/download", () =
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("application/pdf");
-    expect(response.headers.get("content-disposition")).toBe('attachment; filename="certificate.pdf"');
+    expect(response.headers.get("content-disposition")).toBe(
+      'attachment; filename="certificate.pdf"; filename*=UTF-8\'\'certificate.pdf',
+    );
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(Buffer.from(await response.arrayBuffer()).toString("utf8")).toBe("%PDF-1.7\n");
@@ -84,6 +86,29 @@ describe("GET /api/movers/applications/:id/documents/:documentId/download", () =
         entityId: "doc_1",
       }),
     );
+  });
+
+  it("sanitizes hostile document filenames before emitting download headers", async () => {
+    mocks.moverDocumentFindFirst.mockResolvedValueOnce({
+      id: "doc_1",
+      applicationId: "app_1",
+      kind: "USDOT_CERT",
+      fileName: 'bad"\r\nInjected: yes.pdf',
+      objectKey: "document/mover-app_1/document.pdf",
+      contentType: "application/pdf",
+      sizeBytes: 12,
+    });
+
+    const response = await GET(request(), params());
+    const contentDisposition = response.headers.get("content-disposition") || "";
+
+    expect(response.status).toBe(200);
+    expect(contentDisposition).toMatch(
+      /^attachment; filename="[A-Za-z0-9._-]+\.pdf"; filename\*=UTF-8''[A-Za-z0-9._~-]+\.pdf$/,
+    );
+    expect(contentDisposition).not.toContain("\r");
+    expect(contentDisposition).not.toContain("\n");
+    expect(contentDisposition).not.toContain("Injected:");
   });
 
   it("rejects document object keys outside the application namespace before R2 fetch", async () => {

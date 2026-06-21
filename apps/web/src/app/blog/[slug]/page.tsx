@@ -238,7 +238,7 @@ export default async function BlogPostPage({
 
       {/* Body — sanitized HTML rendered into our prose styles. The
           `blog-prose` class is defined in globals.css with rose-tinted
-          links, foil-toned blockquotes, and Fraunces headings to match
+          links, foil-toned blockquotes, and display headings to match
           the rest of the marketing surface. */}
       <div className="container max-w-3xl py-12 sm:py-16">
         <div

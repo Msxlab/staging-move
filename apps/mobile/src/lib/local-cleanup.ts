@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { setAnalyticsEnabled } from "@/lib/analytics";
 import { useAppLockStore } from "@/lib/app-lock-store";
 import { clearAllOfflineCaches } from "@/lib/offline-cache";
+import { SELECTED_WORKSPACE_ID_KEY } from "@/lib/workspace-selection";
 
 const SENSITIVE_ASYNC_STORAGE_KEYS = [
   "locateflow.handledOAuthCodes",
@@ -25,6 +26,7 @@ const SENSITIVE_ASYNC_STORAGE_KEYS = [
   // resolves. Device-keyed, so wipe it or the next account could briefly seed
   // off the previous user's plan.
   "locateflow.lastPlan.v1",
+  SELECTED_WORKSPACE_ID_KEY,
 ];
 
 export async function clearSensitiveLocalState(queryClient?: QueryClient) {

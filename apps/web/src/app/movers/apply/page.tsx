@@ -48,7 +48,7 @@ export default async function MoverApplyPage() {
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
         Questions? See our{" "}
-        <Link href="/legal/terms" className="underline underline-offset-2 hover:text-foreground">
+        <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
           terms
         </Link>
         . Submitting does not guarantee listing.

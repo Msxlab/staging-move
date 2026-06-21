@@ -263,10 +263,11 @@ export default function AddressDetailPage() {
     <div className="max-w-3xl mx-auto space-y-6 pb-8">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/addresses">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-            <ArrowLeft className="h-4 w-4" />{tCommon("back")}
-          </button>
+        <Link
+          href="/addresses"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />{tCommon("back")}
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -276,15 +277,17 @@ export default function AddressDetailPage() {
           <p className="text-sm text-muted-foreground">{address.street}, {address.city}, {address.state} {address.zip}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/moving/new?from=${address.id}`}>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
-              <Truck className="h-3.5 w-3.5" />{t("detail_moveFromHere")}
-            </button>
+          <Link
+            href={`/moving/new?from=${address.id}`}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
+          >
+            <Truck className="h-3.5 w-3.5" />{t("detail_moveFromHere")}
           </Link>
-          <Link href={`/addresses/${address.id}/edit`}>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-              <Edit className="h-3.5 w-3.5" />{tCommon("edit")}
-            </button>
+          <Link
+            href={`/addresses/${address.id}/edit`}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+          >
+            <Edit className="h-3.5 w-3.5" />{tCommon("edit")}
           </Link>
         </div>
       </div>
@@ -342,10 +345,11 @@ export default function AddressDetailPage() {
                 }`}
               >{bulkMode ? tCommon("cancel") : t("detail_bulkEdit")}</button>
             )}
-            <Link href="/services/new">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition">
-                <Plus className="h-3 w-3" />{t("detail_addService")}
-              </button>
+            <Link
+              href="/services/new"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition"
+            >
+              <Plus className="h-3 w-3" />{t("detail_addService")}
             </Link>
           </div>
         </div>
@@ -489,10 +493,11 @@ export default function AddressDetailPage() {
                                   {service.website.replace(/https?:\/\/(www\.)?/, "").split("/")[0]}
                                 </a>
                               )}
-                              <Link href={`/services/${service.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-foreground/40 hover:text-tone-orange-fg hover:bg-tone-orange-bg transition">
-                                  <Edit className="h-2.5 w-2.5" />Edit
-                                </button>
+                              <Link
+                                href={`/services/${service.id}`}
+                                className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-foreground/40 hover:text-tone-orange-fg hover:bg-tone-orange-bg transition"
+                              >
+                                <Edit className="h-2.5 w-2.5" />Edit
                               </Link>
                               <div className="flex-1" />
                               {!isConfirmDel ? (

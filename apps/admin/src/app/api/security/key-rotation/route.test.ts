@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   addressFindMany: vi.fn(),
   addressUpdate: vi.fn(),
   // Shared stand-in for the other FIELD_ENCRYPTION_KEY models (user, adminUser,
-  // runtimeConfigEntry, partnerConsent, connectorDispatch). Default empty so the
+  // runtimeConfigEntry, subscription, partnerConsent, connectorDispatch). Default empty so the
   // generic scan walks every model without needing rows in each.
   otherFindMany: vi.fn(),
   otherUpdate: vi.fn(),
@@ -21,7 +21,15 @@ const mocks = vi.hoisted(() => ({
 
 // Every model the rotation route must cover. service + address have bespoke
 // mocks; the rest share otherFindMany/otherUpdate.
-const OTHER_MODELS = ["user", "adminUser", "runtimeConfigEntry", "partnerConsent", "connectorDispatch", "lead"];
+const OTHER_MODELS = [
+  "user",
+  "adminUser",
+  "runtimeConfigEntry",
+  "subscription",
+  "partnerConsent",
+  "connectorDispatch",
+  "lead",
+];
 
 vi.mock("@/lib/auth", () => ({
   requirePermission: (...args: unknown[]) => mocks.requirePermission(...args),
@@ -41,7 +49,15 @@ vi.mock("@/lib/db", () => {
       update: (...args: unknown[]) => mocks.addressUpdate(...args),
     },
   };
-  for (const name of ["user", "adminUser", "runtimeConfigEntry", "partnerConsent", "connectorDispatch", "lead"]) {
+  for (const name of [
+    "user",
+    "adminUser",
+    "runtimeConfigEntry",
+    "subscription",
+    "partnerConsent",
+    "connectorDispatch",
+    "lead",
+  ]) {
     client[name] = {
       findMany: (...args: unknown[]) => mocks.otherFindMany(name, ...args),
       update: (...args: unknown[]) => mocks.otherUpdate(name, ...args),
@@ -152,9 +168,19 @@ describe("security key rotation API", () => {
     // The success message no longer over-promises "all encrypted fields".
     expect(body.message).toContain("Re-encrypted");
     expect(body.message).toContain("connectorDispatch");
-    // Results report stats for all seven tables.
+    // Results report stats for every configured encrypted table.
     expect(Object.keys(body.results).sort()).toEqual(
-      ["address", "adminUser", "connectorDispatch", "lead", "partnerConsent", "runtimeConfigEntry", "service", "user"],
+      [
+        "address",
+        "adminUser",
+        "connectorDispatch",
+        "lead",
+        "partnerConsent",
+        "runtimeConfigEntry",
+        "service",
+        "subscription",
+        "user",
+      ],
     );
   });
 

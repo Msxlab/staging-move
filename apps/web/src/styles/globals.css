@@ -198,7 +198,7 @@
   --tracking-wide:     0.04em;
   --tracking-mono:     0.14em;
 
-  /* Fraunces variable axis presets */
+  /* Legacy display axis presets; ignored when the current font lacks these axes. */
   --fv-display-hero: "opsz" 144, "SOFT" 50;
   --fv-display-h2:   "opsz"  96, "SOFT" 40;
   --fv-display-h3:   "opsz"  48, "SOFT" 30;
@@ -424,7 +424,7 @@
     -webkit-font-smoothing: antialiased;
     font-weight: var(--fw-regular);
   }
-  /* Display headings — Fraunces variable, light + italic for personality */
+  /* Display headings - Playfair for editorial emphasis, DM Sans for base chrome. */
   h1, h2, h3 {
     font-family: var(--font-sans);
     letter-spacing: 0;
@@ -694,7 +694,7 @@
 .light .text-amber-300 { color: #8a5a00; }
 .light .text-orange-300,
 .light .text-orange-400 { color: #b45309; }
-.light .text-violet-300 { color: #6d28d9; }
+.light .text-violet-300 { color: #7A5418; }
 .light .text-red-300,
 .light .text-red-400 { color: #b91c1c; }
 
@@ -1020,7 +1020,7 @@
   animation: reveal-fade-up 800ms 600ms ease-out backwards;
 }
 .reveal-title {
-  font-family: var(--font-display, Fraunces, Georgia, serif);
+  font-family: var(--font-display, "Playfair Display", Didot, Georgia, serif);
   font-weight: 300;
   font-size: 38px;
   letter-spacing: 0;
@@ -1097,7 +1097,7 @@
  * Blog article prose — Edition VI palette overrides on top of
  * @tailwindcss/typography. The `prose` base gives us spacing and
  * sensible defaults; this layer retunes colors to the site theme
- * (rose primary, foil quotes, Fraunces headings) so a published
+ * (cool links, foil quotes, display headings) so a published
  * article reads like part of the marketing surface, not a foreign
  * subdomain. Only color/typography is re-themed — sizing, list
  * markers, table chrome, and code styling stay on Tailwind defaults.
@@ -1142,7 +1142,7 @@
 }
 
 .blog-prose :where(h2, h3, h4) {
-  font-family: var(--font-fraunces, "Fraunces"), Didot, Georgia, serif;
+  font-family: var(--font-display, "Playfair Display", Didot, Georgia, serif);
   letter-spacing: 0;
 }
 
@@ -1178,7 +1178,7 @@
   );
   padding: 1.25rem 1.5rem;
   font-style: italic;
-  font-family: var(--font-fraunces, "Fraunces"), Didot, Georgia, serif;
+  font-family: var(--font-display, "Playfair Display", Didot, Georgia, serif);
 }
 
 .blog-prose :where(blockquote p:first-of-type)::before,

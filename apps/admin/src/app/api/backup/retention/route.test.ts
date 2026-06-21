@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   requirePermission: vi.fn(),
+  requirePasswordConfirm: vi.fn(),
   verifyInternalAuth: vi.fn(),
   backupFindMany: vi.fn(),
   backupCount: vi.fn(),
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth", () => ({
   requirePermission: (...args: unknown[]) => mocks.requirePermission(...args),
+  requirePasswordConfirm: (...args: unknown[]) => mocks.requirePasswordConfirm(...args),
 }));
 vi.mock("@/lib/internal-secrets", () => ({
   verifyInternalAuth: (...args: unknown[]) => mocks.verifyInternalAuth(...args),
@@ -50,6 +52,22 @@ function retentionRequest(body: Record<string, unknown> = {}) {
   });
 }
 
+function confirmedRetentionRequest(body: Record<string, unknown> = {}) {
+  return retentionRequest({
+    confirmPassword: "correct-password",
+    mfaCode: "123456",
+    ...body,
+  });
+}
+
+function cronRetentionRequest(body: Record<string, unknown> = {}) {
+  return new NextRequest("https://admin.locateflow.com/api/backup/retention", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: "Bearer backup-secret" },
+    body: JSON.stringify(body),
+  });
+}
+
 function storedOffsiteMetadata() {
   return {
     offsite: {
@@ -64,6 +82,7 @@ describe("backup retention cleanup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
+    mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
     mocks.verifyInternalAuth.mockReturnValue(false);
     mocks.backupFindMany.mockResolvedValue([{ id: "backup_old", errorMessage: null }]);
     mocks.backupCount.mockResolvedValue(1);
@@ -85,13 +104,51 @@ describe("backup retention cleanup", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.retention.dryRun).toBe(true);
+    expect(mocks.requirePasswordConfirm).not.toHaveBeenCalled();
+    expect(mocks.backupDeleteMany).not.toHaveBeenCalled();
+    expect(mocks.deleteBackupArchive).not.toHaveBeenCalled();
+  });
+
+  it("uses backup-scoped cron auth before falling back to admin permission", async () => {
+    mocks.verifyInternalAuth.mockReturnValue(true);
+    const { POST } = await import("./route");
+    const response = await POST(cronRetentionRequest({ dryRun: true }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.verifyInternalAuth).toHaveBeenCalledWith("Bearer backup-secret", "backup");
+    expect(mocks.requirePermission).not.toHaveBeenCalled();
+    expect(mocks.requirePasswordConfirm).not.toHaveBeenCalled();
+  });
+
+  it("requires password and MFA step-up before manual destructive cleanup", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValue({
+      confirmed: false,
+      error: "MFA verification required for this operation.",
+      requiresMfa: true,
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(retentionRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(body).toMatchObject({ requiresPassword: true, requiresMfa: true });
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      undefined,
+      expect.objectContaining({
+        operation: "backup_retention_cleanup",
+        requireMfa: true,
+      }),
+    );
     expect(mocks.backupDeleteMany).not.toHaveBeenCalled();
     expect(mocks.deleteBackupArchive).not.toHaveBeenCalled();
   });
 
   it("writes an audit log for retention cleanup", async () => {
     const { POST } = await import("./route");
-    const response = await POST(retentionRequest());
+    const response = await POST(confirmedRetentionRequest());
 
     expect(response.status).toBe(200);
     expect(mocks.auditCreate).toHaveBeenCalledWith(
@@ -110,7 +167,7 @@ describe("backup retention cleanup", () => {
     mocks.parseBackupRecordMetadata.mockReturnValue(storedOffsiteMetadata());
 
     const { POST } = await import("./route");
-    const response = await POST(retentionRequest());
+    const response = await POST(confirmedRetentionRequest());
 
     expect(response.status).toBe(200);
     const body = await response.json();
@@ -140,7 +197,7 @@ describe("backup retention cleanup", () => {
     mocks.parseBackupRecordMetadata.mockReturnValue(storedOffsiteMetadata());
 
     const { POST } = await import("./route");
-    const response = await POST(retentionRequest());
+    const response = await POST(confirmedRetentionRequest());
 
     expect(response.status).toBe(200);
     // The same record surfaces from both the completed and failed
@@ -172,7 +229,7 @@ describe("backup retention cleanup", () => {
     });
 
     const { POST } = await import("./route");
-    const response = await POST(retentionRequest());
+    const response = await POST(confirmedRetentionRequest());
 
     expect(response.status).toBe(200);
     expect(mocks.deleteBackupArchive).toHaveBeenCalledTimes(1);
@@ -201,7 +258,7 @@ describe("backup retention cleanup", () => {
     });
 
     const { POST } = await import("./route");
-    const response = await POST(retentionRequest());
+    const response = await POST(confirmedRetentionRequest());
 
     expect(response.status).toBe(200);
     expect(mocks.backupDeleteMany).not.toHaveBeenCalled();

@@ -45,17 +45,38 @@ const ROLE_LABELS: Record<string, string> = {
   VIEWER: "Viewer",
 };
 
-async function resolveAdminAppUrl(): Promise<string> {
+function normalizeBaseUrl(value: string | null | undefined): string | null {
+  const trimmed = value?.trim().replace(/\/+$/, "");
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString().replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
+
+function isExplicitProductionRuntime(): boolean {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return appEnv === "production" || (!appEnv && process.env.NODE_ENV === "production");
+}
+
+async function resolveAdminAppUrl(request: NextRequest): Promise<string> {
   const values = await getAdminRuntimeConfigValues(["ADMIN_APP_URL", "NEXT_PUBLIC_ADMIN_URL"]);
-  const configured =
+  const configured = normalizeBaseUrl(
     values.ADMIN_APP_URL ||
     values.NEXT_PUBLIC_ADMIN_URL ||
     process.env.ADMIN_APP_URL ||
     process.env.NEXT_PUBLIC_ADMIN_URL ||
-    "";
-  const trimmed = configured.trim().replace(/\/+$/, "");
-  if (trimmed) return trimmed;
-  return process.env.NODE_ENV === "production" ? "https://admin.locateflow.com" : "http://localhost:3001";
+    "",
+  );
+  if (configured) return configured;
+
+  const requestOrigin = normalizeBaseUrl(request.nextUrl.origin);
+  if (requestOrigin) return requestOrigin;
+
+  return isExplicitProductionRuntime() ? "https://admin.locateflow.com" : "http://localhost:3001";
 }
 
 export async function GET() {
@@ -254,7 +275,7 @@ export async function POST(request: NextRequest) {
         createdBy: session.adminId,
       });
       inviteExpiresAt = expiresAt;
-      const appUrl = await resolveAdminAppUrl();
+      const appUrl = await resolveAdminAppUrl(request);
       const setPasswordUrl = `${appUrl}/set-password?token=${encodeURIComponent(token)}`;
       inviteEmailSent = await sendAdminInviteEmail({
         to: admin.email,

@@ -6,9 +6,10 @@
  * must use `IMPERSONATION_HANDOFF_SECRET`. Do not broaden one secret into
  * another security boundary.
  */
-export type InternalSecretKind = "cron" | "internal" | "impersonation";
+export type InternalSecretKind = "cron" | "backup" | "internal" | "impersonation";
 
 function getSpecificEnv(kind: InternalSecretKind): string | undefined {
+  if (kind === "backup") return process.env.BACKUP_CRON_SECRET;
   if (kind === "internal") return process.env.INTERNAL_WEBHOOK_SECRET;
   if (kind === "impersonation") return process.env.IMPERSONATION_HANDOFF_SECRET;
   return undefined;
@@ -36,7 +37,7 @@ export function verifyInternalAuth(
 
   const specific = getSpecificEnv(kind);
   if (specific && safeEqual(token, specific)) return true;
-  if (kind === "cron") {
+  if (kind === "cron" || (kind === "backup" && !specific)) {
     const cron = process.env.CRON_SECRET;
     if (cron && safeEqual(token, cron)) return true;
   }
@@ -49,6 +50,6 @@ export function getInternalCallerSecret(
 ): string | undefined {
   const specific = getSpecificEnv(kind);
   if (specific) return specific;
-  if (kind === "cron") return process.env.CRON_SECRET || undefined;
+  if (kind === "cron" || kind === "backup") return process.env.CRON_SECRET || undefined;
   return undefined;
 }

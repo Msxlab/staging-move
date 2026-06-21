@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/auth";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { downloadAssetObject } from "@/lib/r2-asset-storage";
+import { contentDispositionAttachment } from "@/lib/http-download";
 
 export const runtime = "nodejs";
 
@@ -110,7 +111,7 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Disposition": contentDispositionAttachment(fileName, `mover-document.${extensionFor(contentType)}`),
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
       },

@@ -1,7 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const rl = await rateLimit(getRateLimitKey(request, "help-feedback"), {
+    limit: 20,
+    windowSeconds: 10 * 60,
+    failClosed: "if-redis-configured",
+  });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Try again shortly." },
+      { status: 429, headers: { "Retry-After": Math.ceil((rl.resetAt - Date.now()) / 1000).toString() } },
+    );
+  }
+
   let payload: unknown;
 
   try {

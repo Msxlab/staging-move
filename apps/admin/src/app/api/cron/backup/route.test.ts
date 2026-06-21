@@ -182,6 +182,7 @@ describe("cron backup safety policy", () => {
     const { POST } = await import("./route");
     const res = await POST(cronRequest());
 
+    expect(mocks.verifyInternalAuth).toHaveBeenCalledWith("Bearer cron-secret", "backup");
     expect(res.status).toBe(503);
     await expect(res.json()).resolves.toMatchObject({
       code: "BACKUP_CRYPTO_NOT_CONFIGURED",

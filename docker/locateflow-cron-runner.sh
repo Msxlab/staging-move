@@ -36,7 +36,12 @@ case "$method" in
     ;;
 esac
 
-if [ -z "${CRON_SECRET:-}" ]; then
+secret="${CRON_SECRET:-}"
+if [ "$target" = "admin" ] && [ "$path" = "/api/cron/backup" ] && [ -n "${BACKUP_CRON_SECRET:-}" ]; then
+  secret="${BACKUP_CRON_SECRET}"
+fi
+
+if [ -z "$secret" ]; then
   echo "cron runner: CRON_SECRET is required" >&2
   exit 64
 fi
@@ -44,7 +49,7 @@ fi
 url="http://127.0.0.1:${port}${path}"
 
 if [ "$method" = "POST" ]; then
-  exec wget -qO- --post-data="" --header "Authorization: Bearer ${CRON_SECRET}" "$url"
+  exec wget -qO- --post-data="" --header "Authorization: Bearer ${secret}" "$url"
 fi
 
-exec wget -qO- --header "Authorization: Bearer ${CRON_SECRET}" "$url"
+exec wget -qO- --header "Authorization: Bearer ${secret}" "$url"

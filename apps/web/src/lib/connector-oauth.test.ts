@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   subscriptionFindUnique: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
   consentFindMany: vi.fn(),
+  consentFindFirst: vi.fn(),
   consentFindUnique: vi.fn(),
   consentUpdate: vi.fn(),
   consentUpdateMany: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock("@/lib/db", () => ({
     subscription: { findUnique: (...a: unknown[]) => mocks.subscriptionFindUnique(...a) },
     partnerConsent: {
       findMany: (...a: unknown[]) => mocks.consentFindMany(...a),
+      findFirst: (...a: unknown[]) => mocks.consentFindFirst(...a),
       findUnique: (...a: unknown[]) => mocks.consentFindUnique(...a),
       update: (...a: unknown[]) => mocks.consentUpdate(...a),
       updateMany: (...a: unknown[]) => mocks.consentUpdateMany(...a),
@@ -366,15 +368,86 @@ describe("upsertGrantedConsent", () => {
       }),
     ).resolves.toBe("newest");
 
+    expect(mocks.consentUpdate).toHaveBeenCalledWith({
+      where: { id: "newest" },
+      data: expect.objectContaining({ activeGrantKey: "GRANTED" }),
+    });
     expect(mocks.consentUpdateMany).toHaveBeenCalledWith({
       where: { userId: "u1", connectorKey: "usps", status: "GRANTED", id: { not: "newest" } },
       data: {
         status: "REVOKED",
+        activeGrantKey: null,
         revokedAt: now,
         revocationReason: "SUPERSEDED",
         tokenEncrypted: null,
         refreshTokenEncrypted: null,
       },
+    });
+  });
+
+  it("sets the active grant key for a new grant and clears superseded rows", async () => {
+    const now = new Date("2026-06-01T12:00:00Z");
+    mocks.consentFindMany.mockResolvedValue([]);
+    mocks.consentCreate.mockResolvedValue({ id: "created" });
+    mocks.consentUpdateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      upsertGrantedConsent({
+        userId: "u1",
+        connectorKey: "usps",
+        tokens: {
+          accessToken: "at",
+          refreshToken: "rt",
+          expiresInSeconds: 3600,
+          scope: "addresses",
+          tokenType: "Bearer",
+        },
+        consentSnapshot: { connectorKey: "usps" },
+        now,
+      }),
+    ).resolves.toBe("created");
+
+    expect(mocks.consentCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ activeGrantKey: "GRANTED" }),
+      select: { id: true },
+    });
+    expect(mocks.consentUpdateMany).toHaveBeenCalledWith({
+      where: { userId: "u1", connectorKey: "usps", status: "GRANTED", id: { not: "created" } },
+      data: expect.objectContaining({ activeGrantKey: null }),
+    });
+  });
+
+  it("recovers from a concurrent active-grant unique conflict", async () => {
+    const now = new Date("2026-06-01T12:00:00Z");
+    mocks.consentFindMany.mockResolvedValue([]);
+    mocks.consentCreate.mockRejectedValue(Object.assign(new Error("unique"), { code: "P2002" }));
+    mocks.consentFindFirst.mockResolvedValue({ id: "raced" });
+    mocks.consentUpdate.mockResolvedValue({});
+
+    await expect(
+      upsertGrantedConsent({
+        userId: "u1",
+        connectorKey: "usps",
+        tokens: {
+          accessToken: "at",
+          refreshToken: "rt",
+          expiresInSeconds: 3600,
+          scope: "addresses",
+          tokenType: "Bearer",
+        },
+        consentSnapshot: { connectorKey: "usps" },
+        now,
+      }),
+    ).resolves.toBe("raced");
+
+    expect(mocks.consentFindFirst).toHaveBeenCalledWith({
+      where: { userId: "u1", connectorKey: "usps", status: "GRANTED", activeGrantKey: "GRANTED" },
+      select: { id: true },
+      orderBy: { grantedAt: "desc" },
+    });
+    expect(mocks.consentUpdate).toHaveBeenCalledWith({
+      where: { id: "raced" },
+      data: expect.objectContaining({ activeGrantKey: "GRANTED", grantedAt: now }),
     });
   });
 });

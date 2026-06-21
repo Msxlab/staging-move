@@ -90,6 +90,10 @@ function isAllowedConnectorUrl(rawUrl: string, allowedHosts: readonly string[]):
   }
 }
 
+function isUniqueConstraintError(error: unknown): boolean {
+  return typeof (error as { code?: unknown })?.code === "string" && (error as { code: string }).code === "P2002";
+}
+
 async function fetchOAuthForm(
   tokenUrl: string,
   body: URLSearchParams,
@@ -281,6 +285,7 @@ export async function upsertGrantedConsent(input: {
       where: { id: existing.id },
       data: {
         status: "GRANTED",
+        activeGrantKey: "GRANTED",
         scopesJson,
         consentSnapshotJson,
         tokenEncrypted,
@@ -296,6 +301,7 @@ export async function upsertGrantedConsent(input: {
         where: { userId, connectorKey, status: "GRANTED", id: { not: existing.id } },
         data: {
           status: "REVOKED",
+          activeGrantKey: null,
           revokedAt: now,
           revocationReason: "SUPERSEDED",
           tokenEncrypted: null,
@@ -306,24 +312,53 @@ export async function upsertGrantedConsent(input: {
     return existing.id;
   }
 
-  const created = await prisma.partnerConsent.create({
-    data: {
-      userId,
-      connectorKey,
-      scopesJson,
-      status: "GRANTED",
-      grantedAt: now,
-      tokenEncrypted,
-      refreshTokenEncrypted,
-      tokenExpiresAt,
-      consentSnapshotJson,
-    },
-    select: { id: true },
-  });
+  let created: { id: string };
+  try {
+    created = await prisma.partnerConsent.create({
+      data: {
+        userId,
+        connectorKey,
+        scopesJson,
+        status: "GRANTED",
+        activeGrantKey: "GRANTED",
+        grantedAt: now,
+        tokenEncrypted,
+        refreshTokenEncrypted,
+        tokenExpiresAt,
+        consentSnapshotJson,
+      },
+      select: { id: true },
+    });
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) throw error;
+    const raced = await prisma.partnerConsent.findFirst({
+      where: { userId, connectorKey, status: "GRANTED", activeGrantKey: "GRANTED" },
+      select: { id: true },
+      orderBy: { grantedAt: "desc" },
+    });
+    if (!raced) throw error;
+    await prisma.partnerConsent.update({
+      where: { id: raced.id },
+      data: {
+        status: "GRANTED",
+        activeGrantKey: "GRANTED",
+        scopesJson,
+        consentSnapshotJson,
+        tokenEncrypted,
+        refreshTokenEncrypted: refreshTokenEncrypted ?? undefined,
+        tokenExpiresAt,
+        grantedAt: now,
+        revokedAt: null,
+        revocationReason: null,
+      },
+    });
+    return raced.id;
+  }
   await prisma.partnerConsent.updateMany({
     where: { userId, connectorKey, status: "GRANTED", id: { not: created.id } },
     data: {
       status: "REVOKED",
+      activeGrantKey: null,
       revokedAt: now,
       revocationReason: "SUPERSEDED",
       tokenEncrypted: null,
@@ -348,6 +383,7 @@ export async function revokeConsent(input: {
     where: { id: consent.id },
     data: {
       status: "REVOKED",
+      activeGrantKey: null,
       revokedAt: new Date(),
       revocationReason: input.reason,
       tokenEncrypted: null,

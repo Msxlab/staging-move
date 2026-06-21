@@ -102,7 +102,14 @@ export async function POST(req: NextRequest) {
 
     const result = await prisma.partnerConsent.updateMany({
       where: { connectorKey, status: "GRANTED" },
-      data: { status: "REVOKED", revokedAt: new Date(), revocationReason, tokenEncrypted: null, refreshTokenEncrypted: null },
+      data: {
+        status: "REVOKED",
+        activeGrantKey: null,
+        revokedAt: new Date(),
+        revocationReason,
+        tokenEncrypted: null,
+        refreshTokenEncrypted: null,
+      },
     });
     // Kill in-flight work too: this is an incident kill-switch, but revoking the
     // consents alone leaves QUEUED/DISPATCHING ConnectorDispatch rows that the

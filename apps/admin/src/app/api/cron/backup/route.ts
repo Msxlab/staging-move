@@ -46,12 +46,12 @@ async function dispatchBackupAlert(type: string, details: string) {
 }
 
 // POST /api/cron/backup — automated daily backup via cron
-// Protected by CRON_SECRET. In production compose this is wired by
+// Protected by BACKUP_CRON_SECRET when set, otherwise CRON_SECRET. In production compose this is wired by
 // docker/ofelia.ini's "admin-backup" job against the admin container;
 // apps/web/vercel.json does not schedule this admin-only endpoint.
 export async function POST(request: NextRequest) {
   let backupId: string | null = null;
-  if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
+  if (!verifyInternalAuth(request.headers.get("authorization"), "backup")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

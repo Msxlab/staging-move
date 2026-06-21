@@ -1,6 +1,6 @@
 # Environment and Config Map
 
-Updated: 2026-06-15
+Updated: 2026-06-21
 
 ## Evidence Rules
 
@@ -17,13 +17,13 @@ Updated: 2026-06-15
 
 ## Required Production Categories
 
-- Core secrets: `USER_JWT_SECRET`, `ADMIN_JWT_SECRET`, `FIELD_ENCRYPTION_KEY`, `CRON_SECRET`, `INTERNAL_WEBHOOK_SECRET`, `IMPERSONATION_HANDOFF_SECRET`.
+- Core secrets: `USER_JWT_SECRET`, `ADMIN_JWT_SECRET`, `FIELD_ENCRYPTION_KEY`, `CRON_SECRET`, optional narrower `BACKUP_CRON_SECRET`, `INTERNAL_WEBHOOK_SECRET`, `IMPERSONATION_HANDOFF_SECRET`.
 - Database: `DATABASE_URL`.
 - Distributed state: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
 - Canonical URLs: `APP_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_ADMIN_URL`.
 - Stripe web billing: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, Stripe price IDs.
-- Email: `RESEND_API_KEY`, `EMAIL_FROM`, `SUPPORT_EMAIL`.
-- Maps/Places: `GOOGLE_MAPS_API_KEY`.
+- Email: `RESEND_API_KEY`, `EMAIL_FROM`, `SUPPORT_EMAIL`; alert delivery also uses `ALERT_EMAIL_FROM` / `ALERT_EMAIL_TO` where configured.
+- Maps/Places: `GOOGLE_MAPS_API_KEY` for Places/address details, optional `GEOAPIFY_API_KEY` for server-side route-map PNG proxying.
 - Storage/images: R2 endpoint/bucket/access keys/public base, imgproxy key/salt/public URL.
 
 ## Optional / Feature Flags Observed

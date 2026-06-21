@@ -4,6 +4,7 @@ import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { buildCsv } from "@/lib/csv-safety";
 import { maskEmail } from "@/lib/privacy";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { contentDispositionAttachment } from "@/lib/http-download";
 
 /**
  * Admin waitlist CSV export.
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": contentDispositionAttachment(filename, "waitlist.csv"),
         "Cache-Control": "no-store, max-age=0",
         "X-Content-Type-Options": "nosniff",
         "X-Robots-Tag": "noindex, nofollow",

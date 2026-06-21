@@ -6,7 +6,7 @@
  * must use `IMPERSONATION_HANDOFF_SECRET`. Do not broaden one secret into
  * another security boundary.
  */
-export type InternalSecretKind = "cron" | "internal" | "impersonation";
+export type InternalSecretKind = "cron" | "backup" | "internal" | "impersonation";
 
 // Lazy import to avoid pulling the security-events module into edge-runtime
 // callers that don't need it. Failures are swallowed.
@@ -15,7 +15,7 @@ function emitSecretMisuse(kind: InternalSecretKind, reason: string) {
     .then(() => import("./security-events"))
     .then(({ emitSecurityEvent }) => {
       emitSecurityEvent({
-        type: kind === "cron" ? "CRON_SECRET_MISUSE" : "INTERNAL_SECRET_MISUSE",
+        type: kind === "cron" || kind === "backup" ? "CRON_SECRET_MISUSE" : "INTERNAL_SECRET_MISUSE",
         severity: "warn",
         context: { kind, reason },
       });
@@ -26,6 +26,7 @@ function emitSecretMisuse(kind: InternalSecretKind, reason: string) {
 }
 
 function getSpecificEnv(kind: InternalSecretKind): string | undefined {
+  if (kind === "backup") return process.env.BACKUP_CRON_SECRET;
   if (kind === "internal") return process.env.INTERNAL_WEBHOOK_SECRET;
   if (kind === "impersonation") return process.env.IMPERSONATION_HANDOFF_SECRET;
   return undefined; // "cron" has no kind-specific alternate
@@ -65,7 +66,7 @@ export function verifyInternalAuth(
 
   const specific = getSpecificEnv(kind);
   if (specific && safeEqual(token, specific)) return true;
-  if (kind === "cron") {
+  if (kind === "cron" || (kind === "backup" && !specific)) {
     const cron = process.env.CRON_SECRET;
     if (cron && safeEqual(token, cron)) return true;
   }
@@ -85,6 +86,6 @@ export function getInternalCallerSecret(
 ): string | undefined {
   const specific = getSpecificEnv(kind);
   if (specific) return specific;
-  if (kind === "cron") return process.env.CRON_SECRET || undefined;
+  if (kind === "cron" || kind === "backup") return process.env.CRON_SECRET || undefined;
   return undefined;
 }

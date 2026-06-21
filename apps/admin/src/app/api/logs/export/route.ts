@@ -4,6 +4,7 @@ import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { buildCsv } from "@/lib/csv-safety";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { maskEmail, maskIpAddress, maskProviderIdentifier } from "@/lib/privacy";
+import { contentDispositionAttachment } from "@/lib/http-download";
 
 const MAX_EXPORT_ROWS = 50_000;
 
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": contentDispositionAttachment(filename, "audit-logs.csv"),
         "Cache-Control": "no-store, max-age=0",
         "X-Content-Type-Options": "nosniff",
         "X-Robots-Tag": "noindex, nofollow",

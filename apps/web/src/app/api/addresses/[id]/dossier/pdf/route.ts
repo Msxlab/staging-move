@@ -6,6 +6,7 @@ import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { planLimitScopeForDataScope, resolveWorkspaceDataScope } from "@/lib/workspace-data-scope";
 import { planFeatures } from "@locateflow/shared";
 import { generateDossierReportPdf } from "@/lib/pdf/dossier-report";
+import { contentDispositionAttachment } from "@/lib/http-download";
 import type { PdfDossier } from "@/lib/pdf/types";
 import { GET as getDossier } from "../route";
 
@@ -72,7 +73,10 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="locateflow-home-dossier-${id}.pdf"`,
+        "Content-Disposition": contentDispositionAttachment(
+          `locateflow-home-dossier-${id}.pdf`,
+          "locateflow-home-dossier.pdf",
+        ),
         "Content-Length": String(buffer.length),
         "Cache-Control": "private, no-store",
       },

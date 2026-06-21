@@ -506,10 +506,11 @@ export function ServicesClient({
             )}
           </div>
         </div>
-        <Link href="/services/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
-            <Plus className="h-4 w-4" />{t("newTitle")}
-          </button>
+        <Link
+          href="/services/new"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
+        >
+          <Plus className="h-4 w-4" />{t("newTitle")}
         </Link>
       </div>
 
@@ -595,10 +596,11 @@ export function ServicesClient({
                 ))}
               </div>
             </div>
-            <Link href={providerGapHref} className="shrink-0">
-              <button className="inline-flex items-center gap-2 rounded-xl border border-tone-honey-br bg-background px-4 py-2 text-sm font-semibold text-tone-honey-fg transition hover:bg-tone-honey-bg">
-                Add recommended picks <ArrowRight className="h-4 w-4" />
-              </button>
+            <Link
+              href={providerGapHref}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-tone-honey-br bg-background px-4 py-2 text-sm font-semibold text-tone-honey-fg transition hover:bg-tone-honey-bg"
+            >
+              Add recommended picks <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           {providerGapItems.length > 0 && (
@@ -686,10 +688,11 @@ export function ServicesClient({
                   <span className="text-[10px] text-foreground/35">~{checklist.nextAction.estimatedMinutes} min</span>
                 )}
               </div>
-              <Link href="/services/new">
-                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap">
-                  {t("doIt")} <ArrowRight className="h-3 w-3" />
-                </button>
+              <Link
+                href="/services/new"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap"
+              >
+                {t("doIt")} <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           )}

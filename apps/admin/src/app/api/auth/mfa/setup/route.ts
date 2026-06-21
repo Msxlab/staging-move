@@ -6,6 +6,13 @@ import { generateSecret, generateProvisioningURI, generateBackupCodes } from "@/
 import { encrypt } from "@/lib/shared-encryption";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
+function withNoStore(response: NextResponse) {
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
+}
+
 // POST /api/auth/mfa/setup — initiate MFA setup (returns QR URI + backup codes)
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +27,7 @@ export async function POST(request: NextRequest) {
       userAgent: requestMeta.userAgent,
     });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      return withNoStore(NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 }));
     }
 
     const admin = await prisma.adminUser.findUnique({
@@ -69,14 +76,14 @@ export async function POST(request: NextRequest) {
       request: requestMeta,
     });
 
-    return NextResponse.json({
+    return withNoStore(NextResponse.json({
       success: true,
       provisioningURI,
       qrDataUrl,
       secret, // Show once for manual entry
       backupCodes, // Show once — user must save these
       message: "Scan the QR code with your authenticator app, then verify with a code to enable MFA.",
-    });
+    }));
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     console.error("MFA setup failed:", error);

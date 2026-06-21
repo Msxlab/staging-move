@@ -416,15 +416,15 @@ export const shadowsWeb = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Typography — Fraunces (display, variable opsz/SOFT) for hero/h1/h2,
-// Geist (sans) for UI, Geist Mono for numerals/meta. Inter is the
-// fallback, not the default.
+// Typography - Playfair Display for hero/h1/h2, DM Sans for UI, and
+// DM Mono for numerals/meta. Legacy Fraunces/Geist names remain fallbacks
+// in app CSS only for older assets and not-yet-migrated references.
 // ────────────────────────────────────────────────────────────────────
 
 export const fontFamilies = {
-  display: '"Fraunces", "Didot", Georgia, serif',
-  sans: '"Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  mono: '"Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace',
+  display: '"Playfair Display", "Didot", Georgia, serif',
+  sans: '"DM Sans", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  mono: '"DM Mono", "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace',
 } as const;
 
 /** Font size scale — matches the brand doc type table (px values). */
@@ -467,7 +467,7 @@ export const letterSpacing = {
   mono: "0.14em",
 } as const;
 
-/** Fraunces opsz/SOFT axis presets — character of the display type. */
+/** Legacy display-axis presets. Current Playfair usage ignores unsupported axes. */
 export const fontVariationSettings = {
   displayHero: '"opsz" 144, "SOFT" 50',
   displayH2: '"opsz" 96, "SOFT" 40',

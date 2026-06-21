@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/auth";
 import { resolveClientIpFromHeaders } from "@/lib/client-ip";
+import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
 
 export const runtime = "nodejs";
 
@@ -37,6 +38,15 @@ const CONSENT_TEXT_VERSION = "2026-05-01";
 const postSchema = z.object({
   optOut: z.boolean(),
 });
+
+function ccpaCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: shouldUseSecureSessionCookies(),
+    path: "/",
+  };
+}
 
 export async function GET(request: NextRequest) {
   const session = await getUserSession().catch(() => null);
@@ -101,14 +111,15 @@ export async function POST(request: NextRequest) {
   const response = NextResponse.json({ success: true, optOut });
   if (optOut) {
     response.cookies.set(CCPA_COOKIE, "1", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      ...ccpaCookieOptions(),
       maxAge: COOKIE_TTL_DAYS * 24 * 60 * 60,
-      path: "/",
     });
   } else {
-    response.cookies.delete(CCPA_COOKIE);
+    response.cookies.set(CCPA_COOKIE, "", {
+      ...ccpaCookieOptions(),
+      maxAge: 0,
+      expires: new Date(0),
+    });
   }
   return response;
 }

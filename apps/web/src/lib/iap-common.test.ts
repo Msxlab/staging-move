@@ -54,6 +54,7 @@ vi.mock("@/lib/admin-alerts", () => ({
 
 import {
   applyIapStateToUser,
+  decryptStoredPurchaseToken,
   hashPurchaseToken,
   normalizeAppleResult,
   normalizeAppleTransactionPayload,
@@ -427,12 +428,58 @@ describe("IAP normalization", () => {
     });
     expect(prisma.subscription.upsert).toHaveBeenCalledWith(expect.objectContaining({
       update: expect.objectContaining({
+        purchaseToken: null,
+        purchaseTokenEncrypted: "purchase-token",
         purchaseTokenHash: hashPurchaseToken("purchase-token"),
       }),
     }));
     // ACTIVE -> ACTIVE refresh is a renewal/no-op, not a first activation:
     // no owner purchase alert.
     expect(sendAdminPurchaseAlert).not.toHaveBeenCalled();
+  });
+
+  it("stores Google Play purchase tokens encrypted at rest when FIELD_ENCRYPTION_KEY is configured", async () => {
+    process.env.FIELD_ENCRYPTION_KEY = "a".repeat(64);
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: "sub-owned",
+        userId: "user-1",
+        status: "EXPIRED",
+        provider: "PLAY_STORE",
+        accessType: "PAID",
+      } as any);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-owned",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "android",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      billingInterval: "MONTH",
+      originalTransactionId: "GPA.123",
+      latestTransactionId: "GPA.123",
+      purchaseToken: "purchase-token",
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Production",
+      raw: {},
+    };
+
+    await applyIapStateToUser({ userId: "user-1", state });
+
+    const update = vi.mocked(prisma.subscription.upsert).mock.calls[0]?.[0]?.update as any;
+    expect(update.purchaseToken).toBeNull();
+    expect(update.purchaseTokenEncrypted).toMatch(/^enc_v1:/);
+    expect(update.purchaseTokenEncrypted).not.toContain("purchase-token");
+    expect(update.purchaseTokenHash).toBe(hashPurchaseToken("purchase-token"));
+    expect(decryptStoredPurchaseToken({ purchaseTokenEncrypted: update.purchaseTokenEncrypted })).toBe("purchase-token");
   });
 
   it("sends the owner purchase alert when an IAP subscription becomes active for the first time", async () => {

@@ -11,6 +11,7 @@ import { verifyUserStepUp } from "@/lib/user-step-up";
 import { planFeatures } from "@locateflow/shared";
 import { buildTaxReportData } from "@/lib/tax-report-data";
 import { getRequestEntitlement } from "@/lib/request-entitlements";
+import { contentDispositionAttachment } from "@/lib/http-download";
 
 // POST /api/export
 // Body: { type, format, includeNotes, confirmPassword?, mfaCode?, backupCode? }
@@ -660,7 +661,7 @@ export async function POST(request: NextRequest) {
         return new NextResponse(csv, {
           headers: {
             "Content-Type": "text/csv",
-            "Content-Disposition": `attachment; filename="locateflow-tax-export.csv"`,
+            "Content-Disposition": contentDispositionAttachment("locateflow-tax-export.csv"),
           },
         });
       }
@@ -708,7 +709,7 @@ export async function POST(request: NextRequest) {
       return new NextResponse(csvContent, {
         headers: {
           "Content-Type": "text/csv",
-          "Content-Disposition": `attachment; filename="locateflow-${type}-export.csv"`,
+          "Content-Disposition": contentDispositionAttachment(`locateflow-${type}-export.csv`),
         },
       });
     }
@@ -717,7 +718,7 @@ export async function POST(request: NextRequest) {
     return new NextResponse(JSON.stringify(data, null, 2), {
       headers: {
         "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="locateflow-${type}-export.json"`,
+        "Content-Disposition": contentDispositionAttachment(`locateflow-${type}-export.json`),
       },
     });
   } catch (error) {

@@ -46,16 +46,16 @@ export function EmptyState({
       <p className="text-muted-foreground text-sm mb-6 max-w-sm">{description}</p>
       <div className="flex flex-col sm:flex-row gap-2">
         {actionLabel && actionHref && (
-          <Link href={actionHref}>
-            <button className={primaryBtn}>{actionLabel}</button>
+          <Link href={actionHref} className={primaryBtn}>
+            {actionLabel}
           </Link>
         )}
         {actionLabel && onAction && !actionHref && (
           <button className={primaryBtn} onClick={onAction}>{actionLabel}</button>
         )}
         {secondaryActionLabel && secondaryActionHref && (
-          <Link href={secondaryActionHref}>
-            <button className={secondaryBtn}>{secondaryActionLabel}</button>
+          <Link href={secondaryActionHref} className={secondaryBtn}>
+            {secondaryActionLabel}
           </Link>
         )}
         {secondaryActionLabel && onSecondaryAction && !secondaryActionHref && (

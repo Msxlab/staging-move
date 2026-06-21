@@ -699,6 +699,7 @@
     "vehicleCheckNoMatch": "No pudimos decodificar ese VIN. Verifícalo e inténtalo de nuevo.",
     "vehicleCheckError": "No se pudo contactar con la NHTSA en este momento. Inténtalo de nuevo en un momento.",
     "vehicleCheckRecallsNone": "sin retiradas abiertas reportadas",
+    "vehicleCheckRecallCount": "{{count}} retiradas abiertas",
     "vehicleCheckRecallCount_one": "{{count}} retirada abierta",
     "vehicleCheckRecallCount_other": "{{count}} retiradas abiertas",
     "vehicleCheckRecallsUnavailable": "La información de retiradas no está disponible en este momento.",

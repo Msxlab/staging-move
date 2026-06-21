@@ -30,6 +30,7 @@ function sanitizeSubscriptionForClient<T extends Record<string, unknown> | null>
   if (!subscription) return subscription;
   const safe = { ...subscription };
   delete safe.purchaseToken;
+  delete safe.purchaseTokenEncrypted;
   delete safe.purchaseTokenHash;
   return safe as T;
 }

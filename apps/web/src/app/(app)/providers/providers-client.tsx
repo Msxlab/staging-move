@@ -656,10 +656,11 @@ export function ProvidersClient({
               ) : null}
             </div>
             {setupLaneProviders.length > 0 && (
-              <Link href={setupLaneHref} className="shrink-0">
-                <button className="inline-flex items-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
-                  Add setup picks <ArrowRight className="h-4 w-4" />
-                </button>
+              <Link
+                href={setupLaneHref}
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+              >
+                Add setup picks <ArrowRight className="h-4 w-4" />
               </Link>
             )}
           </div>

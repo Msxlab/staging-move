@@ -30,7 +30,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const caller = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!can(caller.role as WorkspaceRole, "member.invite", { status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -55,7 +57,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const caller = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!can(caller.role as WorkspaceRole, "member.invite", { status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Only owners and admins can invite." }, { status: 403 });
@@ -95,7 +99,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // Seat ceiling from the owner's plan.
-  const workspace = await prisma.workspace.findUnique({ where: { id }, select: { ownerUserId: true, name: true } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, deletedAt: null }, select: { ownerUserId: true, name: true } });
   if (!workspace) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const ownerSub = await prisma.subscription.findUnique({ where: { userId: workspace.ownerUserId } });
   // Consumer seat gate → consumer-free override (audit P1-2): under CONSUMER_FREE

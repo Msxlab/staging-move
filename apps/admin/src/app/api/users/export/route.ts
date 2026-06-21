@@ -4,6 +4,7 @@ import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { buildCsv } from "@/lib/csv-safety";
 import { maskEmail } from "@/lib/privacy";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { contentDispositionAttachment } from "@/lib/http-download";
 
 /**
  * Admin user CSV export.
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
         // text/csv with explicit utf-8 charset so non-ASCII names render
         // correctly in Excel (which assumes UTF-16 otherwise).
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": contentDispositionAttachment(filename, "users.csv"),
         "Cache-Control": "no-store, max-age=0",
         "X-Content-Type-Options": "nosniff",
         "X-Robots-Tag": "noindex, nofollow",

@@ -17,10 +17,11 @@ export default function UpgradePrompt({ feature, message, compact = false }: Upg
       <div className="flex items-center gap-2 p-3 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
         <Sparkles className="h-4 w-4 text-tone-orange-fg shrink-0" />
         <p className="text-xs text-tone-orange-fg flex-1">{message || defaultMessage}</p>
-        <Link href="/pricing">
-          <button className="flex items-center gap-1 px-3 py-1 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap">
-            Upgrade <ArrowRight className="h-3 w-3" />
-          </button>
+        <Link
+          href="/pricing"
+          className="flex items-center gap-1 px-3 py-1 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap"
+        >
+          Upgrade <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
     );
@@ -37,10 +38,11 @@ export default function UpgradePrompt({ feature, message, compact = false }: Upg
       <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
         {message || defaultMessage}
       </p>
-      <Link href="/pricing">
-        <button className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
-          View Plans <ArrowRight className="h-4 w-4" />
-        </button>
+      <Link
+        href="/pricing"
+        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
+      >
+        View Plans <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
   );

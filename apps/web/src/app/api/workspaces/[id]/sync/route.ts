@@ -35,11 +35,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
   const { id } = await params;
 
-  const member = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
+  const member = await prisma.workspaceMember.findFirst({
+    where: { workspaceId: id, userId: session.userId, workspace: { deletedAt: null } },
+  });
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // Owner-resolved entitlement: the workspace's plan must unlock API connectors.
-  const workspace = await prisma.workspace.findUnique({ where: { id }, select: { ownerUserId: true } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, deletedAt: null }, select: { ownerUserId: true } });
   if (!workspace) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!(await userHasApiConnectorEntitlement(workspace.ownerUserId))) {
     return NextResponse.json({ error: "This workspace's plan doesn't include partner API sync." }, { status: 403 });
@@ -98,6 +100,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
   }
 
-  const result = await enqueueAddressChange({ userId: subjectUserId, toAddressId, fromAddressId, workspaceId: id });
-  return NextResponse.json(result);
+  try {
+    const result = await enqueueAddressChange({ userId: subjectUserId, toAddressId, fromAddressId, workspaceId: id });
+    return NextResponse.json(result);
+  } catch (error: any) {
+    if (error?.message === "CONNECTORS_DISABLED") {
+      return NextResponse.json({ error: "Connectors are not enabled." }, { status: 503 });
+    }
+    if (error?.message === "CONNECTORS_NOT_ENTITLED") {
+      return NextResponse.json({ error: "This workspace's plan doesn't include partner API sync." }, { status: 403 });
+    }
+    if (error?.message === "ADDRESS_NOT_FOUND" || error?.message === "WORKSPACE_NOT_FOUND") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    throw error;
+  }
 }

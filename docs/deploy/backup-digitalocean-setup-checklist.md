@@ -50,6 +50,7 @@ Admin staging env:
 - `BACKUP_STORAGE_ACCESS_KEY_ID`
 - `BACKUP_STORAGE_SECRET_ACCESS_KEY`
 - `FIELD_ENCRYPTION_KEY`
+- `BACKUP_CRON_SECRET` (recommended; isolates backup cron from broader scheduler auth)
 
 Offsite bucket requirements:
 

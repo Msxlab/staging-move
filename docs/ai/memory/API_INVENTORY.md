@@ -1,13 +1,13 @@
 # API Inventory
 
-Updated: 2026-06-15
+Updated: 2026-06-21
 
 Evidence basis: route file inventory and selected source inspection. This is a first-pass inventory, not a full per-handler proof.
 
 ## Route Counts
 
-- Web API route files: 160.
-- Admin API route files: 119.
+- Web API route files: 171.
+- Admin API route files: 124.
 
 ## Web API Groups
 
@@ -62,10 +62,16 @@ Evidence basis: route file inventory and selected source inspection. This is a f
 
 ## API Risks and Notes
 
-- Runtime migrations on startup are the highest operational API-adjacent deployment risk.
-- Admin middleware rate limiting is process-local.
-- Legacy `/api/partner-consents/[id]/refresh` appears behind session middleware despite route-level cron guard; canonical route is `/api/cron/partner-consents/[id]/refresh`.
-- SQL dump filename should be sanitized/encoded before `Content-Disposition`.
+- Runtime migrations on startup were removed from root runtime entrypoints in the staging audit branch; live platform run commands still need verification.
+- Admin middleware route limiting now has an Upstash REST path when Redis env is configured; missing Redis remains a staging readiness risk.
+- Legacy `/api/partner-consents/[id]/refresh` is absent; canonical refresh is `/api/cron/partner-consents/[id]/refresh`, and middleware keeps the legacy path sealed.
+- SQL dump filenames are sanitized and encoded before `Content-Disposition`; real staging download still needs runtime proof.
+- User-facing workspace operations now filter active membership through a non-deleted workspace; restore/delete are lifecycle exceptions that still need browser proof during soft-delete testing.
+- Sensitive admin auth responses now use no-store headers for login success/MFA challenge, MFA setup/verify, and session list/revoke flows.
+- Manual backup retention cleanup now requires password/MFA step-up for real deletes; backup-secret cron and dry-run paths remain available for automation and preview.
+- Static literal route/API target inventory for web, admin, and mobile currently reports no page/API misses after fixing the mover application Terms link; this is not a substitute for rendered navigation QA.
+- Static route guard inventory found no unexpected unguarded admin mutations. Web mutation candidates without session/admin guards are expected public flows and each has a feature gate, token proof, enumeration-safe response, or rate limiting: password reset request, help feedback, mover/partner applications, mover/partner portal magic-link request, and unsubscribe.
+- Static GET guard inventory found only expected public read surfaces without session/admin guards: public campaign offers, build-info, invite-token preview, mobile IAP product IDs, and provider catalog details.
 
 ## Incomplete
 

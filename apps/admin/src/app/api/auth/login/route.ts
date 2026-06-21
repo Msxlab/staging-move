@@ -43,6 +43,13 @@ const adminLoginSchema = z
   })
   .strict();
 
+function withNoStore(response: NextResponse) {
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
+}
+
 function parseLoginUA(ua: string) {
   const result = { browser: "Unknown", os: "Unknown", deviceType: "Desktop" };
   if (!ua) return result;
@@ -435,7 +442,7 @@ export async function POST(request: NextRequest) {
       if (!mfaTrustedDeviceUsed && !mfaCode && !backupCode) {
         await writeLoginAuditLog({ action: "MFA_REQUIRED", email, ip, ua, reason: "MFA_REQUIRED", adminId: admin.id });
         await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_REQUIRED", ip, ua, mfaUsed: true, mfaMethod: null });
-        const response = NextResponse.json({ error: "MFA required", requiresMfa: true }, { status: 403 });
+        const response = withNoStore(NextResponse.json({ error: "MFA required", requiresMfa: true }, { status: 403 }));
         if (shouldExpireMfaTrustCookie) {
           expireAdminMfaTrustCookie(response, request.headers.get("host"));
         }
@@ -633,7 +640,7 @@ export async function POST(request: NextRequest) {
       mfaUsed: mfaWasUsed, mfaMethod,
     });
 
-    const response = NextResponse.json({
+    const response = withNoStore(NextResponse.json({
       success: true,
       admin: {
         id: admin.id,
@@ -644,7 +651,7 @@ export async function POST(request: NextRequest) {
         mfaEnabled: (admin as any).mfaEnabled || false,
         mustChangePassword,
       },
-    });
+    }));
     if (trustedDeviceTokenToSet) {
       setAdminMfaTrustCookie(response, trustedDeviceTokenToSet);
     }

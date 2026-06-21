@@ -699,6 +699,7 @@
     "vehicleCheckNoMatch": "We couldn't decode that VIN. Double-check it and try again.",
     "vehicleCheckError": "Couldn't reach NHTSA right now. Try again in a moment.",
     "vehicleCheckRecallsNone": "no open recalls reported",
+    "vehicleCheckRecallCount": "{{count}} open recalls",
     "vehicleCheckRecallCount_one": "{{count}} open recall",
     "vehicleCheckRecallCount_other": "{{count}} open recalls",
     "vehicleCheckRecallsUnavailable": "Recall info is unavailable right now.",

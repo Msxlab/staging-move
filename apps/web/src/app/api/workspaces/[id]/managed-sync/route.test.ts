@@ -52,6 +52,9 @@ describe("/api/workspaces/[id]/managed-sync", () => {
     memberMock.mockResolvedValue(null);
     const res = await GET(new Request("http://localhost") as any, params);
     expect(res.status).toBe(404);
+    expect(memberMock).toHaveBeenCalledWith({
+      where: { workspaceId: "ws-1", userId: "u-1", workspace: { deletedAt: null } },
+    });
   });
 
   it("PUT sets the caller's own consent", async () => {
@@ -59,6 +62,9 @@ describe("/api/workspaces/[id]/managed-sync", () => {
     updateMock.mockResolvedValue({ id: "m1", role: "MEMBER", managedSyncEnabled: true });
     const res = await PUT(putReq({ enabled: true }), params);
     expect(res.status).toBe(200);
+    expect(memberMock).toHaveBeenCalledWith({
+      where: { workspaceId: "ws-1", userId: "u-1", workspace: { deletedAt: null } },
+    });
     expect(updateMock).toHaveBeenCalledWith({ where: { id: "m1" }, data: { managedSyncEnabled: true } });
     expect(await res.json()).toEqual({ enabled: true, explicit: true });
   });

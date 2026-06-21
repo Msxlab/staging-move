@@ -502,10 +502,11 @@ export default function NewServicePage() {
 
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/services">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-            <ArrowLeft className="h-4 w-4" />{ts("newBack")}
-          </button>
+        <Link
+          href="/services"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />{ts("newBack")}
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground">{ts("newPageTitle")}</h1>

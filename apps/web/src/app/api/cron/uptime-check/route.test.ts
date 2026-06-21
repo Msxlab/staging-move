@@ -57,6 +57,7 @@ describe("uptime-check cron", () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW_UTC);
     vi.stubGlobal("fetch", mocks.fetch);
+    vi.stubEnv("APP_ENV", "production");
 
     mocks.guardCronRequest.mockResolvedValue({ ok: true });
     mocks.resolveAdminAlertRecipients.mockResolvedValue(["owner@locateflow.com"]);
@@ -66,6 +67,7 @@ describe("uptime-check cron", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.useRealTimers();
   });
 
@@ -276,7 +278,13 @@ describe("evaluateProbeResponse (pure verdict)", () => {
 });
 
 describe("buildTargets", () => {
-  const ENV_KEYS = ["UPTIME_WEB_BASE_URL", "UPTIME_ADMIN_BASE_URL", "NEXT_PUBLIC_ADMIN_URL"] as const;
+  const ENV_KEYS = [
+    "UPTIME_WEB_BASE_URL",
+    "UPTIME_ADMIN_BASE_URL",
+    "NEXT_PUBLIC_ADMIN_URL",
+    "APP_ENV",
+    "VERCEL_ENV",
+  ] as const;
   const saved: Record<string, string | undefined> = {};
 
   beforeEach(() => {
@@ -287,6 +295,7 @@ describe("buildTargets", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     for (const key of ENV_KEYS) {
       if (saved[key] === undefined) delete process.env[key];
       else process.env[key] = saved[key];
@@ -294,10 +303,24 @@ describe("buildTargets", () => {
   });
 
   it("defaults to the public production surfaces with the brand marker on the home page", () => {
+    process.env.APP_ENV = "production";
     const targets = buildTargets();
     expect(targets.map((t) => t.url)).toEqual([HOME_URL, HEALTH_URL, ADMIN_URL]);
     expect(targets[0].marker).toBe("LocateFlow");
     expect(targets[1].marker).toBeUndefined();
+  });
+
+  it("does not default staging or preview runtimes to production surfaces", () => {
+    process.env.APP_ENV = "staging";
+    vi.stubEnv("NODE_ENV", "production");
+
+    const targets = buildTargets();
+
+    expect(targets.map((t) => t.url)).toEqual([
+      "http://localhost:3000/",
+      "http://localhost:3000/api/health",
+      "http://localhost:3001/login",
+    ]);
   });
 
   it("honors env overrides and strips trailing slashes", () => {

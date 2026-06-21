@@ -225,6 +225,7 @@ describe("admin login rate limiting", () => {
     const body = await response.json();
 
     expect(response.status).toBe(403);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body).toMatchObject({ error: "MFA required", requiresMfa: true });
     expect(mocks.adminSessionCreate).not.toHaveBeenCalled();
     expect(mocks.adminAuditLogCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -261,6 +262,7 @@ describe("admin login rate limiting", () => {
     ));
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(mocks.verifyTOTP).not.toHaveBeenCalled();
     expect(mocks.adminMfaTrustedDeviceFindFirst).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
@@ -346,6 +348,7 @@ describe("admin login rate limiting", () => {
     }));
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(mocks.adminMfaTrustedDeviceCreate).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
         adminUserId: "admin-remember",

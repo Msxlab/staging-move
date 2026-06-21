@@ -3,11 +3,15 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 const rcMock = vi.hoisted(() => ({ getRuntimeConfigValue: vi.fn() }));
 const dbMocks = vi.hoisted(() => ({
   prisma: {
-    connectorConfig: { findUnique: vi.fn() },
-    connectorDispatch: { findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
-    partnerConsent: { findUnique: vi.fn() },
+    $transaction: vi.fn(),
+    address: { findFirst: vi.fn() },
+    addressChangeEvent: { create: vi.fn(), update: vi.fn() },
+    connectorConfig: { findMany: vi.fn(), findUnique: vi.fn() },
+    connectorDispatch: { create: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    partnerConsent: { findMany: vi.fn(), findUnique: vi.fn() },
     notificationPreference: { findMany: vi.fn() },
     user: { findUnique: vi.fn() },
+    workspace: { findFirst: vi.fn() },
   },
 }));
 vi.mock("@/lib/runtime-config", () => ({ getRuntimeConfigValue: rcMock.getRuntimeConfigValue }));
@@ -16,13 +20,27 @@ vi.mock("@/lib/shared-encryption", () => ({
   decrypt: (value: string) => value,
   encrypt: (value: string) => value,
 }));
-vi.mock("@/lib/connector-oauth", () => ({ refreshConsentAccessToken: vi.fn() }));
+const connectorOAuthMocks = vi.hoisted(() => ({
+  isApiConnectorsEnabled: vi.fn(),
+  refreshConsentAccessToken: vi.fn(),
+  userHasApiConnectorEntitlement: vi.fn(),
+}));
+vi.mock("@/lib/connector-oauth", () => ({
+  isApiConnectorsEnabled: connectorOAuthMocks.isApiConnectorsEnabled,
+  refreshConsentAccessToken: connectorOAuthMocks.refreshConsentAccessToken,
+  userHasApiConnectorEntitlement: connectorOAuthMocks.userHasApiConnectorEntitlement,
+}));
 vi.mock("@/lib/in-app-notifications", () => ({ createInAppNotification: vi.fn() }));
 vi.mock("@/lib/email-service", () => ({ sendConnectorActionNeededEmail: vi.fn() }));
 vi.mock("@/lib/notification-preferences", () => ({ isWebNotificationEnabled: vi.fn(() => false) }));
 
 import { connectorRegistry } from "./connector-registry";
-import { toCanonicalAddress, isApiSyncConnector, runDispatchRow, runDueDispatches } from "./connector-runtime";
+import { toCanonicalAddress, enqueueAddressChange, isApiSyncConnector, runDispatchRow, runDueDispatches } from "./connector-runtime";
+
+beforeEach(() => {
+  connectorOAuthMocks.isApiConnectorsEnabled.mockResolvedValue(true);
+  connectorOAuthMocks.userHasApiConnectorEntitlement.mockResolvedValue(true);
+});
 
 describe("toCanonicalAddress", () => {
   it("maps DB address fields and normalizes USA → US", () => {
@@ -93,6 +111,8 @@ describe("isApiSyncConnector — server push only with a real agreement + creden
 describe("runDispatchRow mode gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    connectorOAuthMocks.isApiConnectorsEnabled.mockResolvedValue(true);
+    connectorOAuthMocks.userHasApiConnectorEntitlement.mockResolvedValue(true);
     rcMock.getRuntimeConfigValue.mockResolvedValue(null);
     dbMocks.prisma.connectorConfig.findUnique.mockResolvedValue({
       enabled: true,
@@ -303,5 +323,48 @@ describe("runDispatchRow mode gate", () => {
         data: expect.objectContaining({ status: "DISPATCHING" }),
       }),
     );
+  });
+});
+
+describe("enqueueAddressChange entitlement gate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    connectorOAuthMocks.isApiConnectorsEnabled.mockResolvedValue(true);
+    connectorOAuthMocks.userHasApiConnectorEntitlement.mockResolvedValue(true);
+    dbMocks.prisma.address.findFirst.mockResolvedValue({
+      id: "addr_1",
+      street: "1 New St",
+      street2: null,
+      city: "Austin",
+      state: "TX",
+      zip: "78701",
+      country: "USA",
+    });
+    dbMocks.prisma.user.findUnique.mockResolvedValue({ firstName: "User", lastName: "One" });
+    dbMocks.prisma.partnerConsent.findMany.mockResolvedValue([]);
+    dbMocks.prisma.connectorConfig.findMany.mockResolvedValue([]);
+    dbMocks.prisma.addressChangeEvent.create.mockResolvedValue({ id: "event_row_1" });
+    dbMocks.prisma.addressChangeEvent.update.mockResolvedValue({});
+    dbMocks.prisma.$transaction.mockImplementation(async (fn: any) => fn(dbMocks.prisma));
+  });
+
+  it("refuses to enqueue when the feature flag is disabled", async () => {
+    connectorOAuthMocks.isApiConnectorsEnabled.mockResolvedValue(false);
+
+    await expect(enqueueAddressChange({ userId: "user_1", toAddressId: "addr_1" })).rejects.toThrow(
+      "CONNECTORS_DISABLED",
+    );
+    expect(dbMocks.prisma.address.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("checks the workspace owner's connector entitlement for workspace sync", async () => {
+    dbMocks.prisma.workspace.findFirst.mockResolvedValue({ ownerUserId: "owner_1" });
+    connectorOAuthMocks.userHasApiConnectorEntitlement.mockResolvedValue(false);
+
+    await expect(
+      enqueueAddressChange({ userId: "member_1", workspaceId: "ws_1", toAddressId: "addr_1" }),
+    ).rejects.toThrow("CONNECTORS_NOT_ENTITLED");
+    expect(connectorOAuthMocks.userHasApiConnectorEntitlement).toHaveBeenCalledWith("owner_1");
+    expect(dbMocks.prisma.address.findFirst).not.toHaveBeenCalled();
   });
 });

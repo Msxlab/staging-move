@@ -78,6 +78,11 @@ describe("sanitizeEmailHtml", () => {
     expect(out).toContain('rel="noopener noreferrer"');
   });
 
+  it("preserves existing rel tokens while adding noopener noreferrer for target=_blank links", () => {
+    const out = sanitizeEmailHtml('<a href="https://example.com" target="_blank" rel="nofollow ugc">x</a>');
+    expect(out).toContain('rel="nofollow ugc noopener noreferrer"');
+  });
+
   it("only allows target=_blank value", () => {
     const out = sanitizeEmailHtml('<a href="https://example.com" target="_top">x</a>');
     expect(out).not.toContain('target="_top"');

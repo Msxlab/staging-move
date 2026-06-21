@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 vi.mock("@/lib/db", () => ({
   prisma: {
     workspaceMember: { findFirst: vi.fn() },
-    workspace: { findUnique: vi.fn() },
+    workspace: { findFirst: vi.fn() },
     address: { findFirst: vi.fn() },
   },
 }));
@@ -20,7 +20,7 @@ import { enqueueAddressChange } from "@/lib/connector-runtime";
 import { POST } from "./route";
 
 const memberMock = prisma.workspaceMember.findFirst as unknown as Mock;
-const workspaceMock = prisma.workspace.findUnique as unknown as Mock;
+const workspaceMock = prisma.workspace.findFirst as unknown as Mock;
 const addressMock = prisma.address.findFirst as unknown as Mock;
 const sessionMock = getUserSession as unknown as Mock;
 const connectorsMock = isApiConnectorsEnabled as unknown as Mock;
@@ -81,13 +81,30 @@ describe("POST /api/workspaces/[id]/sync", () => {
     entitlementMock.mockResolvedValue(false);
     const res = await call({ toAddressId: "a1" });
     expect(res.status).toBe(403);
+    expect(workspaceMock).toHaveBeenCalledWith({
+      where: { id: "ws-1", deletedAt: null },
+      select: { ownerUserId: true },
+    });
     expect(enqueueMock).not.toHaveBeenCalled();
   });
 
-  it("404s when the caller is not a member", async () => {
+  it("404s when the caller is not an active-workspace member", async () => {
     membership({ caller: null });
     const res = await call({ toAddressId: "a1" });
     expect(res.status).toBe(404);
+    expect(workspaceMock).not.toHaveBeenCalled();
+    expect(entitlementMock).not.toHaveBeenCalled();
+  });
+
+  it("404s when the workspace disappears after the membership check", async () => {
+    membership({ caller: { role: "MEMBER", status: "ACTIVE" } });
+    workspaceMock.mockResolvedValue(null);
+
+    const res = await call({ toAddressId: "a1" });
+
+    expect(res.status).toBe(404);
+    expect(entitlementMock).not.toHaveBeenCalled();
+    expect(enqueueMock).not.toHaveBeenCalled();
   });
 
   it("422s when toAddressId is missing", async () => {
