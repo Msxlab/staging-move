@@ -161,16 +161,16 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
         onClick={opts?.onNavigate}
         aria-current={isActive ? "page" : undefined}
         className={cn(
-          "adp-item relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] transition-colors",
+          "adp-item relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] transition-colors",
           isActive
-            ? "on bg-primary/10 font-semibold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+            ? "on bg-primary/10 font-bold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
             : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground",
         )}
       >
-        <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground/70")} />
+        <item.icon className={cn("h-[17px] w-[17px] flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground/70")} />
         <span className="min-w-0 flex-1 truncate">{navLabel(tNav, item.nameKey, item.name)}</span>
         {count != null && (
-          <span className="ct shrink-0 rounded-full border border-border/60 bg-muted px-1.5 py-px font-mono text-[10px] leading-4 text-muted-foreground">
+          <span className="ct shrink-0 rounded-full bg-primary/10 px-1.5 py-px font-mono text-[10px] font-bold leading-4 text-primary">
             {count}
           </span>
         )}
@@ -209,7 +209,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
       {ctx && (
         <div className="mb-2 flex items-center gap-2.5 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2">
           <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary ring-1 ring-primary/20"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-primary text-xs font-bold text-primary-foreground ring-1 ring-primary/20"
             aria-hidden="true"
           >
             {initial}
@@ -276,7 +276,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
           href="/"
           title="LocateFlow Admin"
           aria-label="LocateFlow Admin - Dashboard"
-          className="mark mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-colors hover:bg-accent"
+          className="mark mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20 transition-colors hover:bg-accent"
         >
           <RailMark />
         </a>
@@ -293,7 +293,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
                 title={groupTitle}
                 aria-current={isOn ? "true" : undefined}
                 className={cn(
-                  "rail-btn relative flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2.5 transition-colors",
+                  "rail-btn relative flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2.5 transition-colors",
                   isOn
                     ? "on bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:h-7 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
@@ -309,7 +309,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
         {/* Identity chip - full identity card lives in the panel footer. */}
         {ctx && (
           <span
-            className="rail-av flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 font-mono text-xs font-semibold text-primary ring-1 ring-primary/20"
+            className="rail-av flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary/80 to-primary font-mono text-xs font-semibold text-primary-foreground ring-1 ring-primary/20"
             title={email ? `${email}${roleMeta ? ` - ${roleMeta.label}` : ""}` : roleMeta?.label}
             aria-hidden="true"
           >
@@ -320,16 +320,21 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
 
       {/* Contextual panel - brand block, search, active group's items. */}
       <div className="adp-panel flex min-h-0 min-w-0 flex-col">
-        <div className="panel-hd flex h-16 items-center gap-2 border-b border-border px-3">
+        <div className="panel-hd flex h-16 items-center gap-2.5 border-b border-border px-3">
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20"
+            aria-hidden="true"
+          >
+            <RailMark />
+          </span>
           <div className="flex min-w-0 flex-col leading-none">
             <span
-              className="truncate text-[15px] text-foreground"
-              style={{ fontFamily: "var(--font-display), Didot, Georgia, serif", fontWeight: 400 }}
+              className="truncate font-display text-[19px] font-black text-foreground"
             >
               Locate<span className="foil-text">flow</span>
             </span>
-            <span className="mt-1 font-mono text-[8px] uppercase text-muted-foreground/70">
-              Admin
+            <span className="mt-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.22em] text-primary">
+              Operations
             </span>
           </div>
           <span className="flex-1" />
@@ -358,10 +363,10 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
           ) : (
             panelGroup && (
               <>
-                <div className="adp-grp px-2.5 pb-1.5 pt-1 font-mono text-[10px] font-semibold uppercase text-muted-foreground/60">
+                <div className="adp-grp px-3 pb-2 pt-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/60">
                   {navLabel(tNav, panelGroup.labelKey, panelGroup.label)}
                 </div>
-                <div className="space-y-0.5">{panelGroup.items.map((item) => renderItem(item))}</div>
+                <div className="space-y-1">{panelGroup.items.map((item) => renderItem(item))}</div>
               </>
             )
           )}
