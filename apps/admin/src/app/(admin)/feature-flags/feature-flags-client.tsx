@@ -146,49 +146,57 @@ export default function FeatureFlagsClient() {
         title="Feature <em>Flags</em>"
         subtitle="Toggle features and manage rollouts"
         actions={
-          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> New Flag</button>
+          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"><Plus className="h-4 w-4" /> New Flag</button>
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Total Flags</p><p className="mt-1 text-2xl font-bold text-foreground">{flags.length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Enabled</p><p className="mt-1 text-2xl font-bold text-tone-sage-fg">{flags.filter(f => f.enabled).length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Disabled</p><p className="mt-1 text-2xl font-bold text-destructive">{flags.filter(f => !f.enabled).length}</p></div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {[
+          { label: "Total Flags", value: flags.length, color: "text-foreground", bg: "bg-card" },
+          { label: "Enabled", value: flags.filter(f => f.enabled).length, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
+          { label: "Disabled", value: flags.filter(f => !f.enabled).length, color: "text-destructive", bg: "bg-tone-slate-bg" },
+        ].map((s) => (
+          <div key={s.label} className={`rounded-2xl border border-border ${s.bg} p-5`}>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{s.label}</p>
+            <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
       {showForm && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">{editing ? "Edit Flag" : "New Feature Flag"}</h2>
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 space-y-4">
+          <h2 className="font-display text-lg font-bold text-foreground">{editing ? "Edit Flag" : "New Feature Flag"}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Name</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} disabled={!!editing} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50" placeholder="feature_new_dashboard" /></div>
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Target Type</label><select value={form.targetType} onChange={e => setForm({ ...form, targetType: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">{TARGET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
-            <div className="sm:col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">Description</label><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Description..." /></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Name</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} disabled={!!editing} className="w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-sm text-foreground disabled:opacity-50" placeholder="feature_new_dashboard" /></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Target Type</label><select value={form.targetType} onChange={e => setForm({ ...form, targetType: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground">{TARGET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+            <div className="sm:col-span-2"><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Description</label><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="Description..." /></div>
             {form.targetType !== "ALL" && (
-              <div className="sm:col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">{form.targetType === "PERCENTAGE" ? "Percentage (0-100)" : form.targetType === "USER_LIST" ? "User IDs (comma-separated)" : "Plans (comma-separated)"}</label><input value={form.targetValue} onChange={e => setForm({ ...form, targetValue: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" /></div>
+              <div className="sm:col-span-2"><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{form.targetType === "PERCENTAGE" ? "Percentage (0-100)" : form.targetType === "USER_LIST" ? "User IDs (comma-separated)" : "Plans (comma-separated)"}</label><input value={form.targetValue} onChange={e => setForm({ ...form, targetValue: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground" /></div>
             )}
-            <div><label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.enabled} onChange={e => setForm({ ...form, enabled: e.target.checked })} className="accent-primary" /> Enabled</label></div>
+            <div><label className="flex items-center gap-2 text-sm cursor-pointer text-foreground"><input type="checkbox" checked={form.enabled} onChange={e => setForm({ ...form, enabled: e.target.checked })} className="accent-primary" /> Enabled</label></div>
           </div>
-          <div className="flex gap-2"><button onClick={save} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">{editing ? "Update" : "Create"}</button><button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent">Cancel</button></div>
+          <div className="flex gap-2"><button onClick={save} className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">{editing ? "Update" : "Create"}</button><button onClick={reset} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Cancel</button></div>
         </div>
       )}
 
       <div className="space-y-3">
-        {loading ? <div className="text-center py-8 text-muted-foreground">Loading...</div> : flags.length === 0 ? <div className="rounded-xl border border-border bg-card"><EmptyState icon={Flag} title="No feature flags yet" description="Create your first feature flag to control rollouts." /></div> : flags.map(f => (
-          <div key={f.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between">
+        {loading ? <div className="py-20 text-center text-sm text-muted-foreground">Loading flags...</div> : flags.length === 0 ? <div className="rounded-2xl border border-dashed border-border bg-card"><EmptyState icon={Flag} title="No feature flags yet" description="Create your first feature flag to control rollouts." /></div> : flags.map(f => (
+          <div key={f.id} className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-accent/30">
             <div className="flex items-center gap-4">
               <button onClick={() => toggle(f)} aria-label={f.enabled ? "Disable flag" : "Enable flag"} aria-pressed={f.enabled} className="transition-colors">{f.enabled ? <ToggleRight className="h-7 w-7 text-tone-sage-fg" /> : <ToggleLeft className="h-7 w-7 text-muted-foreground" />}</button>
               <div>
-                <div className="flex items-center gap-2"><p className="font-mono font-medium text-foreground">{f.name}</p><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${f.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{f.enabled ? "ON" : "OFF"}</span></div>
-                {f.description && <p className="text-xs text-muted-foreground mt-0.5">{f.description}</p>}
-                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                  <span>Target: {f.targetType}</span>
+                <div className="flex items-center gap-2"><p className="font-mono font-medium text-foreground">{f.name}</p><span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${f.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}><span className={`h-1.5 w-1.5 rounded-full ${f.enabled ? "bg-tone-sage-fg" : "bg-muted-foreground"}`} />{f.enabled ? "ON" : "OFF"}</span></div>
+                {f.description && <p className="mt-0.5 text-xs text-muted-foreground">{f.description}</p>}
+                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.18em]">Target</span>
+                  <span className="font-mono text-foreground">{f.targetType}</span>
                   {f.targetValue && <span className="font-mono text-[10px]">{f.targetValue.length > 50 ? f.targetValue.slice(0, 50) + "..." : f.targetValue}</span>}
                 </div>
               </div>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => startEdit(f)} aria-label="Edit flag" className="rounded p-1.5 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
-              <button onClick={() => remove(f.id)} aria-label="Delete flag" className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => startEdit(f)} aria-label="Edit flag" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"><Edit2 className="h-4 w-4" /></button>
+              <button onClick={() => remove(f.id)} aria-label="Delete flag" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         ))}

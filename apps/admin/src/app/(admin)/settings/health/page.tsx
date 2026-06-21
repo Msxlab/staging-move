@@ -97,7 +97,7 @@ export default function HealthPage() {
     );
   if (!data)
     return (
-      <div className="py-12 text-center text-muted-foreground">
+      <div className="py-12 text-center text-sm text-muted-foreground">
         Failed to load
       </div>
     );
@@ -118,14 +118,14 @@ export default function HealthPage() {
             <Link
               href="/settings"
               aria-label="Back to settings"
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="rounded-xl border border-border bg-card p-2.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <button
               onClick={refresh}
               disabled={refreshing}
-              className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
               <RefreshCw
                 className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
@@ -138,45 +138,59 @@ export default function HealthPage() {
 
       {/* Overall Status */}
       <div
-        className={`rounded-xl border p-6 ${data.overall === "healthy" ? "border-tone-sage-br bg-tone-sage-bg" : data.overall === "down" ? "border-destructive/30 bg-destructive/5" : "border-tone-honey-br bg-tone-honey-bg"}`}
+        className={`rounded-2xl border p-6 ${data.overall === "healthy" ? "border-tone-sage-br bg-tone-sage-bg" : data.overall === "down" ? "border-destructive/30 bg-destructive/5" : "border-tone-honey-br bg-tone-honey-bg"}`}
       >
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className={`rounded-lg p-2.5 ${overallCfg.bg}`}>
+            <div className={`rounded-xl p-2.5 ${overallCfg.bg}`}>
               <OverallIcon className={`h-6 w-6 ${overallCfg.color}`} />
             </div>
             <div>
-              <p className="font-semibold text-foreground text-lg">
-                System Status: {overallCfg.label}
+              <p className="mb-1.5 text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-primary">
+                System status
+              </p>
+              <p className="font-display text-lg font-bold text-foreground">
+                {overallCfg.label}
               </p>
               <p className="text-sm text-muted-foreground">
-                {data.checks?.filter((c: any) => c.status === "healthy").length}
-                /{data.checks?.length} services healthy
+                <span className="font-mono">
+                  {
+                    data.checks?.filter((c: any) => c.status === "healthy")
+                      .length
+                  }
+                  /{data.checks?.length}
+                </span>{" "}
+                services healthy
               </p>
             </div>
           </div>
-          <div className="text-right text-xs text-muted-foreground">
+          <div className="space-y-1 text-right text-xs text-muted-foreground">
             <p>
-              Environment:{" "}
-              <span className="font-medium text-foreground">
+              <span className="uppercase tracking-[0.08em]">Environment</span>{" "}
+              <span className="font-mono font-medium text-foreground">
                 {data.environment}
               </span>
             </p>
             <p>
-              Version:{" "}
-              <span className="font-medium text-foreground">
+              <span className="uppercase tracking-[0.08em]">Version</span>{" "}
+              <span className="font-mono font-medium text-foreground">
                 {data.version}
               </span>
             </p>
-            <p>Checked: {new Date(data.timestamp).toLocaleTimeString()}</p>
+            <p>
+              <span className="uppercase tracking-[0.08em]">Checked</span>{" "}
+              <span className="font-mono">
+                {new Date(data.timestamp).toLocaleTimeString()}
+              </span>
+            </p>
           </div>
         </div>
       </div>
 
       {/* Service Checks */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Server className="h-5 w-5" /> Service Health
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="mb-4 flex items-center gap-2 font-display text-base font-bold text-foreground">
+          <Server className="h-5 w-5 text-muted-foreground" /> Service health
         </h2>
         <div className="grid gap-3">
           {(data.checks || []).map((check: any) => {
@@ -188,7 +202,7 @@ export default function HealthPage() {
             return (
               <div
                 key={check.name}
-                className="flex items-center justify-between rounded-lg bg-muted/30 p-4"
+                className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4"
               >
                 <div className="flex items-center gap-3">
                   <ServiceIcon className="h-5 w-5 text-muted-foreground" />
@@ -203,7 +217,7 @@ export default function HealthPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   {check.latencyMs !== undefined && (
-                    <span className="text-xs font-mono text-muted-foreground">
+                    <span className="font-mono text-xs text-muted-foreground">
                       {check.latencyMs}ms
                     </span>
                   )}
@@ -220,9 +234,9 @@ export default function HealthPage() {
       </div>
 
       {/* System Metrics */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Activity className="h-5 w-5" /> System Metrics
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="mb-4 flex items-center gap-2 font-display text-base font-bold text-foreground">
+          <Activity className="h-5 w-5 text-muted-foreground" /> System metrics
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
@@ -257,26 +271,31 @@ export default function HealthPage() {
               icon: Server,
             },
           ].map((m) => (
-            <div key={m.label} className="rounded-lg bg-muted/30 p-4">
-              <div className="flex items-center gap-2 mb-1">
+            <div
+              key={m.label}
+              className="rounded-xl border border-border bg-muted/30 p-4"
+            >
+              <div className="flex items-center gap-2 mb-1.5">
                 <m.icon className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-[10px] font-medium uppercase text-muted-foreground">
+                <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   {m.label}
                 </p>
               </div>
-              <p className="text-xl font-bold text-foreground">{m.value}</p>
+              <p className="font-display text-2xl font-extrabold leading-none text-foreground">
+                {m.value}
+              </p>
             </div>
           ))}
         </div>
 
         {data.metrics?.lastBackup && (
-          <div className="mt-4 rounded-lg bg-muted/20 border border-border p-4">
-            <div className="flex items-center gap-2">
+          <div className="mt-4 rounded-xl border border-border bg-muted/20 p-4">
+            <div className="flex flex-wrap items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                Last backup:
+              <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                Last backup
               </span>
-              <span className="text-sm font-medium text-foreground">
+              <span className="font-mono text-sm font-medium text-foreground">
                 {new Date(data.metrics.lastBackup.createdAt).toLocaleString()}
               </span>
               {data.metrics.lastBackup.type && (
@@ -285,7 +304,7 @@ export default function HealthPage() {
                 </span>
               )}
               {data.metrics.lastBackup.fileSize && (
-                <span className="text-xs text-muted-foreground">
+                <span className="font-mono text-xs text-muted-foreground">
                   {(data.metrics.lastBackup.fileSize / 1024).toFixed(1)} KB
                 </span>
               )}
