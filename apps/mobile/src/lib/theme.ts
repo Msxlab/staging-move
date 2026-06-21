@@ -64,7 +64,7 @@ const darkColors = {
   primary: ACCENT_DARK,
   primaryLight: ACCENT_DARK_LIGHT,
   primaryDark: ACCENT_DARK_DEEP,
-  primaryFaded: tonesDark.rose.bg,
+  primaryFaded: tonesDark.orange.bg,
   accent: FOIL_DARK,
 
   success: semanticColors.success,
@@ -152,7 +152,7 @@ const lightColors = {
   primaryLight: ACCENT_LIGHT_LIGHT,
   primaryDark: ACCENT_LIGHT_DEEP,
   accent: FOIL_LIGHT,
-  primaryFaded: tonesLight.rose.bg,
+  primaryFaded: tonesLight.orange.bg,
 
   success: semanticColorsLight.success,
   successFaded: semanticColorsLight.successLight,

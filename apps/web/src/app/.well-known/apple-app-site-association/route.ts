@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
  * identifier matches `apps/mobile/app.json` -> `ios.bundleIdentifier`.
  *
  * IMPORTANT: replace `APPLE_TEAM_ID` with the 10-character Apple Developer
- * team ID for the LocateFlow App Store Connect account. Setting the env var
+ * team ID for the Move App Store Connect account. Setting the env var
  * `APPLE_TEAM_ID` (or `NEXT_PUBLIC_APPLE_TEAM_ID` for local previews) keeps
  * the value out of source control. Until the real team ID is supplied the
  * payload returns a placeholder that App Review will reject — this is
@@ -45,7 +45,7 @@ export function GET() {
           appID,
           appIDs: [appID],
           paths: PATHS,
-          components: PATHS.map((path) => ({ "/": path, comment: "LocateFlow universal link" })),
+          components: PATHS.map((path) => ({ "/": path, comment: "Move universal link" })),
         },
       ],
     },

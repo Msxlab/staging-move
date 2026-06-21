@@ -43,19 +43,10 @@ export function Wordmark({
         className="text-[22px] leading-none text-foreground"
         style={{
           fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
-          fontWeight: 400,
+          fontWeight: 900,
         }}
       >
-        Locate
-        <span
-          className="italic bg-clip-text text-transparent"
-          style={{
-            backgroundImage:
-              "linear-gradient(180deg, #DDE7F5 0%, #7FB6E8 50%, #5C9DDC 100%)",
-          }}
-        >
-          flow
-        </span>
+        Move
       </span>
     </Link>
   );

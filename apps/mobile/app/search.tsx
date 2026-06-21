@@ -11,7 +11,11 @@ import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ArrowLeft,
+  BookOpen,
+  Building2,
+  CalendarClock,
   ChevronRight,
+  ClipboardList,
   Search as SearchIcon,
   X,
   Zap,
@@ -55,6 +59,12 @@ function buildAddressSubtitle(address: any): string {
     .join(", ");
 }
 
+function compactJoin(values: unknown[]): string {
+  return values
+    .filter((value) => typeof value === "string" && value.trim().length > 0)
+    .join(" · ");
+}
+
 function monthLabelFromValue(value: string | undefined, locale: string): string {
   if (!value) return "";
   const date = new Date(value);
@@ -64,6 +74,35 @@ function monthLabelFromValue(value: string | undefined, locale: string): string 
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+function dateLabelFromValue(value: string | undefined, locale: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return String(value);
+  return date.toLocaleDateString(locale || "en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function categoryLabel(category: unknown): string {
+  return typeof category === "string" ? category.replace(/_/g, " ") : "";
+}
+
+async function safeGet<T>(path: string, params?: Record<string, string>) {
+  try {
+    const response = await api.get<T>(path, params);
+    return response.error ? null : response.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function pluckArray(payload: any, key: string): any[] {
+  if (Array.isArray(payload?.[key])) return payload[key];
+  return Array.isArray(payload) ? payload : [];
 }
 
 export default function SearchScreen() {
@@ -80,24 +119,55 @@ export default function SearchScreen() {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
   const [budgets, setBudgets] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [providers, setProviders] = useState<any[]>([]);
+  const [customProviders, setCustomProviders] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
 
-  // Pull the same lists the rest of the app already loads — no new endpoint.
-  // Each call is independent and tolerant of a single failure so a partial
-  // outage still searches whatever did load.
+  // Pull the same lists the rest of the app already loads; the search surface
+  // mirrors the design handoff's "Search everything" scope.
   const load = useCallback(async () => {
     setLoading(true);
-    const [svcRes, addrRes, movingRes, budgetRes] = await Promise.all([
-      api.get<any>("/api/services", { limit: "200" }),
-      api.get<any>("/api/addresses", { limit: "200" }),
-      api.get<any>("/api/moving"),
-      api.get<any>("/api/budget"),
+    const [svcData, addrData, movingData, budgetData, taskData, customData, blogData] = await Promise.all([
+      safeGet<any>("/api/services", { limit: "200" }),
+      safeGet<any>("/api/addresses", { limit: "200" }),
+      safeGet<any>("/api/moving"),
+      safeGet<any>("/api/budget"),
+      safeGet<any>("/api/move-tasks"),
+      safeGet<any>("/api/custom-providers"),
+      safeGet<any>("/api/blog/posts", { pageSize: "50", locale }),
     ]);
-    setServices(svcRes.data?.services || svcRes.data || []);
-    setAddresses(addrRes.data?.addresses || addrRes.data || []);
-    setPlans(movingRes.data?.plans || movingRes.data || []);
-    setBudgets(budgetRes.data?.budgets || budgetRes.data || []);
+
+    const nextServices = pluckArray(svcData, "services");
+    const nextAddresses = pluckArray(addrData, "addresses");
+    const states = Array.from(
+      new Set(
+        nextAddresses
+          .map((address) => (typeof address?.state === "string" ? address.state.toUpperCase() : ""))
+          .filter(Boolean),
+      ),
+    ).slice(0, 3);
+    const providerPayloads = await Promise.all([
+      safeGet<any>("/api/providers"),
+      ...states.map((state) => safeGet<any>("/api/providers", { state })),
+    ]);
+    const providerById = new Map<string, any>();
+    for (const payload of providerPayloads) {
+      for (const provider of pluckArray(payload, "providers")) {
+        if (typeof provider?.id === "string") providerById.set(provider.id, provider);
+      }
+    }
+
+    setServices(nextServices);
+    setAddresses(nextAddresses);
+    setPlans(pluckArray(movingData, "plans"));
+    setBudgets(pluckArray(budgetData, "budgets"));
+    setTasks(pluckArray(taskData, "tasks"));
+    setProviders(Array.from(providerById.values()));
+    setCustomProviders(pluckArray(customData, "providers"));
+    setPosts(pluckArray(blogData, "items"));
     setLoading(false);
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     load();
@@ -116,7 +186,7 @@ export default function SearchScreen() {
         const addressLabel =
           service.address?.nickname || service.address?.city || "";
         return {
-          id: service.id,
+          id: `service:${service.id}`,
           title: service.providerName || t("services.title"),
           subtitle: [service.category, addressLabel].filter(Boolean).join(" · "),
           haystack: [
@@ -137,7 +207,7 @@ export default function SearchScreen() {
   const addressResults = useMemo<SearchResult[]>(
     () =>
       addresses.map((address) => ({
-        id: address.id,
+        id: `address:${address.id}`,
         title: address.nickname || buildAddressSubtitle(address) || t("addresses.title"),
         subtitle: buildAddressSubtitle(address),
         haystack: [
@@ -160,7 +230,7 @@ export default function SearchScreen() {
         const from = plan.fromAddress?.city || "";
         const to = plan.toAddress?.city || "";
         return {
-          id: plan.id,
+          id: `plan:${plan.id}`,
           title: `${from || "—"} → ${to || "—"}`,
           subtitle: [
             plan.fromAddress?.state,
@@ -197,7 +267,7 @@ export default function SearchScreen() {
           return match.nickname || [match.city, match.state].filter(Boolean).join(", ");
         })();
         return {
-          id: budget.id,
+          id: `budget:${budget.id}`,
           title: monthLabel || t("budget.title"),
           subtitle: [addressLabel, budget.notes].filter(Boolean).join(" · "),
           haystack: [monthLabel, addressLabel, budget.notes, budget.month]
@@ -211,6 +281,122 @@ export default function SearchScreen() {
     [budgets, addresses, locale, t],
   );
 
+  const taskResults = useMemo<SearchResult[]>(
+    () =>
+      tasks.map((task) => {
+        const due = dateLabelFromValue(task.dueDate, locale);
+        const providerLabel =
+          task.provider?.name ||
+          task.destinationProvider?.name ||
+          task.customProvider?.name ||
+          task.service?.providerName ||
+          "";
+        const category = categoryLabel(task.category || task.actionType || task.provider?.category);
+        return {
+          id: `task:${task.id}`,
+          title: task.title || task.name || t("search.sectionTasks", { defaultValue: "Tasks" }),
+          subtitle: compactJoin([category, task.status, due, providerLabel]),
+          haystack: [
+            task.title,
+            task.name,
+            task.status,
+            task.category,
+            task.actionType,
+            providerLabel,
+            task.originAddress?.city,
+            task.destinationAddress?.city,
+            task.originAddress?.state,
+            task.destinationAddress?.state,
+            due,
+          ]
+            .map(norm)
+            .join(" "),
+          route: task.movingPlanId
+            ? { pathname: "/moving/[id]", params: { id: task.movingPlanId } }
+            : ("/reminders" as Href),
+        };
+      }),
+    [tasks, locale, t],
+  );
+
+  const providerResults = useMemo<SearchResult[]>(
+    () =>
+      providers.map((provider) => {
+        const category = t(`categories.${provider.category}`, { defaultValue: categoryLabel(provider.category) });
+        return {
+          id: `provider:${provider.id}`,
+          title: provider.name || t("providers.title"),
+          subtitle: compactJoin([category, provider.scope, provider.description]),
+          haystack: [
+            provider.name,
+            provider.slug,
+            provider.category,
+            provider.subCategory,
+            provider.description,
+            provider.website,
+            ...(Array.isArray(provider.tags) ? provider.tags : []),
+            category,
+          ]
+            .map(norm)
+            .join(" "),
+          route: { pathname: "/providers/[id]", params: { id: provider.id } },
+        };
+      }),
+    [providers, t],
+  );
+
+  const customProviderResults = useMemo<SearchResult[]>(
+    () =>
+      customProviders.map((provider) => {
+        const category = t(`categories.${provider.category}`, { defaultValue: categoryLabel(provider.category) });
+        const location = compactJoin([provider.city, provider.state]);
+        return {
+          id: `custom-provider:${provider.id}`,
+          title: provider.name || t("customProviders.title"),
+          subtitle: compactJoin([category, location, provider.providerType, provider.trustStatus]),
+          haystack: [
+            provider.name,
+            provider.category,
+            provider.providerType,
+            provider.city,
+            provider.state,
+            provider.website,
+            provider.phone,
+            provider.notes,
+            category,
+          ]
+            .map(norm)
+            .join(" "),
+          route: { pathname: "/custom-providers/[id]", params: { id: provider.id } },
+        };
+      }),
+    [customProviders, t],
+  );
+
+  const postResults = useMemo<SearchResult[]>(
+    () =>
+      posts.map((post) => {
+        const postLocale = post.locale || locale;
+        return {
+          id: `post:${postLocale}:${post.slug}`,
+          title: post.title || t("blog.title"),
+          subtitle: compactJoin([post.category?.name, post.excerpt]),
+          haystack: [
+            post.title,
+            post.excerpt,
+            post.category?.name,
+            post.category?.slug,
+            post.slug,
+            postLocale,
+          ]
+            .map(norm)
+            .join(" "),
+          route: { pathname: "/blog/[slug]", params: { slug: post.slug, locale: postLocale } },
+        };
+      }),
+    [posts, locale, t],
+  );
+
   const sections = useMemo<SearchSection[]>(() => {
     const q = query.trim().toLowerCase();
     const filter = (rows: SearchResult[]) =>
@@ -219,10 +405,25 @@ export default function SearchScreen() {
       { key: "services", title: t("search.sectionServices"), icon: Zap, data: filter(serviceResults) },
       { key: "addresses", title: t("search.sectionAddresses"), icon: MapPin, data: filter(addressResults) },
       { key: "plans", title: t("search.sectionPlans"), icon: Truck, data: filter(planResults) },
+      { key: "tasks", title: t("search.sectionTasks", { defaultValue: "Tasks & reminders" }), icon: ClipboardList, data: filter(taskResults) },
       { key: "budgets", title: t("search.sectionBudgets"), icon: DollarSign, data: filter(budgetResults) },
+      { key: "providers", title: t("search.sectionProviders", { defaultValue: "Providers" }), icon: Building2, data: filter(providerResults) },
+      { key: "customProviders", title: t("search.sectionCustomProviders", { defaultValue: "Custom providers" }), icon: CalendarClock, data: filter(customProviderResults) },
+      { key: "guides", title: t("search.sectionGuides", { defaultValue: "Guides" }), icon: BookOpen, data: filter(postResults) },
     ];
     return all.filter((section) => section.data.length > 0);
-  }, [query, serviceResults, addressResults, planResults, budgetResults, t]);
+  }, [
+    query,
+    serviceResults,
+    addressResults,
+    planResults,
+    taskResults,
+    budgetResults,
+    providerResults,
+    customProviderResults,
+    postResults,
+    t,
+  ]);
 
   const totalResults = useMemo(
     () => sections.reduce((sum, section) => sum + section.data.length, 0),
@@ -265,7 +466,7 @@ export default function SearchScreen() {
             <Text style={styles.heroTitle}>{t("search.heroTitle", { defaultValue: "Find anything in your move" })}</Text>
             <Text style={styles.heroSub} numberOfLines={2}>
               {t("search.heroDescription", {
-                defaultValue: "Search services, addresses, moving plans, and budget records from one focused surface.",
+                defaultValue: "Search services, addresses, tasks, providers, guides, and budget records from one focused surface.",
               })}
             </Text>
           </View>
@@ -303,7 +504,11 @@ export default function SearchScreen() {
             { label: t("search.sectionServices"), value: services.length, Icon: Zap, tone: theme.colors.primary },
             { label: t("search.sectionAddresses"), value: addresses.length, Icon: MapPin, tone: theme.colors.green },
             { label: t("search.sectionPlans"), value: plans.length, Icon: Truck, tone: theme.colors.amberSolid },
+            { label: t("search.sectionTasks", { defaultValue: "Tasks" }), value: tasks.length, Icon: ClipboardList, tone: theme.colors.warning },
             { label: t("search.sectionBudgets"), value: budgets.length, Icon: DollarSign, tone: theme.colors.teal },
+            { label: t("search.sectionProviders", { defaultValue: "Providers" }), value: providers.length, Icon: Building2, tone: theme.colors.primary },
+            { label: t("search.sectionCustomProviders", { defaultValue: "Custom" }), value: customProviders.length, Icon: CalendarClock, tone: theme.colors.accent },
+            { label: t("search.sectionGuides", { defaultValue: "Guides" }), value: posts.length, Icon: BookOpen, tone: theme.colors.green },
           ].map(({ label, value, Icon, tone }) => (
             <View key={label} style={styles.domainChip}>
               <Icon size={13} color={tone} />
@@ -445,9 +650,10 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 12,
     },
     searchInput: { flex: 1, fontSize: 14, fontFamily: fonts.sans, color: theme.colors.text, padding: 0 },
-    domainGrid: { flexDirection: "row", gap: 8 },
+    domainGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     domainChip: {
-      flex: 1,
+      flexGrow: 1,
+      flexBasis: "23%",
       minWidth: 0,
       alignItems: "center",
       gap: 2,

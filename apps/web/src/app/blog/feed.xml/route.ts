@@ -46,9 +46,9 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>LocateFlow Blog</title>
+    <title>Move Blog</title>
     <link>${SITE_URL}/blog</link>
-    <description>Stories, guides, and product updates from the LocateFlow team.</description>
+    <description>Stories, guides, and product updates from the Move team.</description>
     <language>en-us</language>
     <atom:link href="${SITE_URL}/blog/feed.xml" rel="self" type="application/rss+xml" />
 ${itemsXml}

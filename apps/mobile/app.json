@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "LocateFlow",
+    "name": "Move",
     "slug": "locateflow",
     "version": "1.0.2",
     "orientation": "portrait",
@@ -72,7 +72,7 @@
       "icon": "./assets/icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0A0F18"
+        "backgroundColor": "#070B14"
       },
       "package": "com.locateflow.mobile",
       "intentFilters": [
@@ -130,9 +130,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0A0F18",
+          "backgroundColor": "#070B14",
           "dark": {
-            "backgroundColor": "#0A0F18"
+            "backgroundColor": "#070B14"
           }
         }
       ],
@@ -141,14 +141,14 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Use Face ID to unlock LocateFlow."
+          "faceIDPermission": "Use Face ID to unlock Move."
         }
       ],
       [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#7FB6E8"
+          "color": "#CBA45E"
         }
       ],
       "expo-web-browser",
@@ -169,7 +169,7 @@
           "widgets": [
             {
               "name": "MoveWidget",
-              "label": "LocateFlow Move",
+              "label": "Move",
               "description": "Your move countdown, next task, and readiness at a glance.",
               "minWidth": "180dp",
               "minHeight": "110dp",

@@ -3,7 +3,7 @@ export const COMPANY_ADDRESS_PLACEHOLDER =
   "[Mailing address to be finalized before production launch]";
 
 export const LEGAL_INFO = {
-  productName: "LocateFlow",
+  productName: "Move",
   legalEntityName:
     process.env.NEXT_PUBLIC_LEGAL_ENTITY_NAME?.trim() ||
     LEGAL_ENTITY_PLACEHOLDER,

@@ -16,7 +16,7 @@ import { absoluteUrl, createPublicPageMetadata } from "@/lib/seo";
 export const metadata = createPublicPageMetadata({
   title: "How It Works",
   description:
-    "See how LocateFlow helps organize providers, addresses, reminders, and moving tasks without replacing provider confirmation.",
+    "See how Move helps organize providers, addresses, reminders, and moving tasks without replacing provider confirmation.",
   path: "/how-it-works",
 });
 
@@ -41,7 +41,7 @@ const steps = [
     step: "03",
     icon: Bell,
     title: "Stay ahead of renewals",
-    body: "LocateFlow helps track due dates, auto-renew windows, and price notes you enter. You can get reminders before a date you saved becomes urgent.",
+    body: "Move helps track due dates, auto-renew windows, and price notes you enter. You can get reminders before a date you saved becomes urgent.",
     detail:
       "Reminders arrive in the app and by email. Snooze, mark handled, or jump straight to the provider login - your choice.",
   },
@@ -59,7 +59,7 @@ const pillars = [
   {
     icon: Shield,
     title: "Private by default",
-    body: "Your account data is scoped to your account. LocateFlow uses access controls and privacy tools and does not sell user-entered relocation data.",
+    body: "Your account data is scoped to your account. Move uses access controls and privacy tools and does not sell user-entered relocation data.",
   },
   {
     icon: Bell,
@@ -78,9 +78,9 @@ export default function HowItWorksPage() {
   // the rich result can never describe a procedure the reader can't see. Each
   // step deep-links to the page so a HowToStep `url` resolves to real content.
   const howTo = howToSchema({
-    name: "How to organize your providers, addresses, and moving tasks with LocateFlow",
+    name: "How to organize your providers, addresses, and moving tasks with Move",
     description:
-      "Four steps to set up LocateFlow: add your addresses, log every service, stay ahead of renewals, and turn a move into a checklist.",
+      "Four steps to set up Move: add your addresses, log every service, stay ahead of renewals, and turn a move into a checklist.",
     steps: steps.map((s) => ({
       name: s.title,
       text: s.body,
@@ -92,7 +92,7 @@ export default function HowItWorksPage() {
     <PublicPageShell
       eyebrow="How it works"
       title="Providers, addresses, and moving tasks in one place."
-      description="Most people keep their service list in memory, email threads, and three browser tabs. LocateFlow gives you one place to organize the records and reminders you need to verify."
+      description="Most people keep their service list in memory, email threads, and three browser tabs. Move gives you one place to organize the records and reminders you need to verify."
     >
       <JsonLd id="ld-howto" data={howTo} />
       <PublicSection title="The four things you'll do">

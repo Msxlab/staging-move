@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { MovingPlanRecommendations } from "@/components/moving/plan-recommendations";
@@ -249,7 +249,7 @@ export default function MovingPlanDetailClient({
   const handleCompleteMoveTask = async (taskId: string) => {
     const ok = await updateMoveTask(taskId, "COMPLETE");
     if (!ok) return;
-    toast.success("Completed locally in LocateFlow", {
+    toast.success("Completed locally in Move", {
       description: "Provider accounts are not updated automatically.",
       duration: 5000,
       action: {
@@ -474,7 +474,7 @@ export default function MovingPlanDetailClient({
             </h2>
             <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
               Your provider migration steps and new-service to-dos, all in one place.
-              Items are tracked locally in LocateFlow — marking one done won't change anything at the provider.
+              Items are tracked locally in Move — marking one done won't change anything at the provider.
             </p>
           </div>
           <div className="flex flex-col items-start sm:items-end gap-2">

@@ -249,8 +249,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   secondary: {
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    // Aurora cool 30% — matches `theme.colors.primary` (#7FB6E8).
-    borderColor: "rgba(127, 182, 232, 0.30)",
+    // Aurora cool 30% — matches `theme.colors.primary` (#CBA45E).
+    borderColor: "rgba(203, 164, 94, 0.30)",
   },
   ghost: {
     backgroundColor: "transparent",
@@ -258,8 +258,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   danger: {
     backgroundColor: theme.colors.errorFaded,
     borderWidth: 1,
-    // Aurora coral border to match `semanticColors.danger` (#F08C8E).
-    borderColor: "rgba(240, 140, 142, 0.30)",
+    // Aurora coral border to match `semanticColors.danger` (#E25C5C).
+    borderColor: "rgba(226, 92, 92, 0.30)",
   },
   outline: {
     backgroundColor: "transparent",

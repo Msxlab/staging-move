@@ -12,7 +12,7 @@ import {
 
 export const metadata = createPublicPageMetadata({
   title: "Privacy Policy",
-  description: "How LocateFlow handles account, address, service, moving, billing, analytics, mobile, support, and security data.",
+  description: "How Move handles account, address, service, moving, billing, analytics, mobile, support, and security data.",
   path: "/privacy",
 });
 
@@ -20,7 +20,7 @@ const highlights = [
   {
     icon: Database,
     title: "Data you create",
-    description: "LocateFlow stores account, profile, address, service, moving, budget, document, support, and notification records you create or submit.",
+    description: "Move stores account, profile, address, service, moving, budget, document, support, and notification records you create or submit.",
   },
   {
     icon: Shield,
@@ -46,14 +46,14 @@ export default function PrivacyPage() {
     <PublicPageShell
       eyebrow="Legal"
       title="Privacy Policy"
-      description="This policy explains how LocateFlow uses data required to run account, address, service, moving, billing, support, analytics, mobile, and security features."
+      description="This policy explains how Move uses data required to run account, address, service, moving, billing, support, analytics, mobile, and security features."
     >
       <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
         <p>{policyLastUpdatedLabel()}</p>
         <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           Privacy contact:{" "}
-          <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow privacy request")} className="underline">
+          <a href={mailto(LEGAL_CONTACTS.privacy, "Move privacy request")} className="underline">
             {LEGAL_CONTACTS.privacy}
           </a>
         </p>
@@ -72,10 +72,10 @@ export default function PrivacyPage() {
         ))}
       </div>
 
-      <PublicSection title="Information LocateFlow may collect">
+      <PublicSection title="Information Move may collect">
         <ul className="list-disc space-y-1 pl-6">
           <li>Account and profile data, such as name, email, password hash, locale, authentication status, OAuth provider identifiers, and legal consent records.</li>
-          <li>User-entered address, ZIP, city, approximate relocation context, moving, service, custom-provider, provider recommendation, task, checklist, document metadata, note, and budget or expense records you enter. LocateFlow does not use device GPS location in the mobile app.</li>
+          <li>User-entered address, ZIP, city, approximate relocation context, moving, service, custom-provider, provider recommendation, task, checklist, document metadata, note, and budget or expense records you enter. Move does not use device GPS location in the mobile app.</li>
           <li>Derived location-context records attached to an address you save, such as flood zone, hazard index, radon zone, school district, broadband availability, electric utility, water system, air quality, and weather data returned by the public-data lookups described below, plus vehicle details and recall status when you choose to enter a VIN.</li>
           <li>Support tickets, support messages, billing-support requests, privacy requests, security reports, and related communications.</li>
           <li>Subscription and billing data, such as plan, trial, renewal, cancellation, Stripe customer/subscription identifiers, store purchase status, receipt metadata, invoice status, and refund status.</li>
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
 
       <PublicSection title="How the data is used">
         <p>
-          LocateFlow uses data to provide account access, organize relocation workflows, store records, generate local checklists, support provider research, process subscriptions, send notices and reminders, answer support requests, maintain security, prevent abuse, debug errors, satisfy legal obligations, and improve product reliability.
+          Move uses data to provide account access, organize relocation workflows, store records, generate local checklists, support provider research, process subscriptions, send notices and reminders, answer support requests, maintain security, prevent abuse, debug errors, satisfy legal obligations, and improve product reliability.
         </p>
         <p>
           Recommendations, reminders, and checklist suggestions are informational and depend on the data you enter, location context, seed data, public sources, and product rules.
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
 
       <PublicSection title="Sharing and processors">
         <p>
-          LocateFlow does not sell user-entered relocation data for commercial advertising or broker-style resale. We transfer limited data to service providers and processors acting on LocateFlow's instructions when needed to operate the product.
+          Move does not sell user-entered relocation data for commercial advertising or broker-style resale. We transfer limited data to service providers and processors acting on Move's instructions when needed to operate the product.
         </p>
         <p>
           Processors may include Stripe for web payments, Apple App Store and Google Play for mobile purchases, email providers such as Resend, hosting/database providers, Cloudflare R2 or other object storage, Google Analytics or Google Tag Manager when consented and configured, Google Maps/address autocomplete when configured, push notification providers such as Expo, and error-monitoring providers such as Sentry or GlitchTip when configured.
@@ -104,13 +104,13 @@ export default function PrivacyPage() {
           When the related features are enabled, limited location data is also sent to the public and government data services described in the next section, and coarse de-identified signals are sent to the AI provider described below.
         </p>
         <p>
-          Third-party providers operate under their own terms and privacy policies. LocateFlow may also disclose data when required by law, to protect rights or security, to investigate abuse, or in connection with a business transaction.
+          Third-party providers operate under their own terms and privacy policies. Move may also disclose data when required by law, to protect rights or security, to investigate abuse, or in connection with a business transaction.
         </p>
       </PublicSection>
 
       <PublicSection title="Address-derived public-data lookups">
         <p>
-          When you save an address, LocateFlow may enrich it with public, government-published context about that location. To do this, the address coordinates — or, where a service needs them, city/state or other area identifiers — are sent to public and government data services. If you typed the address by hand instead of picking it from autocomplete, the street, city, state, and ZIP you entered may first be sent to the U.S. Census Bureau geocoder to convert it into coordinates. Only that location data (or the VIN described below) is sent. Your name, email, and account identifiers are never sent to these services.
+          When you save an address, Move may enrich it with public, government-published context about that location. To do this, the address coordinates — or, where a service needs them, city/state or other area identifiers — are sent to public and government data services. If you typed the address by hand instead of picking it from autocomplete, the street, city, state, and ZIP you entered may first be sent to the U.S. Census Bureau geocoder to convert it into coordinates. Only that location data (or the VIN described below) is sent. Your name, email, and account identifiers are never sent to these services.
         </p>
         <ul className="list-disc space-y-1 pl-6">
           <li>FEMA — flood zone and National Risk Index hazard information.</li>
@@ -158,19 +158,19 @@ export default function PrivacyPage() {
           Depending on where you live, you may have rights to access, correct, delete, export, or object to certain processing of personal information. California residents should also review the <Link href="/ccpa-privacy-notice" className="underline">California Privacy Notice</Link>.
         </p>
         <p>
-          EEA/UK rights may apply if LocateFlow offers the service to users in those regions or otherwise processes personal data subject to applicable law. LocateFlow does not claim a privacy certification or legal compliance approval on this page.
+          EEA/UK rights may apply if Move offers the service to users in those regions or otherwise processes personal data subject to applicable law. Move does not claim a privacy certification or legal compliance approval on this page.
         </p>
       </PublicSection>
 
       <PublicSection title="Children's privacy">
         <p>
-          LocateFlow is not intended for children under 13, and users must satisfy the age and authority requirements in the Terms. Do not submit information about children unless you have the authority and lawful basis to manage it.
+          Move is not intended for children under 13, and users must satisfy the age and authority requirements in the Terms. Do not submit information about children unless you have the authority and lawful basis to manage it.
         </p>
       </PublicSection>
 
       <PublicSection title="Contact">
         <p>
-          For privacy requests, email <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow privacy request")} className="underline">{LEGAL_CONTACTS.privacy}</a> or use the account settings tools when available.
+          For privacy requests, email <a href={mailto(LEGAL_CONTACTS.privacy, "Move privacy request")} className="underline">{LEGAL_CONTACTS.privacy}</a> or use the account settings tools when available.
         </p>
       </PublicSection>
     </PublicPageShell>

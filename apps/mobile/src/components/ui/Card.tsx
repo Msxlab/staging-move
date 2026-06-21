@@ -100,7 +100,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     // Aurora cool ring (Edition VII) — matches `--line-foil` on web.
-    borderColor: "rgba(127, 182, 232, 0.30)",
+    borderColor: "rgba(203, 164, 94, 0.30)",
     ...theme.shadow.glow,
   },
   glass: {

@@ -4,8 +4,8 @@ import { getMoverPortalSession } from "@/lib/mover-portal-auth";
 import { MoverPortalLogin } from "@/components/movers/mover-portal-login";
 
 export const metadata: Metadata = {
-  title: "Mover portal · LocateFlow",
-  description: "Sign in to manage your LocateFlow moving-company listing.",
+  title: "Mover portal · Move",
+  description: "Sign in to manage your Move moving-company listing.",
   robots: { index: false, follow: false },
 };
 

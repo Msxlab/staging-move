@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ONBOARDING_FUNNEL_STEPS } from "@/lib/onboarding-progress";
@@ -352,7 +352,7 @@ export default function OnboardingClient({
   // assemble moment played once when the Step-2 recommendations finish
   // loading: the REAL state-based recommendations the wizard already fetched
   // appear as staggered rows under a progress ring, then the full picker
-  // reveals. It replaces the prototype's "account scan" — LocateFlow never
+  // reveals. It replaces the prototype's "account scan" — Move never
   // scans accounts, inboxes, or email, and the copy says so. Decorative only:
   // prefers-reduced-motion (or an empty result) skips straight to the list.
   const ritualPlayedRef = useRef(false);
@@ -1219,7 +1219,7 @@ export default function OnboardingClient({
             <div>
               <h2 className="text-lg font-semibold text-foreground">Required legal acknowledgements</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Accept these before using LocateFlow.
+                Accept these before using Move.
               </p>
             </div>
           </div>
@@ -1920,7 +1920,7 @@ export default function OnboardingClient({
           <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3">
             <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">Listed providers, manual tracking only</p>
             <p className="mt-1 text-[11px] leading-relaxed text-tone-honey-fg/80 dark:text-tone-honey-fg/75">
-              Listed providers are directory entries, not proof of activation at your address. Adding one creates a LocateFlow service record; it does not update your address with the provider.
+              Listed providers are directory entries, not proof of activation at your address. Adding one creates a Move service record; it does not update your address with the provider.
             </p>
           </div>
 

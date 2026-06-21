@@ -79,19 +79,19 @@ describe("SEO helpers", () => {
 
     const metadata = seo.createPublicPageMetadata({
       title: "FAQ",
-      description: "Answers about LocateFlow.",
+      description: "Answers about Move.",
       path: "/faq",
     });
 
     expect(metadata.alternates).toMatchObject({ canonical: "/faq" });
     expect(metadata.openGraph).toMatchObject({
       url: "https://locateflow.com/faq",
-      title: "FAQ | LocateFlow",
-      description: "Answers about LocateFlow.",
+      title: "FAQ | Move",
+      description: "Answers about Move.",
     });
     expect(metadata.twitter).toMatchObject({
       card: "summary_large_image",
-      title: "FAQ | LocateFlow",
+      title: "FAQ | Move",
     });
     expect(metadata.openGraph).toMatchObject({
       images: [

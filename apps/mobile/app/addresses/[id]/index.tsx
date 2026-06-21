@@ -143,7 +143,7 @@ export default function AddressDetailScreen() {
   const isVacation = address.type === "VACATION";
   const isPast = !!address.endDate && new Date(address.endDate).getTime() < Date.now();
   const statusLabel = isVacation ? "Seasonal" : isPast ? "Past" : "Active";
-  const tone = isVacation ? theme.colors.rose : isPast ? theme.colors.amber : theme.colors.emerald;
+  const tone = isVacation ? theme.colors.sky : isPast ? theme.colors.amber : theme.colors.emerald;
 
   // "Needs attention" = services renewing within 14 days (real contractEndDate).
   const renewSoon = (s: any): number | null => {

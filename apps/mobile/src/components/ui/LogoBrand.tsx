@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   },
   iconShadow: {
     borderRadius: 22,
-    shadowColor: "#7FB6E8",
+    shadowColor: "#CBA45E",
     shadowOpacity: 0.24,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },

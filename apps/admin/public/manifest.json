@@ -1,7 +1,7 @@
 {
-  "name": "LocateFlow Admin",
-  "short_name": "LF Admin",
-  "description": "Secure LocateFlow administration panel.",
+  "name": "Move Operations",
+  "short_name": "Move Ops",
+  "description": "Secure Move operations console.",
   "id": "/?source=admin-pwa",
   "start_url": "/?source=admin-pwa",
   "scope": "/",
@@ -13,8 +13,8 @@
     "client_mode": ["navigate-existing", "auto"]
   },
   "handle_links": "preferred",
-  "background_color": "#171E2B",
-  "theme_color": "#171E2B",
+  "background_color": "#070B14",
+  "theme_color": "#070B14",
   "orientation": "portrait-primary",
   "icons": [
     {

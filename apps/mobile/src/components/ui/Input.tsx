@@ -109,8 +109,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.card,
   },
   inputError: {
-    // Aurora coral (#F08C8E) at 50% — matches `theme.colors.error`.
-    borderColor: "rgba(240, 140, 142, 0.50)",
+    // Aurora coral (#E25C5C) at 50% — matches `theme.colors.error`.
+    borderColor: "rgba(226, 92, 92, 0.50)",
   },
   input: {
     flex: 1,

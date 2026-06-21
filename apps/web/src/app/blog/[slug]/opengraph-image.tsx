@@ -11,7 +11,7 @@
 import { ImageResponse } from "next/og";
 import { getPublicPostBySlug } from "@/lib/blog/queries";
 
-export const alt = "LocateFlow blog article";
+export const alt = "Move blog article";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -43,8 +43,8 @@ export default async function BlogPostOgImage({
           height: "100%",
           padding: "80px",
           background:
-            "linear-gradient(135deg, #0A0F18 0%, #0E1521 50%, #131C2C 100%)",
-          color: "#ECF1F8",
+            "linear-gradient(135deg, #070B14 0%, #121B2D 50%, #18233A 100%)",
+          color: "#EFF3FA",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
@@ -54,19 +54,19 @@ export default async function BlogPostOgImage({
               width: 64,
               height: 64,
               borderRadius: 16,
-              background: "linear-gradient(135deg, #A5C9F0 0%, #5C9DDC 100%)",
+              background: "linear-gradient(135deg, #DCBC7C 0%, #B0852F 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 40px rgba(127, 182, 232, 0.40)",
+              boxShadow: "0 0 40px rgba(203, 164, 94, 0.40)",
             }}
           >
-            <span style={{ fontSize: 36, fontWeight: 800, color: "#ECF1F8" }}>L</span>
+            <span style={{ fontSize: 36, fontWeight: 800, color: "#EFF3FA" }}>M</span>
           </div>
           <span
-            style={{ fontSize: 38, fontWeight: 800, letterSpacing: -1.2, color: "#ECF1F8" }}
+            style={{ fontSize: 38, fontWeight: 800, letterSpacing: -1.2, color: "#EFF3FA" }}
           >
-            LocateFlow
+            Move
           </span>
         </div>
 
@@ -77,7 +77,7 @@ export default async function BlogPostOgImage({
               fontWeight: 700,
               letterSpacing: 4,
               textTransform: "uppercase",
-              color: "#A5C9F0",
+              color: "#DCBC7C",
             }}
           >
             {category}
@@ -88,7 +88,7 @@ export default async function BlogPostOgImage({
               fontWeight: 800,
               lineHeight: 1.08,
               letterSpacing: -2,
-              color: "#ECF1F8",
+              color: "#EFF3FA",
               maxWidth: 1040,
             }}
           >
@@ -103,13 +103,13 @@ export default async function BlogPostOgImage({
             gap: 12,
             padding: "12px 20px",
             borderRadius: 999,
-            background: "rgba(127, 182, 232, 0.10)",
-            border: "1px solid rgba(127, 182, 232, 0.30)",
+            background: "rgba(203, 164, 94, 0.10)",
+            border: "1px solid rgba(203, 164, 94, 0.30)",
             alignSelf: "flex-start",
           }}
         >
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#7FB6E8" }} />
-          <span style={{ fontSize: 20, color: "#A5C9F0", fontWeight: 600 }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#CBA45E" }} />
+          <span style={{ fontSize: 20, color: "#DCBC7C", fontWeight: 600 }}>
             locateflow.com/blog
           </span>
         </div>

@@ -1,11 +1,11 @@
 {
-  "name": "LocateFlow - Address & Moving Management",
-  "short_name": "LocateFlow",
-  "description": "Manage your addresses, services, and moving processes with intelligent assistance.",
+  "name": "Move - Relocation Intelligence",
+  "short_name": "Move",
+  "description": "Track every utility, address, deadline, and home dossier before you arrive.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#0A0F18",
-  "theme_color": "#0A0F18",
+  "background_color": "#070B14",
+  "theme_color": "#070B14",
   "orientation": "portrait-primary",
   "icons": [
     {

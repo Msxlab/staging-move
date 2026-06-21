@@ -5,9 +5,9 @@ import { PARTNER_REGISTRATION_FLAG } from "@locateflow/shared";
 import { PartnerApplyForm } from "@/components/partners/partner-apply-form";
 
 export const metadata: Metadata = {
-  title: "List your business · LocateFlow",
+  title: "List your business · Move",
   description:
-    "Apply to receive customer leads on LocateFlow as a cleaning or junk-removal partner. Listing is free; our team reviews every applicant.",
+    "Apply to receive customer leads on Move as a cleaning or junk-removal partner. Listing is free; our team reviews every applicant.",
 };
 
 // Server-rendered so the partner_registration_v1 gate is evaluated per request.

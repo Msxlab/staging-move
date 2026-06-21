@@ -468,7 +468,7 @@ function ConsumerFreePricing({
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           Free — every feature included
         </div>
-        <Heading className="mb-4 text-3xl font-bold">LocateFlow is free for your whole move</Heading>
+        <Heading className="mb-4 text-3xl font-bold">Move is free for your whole move</Heading>
         <p className="text-lg text-muted-foreground">
           No subscription, no credit card. Every feature, for every move — Concierge and Business are on the way.
         </p>
@@ -490,7 +490,7 @@ function ConsumerFreePricing({
             </div>
             <h3 className="text-2xl font-semibold">Free</h3>
             <p className="mt-2 min-h-[3rem] text-sm leading-6 text-muted-foreground">
-              The complete LocateFlow — every home, every feature, no limits to unlock.
+              The complete Move — every home, every feature, no limits to unlock.
             </p>
           </div>
 
@@ -524,7 +524,7 @@ function ConsumerFreePricing({
       </div>
 
       <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-muted-foreground">
-        LocateFlow tracks your services and move workflow. It does not log into or change your accounts with any
+        Move tracks your services and move workflow. It does not log into or change your accounts with any
         provider on your behalf — it gives you guided checklists, reminders, and links so you update each provider
         yourself through their official channel.
       </p>
@@ -642,7 +642,7 @@ export function PricingSection({
       </div>
 
       <p className="mx-auto mt-4 max-w-3xl text-center text-[11px] text-muted-foreground">
-        LocateFlow tracks your services and move workflow. It does not log into or change your accounts with any provider on your behalf — it gives you guided checklists, reminders, and links so you update each provider yourself through their official channel.
+        Move tracks your services and move workflow. It does not log into or change your accounts with any provider on your behalf — it gives you guided checklists, reminders, and links so you update each provider yourself through their official channel.
       </p>
     </section>
   );

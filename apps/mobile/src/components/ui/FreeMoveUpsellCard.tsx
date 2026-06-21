@@ -99,7 +99,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 16,
       backgroundColor: theme.colors.primaryFaded,
       borderWidth: 1,
-      borderColor: "rgba(127, 182, 232,0.3)",
+      borderColor: "rgba(203, 164, 94,0.3)",
       alignItems: "center",
       justifyContent: "center",
     },

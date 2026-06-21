@@ -30,10 +30,10 @@ const DARK = "#3a4350";
 
 // Aurora brand tokens, mirrored from packages/shared/src/design-tokens.ts so the
 // pose accents read on-brand (we can't import runtime theme into a pure SVG).
-const AURORA_BLUE = "#7FB6E8";
+const AURORA_BLUE = "#CBA45E";
 const AURORA_MASK_TIP = "#9CCBF2";
-const AURORA_MINT = "#87DDC0";
-const AURORA_AMBER = "#F2C46C";
+const AURORA_MINT = "#54CB7E";
+const AURORA_AMBER = "#CBA45E";
 const BLUSH = "#F58FB4";
 
 /**

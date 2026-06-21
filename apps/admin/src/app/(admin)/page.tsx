@@ -506,7 +506,7 @@ export default async function DashboardPage() {
       <AdminPageHeader
         eyebrow="Overview"
         title="<em>Today's</em> snapshot"
-        subtitle="System health, revenue, and the people moving through LocateFlow."
+        subtitle="System health, revenue, and the people moving through Move."
         actions={
           <>
             <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
@@ -700,9 +700,9 @@ export default async function DashboardPage() {
               const plan = planRaw.includes("FAMILY")
                 ? { label: "Family", color: "#4FD1B5" }
                 : planRaw.includes("PRO")
-                  ? { label: "Pro", color: "#F2C46C" }
+                  ? { label: "Pro", color: "#CBA45E" }
                   : planRaw.includes("INDIVIDUAL")
-                    ? { label: "Individual", color: "#7FB6E8" }
+                    ? { label: "Individual", color: "#CBA45E" }
                     : planRaw
                       ? { label: "Free", color: "#8A94A6" }
                       : null;
@@ -724,9 +724,9 @@ export default async function DashboardPage() {
                       {moving && (
                         <span
                           className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
-                          style={{ color: "#7FB6E8", backgroundColor: "rgba(127,182,232,0.12)", borderColor: "rgba(127,182,232,0.28)" }}
+                          style={{ color: "#CBA45E", backgroundColor: "rgba(203, 164, 94,0.12)", borderColor: "rgba(203, 164, 94,0.28)" }}
                         >
-                          <span className="h-1 w-1 rounded-full" style={{ backgroundColor: "#7FB6E8" }} />
+                          <span className="h-1 w-1 rounded-full" style={{ backgroundColor: "#CBA45E" }} />
                           Moving
                         </span>
                       )}

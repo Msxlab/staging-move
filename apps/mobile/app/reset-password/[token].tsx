@@ -143,7 +143,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 20,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.22)",
+    borderColor: "rgba(203, 164, 94,0.22)",
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",

@@ -83,7 +83,7 @@ export async function generateMetadata({
       url,
       title: post.seo.title,
       description: post.seo.description,
-      siteName: "LocateFlow",
+      siteName: "Move",
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
       authors: [post.author.name],
@@ -130,7 +130,7 @@ export default async function BlogPostPage({
   const url = blogPostUrl(SITE_URL, post.slug, post.locale);
   const ctx = {
     siteUrl: SITE_URL,
-    siteName: "LocateFlow",
+    siteName: "Move",
     logoUrl: `${SITE_URL}/logo.svg`,
   };
   const inLanguage = post.locale === "es" ? "es-US" : "en-US";
@@ -269,7 +269,7 @@ export default async function BlogPostPage({
       <section className="border-y border-border bg-card/40">
         <div className="container max-w-4xl py-14 text-center">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
-            Try LocateFlow
+            Try Move
           </p>
           <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Keep provider records, addresses, and renewal reminders in one place.

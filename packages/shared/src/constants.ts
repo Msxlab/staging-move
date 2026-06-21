@@ -19,14 +19,14 @@ export const OWNERSHIP_TYPES = [
 // ==================== SERVICE CATEGORIES ====================
 
 export const SERVICE_CATEGORIES = [
-  { value: "GOVERNMENT", label: "Government", color: "#F08C8E" },
-  { value: "UTILITY", label: "Utilities", color: "#F2C46C" },
-  { value: "FINANCIAL", label: "Financial", color: "#87DDC0" },
-  { value: "HOUSING", label: "Housing", color: "#7FB6E8" },
+  { value: "GOVERNMENT", label: "Government", color: "#E25C5C" },
+  { value: "UTILITY", label: "Utilities", color: "#CBA45E" },
+  { value: "FINANCIAL", label: "Financial", color: "#54CB7E" },
+  { value: "HOUSING", label: "Housing", color: "#CBA45E" },
   { value: "HEALTHCARE", label: "Healthcare", color: "#F0A0B8" },
-  { value: "TRANSPORTATION", label: "Transportation", color: "#5C9DDC" },
-  { value: "KIDS", label: "Kids & Education", color: "#D99A4E" },
-  { value: "FITNESS", label: "Fitness", color: "#F2C46C" },
+  { value: "TRANSPORTATION", label: "Transportation", color: "#B0852F" },
+  { value: "KIDS", label: "Kids & Education", color: "#B0852F" },
+  { value: "FITNESS", label: "Fitness", color: "#CBA45E" },
   { value: "SHOPPING", label: "Shopping", color: "#F0A0B8" },
   { value: "OTHER", label: "Other", color: "#6E7C92" },
 ] as const;
@@ -59,9 +59,9 @@ export function isCanceledMovingPlanStatus(status: string | null | undefined): b
 
 export const MOVING_STATUSES = [
   { value: "PLANNING", label: "Planning", color: "#6E7C92" },
-  { value: "IN_PROGRESS", label: "In Progress", color: "#7FB6E8" },
-  { value: "COMPLETED", label: "Completed", color: "#87DDC0" },
-  { value: "CANCELED", label: "Canceled", color: "#F08C8E" },
+  { value: "IN_PROGRESS", label: "In Progress", color: "#CBA45E" },
+  { value: "COMPLETED", label: "Completed", color: "#54CB7E" },
+  { value: "CANCELED", label: "Canceled", color: "#E25C5C" },
 ] as const;
 
 // ==================== DOCUMENT ====================
@@ -150,11 +150,11 @@ export const IMMIGRATION_STATUSES = [
 
 export const RELOCATION_PHASES = [
   { phase: 0, label: "Before the Move", shortLabel: "Pre-Move", daysOffset: -14, icon: "📦", color: "#6E7C92" },
-  { phase: 1, label: "Move Week", shortLabel: "Move Week", daysOffset: 0, icon: "🚚", color: "#F2C46C" },
-  { phase: 2, label: "First 10 Days", shortLabel: "Days 1-10", daysOffset: 10, icon: "⚡", color: "#F08C8E" },
-  { phase: 3, label: "First 30 Days", shortLabel: "Days 11-30", daysOffset: 30, icon: "📋", color: "#7FB6E8" },
-  { phase: 4, label: "First 60 Days", shortLabel: "Days 31-60", daysOffset: 60, icon: "🔧", color: "#D99A4E" },
-  { phase: 5, label: "Settling In", shortLabel: "60+ Days", daysOffset: 90, icon: "🏠", color: "#87DDC0" },
+  { phase: 1, label: "Move Week", shortLabel: "Move Week", daysOffset: 0, icon: "🚚", color: "#CBA45E" },
+  { phase: 2, label: "First 10 Days", shortLabel: "Days 1-10", daysOffset: 10, icon: "⚡", color: "#E25C5C" },
+  { phase: 3, label: "First 30 Days", shortLabel: "Days 11-30", daysOffset: 30, icon: "📋", color: "#CBA45E" },
+  { phase: 4, label: "First 60 Days", shortLabel: "Days 31-60", daysOffset: 60, icon: "🔧", color: "#B0852F" },
+  { phase: 5, label: "Settling In", shortLabel: "60+ Days", daysOffset: 90, icon: "🏠", color: "#54CB7E" },
 ] as const;
 
 export function getCurrentRelocationPhase(daysSinceMove: number): number {
@@ -718,21 +718,21 @@ export const STATE_DMV_DEADLINES: Record<string, { licenseDays: number; registra
 // ==================== THEME COLORS ====================
 
 export const COLORS = {
-  primary: "#7FB6E8",
-  primaryLight: "#A5C9F0",
-  primaryDark: "#5C9DDC",
-  accent: "#F2C46C",
-  success: "#87DDC0",
-  warning: "#F2C46C",
-  error: "#F08C8E",
-  info: "#7FB6E8",
-  surface: "#0A0F18",
-  surfaceElevated: "#131C2C",
+  primary: "#CBA45E",
+  primaryLight: "#DCBC7C",
+  primaryDark: "#B0852F",
+  accent: "#CBA45E",
+  success: "#54CB7E",
+  warning: "#E0A85A",
+  error: "#E25C5C",
+  info: "#37C2C9",
+  surface: "#070B14",
+  surfaceElevated: "#18233A",
   surfaceCard: "rgba(255, 255, 255, 0.05)",
   border: "rgba(255, 255, 255, 0.1)",
-  borderFocus: "rgba(127, 182, 232, 0.55)",
-  textPrimary: "#ECF1F8",
-  textSecondary: "rgba(236, 241, 248, 0.66)",
-  textTertiary: "rgba(236, 241, 248, 0.43)",
-  textMuted: "rgba(236, 241, 248, 0.30)",
+  borderFocus: "rgba(203, 164, 94, 0.55)",
+  textPrimary: "#EFF3FA",
+  textSecondary: "rgba(239, 243, 250, 0.66)",
+  textTertiary: "rgba(239, 243, 250, 0.43)",
+  textMuted: "rgba(239, 243, 250, 0.30)",
 } as const;

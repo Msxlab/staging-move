@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, RefreshCw, Check, X, BadgeDollarSign } from "lucide-react";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
-// Affiliate conversion reconciliation queue: advance commissions LocateFlow
+// Affiliate conversion reconciliation queue: advance commissions Move
 // earns from provider networks through PENDING → APPROVED → PAID (or REJECTED).
 // All mutations go through password+MFA step-up server-side.
 

@@ -628,7 +628,7 @@ export default function MovingDetailScreen() {
             <Text style={{ fontSize: 12.5, lineHeight: 18, color: theme.colors.textSecondary }}>
               {t("moving.uspsBody", {
                 defaultValue:
-                  "Forward your mail to your new address — best done about 2 weeks before you move. You'll finish on the official USPS site, which charges a small one-time identity-verification fee. LocateFlow never collects it.",
+                  "Forward your mail to your new address — best done about 2 weeks before you move. You'll finish on the official USPS site, which charges a small one-time identity-verification fee. Move never collects it.",
               })}
             </Text>
             <TouchableOpacity
@@ -689,7 +689,7 @@ export default function MovingDetailScreen() {
                   ))
                 )}
               </View>
-              <View style={[styles.moveSplit, { borderColor: theme.colors.rose.border }]}>
+              <View style={[styles.moveSplit, { borderColor: theme.colors.orange.border }]}>
                 <View style={styles.moveSplitH}>
                   <AlertTriangle size={15} color={theme.colors.error} />
                   <Text style={[styles.moveSplitHT, { color: theme.colors.error }]}>Still at old</Text>
@@ -1326,7 +1326,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   deleteBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     marginTop: 32, paddingVertical: 14, borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.20)",
+    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(226, 92, 92, 0.20)",
   },
   deleteText: { fontSize: 14, fontWeight: "600", color: theme.colors.error },
   migSectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
@@ -1638,7 +1638,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 12,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.22)",
+    borderColor: "rgba(203, 164, 94,0.22)",
   },
   taskRevealText: {
     fontSize: 12,

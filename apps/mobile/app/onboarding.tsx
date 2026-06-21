@@ -1111,7 +1111,7 @@ export default function OnboardingScreen() {
           t("onboarding.pushPromptTitle", { defaultValue: "Stay on top of your move" }),
           t("onboarding.pushPromptBody", {
             defaultValue:
-              "LocateFlow can send reminders for moving tasks, provider replies, and billing notices. You can change this any time in Settings.",
+              "Move can send reminders for moving tasks, provider replies, and billing notices. You can change this any time in Settings.",
           }),
           [
             {
@@ -1267,7 +1267,7 @@ export default function OnboardingScreen() {
             logoSize={30}
             borderRadius={10}
             backgroundColor={isSelected ? theme.colors.primary : "rgba(255,255,255,0.05)"}
-            borderColor={theme.colors.rose.border}
+            borderColor={theme.colors.orange.border}
             fallbackFontSize={16}
           />
           <View style={{ flex: 1 }}>
@@ -1980,7 +1980,7 @@ export default function OnboardingScreen() {
                                   logoSize={30}
                                   borderRadius={10}
                                   backgroundColor={sel ? theme.colors.primary : "rgba(255,255,255,0.05)"}
-                                  borderColor={theme.colors.rose.border}
+                                  borderColor={theme.colors.orange.border}
                                   fallbackFontSize={16}
                                 />
                                 <View style={{ flex: 1 }}>

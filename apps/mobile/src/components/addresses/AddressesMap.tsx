@@ -25,7 +25,7 @@ function addressStatus(a: Address): { kind: StatusKind; label: string } {
 }
 
 function tone(kind: StatusKind, theme: Theme) {
-  return kind === "seasonal" ? theme.colors.rose : kind === "past" ? theme.colors.amber : theme.colors.emerald;
+  return kind === "seasonal" ? theme.colors.sky : kind === "past" ? theme.colors.amber : theme.colors.emerald;
 }
 
 const lat = (a: Address) => (a as any).latitude as number | null | undefined;

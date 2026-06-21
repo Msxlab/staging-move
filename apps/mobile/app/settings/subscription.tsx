@@ -592,7 +592,7 @@ function LegacySubscriptionScreen() {
     }
     if (message === "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE") {
       return t("settings.subscription_activeManagedElsewhere", {
-        defaultValue: "This account already has an active subscription managed elsewhere. You can continue using LocateFlow here.",
+        defaultValue: "This account already has an active subscription managed elsewhere. You can continue using Move here.",
       });
     }
     return message || t("toast.networkError");

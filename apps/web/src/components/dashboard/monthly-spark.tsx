@@ -14,7 +14,7 @@ import { monthlyAmountForCycle } from "@/lib/budget-planning";
  * from data already loaded: for each of the last 6 months we sum the
  * monthly-equivalent cost of every service that existed by the end of that
  * month (via its createdAt). That makes this an honest "tracked monthly
- * spend" growth curve — it reflects when services were added to LocateFlow,
+ * spend" growth curve — it reflects when services were added to Move,
  * not retroactive billing history. No extra API calls.
  */
 

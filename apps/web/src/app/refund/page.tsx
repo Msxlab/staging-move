@@ -6,7 +6,7 @@ import { createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
   title: "Refund Policy",
-  description: "LocateFlow refund eligibility, refund request windows, and store-purchase refund handling.",
+  description: "Move refund eligibility, refund request windows, and store-purchase refund handling.",
   path: "/refund",
 });
 
@@ -19,7 +19,7 @@ const highlights = [
   {
     icon: CreditCard,
     title: "Web purchases",
-    description: "Stripe web purchases are reviewed by LocateFlow support under the request windows below.",
+    description: "Stripe web purchases are reviewed by Move support under the request windows below.",
   },
   {
     icon: Store,
@@ -38,7 +38,7 @@ export default function RefundPolicyPage() {
     <PublicPageShell
       eyebrow="Legal"
       title="Refund Policy"
-      description="This policy explains how refund requests are handled for LocateFlow subscriptions. It does not replace the final offer terms shown at checkout or mobile store rules."
+      description="This policy explains how refund requests are handled for Move subscriptions. It does not replace the final offer terms shown at checkout or mobile store rules."
     >
       <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
 
@@ -66,7 +66,7 @@ export default function RefundPolicyPage() {
       <PublicSection title="Mobile store refunds">
         <p>{STORE_PURCHASE_DISTINCTION}</p>
         <p>
-          If you subscribed through Apple App Store or Google Play, refund requests may need to be submitted directly to Apple or Google. LocateFlow may not be able to issue a direct refund for store-managed purchases.
+          If you subscribed through Apple App Store or Google Play, refund requests may need to be submitted directly to Apple or Google. Move may not be able to issue a direct refund for store-managed purchases.
         </p>
       </PublicSection>
 
@@ -81,7 +81,7 @@ export default function RefundPolicyPage() {
 
       <PublicSection title="How to request a refund">
         <p>
-          Email <a href={mailto(LEGAL_CONTACTS.billing, "LocateFlow refund request")} className="underline">{LEGAL_CONTACTS.billing}</a> with the account email, purchase platform, charge date, and a short description. Do not send payment card numbers or sensitive secrets.
+          Email <a href={mailto(LEGAL_CONTACTS.billing, "Move refund request")} className="underline">{LEGAL_CONTACTS.billing}</a> with the account email, purchase platform, charge date, and a short description. Do not send payment card numbers or sensitive secrets.
         </p>
         <p>
           See the <Link href="/billing-policy" className="underline">Billing Policy</Link> for subscription, renewal, failed payment, tax, and cancellation terms.

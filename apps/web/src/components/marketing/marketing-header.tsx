@@ -17,7 +17,6 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
   const userId = providedUserId === undefined ? session?.userId ?? null : providedUserId;
   const tCommon = await getTranslations("common");
   const tLanding = await getTranslations("landing");
-  const tPricing = await getTranslations("pricing");
 
   // Nav restyled to the Move web design (Web.dc.html) pill style, leading with
   // Features / Pricing / Guides. Pricing stays while the paid model is active on
@@ -25,8 +24,8 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
   // CONSUMER_FREE pivot flag, which lives on a separate branch — wire it there,
   // not hardcoded here.
   const navLinks = [
-    { href: "/how-it-works", label: "Features" },
-    { href: "/#pricing", label: tPricing("title").split(".")[0] },
+    { href: "/features", label: "Features" },
+    { href: "/why-free", label: "Why free" },
     { href: "/blog", label: "Guides" },
     { href: "/faq", label: "FAQ" },
   ];
@@ -37,16 +36,16 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
         <Wordmark />
         <nav className="hidden items-center gap-1 md:flex">
           <Link
-            href="/how-it-works"
+            href="/features"
             className="rounded-lg px-3.5 py-2 text-[13.5px] font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
           >
             Features
           </Link>
           <Link
-            href="/#pricing"
+            href="/why-free"
             className="rounded-lg px-3.5 py-2 text-[13.5px] font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
           >
-            {tPricing("title").split(".")[0]}
+            Why free
           </Link>
           <Link
             href="/blog"

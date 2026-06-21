@@ -203,9 +203,11 @@ function serviceTone(category: string | null | undefined, theme: Theme) {
     case "HOUSING":
       return theme.colors.sky;
     case "GOVERNMENT":
+      return theme.colors.orange;
     case "HEALTHCARE":
+      return theme.colors.sky;
     case "SHOPPING":
-      return theme.colors.rose;
+      return theme.colors.cyan;
     case "TRANSPORTATION":
       return theme.colors.cyan;
     default:
@@ -1008,8 +1010,8 @@ export default function DashboardScreen() {
     if (p === "FAMILY")
       return { label: t("dashboard.familyBadge", "Family"), fg: "#4FD1B5", bg: "rgba(79,209,181,0.12)", border: "rgba(79,209,181,0.32)", Icon: Users };
     if (p === "PRO")
-      return { label: t("dashboard.proBadge", "Pro"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.34)", Icon: Sparkles };
-    return { label: t("dashboard.premiumBadge"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.3)", Icon: Sparkles };
+      return { label: t("dashboard.proBadge", "Pro"), fg: "#CBA45E", bg: "rgba(203, 164, 94,0.12)", border: "rgba(203, 164, 94,0.34)", Icon: Sparkles };
+    return { label: t("dashboard.premiumBadge"), fg: "#CBA45E", bg: "rgba(203, 164, 94,0.12)", border: "rgba(203, 164, 94,0.3)", Icon: Sparkles };
   })();
   const PlanBadgeIcon = planBadge.Icon;
   const workspaceRoleLabel = workspace

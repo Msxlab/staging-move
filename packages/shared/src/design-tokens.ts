@@ -4,11 +4,10 @@
  * Single source of truth for colors, typography, spacing, radii, and
  * shadows across web, admin, and mobile.
  *
- * Edition VII · Aurora. The values below were flipped from the
- * Champagne & Rose palette (Edition VI) to Aurora's cool / honey /
- * mint / amber / coral system to match the system-wide theming shipped
- * on web and admin. The premium "foil" accent (and Pro plan) is
- * honey/champagne. Legacy export names (`brand.orange`, `tones.orange`,
+ * Edition VIII · Move Gold. The values below follow the GitHub design
+ * handoff defaults: deep navy surfaces, Gold as the primary accent, plus
+ * green / teal / amber / red semantic support colors. Legacy export names
+ * (`brand.orange`, `tones.orange`,
  * `roseScale`, `foilScale`, etc.) are preserved on purpose so the
  * mobile app — the only runtime consumer of this file — flips palette
  * without a codemod. Web and admin don't import at runtime; their
@@ -24,32 +23,32 @@
  */
 
 // ────────────────────────────────────────────────────────────────────
-// Brand palette — Aurora (Edition VII)
-// Cool blue primary, honey/champagne accent, mint success.
+// Brand palette — Move Gold (Edition VIII)
+// Gold primary, teal info, green success.
 // ────────────────────────────────────────────────────────────────────
 
 export const brandColors = {
   // Legacy names — kept so `brand.orange` references in code keep working.
-  // Values now resolve to Aurora cool (primary) / honey (accent) so the
+  // Values now resolve to the GitHub design handoff's Gold primary so the
   // visual surface flips automatically.
-  orange: "#7FB6E8", // primary — Aurora cool
-  orangeLight: "#A5C9F0", // hover / soft glow
-  orangeDark: "#5C9DDC", // pressed — Aurora cool-2
-  amber: "#F2C46C", // secondary / accent — honey/champagne foil
+  orange: "#CBA45E", // primary — Gold
+  orangeLight: "#DCBC7C", // hover / soft glow
+  orangeDark: "#B0852F", // pressed — Gold dark
+  amber: "#E0A85A", // secondary / warning
 
-  // Canonical Aurora names.
-  rose: "#7FB6E8", // primary cool
-  roseLight: "#A5C9F0",
-  roseDeep: "#5C9DDC",
-  roseDark: "#3D7AB8",
-  foil: "#F2C46C", // honey/champagne accent (Pro)
-  foilHighlight: "#FBE7BD", // champagne highlight (gradient stop a)
-  foilShadow: "#D99A4E", // champagne shadow (gradient stop c)
-  foilInk: "#7A5418", // honey ink
-  sage: "#87DDC0", // mint
-  sageSoft: "#B0E8D2",
-  nude: "#F2C46C", // alias of foil/honey
-  nudeDeep: "#D99A4E",
+  // Canonical design names.
+  rose: "#CBA45E", // primary Gold
+  roseLight: "#DCBC7C",
+  roseDeep: "#B0852F",
+  roseDark: "#9A7325",
+  foil: "#CBA45E", // Pro / premium gold
+  foilHighlight: "#DCBC7C", // gradient stop a
+  foilShadow: "#B0852F", // gradient stop c
+  foilInk: "#765514", // readable gold ink on paper
+  sage: "#54CB7E", // success green
+  sageSoft: "#8BE3A8",
+  nude: "#E0A85A", // amber alias
+  nudeDeep: "#A9761E",
 } as const;
 
 /**
@@ -59,28 +58,27 @@ export const brandColors = {
  * code. The 500 step is the brand pin color.
  */
 export const roseScale = {
-  50: "#EFF5FB",
-  100: "#DDE7F5",
-  200: "#BDD2EE",
-  300: "#9CBDDD",
-  400: "#7FB6E8", // brand pin (was 500 step)
-  500: "#7FB6E8", // primary
-  600: "#6BA5D9",
-  700: "#5C9DDC", // pressed (cool-2)
-  800: "#3D7AB8",
-  900: "#1F5FA0",
+  50: "#FCF7EA",
+  100: "#F6E9C8",
+  200: "#EBD39B",
+  300: "#DCBC7C",
+  400: "#CBA45E", // brand pin
+  500: "#CBA45E", // primary
+  600: "#B89142",
+  700: "#B0852F", // pressed
+  800: "#9A7325",
+  900: "#765514",
 } as const;
 
 /**
- * Foil/honey scale — Aurora secondary accent. Champagne highlight →
- * honey body → champagne shadow so legacy `foilScale.highlight` callers
- * keep rendering, now in the honey/champagne foil.
+ * Foil/gold scale — premium Gold highlight → body → shadow so legacy
+ * `foilScale.highlight` callers keep rendering in the handoff palette.
  */
 export const foilScale = {
-  highlight: "#FBE7BD", // champagne highlight
-  body: "#F2C46C", // honey/champagne (the flat-color use)
-  shadow: "#D99A4E", // champagne shadow
-  ink: "#7A5418", // honey ink on paper
+  highlight: "#DCBC7C", // gold highlight
+  body: "#CBA45E", // flat gold
+  shadow: "#B0852F", // gold shadow
+  ink: "#765514", // gold ink on paper
 } as const;
 
 /**
@@ -96,11 +94,11 @@ export const orangeScale = roseScale;
 // ────────────────────────────────────────────────────────────────────
 
 export const surfaceDark = {
-  background: "#0A0F18", // au-base
-  surface: "#0E1521", // au-base-2 (cards)
-  card: "#131C2C", // au-base-3 (card hover, input fill)
-  cardHover: "#1A2438", // active surface, menu hover
-  elevated: "#212C45", // popovers, dialogs
+  background: "#070B14",
+  surface: "#121B2D",
+  card: "#18233A",
+  cardHover: "#16203A",
+  elevated: "#1D2943",
 } as const;
 
 export const surfaceLight = {
@@ -116,10 +114,10 @@ export const surfaceLight = {
 // ────────────────────────────────────────────────────────────────────
 
 export const textDark = {
-  primary: "#ECF1F8", // au-ink
-  secondary: "#A8B5C9", // au-ink-2
-  tertiary: "#6E7C92", // au-ink-3
-  muted: "#4C586D", // au-ink-4
+  primary: "#EFF3FA",
+  secondary: "#8A99B6",
+  tertiary: "#5A6A86",
+  muted: "#41526F",
 } as const;
 
 export const textLight = {
@@ -130,63 +128,62 @@ export const textLight = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Borders — alpha, never opaque. Focus is always a cool ring.
+// Borders — alpha, never opaque. Focus is always a Gold ring.
 // ────────────────────────────────────────────────────────────────────
 
 export const borderDark = {
   default: "rgba(255, 255, 255, 0.05)", // au-edge-2
   strong: "rgba(255, 255, 255, 0.10)", // au-edge
-  foil: "rgba(242, 196, 108, 0.24)", // honey hairline
-  rose: "rgba(127, 182, 232, 0.30)", // cool ring
-  focus: "rgba(127, 182, 232, 0.55)", // 2px outline on focus-visible
+  foil: "rgba(203, 164, 94, 0.24)", // gold hairline
+  rose: "rgba(203, 164, 94, 0.30)", // gold ring
+  focus: "rgba(203, 164, 94, 0.55)", // 2px outline on focus-visible
 } as const;
 
 export const borderLight = {
   default: "rgba(20, 32, 47, 0.06)",
   strong: "rgba(20, 32, 47, 0.14)",
-  foil: "rgba(122, 84, 24, 0.30)",
-  rose: "rgba(31, 95, 160, 0.30)",
-  focus: "rgba(31, 95, 160, 0.55)",
+  foil: "rgba(134, 99, 26, 0.30)",
+  rose: "rgba(134, 99, 26, 0.30)",
+  focus: "rgba(134, 99, 26, 0.55)",
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Semantic colors — Aurora mint/amber/coral/cool. All in the brand family.
+// Semantic colors — green/amber/red/teal from the design handoff.
 // ────────────────────────────────────────────────────────────────────
 
 export const semanticColors = {
-  success: "#87DDC0", // au-mint
-  successLight: "rgba(135, 221, 192, 0.14)",
-  warning: "#F2C46C", // au-amber
-  warningLight: "rgba(242, 196, 108, 0.14)",
-  danger: "#F08C8E", // au-coral
-  dangerLight: "rgba(240, 140, 142, 0.16)",
-  info: "#7FB6E8", // au-cool
-  infoLight: "rgba(127, 182, 232, 0.14)",
+  success: "#54CB7E",
+  successLight: "rgba(84, 203, 126, 0.14)",
+  warning: "#E0A85A",
+  warningLight: "rgba(224, 168, 90, 0.16)",
+  danger: "#E25C5C",
+  dangerLight: "rgba(226, 92, 92, 0.16)",
+  info: "#37C2C9",
+  infoLight: "rgba(55, 194, 201, 0.14)",
 } as const;
 
 export const semanticColorsLight = {
-  success: "#0F6B50", // au-mint ink on paper
+  success: "#0F6B50",
   successLight: "rgba(15, 107, 80, 0.10)",
-  warning: "#7A5418", // au-amber ink on paper
-  warningLight: "rgba(122, 84, 24, 0.10)",
-  danger: "#A23B3F", // au-coral ink on paper
-  dangerLight: "rgba(162, 59, 63, 0.10)",
-  info: "#1F5FA0", // au-cool ink on paper
-  infoLight: "rgba(31, 95, 160, 0.10)",
+  warning: "#765514",
+  warningLight: "rgba(138, 91, 22, 0.10)",
+  danger: "#A83333",
+  dangerLight: "rgba(168, 51, 51, 0.10)",
+  info: "#16666B",
+  infoLight: "rgba(22, 102, 107, 0.10)",
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Plan accent colors — the canonical per-tier hexes from the Edition VII
-// design handoff (one source of truth for web `.plan-*` CSS, the mobile
-// `planAccents` palette, and admin tier chips). Individual is the base
-// cool-blue primary — listed for completeness. No purple, ever.
+// Plan accent colors — one source of truth for web `.plan-*` CSS, the mobile
+// `planAccents` palette, and admin tier chips. Individual is the base Gold
+// primary — listed for completeness. No purple, ever.
 // ────────────────────────────────────────────────────────────────────
 
 export const planColors = {
   free: { dark: "#FF9DB2", light: "#A8324F" }, // candy coral — "Start here"
-  individual: { dark: "#7FB6E8", light: "#1F5FA0" }, // base Aurora cool
+  individual: { dark: "#CBA45E", light: "#765514" }, // base Gold primary
   family: { dark: "#4FD1B5", light: "#0F6B50" }, // teal/mint
-  pro: { dark: "#F2C46C", light: "#7A5418" }, // honey/champagne foil
+  pro: { dark: "#CBA45E", light: "#765514" }, // premium Gold
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
@@ -197,32 +194,31 @@ export const planColors = {
 // ────────────────────────────────────────────────────────────────────
 
 const _tonesDarkCanonical = {
-  // rose tone is now Aurora cool — semantic intent (warning/attention) preserved.
   rose: {
-    bg: "rgba(127, 182, 232, 0.10)",
-    border: "rgba(127, 182, 232, 0.22)",
-    text: "#7FB6E8",
+    bg: "rgba(226, 92, 92, 0.16)",
+    border: "rgba(226, 92, 92, 0.28)",
+    text: "#E25C5C",
   },
   foil: {
-    bg: "rgba(242, 196, 108, 0.10)",
-    border: "rgba(242, 196, 108, 0.24)",
-    text: "#F2C46C",
+    bg: "rgba(203, 164, 94, 0.09)",
+    border: "rgba(203, 164, 94, 0.22)",
+    text: "#CBA45E",
   },
   sage: {
-    bg: "rgba(135, 221, 192, 0.10)",
-    border: "rgba(135, 221, 192, 0.22)",
-    text: "#87DDC0",
+    bg: "rgba(84, 203, 126, 0.14)",
+    border: "rgba(84, 203, 126, 0.24)",
+    text: "#54CB7E",
   },
   honey: {
-    bg: "rgba(242, 196, 108, 0.10)",
-    border: "rgba(242, 196, 108, 0.22)",
-    text: "#F2C46C",
+    bg: "rgba(224, 168, 90, 0.16)",
+    border: "rgba(224, 168, 90, 0.24)",
+    text: "#E0A85A",
   },
   // umber — champagne shadow tone (matches bundle --tone-umber-fg).
   umber: {
-    bg: "rgba(216, 154, 78, 0.10)",
-    border: "rgba(216, 154, 78, 0.22)",
-    text: "#D99A4E",
+    bg: "rgba(176, 133, 47, 0.12)",
+    border: "rgba(176, 133, 47, 0.24)",
+    text: "#B0852F",
   },
   slate: {
     bg: "rgba(168, 181, 201, 0.10)",
@@ -231,16 +227,22 @@ const _tonesDarkCanonical = {
   },
 } as const;
 
+const _tonesDarkInfo = {
+  bg: "rgba(55, 194, 201, 0.14)",
+  border: "rgba(55, 194, 201, 0.24)",
+  text: "#37C2C9",
+} as const;
+
 const _tonesLightCanonical = {
   rose: {
-    bg: "rgba(31, 95, 160, 0.10)",
-    border: "rgba(31, 95, 160, 0.22)",
-    text: "#1F5FA0",
+    bg: "rgba(168, 51, 51, 0.10)",
+    border: "rgba(168, 51, 51, 0.22)",
+    text: "#A83333",
   },
   foil: {
-    bg: "rgba(122, 84, 24, 0.10)",
-    border: "rgba(122, 84, 24, 0.22)",
-    text: "#7A5418",
+    bg: "rgba(134, 99, 26, 0.10)",
+    border: "rgba(134, 99, 26, 0.22)",
+    text: "#765514",
   },
   sage: {
     bg: "rgba(15, 107, 80, 0.10)",
@@ -248,14 +250,14 @@ const _tonesLightCanonical = {
     text: "#0F6B50",
   },
   honey: {
-    bg: "rgba(122, 84, 24, 0.10)",
-    border: "rgba(122, 84, 24, 0.22)",
-    text: "#7A5418",
+    bg: "rgba(138, 91, 22, 0.10)",
+    border: "rgba(138, 91, 22, 0.22)",
+    text: "#765514",
   },
   umber: {
-    bg: "rgba(122, 84, 24, 0.10)",
-    border: "rgba(122, 84, 24, 0.22)",
-    text: "#7A5418",
+    bg: "rgba(134, 99, 26, 0.10)",
+    border: "rgba(134, 99, 26, 0.22)",
+    text: "#765514",
   },
   slate: {
     bg: "rgba(74, 92, 117, 0.10)",
@@ -264,24 +266,30 @@ const _tonesLightCanonical = {
   },
 } as const;
 
+const _tonesLightInfo = {
+  bg: "rgba(22, 102, 107, 0.10)",
+  border: "rgba(22, 102, 107, 0.22)",
+  text: "#16666B",
+} as const;
+
 export const tonesDark = {
   ..._tonesDarkCanonical,
   // Legacy aliases — orange→rose, emerald→sage, amber→honey, sky→slate,
   // cyan→slate. Existing `text-tone-orange-fg` etc. flip palette.
-  orange: _tonesDarkCanonical.rose,
+  orange: _tonesDarkCanonical.foil,
   emerald: _tonesDarkCanonical.sage,
   amber: _tonesDarkCanonical.honey,
-  sky: _tonesDarkCanonical.slate,
-  cyan: _tonesDarkCanonical.slate,
+  sky: _tonesDarkInfo,
+  cyan: _tonesDarkInfo,
 } as const;
 
 export const tonesLight = {
   ..._tonesLightCanonical,
-  orange: _tonesLightCanonical.rose,
+  orange: _tonesLightCanonical.foil,
   emerald: _tonesLightCanonical.sage,
   amber: _tonesLightCanonical.honey,
-  sky: _tonesLightCanonical.slate,
-  cyan: _tonesLightCanonical.slate,
+  sky: _tonesLightInfo,
+  cyan: _tonesLightInfo,
 } as const;
 
 export type ToneKey = keyof typeof tonesDark;
@@ -308,16 +316,16 @@ export const glassLight = {
 // ────────────────────────────────────────────────────────────────────
 
 export const gradients = {
-  /** Foil — champagne highlight → honey → champagne shadow at 135°. Brand moment. */
-  foil: ["#FBE7BD", "#F2C46C", "#D99A4E"] as const,
-  /** Rose — soft cool → cool-2, used on hero pin glows, illustration fills. */
-  rose: ["#A5C9F0", "#5C9DDC"] as const,
-  /** Premium — cool→honey sweep for upgrade CTAs / "Order moving pack". */
-  premium: ["#7FB6E8", "#F2C46C"] as const,
-  // Legacy names — flipped to Aurora cool so old gradient sites read cool.
-  primary: ["#DDE7F5", "#7FB6E8"] as const,
-  warm: ["#5C9DDC", "#7FB6E8"] as const,
-  glow: ["rgba(127, 182, 232, 0.40)", "rgba(242, 196, 108, 0.10)"] as const,
+  /** Foil — gold highlight → gold body → gold shadow at 135°. Brand moment. */
+  foil: ["#DCBC7C", "#CBA45E", "#B0852F"] as const,
+  /** Rose legacy slot — Gold highlight → Gold shadow. */
+  rose: ["#DCBC7C", "#B0852F"] as const,
+  /** Premium — full Gold sweep for upgrade CTAs / "Order moving pack". */
+  premium: ["#DCBC7C", "#CBA45E", "#B0852F"] as const,
+  // Legacy names — flipped to Gold so old gradient sites read the handoff default.
+  primary: ["#DCBC7C", "#CBA45E"] as const,
+  warm: ["#B0852F", "#CBA45E"] as const,
+  glow: ["rgba(203, 164, 94, 0.40)", "rgba(55, 194, 201, 0.10)"] as const,
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
@@ -387,17 +395,17 @@ export const shadowsMobile = {
     shadowRadius: 50,
     elevation: 8,
   },
-  /** Cool glow — reserved for the active state of the primary CTA. */
+  /** Gold glow — reserved for the active state of the primary CTA. */
   glow: {
-    shadowColor: "#7FB6E8",
+    shadowColor: "#CBA45E",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.28,
     shadowRadius: 20,
     elevation: 6,
   },
-  /** Honey glow — premium / upgrade moments only. */
+  /** Gold glow — premium / upgrade moments only. */
   foil: {
-    shadowColor: "#F2C46C",
+    shadowColor: "#CBA45E",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 30,
@@ -411,8 +419,8 @@ export const shadowsWeb = {
   md: "0 6px 18px rgba(0, 0, 0, 0.40)",
   lg: "0 20px 50px rgba(0, 0, 0, 0.55)",
   xl: "0 40px 80px rgba(0, 0, 0, 0.60)",
-  glow: "0 0 20px rgba(127, 182, 232, 0.28)", // Aurora cool
-  foil: "0 0 30px rgba(242, 196, 108, 0.20)", // honey/champagne
+  glow: "0 0 20px rgba(203, 164, 94, 0.28)", // Gold
+  foil: "0 0 30px rgba(203, 164, 94, 0.20)", // premium Gold
 } as const;
 
 // ────────────────────────────────────────────────────────────────────

@@ -292,7 +292,7 @@ export default function ProviderDetailScreen() {
   // When FCC already confirmed it the confidence is AVAILABLE_AT_ADDRESS and
   // we suppress the link — there's nothing left to check. Requires a website
   // to open; otherwise we omit the button gracefully. The copy NEVER implies
-  // LocateFlow confirmed service — the provider's own site does.
+  // Move confirmed service — the provider's own site does.
   const coverageConfidence = trust.coverageConfidence.confidence;
   const showAddressCheck =
     LOCATION_SENSITIVE_PROVIDER_CATEGORIES.has(provider.category) &&
@@ -341,7 +341,7 @@ export default function ProviderDetailScreen() {
               logoSize={48}
               borderRadius={14}
               backgroundColor={theme.colors.primaryFaded}
-              borderColor={theme.colors.rose.border}
+              borderColor={theme.colors.orange.border}
               fallbackFontSize={26}
             />
             <View style={{ flex: 1 }}>
@@ -651,7 +651,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 14,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
+    borderColor: theme.colors.orange.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -678,7 +678,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
+    borderColor: theme.colors.orange.border,
   },
   addressCheckHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   addressCheckTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text, flex: 1 },
@@ -691,7 +691,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
+    borderColor: theme.colors.orange.border,
     paddingVertical: 13,
     paddingHorizontal: 12,
     marginTop: 12,
@@ -725,7 +725,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.primaryFaded,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
+    borderColor: theme.colors.orange.border,
     paddingVertical: 15,
     marginTop: 14,
   },

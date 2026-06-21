@@ -11,7 +11,7 @@ import { IOS_APP_STORE_URL, ANDROID_PLAY_STORE_URL } from "@/lib/store-links";
  * Detects the visitor's OS and offers the matching native app: App Store on
  * iOS, Google Play on Android. We intentionally do NOT use a PWA
  * `beforeinstallprompt` flow — when a real native app exists, asking the user
- * to "Add to Home Screen" instead is confusing (two LocateFlow icons end up
+ * to "Add to Home Screen" instead is confusing (two Move icons end up
  * on their phone). On desktop the banner stays hidden; there's nothing useful
  * to install.
  *
@@ -159,7 +159,7 @@ export function InstallPrompt() {
               <Logo className="h-7 w-7 text-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">Get the LocateFlow app</p>
+              <p className="text-sm font-semibold text-foreground">Get the Move app</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {storeUrl
                   ? `Faster, offline-ready, with push notifications. Free on ${storeLabel}.`

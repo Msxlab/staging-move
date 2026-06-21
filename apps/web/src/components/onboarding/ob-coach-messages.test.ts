@@ -48,7 +48,7 @@ describe("onboarding coach message keys", () => {
   });
 
   it("keeps the coach copy honest — no scanning claims", () => {
-    // LocateFlow never scans accounts, inboxes, or email; the coach must not
+    // Move never scans accounts, inboxes, or email; the coach must not
     // imply otherwise (legal posture: connectors stay flag-gated).
     for (const key of REQUIRED_KEYS) {
       const value = String(onboardingMessages(en)[key]).toLowerCase();

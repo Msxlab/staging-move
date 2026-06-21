@@ -1,26 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none" role="img" aria-label="Mail and packages at a new home">
   <defs>
     <linearGradient id="flow" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#5C9DDC"/>
-      <stop offset="60%" stop-color="#7FB6E8"/>
+      <stop offset="0%" stop-color="#B0852F"/>
+      <stop offset="60%" stop-color="#CBA45E"/>
       <stop offset="100%" stop-color="#DDE7F5"/>
     </linearGradient>
     <radialGradient id="tr" cx="0.15" cy="0.2" r="0.7">
-      <stop offset="0%" stop-color="#7FB6E8" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#7FB6E8" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#CBA45E" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#CBA45E" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="br" cx="0.9" cy="0.85" r="0.6">
-      <stop offset="0%" stop-color="#7FB6E8" stop-opacity="0.16"/>
-      <stop offset="100%" stop-color="#7FB6E8" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#CBA45E" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#CBA45E" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="1200" height="630" fill="#0A0F18"/>
   <rect width="1200" height="630" fill="url(#tr)"/>
   <rect width="1200" height="630" fill="url(#br)"/>
-  <rect x="110" y="150" width="40" height="3" rx="1.5" fill="#7FB6E8"/>
-  <text x="166" y="159" font-family="'Geist Mono', ui-monospace, monospace" font-size="22" letter-spacing="0.22em" fill="#A5C9F0">LOGISTICS · MAIL</text>
-  <text x="110" y="306" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">Mail that</text>
-  <text x="110" y="392" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">finds you</text>
+  <rect x="110" y="150" width="40" height="3" rx="1.5" fill="#CBA45E"/>
+  <text x="166" y="159" font-family="'Geist Mono', ui-monospace, monospace" font-size="22" letter-spacing="0.22em" fill="#DCBC7C">LOGISTICS · MAIL</text>
+  <text x="110" y="306" font-family="Playfair Display, Didot, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">Mail that</text>
+  <text x="110" y="392" font-family="Playfair Display, Didot, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">finds you</text>
   <g transform="translate(800,225)" stroke="url(#flow)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
     <rect x="0" y="40" width="210" height="145" rx="14"/>
     <path d="M6 52 L105 124 L204 52"/>
@@ -30,8 +30,8 @@
   </g>
   <g transform="translate(110,470)">
     <path d="M0 40 Q 12 8, 30 26 T 64 14" stroke="url(#flow)" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <circle cx="0" cy="40" r="5" fill="#5C9DDC"/>
-    <circle cx="64" cy="14" r="6" fill="#7FB6E8"/>
-    <text x="84" y="32" font-family="Fraunces, Georgia, serif" font-size="30" fill="#ECF1F8">LocateFlow</text>
+    <circle cx="0" cy="40" r="5" fill="#B0852F"/>
+    <circle cx="64" cy="14" r="6" fill="#CBA45E"/>
+    <text x="84" y="32" font-family="Playfair Display, Didot, Georgia, serif" font-size="30" fill="#ECF1F8">Move</text>
   </g>
 </svg>

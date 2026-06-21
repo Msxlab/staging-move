@@ -67,7 +67,7 @@ export default async function MoverPortalDashboard() {
           {company.safetyRating && <span className="rounded-full border border-border px-3 py-1 text-muted-foreground">FMCSA: {company.safetyRating}</span>}
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          Your listing appears in the LocateFlow licensed-movers directory for people moving in your service area.
+          Your listing appears in the Move licensed-movers directory for people moving in your service area.
           Listing details come from the FMCSA register — to correct them, contact support.
         </p>
       </section>

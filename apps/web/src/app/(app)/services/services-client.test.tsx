@@ -159,7 +159,7 @@ describe("service delete requests", () => {
     const serviceDetail = readWebSource("src/app/(app)/services/[id]/page.tsx");
 
     expect(serviceDetail).toContain("Remove from my services");
-    expect(serviceDetail).toContain("This removes the service from your account/address. It does not delete the provider from LocateFlow.");
+    expect(serviceDetail).toContain("This removes the service from your account/address. It does not delete the provider from Move.");
     expect(serviceDetail).not.toContain("Delete Service");
   });
 });

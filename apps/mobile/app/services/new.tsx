@@ -1305,7 +1305,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   addrChipTextActive: { color: theme.colors.primary },
 
   // Selected chips
-  selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.rose.border },
+  selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.orange.border },
   selectedChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: theme.colors.primary },
   selectedChipText: { fontSize: 12, fontWeight: "600", color: "#fff" },
 
@@ -1355,7 +1355,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   catCount: { fontSize: 11, color: theme.colors.textMuted },
   catBadge: {
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10,
-    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.rose.border,
+    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.orange.border,
   },
   catBadgeText: { fontSize: 10, fontWeight: "700", color: theme.colors.primary },
 
@@ -1388,7 +1388,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   manualTrustBox: {
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
+    borderColor: theme.colors.sky.border,
     backgroundColor: theme.colors.infoFaded,
     padding: 12,
     marginBottom: 14,

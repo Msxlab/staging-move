@@ -13,7 +13,7 @@ import { Star } from "lucide-react";
 const SAMPLE_TESTIMONIALS = [
   {
     quote:
-      "I moved twice in three years and always forgot something. LocateFlow kept every provider, renewal, and address change in one place — nothing slipped through this time.",
+      "I moved twice in three years and always forgot something. Move kept every provider, renewal, and address change in one place — nothing slipped through this time.",
     name: "Sample Name",
     role: "Recent mover",
     initials: "SN",

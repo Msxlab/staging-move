@@ -47,7 +47,7 @@ function GooglePlayLogo({ className }: { className?: string }) {
 }
 
 /**
- * Mobile app install CTA. LocateFlow is live on both stores — these deep-link
+ * Mobile app install CTA. Move is live on both stores — these deep-link
  * straight to the App Store / Google Play listings. (Store URLs are centralized
  * in lib/store-links so the marketing CTA, the install banner, and structured
  * data all agree.)
@@ -63,7 +63,7 @@ export function AppStoreCTA({ compact = false }: { compact?: boolean }) {
         href={IOS_APP_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Download LocateFlow on the App Store"
+        aria-label="Download Move on the App Store"
         className={`${base} ${size}`}
       >
         <AppleLogo className="h-8 w-8" />
@@ -78,7 +78,7 @@ export function AppStoreCTA({ compact = false }: { compact?: boolean }) {
         href={ANDROID_PLAY_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Get LocateFlow on Google Play"
+        aria-label="Get Move on Google Play"
         className={`${base} ${size}`}
       >
         <GooglePlayLogo className="h-8 w-8" />
