@@ -138,23 +138,39 @@ function SignInForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
-      <div className="w-full max-w-md space-y-6 rounded-[1.75rem] border border-border/70 bg-card/75 p-8 shadow-lg backdrop-blur-xl">
-        <div className="space-y-3 text-center">
-          <div className="flex justify-center">
-            <Wordmark href="/" animated={false} />
-          </div>
-          <div className="flex justify-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
-              <ShieldCheck className="h-6 w-6" />
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            <p className="text-xs font-semibold uppercase text-primary">Secure access</p>
-            <h1 className="text-2xl font-bold text-foreground">{tCommon("signIn")}</h1>
-            <p className="text-sm text-muted-foreground">{tAuth("signIn_subtitle")}</p>
-          </div>
+    <div className="grid min-h-screen bg-background lg:grid-cols-[1.05fr_0.95fr]">
+      {/* LEFT brand panel — hidden below lg (the design hides it on narrow screens). */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-card to-background p-12 lg:flex">
+        <div aria-hidden className="pointer-events-none absolute -left-24 -top-40 h-[560px] w-[560px] rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative">
+          <Wordmark href="/" animated={false} />
         </div>
+        <div className="relative">
+          <h1 className="max-w-[420px] font-display text-4xl font-extrabold leading-[1.1] text-foreground">
+            {tAuth("signIn_title")}
+          </h1>
+          <p className="mt-4 max-w-[400px] text-base leading-relaxed text-muted-foreground">
+            {tAuth("signIn_subtitle")}
+          </p>
+        </div>
+        <div className="relative flex items-center gap-2 text-xs text-muted-foreground">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+          Secure access
+        </div>
+      </aside>
+
+      {/* RIGHT form panel */}
+      <main className="flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-[380px] space-y-6">
+          <div>
+            <h2 className="font-display text-3xl font-bold text-foreground">{tCommon("signIn")}</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {tAuth("noAccount")}{" "}
+              <Link href="/sign-up" className="font-semibold text-primary hover:underline">
+                {tCommon("signUp")}
+              </Link>
+            </p>
+          </div>
 
         {error && (
           <div className="flex gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
@@ -260,20 +276,14 @@ function SignInForm() {
           </button>
         </form>
 
-        {!requiresMfa && (
-          <p className="text-center text-xs text-muted-foreground">
-            {tAuth("noAccount")}{" "}
-            <Link href="/sign-up" className="text-primary underline underline-offset-4">{tCommon("signUp")}</Link>
-          </p>
-        )}
-
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
           <Link href="/terms" className="underline hover:text-primary">{tCommon("terms")}</Link>
           <Link href="/privacy" className="underline hover:text-primary">{tCommon("privacy")}</Link>
           <Link href="/disclaimer" className="underline hover:text-primary">{tLegal("disclaimer_title")}</Link>
           <Link href="/contact" className="underline hover:text-primary">{tCommon("contact")}</Link>
         </div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

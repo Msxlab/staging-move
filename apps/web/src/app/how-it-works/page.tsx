@@ -96,34 +96,41 @@ export default function HowItWorksPage() {
     >
       <JsonLd id="ld-howto" data={howTo} />
       <PublicSection title="The four things you'll do">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           {steps.map(({ step, icon: Icon, title, body, detail }) => (
             <div
               key={step}
               id={`step-${step}`}
-              className="scroll-mt-24 rounded-xl border bg-background/60 p-5 space-y-3"
+              className="scroll-mt-24 space-y-4 rounded-[22px] border border-border bg-background/60 p-7 transition hover:border-primary/40"
             >
-              <div className="flex items-center gap-3">
-                <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+              <div className="flex items-center gap-4">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Icon className="h-6 w-6" />
+                </span>
+                <span className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                   {step}
                 </span>
-                <Icon className="h-5 w-5 text-primary" />
-                <h3 className="text-base font-semibold text-foreground">{title}</h3>
               </div>
-              <p className="text-sm text-foreground/90">{body}</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">{detail}</p>
+              <h3 className="font-display text-xl font-bold tracking-tight text-foreground">{title}</h3>
+              <p className="text-[15px] leading-relaxed text-foreground/90">{body}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{detail}</p>
             </div>
           ))}
         </div>
       </PublicSection>
 
       <PublicSection title="What makes it different">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-3">
           {pillars.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="space-y-2">
-              <Icon className="h-5 w-5 text-primary" />
-              <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-              <p className="text-sm text-muted-foreground">{body}</p>
+            <div
+              key={title}
+              className="space-y-3 rounded-[22px] border border-border bg-background/60 p-6 transition hover:border-primary/40"
+            >
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Icon className="h-5 w-5" />
+              </span>
+              <h3 className="font-display text-base font-bold tracking-tight text-foreground">{title}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">{body}</p>
             </div>
           ))}
         </div>
@@ -132,22 +139,25 @@ export default function HowItWorksPage() {
       <PublicSection title="A typical week">
         <ul className="space-y-3">
           <li className="flex items-start gap-3">
-            <CheckCircle2 className="h-4 w-4 mt-1 text-success shrink-0" />
+            <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-success" />
             <span><strong className="text-foreground">Monday.</strong> Your internet bill renewal date is in 6 days - tap to review your saved record and decide what to confirm with the provider.</span>
           </li>
           <li className="flex items-start gap-3">
-            <CheckCircle2 className="h-4 w-4 mt-1 text-success shrink-0" />
+            <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-success" />
             <span><strong className="text-foreground">Wednesday.</strong> Add a new HOA statement to the right address so the cost and renewal are easy to find later.</span>
           </li>
           <li className="flex items-start gap-3">
-            <CheckCircle2 className="h-4 w-4 mt-1 text-success shrink-0" />
+            <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-success" />
             <span><strong className="text-foreground">Friday.</strong> Closing on a new place in 6 weeks - your checklist suggests which services may need transfer, cancellation, or new setup.</span>
           </li>
         </ul>
       </PublicSection>
 
-      <PublicSection title="Ready to see your list in one place?">
-        <div className="flex flex-wrap gap-3 pt-2">
+      <section className="overflow-hidden rounded-[26px] border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-8 text-center shadow-sm sm:p-12">
+        <h2 className="font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+          Ready to see your list in one place?
+        </h2>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg">
             <Link href="/sign-up">
               Get started <ArrowRight className="ml-2 h-4 w-4" />
@@ -157,12 +167,12 @@ export default function HowItWorksPage() {
             <Link href="/pricing">See pricing</Link>
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="mx-auto mt-6 max-w-2xl text-xs text-muted-foreground">
           Trial length, renewal date, price, and payment method requirements are shown at checkout. See the{" "}
           <Link href="/billing-policy" className="underline">Billing Policy</Link>{" "}
           and <Link href="/disclaimer" className="underline">Disclaimer</Link> before relying on provider or moving guidance.
         </p>
-      </PublicSection>
+      </section>
     </PublicPageShell>
   );
 }

@@ -185,11 +185,11 @@ export default async function LandingPage() {
         />
         <div className="container relative grid items-center gap-14 py-16 md:grid-cols-[1.15fr_1fr] md:py-24">
           <div className="space-y-7">
-            <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-mono uppercase tracking-wider text-primary">
-              <Zap className="h-3.5 w-3.5" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-mono uppercase tracking-wider text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" />
               {t("hero_eyebrow")}
             </div>
-            <h1 className="display-tight text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.07]">
+            <h1 className="display-tight font-display text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.04] tracking-tight">
               {t("heroPrefix")}{" "}
               <span className="text-primary">{t("heroAccent")}</span>{" "}
               {t("heroSuffix")}
@@ -243,20 +243,20 @@ export default async function LandingPage() {
         {/* Scope strip — what the product actually does, in three quiet lines */}
         <div className="container">
           <div className="mx-auto mb-16 mt-2 max-w-4xl">
-            <div className="grid grid-cols-1 gap-4 rounded-2xl border bg-card/40 px-6 py-5 text-center sm:grid-cols-3">
-              <div>
+            <div className="grid grid-cols-1 gap-4 rounded-3xl border bg-card/40 px-6 py-6 text-center backdrop-blur sm:grid-cols-3 sm:divide-x sm:divide-border">
+              <div className="px-2">
                 <p className="text-sm font-semibold">{t("scope_strip_manual_title")}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {t("scope_strip_manual_body")}
                 </p>
               </div>
-              <div>
+              <div className="px-2">
                 <p className="text-sm font-semibold">{t("scope_strip_directory_title")}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {t("scope_strip_directory_body")}
                 </p>
               </div>
-              <div>
+              <div className="px-2">
                 <p className="text-sm font-semibold">{t("scope_strip_devices_title")}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {t("scope_strip_devices_body")}
@@ -280,7 +280,7 @@ export default async function LandingPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-tone-honey-fg" />
             {t("risk_eyebrow")}
           </div>
-          <h2 className="display-tight text-3xl md:text-4xl font-bold">{t("risk_title")}</h2>
+          <h2 className="display-tight font-display text-3xl md:text-4xl font-bold">{t("risk_title")}</h2>
           <p className="text-recessive text-lg">{t("risk_subtitle")}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
@@ -293,7 +293,7 @@ export default async function LandingPage() {
           ].map((item) => (
             <div
               key={item.titleKey}
-              className="rounded-xl border bg-card p-5 space-y-3 hover:border-tone-honey-br hover:shadow-md transition-all"
+              className="rounded-2xl border bg-card p-5 space-y-3 hover:border-tone-honey-br hover:shadow-md transition-all"
             >
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-tone-honey-bg text-tone-honey-fg dark:text-tone-honey-fg">
                 <item.icon className="h-5 w-5" />
@@ -311,7 +311,7 @@ export default async function LandingPage() {
       {/* Features Grid — the full product reveal */}
       <section id="features" className="container py-20 border-t">
         <div className="text-center mb-16">
-          <h2 className="display-tight text-3xl font-bold mb-4">{t("section_features_title")}</h2>
+          <h2 className="display-tight font-display text-3xl md:text-4xl font-bold mb-4">{t("section_features_title")}</h2>
           <p className="text-recessive text-lg max-w-2xl mx-auto">
             {t("section_features_subtitle")}
           </p>
@@ -327,9 +327,9 @@ export default async function LandingPage() {
           ].map((feature, idx) => (
             <div
               key={idx}
-              className="group p-6 rounded-xl border bg-card hover:shadow-lg transition-all duration-200"
+              className="group p-6 rounded-2xl border bg-card hover:shadow-lg hover:border-primary/30 transition-all duration-200"
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 <feature.icon className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-semibold mb-2">{t(feature.titleKey as any)}</h3>
@@ -358,20 +358,20 @@ export default async function LandingPage() {
               size={104}
               className="mx-auto mb-4 text-foreground/35"
             />
-            <h2 className="display-tight text-3xl font-bold mb-4">{t("section_how_title")}</h2>
+            <h2 className="display-tight font-display text-3xl md:text-4xl font-bold mb-4">{t("section_how_title")}</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto">
             {[
               { step: "1", titleKey: "step_1_title", bodyKey: "step_1_body" },
               { step: "2", titleKey: "step_2_title", bodyKey: "step_2_body" },
               { step: "3", titleKey: "step_3_title", bodyKey: "step_3_body" },
             ].map((item) => (
-              <div key={item.step} className="text-center space-y-4">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground text-xl font-bold">
+              <div key={item.step} className="rounded-2xl border bg-card p-7 space-y-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl border border-primary/30 bg-primary/10 font-display text-2xl font-bold text-primary">
                   {item.step}
                 </div>
                 <h3 className="text-lg font-semibold">{t(item.titleKey as any)}</h3>
-                <p className="text-sm text-muted-foreground">{t(item.bodyKey as any)}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(item.bodyKey as any)}</p>
               </div>
             ))}
           </div>
@@ -387,11 +387,11 @@ export default async function LandingPage() {
       {apiConnectorsEnabled && (
         <section className="container py-20 border-t">
           <div className="text-center mb-12 max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-primary">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
               <Zap className="h-3.5 w-3.5" />
               {t("connector_eyebrow")}
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{t("connector_title")}</h2>
+            <h2 className="display-tight font-display text-3xl md:text-4xl font-bold tracking-tight">{t("connector_title")}</h2>
             <p className="text-muted-foreground text-lg">{t("connector_subtitle")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -400,8 +400,8 @@ export default async function LandingPage() {
               { icon: Zap, titleKey: "connector_feature_submit_title", bodyKey: "connector_feature_submit_body" },
               { icon: CheckCircle2, titleKey: "connector_feature_control_title", bodyKey: "connector_feature_control_body" },
             ].map((item) => (
-              <div key={item.titleKey} className="rounded-xl border bg-card p-6 space-y-3">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div key={item.titleKey} className="rounded-2xl border bg-card p-6 space-y-3">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <item.icon className="h-5 w-5" />
                 </div>
                 <h3 className="text-base font-semibold">{t(item.titleKey as any)}</h3>
@@ -419,11 +419,11 @@ export default async function LandingPage() {
       {workspaceModelEnabled && (
         <section className="container py-20 border-t">
           <div className="text-center mb-12 max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-primary">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
               <Users className="h-3.5 w-3.5" />
               {t("family_eyebrow")}
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{t("family_title")}</h2>
+            <h2 className="display-tight font-display text-3xl md:text-4xl font-bold tracking-tight">{t("family_title")}</h2>
             <p className="text-muted-foreground text-lg">{t("family_subtitle")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -432,8 +432,8 @@ export default async function LandingPage() {
               { icon: Shield, titleKey: "family_feature_roles_title", bodyKey: "family_feature_roles_body" },
               { icon: MapPin, titleKey: "family_feature_together_title", bodyKey: "family_feature_together_body" },
             ].map((item) => (
-              <div key={item.titleKey} className="rounded-xl border bg-card p-6 space-y-3">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div key={item.titleKey} className="rounded-2xl border bg-card p-6 space-y-3">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <item.icon className="h-5 w-5" />
                 </div>
                 <h3 className="text-base font-semibold">{t(item.titleKey as any)}</h3>
@@ -471,7 +471,7 @@ export default async function LandingPage() {
       {/* Current workflow coverage */}
       <section className="container py-20 border-t">
         <div className="text-center mb-12 max-w-3xl mx-auto">
-          <h2 className="display-tight text-3xl font-bold mb-4">{t("scope_title")}</h2>
+          <h2 className="display-tight font-display text-3xl md:text-4xl font-bold mb-4">{t("scope_title")}</h2>
           <p className="text-recessive text-lg">{t("scope_subtitle")}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -480,7 +480,7 @@ export default async function LandingPage() {
             { titleKey: "scope_provider_title", bodyKey: "scope_provider_body" },
             { titleKey: "scope_devices_title", bodyKey: "scope_devices_body" },
           ].map((item) => (
-            <div key={item.titleKey} className="rounded-xl border bg-card p-6 space-y-3">
+            <div key={item.titleKey} className="rounded-2xl border bg-card p-6 space-y-3">
               <CheckCircle2 className="h-7 w-7 text-primary" />
               <h3 className="text-base font-semibold">{t(item.titleKey as any)}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{t(item.bodyKey as any)}</p>
@@ -500,11 +500,11 @@ export default async function LandingPage() {
         />
         <div className="container max-w-3xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">{tPricing("faq_title")}</h2>
+            <h2 className="display-tight font-display text-3xl md:text-4xl font-bold mb-4">{tPricing("faq_title")}</h2>
           </div>
           <div className="space-y-3">
             {faqs.map((faq) => (
-              <details key={faq.q} className="group rounded-xl border bg-card">
+              <details key={faq.q} className="group rounded-2xl border bg-card">
                 <summary className="flex items-center justify-between cursor-pointer px-6 py-4 text-sm font-medium">
                   {faq.q}
                   <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
@@ -528,7 +528,7 @@ export default async function LandingPage() {
               <span className="h-2 w-2 rounded-full bg-tone-honey-fg motion-safe:animate-pulse" />
               {t("mobile_eyebrow")}
             </div>
-            <h2 className="text-3xl font-bold tracking-tight">{t("mobile_title")}</h2>
+            <h2 className="display-tight font-display text-3xl md:text-4xl font-bold tracking-tight">{t("mobile_title")}</h2>
             <p className="text-muted-foreground">{t("mobile_body")}</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
@@ -553,19 +553,25 @@ export default async function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-primary text-primary-foreground py-20">
-        <div className="container text-center space-y-6">
-          <Shield className="h-12 w-12 mx-auto opacity-80" />
-          <h2 className="text-3xl font-bold">{t("section_trust_title")}</h2>
-          <p className="text-lg opacity-80 max-w-xl mx-auto">
-            {t("trust_retention")} · {t("noCreditCard")}
-          </p>
-          <Button asChild size="lg" variant="secondary" className="text-base px-8">
-            <Link href={primaryHref}>
-              {userId ? tErrors("goToDashboard") : t("heroCta")}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+      <section className="container py-20">
+        <div className="relative overflow-hidden rounded-3xl bg-primary px-6 py-16 text-center text-primary-foreground sm:px-10">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.16),transparent_60%)]"
+          />
+          <div className="relative space-y-6">
+            <Shield className="h-12 w-12 mx-auto opacity-80" />
+            <h2 className="display-tight font-display text-3xl md:text-4xl font-bold">{t("section_trust_title")}</h2>
+            <p className="text-lg opacity-80 max-w-xl mx-auto">
+              {t("trust_retention")} · {t("noCreditCard")}
+            </p>
+            <Button asChild size="lg" variant="secondary" className="text-base px-8">
+              <Link href={primaryHref}>
+                {userId ? tErrors("goToDashboard") : t("heroCta")}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
