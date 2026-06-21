@@ -91,19 +91,22 @@ export default function ContactPage() {
       title="Contact LocateFlow"
       description="Use the contact path that matches your request. Do not send passwords, payment card numbers, private keys, or other sensitive secrets by email."
     >
-      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+      <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         {contactPaths.map((item) => (
-          <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
-            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div
+            key={item.title}
+            className="space-y-3 rounded-[22px] border border-border bg-background/60 p-6 transition hover:border-primary/40"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <item.icon className="h-5 w-5" />
-            </div>
-            <h2 className="text-base font-semibold text-foreground">{item.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+            </span>
+            <h2 className="font-display text-base font-bold tracking-tight text-foreground">{item.title}</h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
             <a
               href={mailto(item.email, item.subject)}
-              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-2 font-mono text-sm font-medium text-primary hover:underline"
             >
               <Mail className="h-4 w-4" />
               {item.email}
@@ -113,16 +116,18 @@ export default function ContactPage() {
       </div>
 
       <PublicSection title="Mailing address">
-        <div className="flex items-start gap-3">
-          <MapPin className="mt-1 h-4 w-4 shrink-0 text-primary" />
-          <div>
-            <p className="font-medium text-foreground">{displayLegalEntityName()}</p>
+        <div className="flex items-start gap-3 rounded-[22px] border border-border bg-background/60 p-6">
+          <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <MapPin className="h-4 w-4" />
+          </span>
+          <div className="space-y-1">
+            <p className="font-display text-base font-bold tracking-tight text-foreground">{displayLegalEntityName()}</p>
             {publicCompanyAddress ? (
-              <p>{publicCompanyAddress}</p>
+              <p className="text-[15px] leading-relaxed text-foreground/90">{publicCompanyAddress}</p>
             ) : (
-              <p>Formal legal, billing, and privacy correspondence can use the contact paths above until the public mailing address is finalized.</p>
+              <p className="text-[15px] leading-relaxed text-foreground/90">Formal legal, billing, and privacy correspondence can use the contact paths above until the public mailing address is finalized.</p>
             )}
-            <p className="text-xs">{CONTACT_CONFIGURATION_NOTE}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">{CONTACT_CONFIGURATION_NOTE}</p>
           </div>
         </div>
       </PublicSection>
@@ -139,23 +144,23 @@ export default function ContactPage() {
         </div>
       </PublicSection>
 
-      <div className="rounded-2xl border bg-background p-6">
-        <h2 className="text-xl font-semibold text-foreground">Need account-specific help?</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+      <section className="overflow-hidden rounded-[26px] border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-8 text-center shadow-sm sm:p-12">
+        <h2 className="font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">Need account-specific help?</h2>
+        <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-foreground/90">
           Sign in when your request involves saved addresses, services, subscriptions, exports, deletion, or support tickets tied to your account.
         </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Button asChild variant="outline">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Button asChild variant="outline" size="lg">
             <Link href="/faq">FAQ</Link>
           </Button>
-          <Button asChild>
+          <Button asChild size="lg">
             <Link href="/sign-in">
               Sign in
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>
-      </div>
+      </section>
     </PublicPageShell>
   );
 }
