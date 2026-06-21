@@ -330,7 +330,7 @@ export default function ServiceDetailScreen() {
               <Text style={styles.miniStatLabel}>{t("services.detailStatAddress", { defaultValue: "Address" }).toUpperCase()}</Text>
             </View>
           </View>
-        </View>
+        </HeroCard>
 
         {/* Renewal tracking — derived from contractEndDate or billingDay/cycle.
             Only renders when the service carries a date signal. */}
