@@ -5,15 +5,11 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   AlertTriangle,
-  Clock,
   ExternalLink,
-  MapPin,
   Pencil,
   Phone,
-  Shield,
   Tag,
   Trash2,
-  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -140,132 +136,87 @@ export default function ProviderDetailPage() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => window.location.assign("/providers")}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-accent"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to Providers
+          <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div className="flex items-center gap-2">
           <button
             onClick={() => window.location.assign(`/providers/${id}/edit`)}
-            className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
+            className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-accent"
           >
             <Pencil className="h-4 w-4" /> Edit
           </button>
           <button
             onClick={() => setShowDeletePrompt(true)}
-            className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
+            className="flex items-center gap-2 rounded-xl border border-destructive/30 px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="h-4 w-4" /> Delete
           </button>
         </div>
       </div>
 
-      <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-5">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-tone-honey-fg" />
-          <div className="flex-1">
-            <h2 className="font-semibold text-foreground">Provider quality warnings</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              These checks are derived from current catalog fields. They do not prove this provider is official or verified.
-            </p>
-            {provider.qualityWarnings && provider.qualityWarnings.length > 0 ? (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {provider.qualityWarnings.map((warning) => (
-                  <div
-                    key={warning.code}
-                    className="rounded-lg border border-border bg-background/80 p-3"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-foreground">{warning.label}</p>
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase text-muted-foreground">
-                        {warning.severity}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{warning.message}</p>
-                  </div>
-                ))}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr]">
+        {/* ===== LEFT: provider detail card ===== */}
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-0">
+          {/* header: icon + name + type + status */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-[50px] w-[50px] items-center justify-center rounded-xl bg-muted text-2xl">
+                {provider.logoUrl ? (
+                  <img
+                    src={provider.logoUrl}
+                    alt=""
+                    className="h-10 w-10 rounded-lg object-cover"
+                    onError={(event) => {
+                      (event.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <span>{getCategoryIcon(provider.category)}</span>
+                )}
               </div>
-            ) : (
-              <p className="mt-3 text-sm text-muted-foreground">
-                No automated quality warnings for this record.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 text-2xl">
-            {provider.logoUrl ? (
-              <img
-                src={provider.logoUrl}
-                alt=""
-                className="h-12 w-12 rounded-lg object-cover"
-                onError={(event) => {
-                  (event.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            ) : (
-              <span>{getCategoryIcon(provider.category)}</span>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground break-words">{provider.name}</h1>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  provider.isActive
-                    ? "bg-tone-sage-bg text-tone-sage-fg"
-                    : "bg-tone-slate-bg text-muted-foreground"
-                }`}
-              >
-                {provider.isActive ? "Active" : "Inactive"}
-              </span>
+              <div className="min-w-0">
+                <h1 className="font-display text-2xl font-extrabold text-foreground break-words">
+                  {provider.name}
+                </h1>
+                <p className="text-sm text-muted-foreground">{provider.slug}</p>
+              </div>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{provider.slug}</p>
-            {provider.description && (
-              <p className="mt-2 text-sm text-foreground/80">{provider.description}</p>
-            )}
+            <span
+              className={`flex items-center gap-1.5 text-xs font-bold ${
+                provider.isActive ? "text-tone-sage-fg" : "text-muted-foreground"
+              }`}
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  provider.isActive ? "bg-tone-sage-fg" : "bg-muted-foreground"
+                }`}
+              />
+              {provider.isActive ? "Active" : "Inactive"}
+            </span>
           </div>
-          <div className="text-left sm:text-right">
-            <p className="text-4xl font-bold text-foreground">{provider.popularityScore}</p>
-            <p className="text-xs text-muted-foreground">Popularity Score</p>
+
+          {provider.description && (
+            <p className="mt-4 text-sm text-foreground/80">{provider.description}</p>
+          )}
+
+          {/* stat row */}
+          <div className="mt-5 flex flex-wrap gap-x-10 gap-y-4 border-t border-border pt-5">
+            <ProviderStat label="Popularity" value={provider.popularityScore} accent />
+            <ProviderStat label="Users" value={provider.userCount} />
+            <ProviderStat label="Coverage Rows" value={coverageCount} hint="Number of geographic service areas mapped to this provider (each row is a state, city, or ZIP/polygon entry that decides where it appears in search)." />
+            <ProviderStat label="Version" value={`v${provider.version}`} />
+            <ProviderStat
+              label="Last Updated"
+              value={new Date(provider.updatedAt).toLocaleDateString()}
+            />
           </div>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          icon={Users}
-          tone="purple"
-          label="Users"
-          value={provider.userCount}
-        />
-        <StatCard
-          icon={Clock}
-          tone="cyan"
-          label="Last Updated"
-          value={new Date(provider.updatedAt).toLocaleDateString()}
-        />
-        <StatCard
-          icon={MapPin}
-          tone="amber"
-          label="Coverage Rows"
-          value={coverageCount}
-          hint="Number of geographic service areas mapped to this provider (each row is a state, city, or ZIP/polygon entry that decides where it appears in search)."
-        />
-        <StatCard
-          icon={Shield}
-          tone="blue"
-          label="Version"
-          value={`v${provider.version}`}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h2 className="font-semibold text-foreground">Details</h2>
+          {/* details */}
+          <p className="mt-6 mb-3 text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+            Details
+          </p>
           <div className="space-y-3 text-sm">
             <DetailRow
               label="Category"
@@ -286,74 +237,116 @@ export default function ProviderDetailPage() {
               value={new Date(provider.createdAt).toLocaleDateString()}
             />
           </div>
+
+          {/* recent admin activity */}
+          {auditLogs.length > 0 && (
+            <>
+              <p className="mt-6 mb-3 text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                Recent Admin Activity
+              </p>
+              <div className="space-y-2">
+                {auditLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3.5 py-3 text-sm"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground">{log.action}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(log.adminUser?.firstName || log.adminUser?.email || "Admin")}
+                        {log.adminUser?.lastName ? ` ${log.adminUser.lastName}` : ""}
+                      </p>
+                    </div>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {new Date(log.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h2 className="font-semibold text-foreground">Contact & Links</h2>
-          <div className="space-y-3 text-sm">
-            {provider.website && (
-              <a
-                href={provider.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-primary hover:underline"
-              >
-                <ExternalLink className="h-4 w-4" /> {provider.website}
-              </a>
-            )}
-            {provider.phone && (
-              <div className="flex items-center gap-2 text-foreground">
-                <Phone className="h-4 w-4 text-muted-foreground" /> {provider.phone}
+        {/* ===== RIGHT: side panels ===== */}
+        <div className="flex flex-col gap-4">
+          {/* quality warnings */}
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="mb-1 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-tone-honey-fg" />
+              <h2 className="text-sm font-bold text-foreground">Quality warnings</h2>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              These checks are derived from current catalog fields. They do not prove this provider is official or verified.
+            </p>
+            {provider.qualityWarnings && provider.qualityWarnings.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {provider.qualityWarnings.map((warning) => (
+                  <div
+                    key={warning.code}
+                    className="rounded-xl border border-border bg-muted/40 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-foreground">{warning.label}</p>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase text-muted-foreground">
+                        {warning.severity}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{warning.message}</p>
+                  </div>
+                ))}
               </div>
-            )}
-            {!provider.website && !provider.phone && (
-              <p className="text-muted-foreground">No contact info</p>
+            ) : (
+              <p className="mt-3 text-xs text-muted-foreground">
+                No automated quality warnings for this record.
+              </p>
             )}
           </div>
+
+          {/* contact & links */}
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-3 text-sm font-bold text-foreground">Contact &amp; Links</h2>
+            <div className="space-y-3 text-sm">
+              {provider.website && (
+                <a
+                  href={provider.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 break-all text-primary hover:underline"
+                >
+                  <ExternalLink className="h-4 w-4 shrink-0" /> {provider.website}
+                </a>
+              )}
+              {provider.phone && (
+                <div className="flex items-center gap-2 text-foreground">
+                  <Phone className="h-4 w-4 text-muted-foreground" /> {provider.phone}
+                </div>
+              )}
+              {!provider.website && !provider.phone && (
+                <p className="text-muted-foreground">No contact info</p>
+              )}
+            </div>
+          </div>
+
+          {/* tags */}
+          {tags.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="mb-3 text-sm font-bold text-foreground">Tags</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1 text-xs text-muted-foreground"
+                  >
+                    <Tag className="h-3 w-3" /> {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <CoverageEditor providerId={String(id)} />
-
-      {tags.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="mb-3 font-semibold text-foreground">Tags</h2>
-          <div className="flex flex-wrap gap-1.5">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1 text-xs text-muted-foreground"
-              >
-                <Tag className="h-3 w-3" /> {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {auditLogs.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="mb-3 font-semibold text-foreground">
-            Recent Admin Activity
-          </h2>
-          <div className="space-y-2">
-            {auditLogs.map((log) => (
-              <div key={log.id} className="rounded-lg bg-muted/40 p-3 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium text-foreground">{log.action}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(log.createdAt).toLocaleString()}
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {(log.adminUser?.firstName || log.adminUser?.email || "Admin")}
-                  {log.adminUser?.lastName ? ` ${log.adminUser.lastName}` : ""}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <PasswordConfirmModal
         open={showDeletePrompt}
@@ -391,40 +384,30 @@ function DetailRow({
   );
 }
 
-function StatCard({
-  icon: Icon,
+function ProviderStat({
   label,
   value,
-  tone,
+  accent,
   hint,
 }: {
-  icon: typeof Users;
   label: string;
   value: string | number;
-  tone: "purple" | "cyan" | "amber" | "blue";
+  accent?: boolean;
   hint?: string;
 }) {
-  const toneMap = {
-    purple: "bg-tone-foil-bg text-tone-foil-fg",
-    cyan: "bg-tone-cyan-bg text-tone-cyan-fg",
-    amber: "bg-tone-honey-bg text-tone-honey-fg",
-    blue: "bg-tone-sky-bg text-tone-sky-fg",
-  } as const;
-
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <div className="flex items-center gap-3">
-        <div className={`rounded-lg p-2.5 ${toneMap[tone]}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
-          <p className="flex items-center gap-1 text-xs text-muted-foreground">
-            {label}
-            {hint ? <InfoHint text={hint} label={label} /> : null}
-          </p>
-        </div>
-      </div>
+    <div>
+      <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+        {hint ? <InfoHint text={hint} label={label} /> : null}
+      </p>
+      <p
+        className={`mt-1 font-mono text-lg font-semibold ${
+          accent ? "text-primary" : "text-foreground"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }

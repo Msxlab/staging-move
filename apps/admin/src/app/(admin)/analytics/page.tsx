@@ -96,16 +96,16 @@ function BarChart({ data, colorMap, maxItems = 6 }: { data: [string, number][]; 
   const total = items.reduce((s, [, v]) => s + v, 0);
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {items.map(([label, value]) => {
         const pct = total > 0 ? Math.round((value / total) * 100) : 0;
         const barPct = Math.round((value / max) * 100);
         const color = colorMap?.[label] || "bg-primary";
         return (
           <div key={label}>
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-foreground font-medium">{label}</span>
-              <span className="text-muted-foreground">{value} ({pct}%)</span>
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="text-foreground">{label}</span>
+              <span className="font-mono text-muted-foreground">{value} · {pct}%</span>
             </div>
             <div className="h-2 rounded-full bg-muted overflow-hidden">
               <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${barPct}%` }} />
@@ -147,7 +147,7 @@ function DonutChart({ data, colorMap }: { data: [string, number][]; colorMap?: R
           ))}
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold text-foreground">{total}</span>
+          <span className="font-display text-lg font-extrabold text-foreground">{total}</span>
         </div>
       </div>
       <div className="space-y-1.5 flex-1">
@@ -155,7 +155,7 @@ function DonutChart({ data, colorMap }: { data: [string, number][]; colorMap?: R
           <div key={seg.label} className="flex items-center gap-2 text-xs">
             <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }} />
             <span className="text-foreground flex-1">{seg.label}</span>
-            <span className="text-muted-foreground">{seg.value} ({Math.round(seg.pct)}%)</span>
+            <span className="font-mono text-muted-foreground">{seg.value} ({Math.round(seg.pct)}%)</span>
           </div>
         ))}
       </div>
@@ -195,14 +195,14 @@ function KpiCard({ label, kpi, icon: Icon }: { label: string; kpi: Kpi; icon: an
   const DeltaIcon = up ? TrendingUp : down ? TrendingDown : Minus;
   const deltaColor = up ? "text-tone-sage-fg" : down ? "text-destructive" : "text-muted-foreground";
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-[18px] border border-border bg-card p-[18px]">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <p className="text-[11px] font-semibold text-muted-foreground">{label}</p>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
-      <p className="mt-2 text-3xl font-bold text-foreground">{kpi.value.toLocaleString()}</p>
-      <div className="mt-1.5 flex items-center gap-1.5 text-xs">
-        <span className={`inline-flex items-center gap-0.5 font-medium ${deltaColor}`}>
+      <p className="mt-1.5 font-display text-[28px] font-extrabold text-foreground">{kpi.value.toLocaleString()}</p>
+      <div className="mt-1 flex items-center gap-1.5 text-[11px]">
+        <span className={`inline-flex items-center gap-0.5 font-mono font-medium ${deltaColor}`}>
           <DeltaIcon className="h-3.5 w-3.5" />
           {delta === null ? "new" : `${delta > 0 ? "+" : ""}${delta}%`}
         </span>
@@ -292,7 +292,7 @@ export default function AnalyticsPage() {
       />
 
       {/* ── Global date-range + segmentation control bar ───────── */}
-      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <div className="rounded-[18px] border border-border bg-card p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           {/* Date range pills */}
           <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5">
@@ -414,24 +414,25 @@ export default function AnalyticsPage() {
       {/* All-time totals (context) */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          { label: "Total Users (all-time)", value: data.activeUsers.total, icon: Users, color: "text-foreground", bg: "bg-card" },
-          { label: "Active Today", value: data.activeUsers.today, icon: Activity, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
-          { label: "This Week", value: data.activeUsers.week, icon: TrendingUp, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg" },
-          { label: "This Month", value: data.activeUsers.month, icon: BarChart3, color: "text-tone-foil-fg", bg: "bg-tone-foil-bg" },
+          { label: "Total Users (all-time)", value: data.activeUsers.total, icon: Users, color: "text-foreground", note: "All accounts ever created" },
+          { label: "Active Today", value: data.activeUsers.today, icon: Activity, color: "text-tone-sage-fg", note: "Seen in the last 24 hours" },
+          { label: "This Week", value: data.activeUsers.week, icon: TrendingUp, color: "text-tone-sky-fg", note: "Active in the last 7 days" },
+          { label: "This Month", value: data.activeUsers.month, icon: BarChart3, color: "text-tone-foil-fg", note: "Active in the last 30 days" },
         ].map((s) => (
-          <div key={s.label} className={`rounded-xl border border-border ${s.bg} p-5`}>
+          <div key={s.label} className="rounded-[18px] border border-border bg-card p-[18px]">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
+              <p className="text-[11px] font-semibold text-muted-foreground">{s.label}</p>
               <s.icon className={`h-4 w-4 ${s.color}`} />
             </div>
-            <p className={`mt-2 text-3xl font-bold ${s.color}`}>{s.value}</p>
+            <p className={`mt-1.5 font-display text-[28px] font-extrabold ${s.color}`}>{s.value}</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{s.note}</p>
           </div>
         ))}
       </div>
 
       {/* Registration Trend (within window) */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">
+      <div className="rounded-[18px] border border-border bg-card p-5">
+        <h2 className="text-sm font-bold text-foreground mb-4">
           New Registrations {overview ? `(last ${overview.window.days}d)` : ""}
         </h2>
         {overview ? (
@@ -443,12 +444,12 @@ export default function AnalyticsPage() {
 
       {/* ── MOVE ANALYTICS ─────────────────────────────────────── */}
       {overview && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+        <div className="rounded-[18px] border border-border bg-card p-5 space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Truck className="h-4 w-4 text-tone-orange-fg" /> Move Analytics
             </h2>
-            <span className="text-xs text-muted-foreground">
+            <span className="font-mono text-xs text-muted-foreground">
               {overview.moveAnalytics.totalMoves.toLocaleString()} moves in window
             </span>
           </div>
@@ -461,11 +462,11 @@ export default function AnalyticsPage() {
             <>
               {/* Headline move metrics */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="rounded-lg bg-muted/30 p-4">
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <div className="rounded-[14px] border border-border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                     <ArrowRight className="h-3.5 w-3.5" /> Interstate vs Intrastate
                   </div>
-                  <p className="mt-2 text-2xl font-bold text-foreground">
+                  <p className="mt-2 font-display text-2xl font-extrabold text-foreground">
                     {overview.moveAnalytics.interstatePct}% / {overview.moveAnalytics.intrastatePct}%
                   </p>
                   <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-muted">
@@ -477,11 +478,11 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-muted/30 p-4">
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <div className="rounded-[14px] border border-border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                     <Timer className="h-3.5 w-3.5" /> Avg Move Lead Time
                   </div>
-                  <p className="mt-2 text-2xl font-bold text-foreground">
+                  <p className="mt-2 font-display text-2xl font-extrabold text-foreground">
                     {overview.moveAnalytics.avgLeadTimeDays === null
                       ? "—"
                       : `${overview.moveAnalytics.avgLeadTimeDays} days`}
@@ -491,11 +492,11 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-muted/30 p-4">
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <div className="rounded-[14px] border border-border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5" /> Distinct State Pairs
                   </div>
-                  <p className="mt-2 text-2xl font-bold text-foreground">
+                  <p className="mt-2 font-display text-2xl font-extrabold text-foreground">
                     {overview.moveAnalytics.topPairs.length >= 10 ? "10+" : overview.moveAnalytics.topPairs.length}
                   </p>
                   <p className="mt-1.5 text-[11px] text-muted-foreground">
@@ -529,8 +530,8 @@ export default function AnalyticsPage() {
                             </span>
                             <span className="text-muted-foreground">{p.count}</span>
                           </div>
-                          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                            <div className="h-full rounded-full bg-tone-orange-fg transition-all" style={{ width: `${barPct}%` }} />
+                          <div className="h-2 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${barPct}%` }} />
                           </div>
                         </div>
                       );
@@ -569,8 +570,8 @@ export default function AnalyticsPage() {
 
       {/* ── Segmented breakdown (within window) ────────────────── */}
       {overview && (
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-5">
+        <div className="rounded-[18px] border border-border bg-card p-5">
+          <h2 className="text-sm font-bold text-foreground mb-5">
             Segmented Breakdown {overview.filters.plan ? `· ${planLabel(overview.filters.plan)}` : ""}
           </h2>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -617,8 +618,8 @@ export default function AnalyticsPage() {
       <EmailHealthWidget />
 
       {/* Audience Breakdown — Platform / Device / OS / Browser grouped under one card (all-time) */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-5">Audience Breakdown <span className="text-xs font-normal text-muted-foreground">(all-time)</span></h2>
+      <div className="rounded-[18px] border border-border bg-card p-5">
+        <h2 className="text-sm font-bold text-foreground mb-5">Audience Breakdown <span className="text-xs font-normal text-muted-foreground">(all-time)</span></h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Platform */}
           <div>
@@ -641,10 +642,10 @@ export default function AnalyticsPage() {
                   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
                   return (
                     <div key={label} className="text-center">
-                      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+                      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-[14px] bg-muted">
                         <Icon className="h-6 w-6 text-muted-foreground" />
                       </div>
-                      <p className="text-lg font-bold text-foreground">{pct}%</p>
+                      <p className="font-display text-lg font-extrabold text-foreground">{pct}%</p>
                       <p className="text-[11px] text-muted-foreground">{label}</p>
                     </div>
                   );
@@ -670,8 +671,8 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Geography */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Top Regions <span className="text-xs font-normal text-muted-foreground">(all-time)</span></h2>
+      <div className="rounded-[18px] border border-border bg-card p-5">
+        <h2 className="text-sm font-bold text-foreground mb-4">Top Regions <span className="text-xs font-normal text-muted-foreground">(all-time)</span></h2>
         {data.regions.length > 0 ? (
           <BarChart data={data.regions} maxItems={8} />
         ) : (
@@ -681,14 +682,14 @@ export default function AnalyticsPage() {
 
       {/* Popular Pages */}
       {data.popularPages.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Popular Pages</h2>
+        <div className="rounded-[18px] border border-border bg-card p-5">
+          <h2 className="text-sm font-bold text-foreground mb-4">Popular Pages</h2>
           <div className="space-y-2">
             {data.popularPages.map((p, i) => (
-              <div key={p.page} className="flex items-center gap-3 rounded-lg bg-muted/30 px-4 py-2.5">
-                <span className="text-xs font-bold text-muted-foreground w-6">#{i + 1}</span>
+              <div key={p.page} className="flex items-center gap-3 rounded-[12px] border border-border bg-muted/30 px-4 py-2.5">
+                <span className="font-mono text-xs font-bold text-muted-foreground w-6">#{i + 1}</span>
                 <span className="flex-1 text-sm font-medium text-foreground font-mono">{p.page}</span>
-                <span className="text-sm text-muted-foreground">{p.views} views</span>
+                <span className="font-mono text-sm text-muted-foreground">{p.views} views</span>
               </div>
             ))}
           </div>
@@ -698,9 +699,9 @@ export default function AnalyticsPage() {
       {/* Recent Sessions — Browser/OS hidden by default since they live in the
           Audience Breakdown charts above; toggle reveals them on demand. */}
       {data.recentSessions.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="rounded-[18px] border border-border bg-card p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-foreground">Recent Sessions</h2>
+            <h2 className="text-sm font-bold text-foreground">Recent Sessions</h2>
             <button
               type="button"
               onClick={() => setSessionDetails((v) => !v)}
@@ -709,18 +710,18 @@ export default function AnalyticsPage() {
               {sessionDetails ? "Hide browser / OS" : "Show browser / OS"}
             </button>
           </div>
-          <div className="overflow-hidden rounded-lg border border-border">
+          <div className="overflow-hidden rounded-[12px] border border-border">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">User</th>
-                  {sessionDetails && <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Browser</th>}
-                  {sessionDetails && <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">OS</th>}
-                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Device</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Platform</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Location</th>
-                  <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Pages</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Started</th>
+                  <th className="px-3 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">User</th>
+                  {sessionDetails && <th className="px-3 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">Browser</th>}
+                  {sessionDetails && <th className="px-3 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">OS</th>}
+                  <th className="px-3 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">Device</th>
+                  <th className="px-3 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">Platform</th>
+                  <th className="px-3 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">Location</th>
+                  <th className="px-3 py-2.5 text-center text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">Pages</th>
+                  <th className="px-3 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">Started</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -749,8 +750,8 @@ export default function AnalyticsPage() {
                     <td className="px-3 py-2 text-xs text-muted-foreground">
                       {s.city && s.region ? `${s.city}, ${s.region}` : s.country || "—"}
                     </td>
-                    <td className="px-3 py-2 text-center text-xs font-medium text-foreground">{s.pageViews}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(s.sessionStart).toLocaleString()}</td>
+                    <td className="px-3 py-2 text-center font-mono text-xs font-medium text-foreground">{s.pageViews}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{new Date(s.sessionStart).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>

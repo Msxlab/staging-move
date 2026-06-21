@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   ArrowRight,
   MapPin,
-  Calendar,
   Truck,
   Clock,
   CheckCircle2,
@@ -20,7 +19,6 @@ import {
   CircleDot,
 } from "lucide-react";
 import { toast } from "sonner";
-import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
 
 interface ServiceRow {
@@ -124,6 +122,16 @@ function taskStatusClass(status: string) {
   return "bg-tone-honey-bg text-tone-honey-fg";
 }
 
+function initialsFor(value: string) {
+  const parts = String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 function daysLabel(moveDate: string): { text: string; cls: string } {
   const days = Math.ceil((new Date(moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (days > 7) return { text: `${days} days left`, cls: "text-muted-foreground" };
@@ -135,15 +143,15 @@ function daysLabel(moveDate: string): { text: string; cls: string } {
 function AddressCard({ address, label, accent }: { address: AddressBlock | null; label: string; accent: string }) {
   if (!address) {
     return (
-      <div className="rounded-xl border border-border bg-card p-4">
-        <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+      <div className="rounded-[18px] border border-border bg-card p-5">
+        <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
         <p className="mt-2 text-sm text-muted-foreground">Address unavailable.</p>
       </div>
     );
   }
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
+    <div className="rounded-[18px] border border-border bg-card p-5">
+      <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
         <MapPin className={`h-3.5 w-3.5 ${accent}`} /> {label}
       </p>
       {address.nickname ? (
@@ -156,7 +164,7 @@ function AddressCard({ address, label, accent }: { address: AddressBlock | null;
       </p>
 
       <div className="mt-3 border-t border-border pt-3">
-        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase text-muted-foreground">
+        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
           <Zap className="h-3 w-3" /> Tracked services ({address.services.length})
         </p>
         {address.services.length === 0 ? (
@@ -234,133 +242,148 @@ export default function MovingPlanDetailClient({ id }: { id: string }) {
   const StatusIcon = STATUS_ICONS[plan.status] || Clock;
   const days = daysLabel(plan.moveDate);
   const route = `${plan.fromAddress?.city ?? "?"}, ${plan.fromAddress?.state ?? "?"} → ${plan.toAddress?.city ?? "?"}, ${plan.toAddress?.state ?? "?"}`;
+  const ownerLabel = plan.user.deleted ? "(deleted user)" : plan.user.name || plan.user.email;
+  // Risk is derived purely from real progress aggregates (overdue tasks).
+  const risk =
+    plan.progress.overdueTasks > 0
+      ? { text: "At risk", cls: "text-destructive" }
+      : plan.progress.openTasks > 0
+        ? { text: "On track", cls: "text-tone-honey-fg" }
+        : { text: "Clear", cls: "text-tone-sage-fg" };
 
   return (
     <div className="space-y-6">
       <Link
         href="/moving"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-2 rounded-[11px] border border-border bg-card px-[15px] py-[9px] text-sm font-semibold text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> Back to moving plans
       </Link>
 
-      <AdminPageHeader
-        eyebrow="Moving Plan"
-        title={route}
-        subtitle={`Owner: ${plan.user.deleted ? "(deleted user)" : plan.user.name || plan.user.email}`}
-        actions={
-          <span
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${STATUS_COLORS[plan.status] || "bg-muted"}`}
-          >
-            <StatusIcon className="h-3.5 w-3.5" />
-            {formatLabel(plan.status)}
-          </span>
-        }
-      />
+      {/* dMove detail: header + stats + task breakdown (left), risk + services (right) */}
+      <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+        {/* Left: header, stat row, task breakdown */}
+        <div className="rounded-[18px] border border-border bg-card p-[22px]">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-muted font-mono text-[17px] font-bold text-primary">
+              {initialsFor(ownerLabel)}
+            </div>
+            <div className="min-w-0">
+              <div className="font-display text-[22px] font-extrabold text-foreground">{route}</div>
+              <div className="truncate text-[13px] text-muted-foreground">Owner: {ownerLabel}</div>
+            </div>
+            <span
+              className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${STATUS_COLORS[plan.status] || "bg-muted"}`}
+            >
+              <StatusIcon className="h-3.5 w-3.5" />
+              {formatLabel(plan.status)}
+            </span>
+          </div>
 
-      {/* Summary cards */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
-            <Calendar className="h-4 w-4" /> Move date
+          {/* Stat row */}
+          <div className="mt-5 flex flex-wrap gap-6 border-t border-border pt-[18px]">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Move type</div>
+              <div className="mt-1 text-sm font-semibold text-foreground">
+                {plan.isInterstate ? "Interstate" : "Same-state"}
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {plan.isTemporary ? "Temporary" : "Permanent"}
+                {plan.estimatedDuration ? ` · ${plan.estimatedDuration}d est.` : ""}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Move date</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-foreground">
+                {new Date(plan.moveDate).toLocaleDateString()}
+              </div>
+              <div className={`text-[11px] ${days.cls}`}>{days.text}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Progress</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-primary">
+                {plan.progress.completionPercent}%
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {plan.progress.completedTasks} / {plan.progress.completedTasks + plan.progress.openTasks}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Risk</div>
+              <div className={`mt-1 text-sm font-bold ${risk.cls}`}>{risk.text}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {plan.progress.overdueTasks > 0 ? `${plan.progress.overdueTasks} overdue` : "No overdue tasks"}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Created</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-foreground">
+                {new Date(plan.createdAt).toLocaleDateString()}
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                Updated {new Date(plan.updatedAt).toLocaleDateString()}
+              </div>
+            </div>
           </div>
-          <div className="mt-1 text-lg font-semibold text-foreground">
-            {new Date(plan.moveDate).toLocaleDateString()}
-          </div>
-          <p className={`text-xs ${days.cls}`}>{days.text}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
-            <ListChecks className="h-4 w-4" /> Checklist
-          </div>
-          <div className="mt-1 text-lg font-semibold text-foreground">
-            {plan.progress.completedTasks} / {plan.progress.completedTasks + plan.progress.openTasks}
-          </div>
-          <p className="text-xs text-muted-foreground">{plan.progress.completionPercent}% complete</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
-            <Truck className="h-4 w-4" /> Move type
-          </div>
-          <div className="mt-1 text-lg font-semibold text-foreground">
-            {plan.isInterstate ? "Interstate" : "Same-state"}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {plan.isTemporary ? "Temporary" : "Permanent"}
-            {plan.estimatedDuration ? ` · ${plan.estimatedDuration}d est.` : ""}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
-            <Clock className="h-4 w-4" /> Created
-          </div>
-          <div className="mt-1 text-lg font-semibold text-foreground">
-            {new Date(plan.createdAt).toLocaleDateString()}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Updated {new Date(plan.updatedAt).toLocaleDateString()}
-          </p>
-        </div>
-      </div>
 
-      {/* Checklist progress bar */}
-      <div className="rounded-xl border border-border bg-card p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Checklist progress</h2>
-          <span className="text-xs text-muted-foreground">
+          {/* Task breakdown — checklist progress */}
+          <div className="mt-[22px] mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+            Task breakdown
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-tone-sage-fg transition-all"
+              style={{ width: `${plan.progress.completionPercent}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
             {plan.progress.completedTasks} done · {plan.progress.openTasks} open
             {plan.progress.overdueTasks > 0 ? ` · ${plan.progress.overdueTasks} overdue` : ""}
             {plan.progress.dismissedTasks > 0 ? ` · ${plan.progress.dismissedTasks} dismissed` : ""}
-          </span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-tone-sage-fg transition-all"
-            style={{ width: `${plan.progress.completionPercent}%` }}
-          />
-        </div>
-        {plan.progress.overdueTasks > 0 && (
-          <div className="mt-3 flex items-center gap-2 rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-xs text-tone-honey-fg">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            {plan.progress.overdueTasks} task{plan.progress.overdueTasks === 1 ? " is" : "s are"} past their due date.
-          </div>
-        )}
-      </div>
-
-      {/* Owner + workspace */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
-            <User className="h-3.5 w-3.5" /> Owning user
           </p>
-          <p className="text-sm font-medium text-foreground">
-            {plan.user.deleted ? "(deleted user)" : plan.user.name || "—"}
-          </p>
-          {!plan.user.deleted && <p className="text-xs text-muted-foreground">{plan.user.email}</p>}
-          <Link
-            href={`/users/${plan.user.id}`}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            <Eye className="h-3 w-3" /> View user profile
-          </Link>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
-            <Building2 className="h-3.5 w-3.5" /> Workspace
-          </p>
-          {plan.workspace ? (
-            <>
-              <p className="text-sm font-medium text-foreground">{plan.workspace.name}</p>
-              <Link
-                href={`/workspaces/${plan.workspace.id}`}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                <Eye className="h-3 w-3" /> View workspace
-              </Link>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">Solo plan — not in a workspace.</p>
+          {plan.progress.overdueTasks > 0 && (
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-xs text-tone-honey-fg">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              {plan.progress.overdueTasks} task{plan.progress.overdueTasks === 1 ? " is" : "s are"} past their due date.
+            </div>
           )}
+        </div>
+
+        {/* Right: owning user + workspace meta */}
+        <div className="flex flex-col gap-4">
+          <div className="rounded-[18px] border border-border bg-card p-[18px]">
+            <p className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-foreground">
+              <User className="h-3.5 w-3.5" /> Owning user
+            </p>
+            <p className="text-sm font-medium text-foreground">
+              {plan.user.deleted ? "(deleted user)" : plan.user.name || "—"}
+            </p>
+            {!plan.user.deleted && <p className="text-xs text-muted-foreground">{plan.user.email}</p>}
+            <Link
+              href={`/users/${plan.user.id}`}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-[11px] border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <Eye className="h-3 w-3" /> View user profile
+            </Link>
+          </div>
+          <div className="rounded-[18px] border border-border bg-card p-[18px]">
+            <p className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-foreground">
+              <Building2 className="h-3.5 w-3.5" /> Workspace
+            </p>
+            {plan.workspace ? (
+              <>
+                <p className="text-sm font-medium text-foreground">{plan.workspace.name}</p>
+                <Link
+                  href={`/workspaces/${plan.workspace.id}`}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-[11px] border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <Eye className="h-3 w-3" /> View workspace
+                </Link>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Solo plan — not in a workspace.</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -389,12 +412,12 @@ export default function MovingPlanDetailClient({ id }: { id: string }) {
             title="No move tasks"
             description="This plan has no checklist tasks yet."
             compact
-            className="rounded-xl border border-border bg-card"
+            className="rounded-[18px] border border-border bg-card"
           />
         ) : (
-          <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-border">
+          <div className="overflow-x-auto overscroll-x-contain rounded-[18px] border border-border bg-card">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-foreground/[0.03] text-left text-xs uppercase text-muted-foreground">
+              <thead className="bg-foreground/[0.03] text-left text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Task</th>
                   <th className="px-4 py-3 font-medium">Action</th>
@@ -444,7 +467,7 @@ export default function MovingPlanDetailClient({ id }: { id: string }) {
         <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
           <Clock className="h-4 w-4" /> Timeline
         </h2>
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-[18px] border border-border bg-card p-[18px]">
           <ol className="space-y-3">
             {plan.timeline.map((ev, idx) => (
               <li key={`${ev.kind}-${idx}`} className="flex items-start gap-3">
