@@ -31,8 +31,8 @@ describe("matchMoversForLead", () => {
         serviceStates: ["TX", "OK"],
       },
     ]);
-    // Only APPROVED partners are even queried.
-    expect(mocks.findMany.mock.calls[0][0].where).toEqual({ status: "APPROVED" });
+    // Only APPROVED, lead-opted-in movers are even queried (audit P2).
+    expect(mocks.findMany.mock.calls[0][0].where).toEqual({ status: "APPROVED", leadsOptIn: true });
   });
 
   it("treats a partner with no declared states as nationwide", async () => {

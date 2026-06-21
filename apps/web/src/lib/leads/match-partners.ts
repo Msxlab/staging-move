@@ -67,7 +67,8 @@ export async function matchPartnersForLead(params: {
   }>;
   try {
     partners = await prisma.partner.findMany({
-      where: { status: "APPROVED", category },
+      // Only opted-in partners receive consumer lead PII (audit P2).
+      where: { status: "APPROVED", category, leadsOptIn: true },
       select: { id: true, companyName: true, contactEmail: true, serviceStates: true },
       orderBy: { createdAt: "asc" },
     });

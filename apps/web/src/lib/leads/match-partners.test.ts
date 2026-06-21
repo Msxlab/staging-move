@@ -48,7 +48,7 @@ describe("matchPartnersForLead", () => {
         serviceStates: ["TX", "OK"],
       },
     ]);
-    expect(mocks.partnerFindMany.mock.calls[0][0].where).toEqual({ status: "APPROVED", category: "cleaning" });
+    expect(mocks.partnerFindMany.mock.calls[0][0].where).toEqual({ status: "APPROVED", category: "cleaning", leadsOptIn: true });
     expect(mocks.moverFindMany).not.toHaveBeenCalled();
   });
 

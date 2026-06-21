@@ -74,6 +74,9 @@ export async function POST(request: NextRequest) {
         website: d.website || null,
         serviceStates: normalizeStates(d.serviceStates),
         attestation: true,
+        // Persist the lead-program consent so matching can route PII only to
+        // opted-in partners (audit P2). consent is z.literal(true) here.
+        leadsOptIn: d.consent,
         status: "PENDING",
       },
       select: { id: true },

@@ -50,7 +50,8 @@ export async function matchMoversForLead(params: {
     // Approved partners are few, so an in-memory state filter is fine for v1
     // (avoids a substring LIKE that would false-match "TX" inside "ATXN").
     apps = await prisma.moverApplication.findMany({
-      where: { status: "APPROVED" },
+      // Only opted-in movers receive consumer lead PII (audit P2).
+      where: { status: "APPROVED", leadsOptIn: true },
       select: {
         id: true,
         companyLegalName: true,

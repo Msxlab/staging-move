@@ -2478,6 +2478,10 @@ model Partner {
   serviceStates String @db.VarChar(255)
 
   attestation Boolean @default(false)
+  // Explicit consent to receive consumer lead PII by email. Captured at
+  // registration; ANDed into lead matching so we only route PII to opted-in
+  // partners (audit P2 — CAN-SPAM/TCPA).
+  leadsOptIn  Boolean @default(false)
   status      String  @default("PENDING") @db.VarChar(20) // PENDING|IN_REVIEW|APPROVED|REJECTED|NEEDS_INFO
 
   reviewNotes       String?   @db.Text
@@ -2611,6 +2615,12 @@ model MoverApplication {
 
   // Applicant attested the submitted information is accurate (required to submit).
   attestation Boolean @default(false)
+
+  // Explicit consent to receive consumer lead PII by email. Directory approval is
+  // NOT consent to the lead program — leads route only to opted-in movers (audit
+  // P2 — CAN-SPAM/TCPA). Default false: a mover opt-in capture is required before
+  // moving-lead delivery flows (pre-launch follow-up).
+  leadsOptIn Boolean @default(false)
 
   status String @default("PENDING") @db.VarChar(20) // PENDING | IN_REVIEW | APPROVED | REJECTED | NEEDS_INFO
 

@@ -71,6 +71,14 @@ describe("POST /api/partners", () => {
     const res = await POST(req(valid));
     expect(res.status).toBe(201);
     const data = mocks.partnerCreate.mock.calls[0][0].data;
-    expect(data).toMatchObject({ category: "cleaning", status: "PENDING", attestation: true, serviceStates: "TX,OK" });
+    expect(data).toMatchObject({
+      category: "cleaning",
+      status: "PENDING",
+      attestation: true,
+      // Lead-program consent is persisted so matching only routes PII to opted-in
+      // partners (audit P2).
+      leadsOptIn: true,
+      serviceStates: "TX,OK",
+    });
   });
 });

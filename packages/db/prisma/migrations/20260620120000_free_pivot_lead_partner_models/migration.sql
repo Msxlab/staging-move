@@ -81,6 +81,7 @@ CREATE TABLE `Partner` (
     `website` VARCHAR(255) NULL,
     `serviceStates` VARCHAR(255) NOT NULL,
     `attestation` BOOLEAN NOT NULL DEFAULT false,
+    `leadsOptIn` BOOLEAN NOT NULL DEFAULT false,
     `status` VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     `reviewNotes` TEXT NULL,
     `decisionMessage` TEXT NULL,
