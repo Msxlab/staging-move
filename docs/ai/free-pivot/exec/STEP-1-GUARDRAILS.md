@@ -1,7 +1,7 @@
 # Step 1 — Cost / Abuse Guardrails · Implementation Spec (diff plan)
 
-Status: **APPROVED to spec, not yet coded.** Decisions locked (mustafa): PRO caps stay 25/1000 · maxCustomProviders(PRO)=1000 · dossier daily backstop 50/user · **durable per-section geo cache (option a)** · global circuit-breaker included (minimal).
-Verification: worktree has no node_modules → code lands on branch, **typecheck/tests run in CI / a deps checkout**. Ship as separate PRs.
+Status: **CODED + VERIFIED + COMMITTED** on branch `claude/fervent-wozniak-3e9bd6`. Decisions locked (mustafa): PRO caps stay 25/1000 · maxCustomProviders(PRO)=1000 · dossier daily backstop 50/user (DEFERRED — see Progress) · **durable per-section geo cache (option a)** · global circuit-breaker included (minimal).
+Verification: full web suite + typechecks green in-worktree (node_modules + generated Prisma client present).
 
 This step is independent of the `CONSUMER_FREE` flag — it protects today and the free world. Three changes.
 
@@ -9,8 +9,8 @@ This step is independent of the `CONSUMER_FREE` flag — it protects today and t
 
 ## Progress
 - ✅ **PR1a (Change 1) — coded** on branch `claude/fervent-wozniak-3e9bd6` (plan-limits.ts + plan-limits.test.ts). Type-safe; CI/typecheck pending (no node_modules in worktree). Not yet committed/pushed.
-- 🟡 **PR1b (Change 2) — partial (safe pieces coded):** new `AddressDataCacheEntry` Prisma model + `apps/web/src/lib/address-data-cache.ts` (generic `getOrFetchSection` helper) + `address-data-cache.test.ts` (7 unit tests, prisma mocked). **Deferred to a deps checkout/CI** (cannot run/typecheck here): `prisma migrate` + `prisma generate` for the new model (the helper's `prisma.addressDataCacheEntry` only typechecks after generate), and wiring the dossier route per recipe §2.7. Decision was to NOT blind-rewrite the critical 800-line dossier route without typecheck/tests.
-- 🟡 **PR1c (Change 3) — coded (1 wire deferred):** `apps/web/src/lib/global-spend-guard.ts` (`checkGlobalBudget`, fails OPEN, opt-in cap, 1/day alert) + `global-spend-guard.test.ts` (6 tests). **AI breaker WIRED** into `onboarding/briefing/route.ts` (degrade to rule-based when over the global AI cap). Deferred to the §2.7 route/CI step: the dossier breaker wire (skip upstream + serve cache-only over `DOSSIER_DAILY_GLOBAL_CAP`). CI typecheck pending.
+- ✅ **PR1b (Change 2) — DONE:** `AddressDataCacheEntry` model + migration (`20260620120000`, committed in the audit pass) + `apps/web/src/lib/address-data-cache.ts` (`getOrFetchSection`) + tests; the dossier route is fully wired through the cache across all sections. (The model's migration was the audit P0-1 fix.)
+- ✅ **PR1c (Change 3) — DONE:** `apps/web/src/lib/global-spend-guard.ts` (`checkGlobalBudget`, fails OPEN, opt-in cap, 1/day alert) + tests. AI breaker wired into `onboarding/briefing/route.ts`; the **dossier breaker is wired across all 3 build paths** (summary/preview/full). The per-user/day **50-cap backstop (§2.6) is DEFERRED** — not retrofitted into the ~800-line route; global fuse + 60/min + durable cache bound cost (see [AUDIT-FIXES](AUDIT-FIXES.md)).
 
 ## Change 1 — Custom-provider per-owner abuse cap
 **Why:** [plan-limits.ts:380-402](apps/web/src/lib/plan-limits.ts) `canCreateCustomProvider` active path returns `{allowed:true}` with **no count check** → one account can create unbounded rows.
@@ -100,7 +100,7 @@ In `apps/web/src/app/api/addresses/[id]/dossier/route.ts`, the full-dossier bran
 8. **Dossier circuit-breaker** (PR1c tail): before the `Promise.allSettled` lookups, `const b = await checkGlobalBudget("dossier"); if (!b.allowed) { /* skip upstream: serve cached blob if present, else all-sections "unavailable" — no external calls */ }`. Mirrors the AI breaker already wired in the briefing route.
 9. Migration: `prisma migrate dev` (then `deploy` in CI) + `prisma generate`.
 
-**Tests:** 2nd user at same geo cell → external fetcher NOT called (HIT); static section not re-fetched within its long TTL; volatile section refreshes after short TTL; DEGRADED/EMPTY section retried next request; daily backstop 429 after 50 misses; HIT does not consume the daily budget. (Helper unit tests already written in `address-data-cache.test.ts`.)
+**Tests:** 2nd user at same geo cell → external fetcher NOT called (HIT); static section not re-fetched within its long TTL; volatile section refreshes after short TTL; DEGRADED/EMPTY section retried next request. (Helper unit tests in `address-data-cache.test.ts`.) NOTE: the "daily backstop 429 after 50 misses" / "HIT does not consume the daily budget" tests are NOT implemented — the §2.6 per-user/day backstop was deferred (see [AUDIT-FIXES](AUDIT-FIXES.md)).
 
 ---
 

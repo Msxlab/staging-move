@@ -11,7 +11,7 @@ Exhaustive combination matrix for the pivot. Axes: **FLAG** {on, off} × **USER*
 | Addresses cap · `canCreateAddress` :246 | up to **finite abuse cap** (not ∞) | 3/10/15/25 by tier |
 | Services cap · `canCreateService` :290 | finite abuse cap | 10/100/500/1000 |
 | Custom providers · `canCreateCustomProvider` :380 | finite abuse cap (**add count check** — H6) | setup-grace 10 then tier |
-| Members/seats · `seatLimitForPlan(effectivePlan)` [invitations:100](apps/web/src/app/api/workspaces/[id]/invitations/route.ts) | 10 (needs `getEffectiveEntitlement`→PRO, H3) | 1 (free/indiv) → "Upgrade to invite" |
+| Members/seats · `seatLimitForPlan(effectivePlan)` [invitations:100](apps/web/src/app/api/workspaces/[id]/invitations/route.ts) | 10 — WIRED via `resolveConsumerEntitlement` (H3 ✅, [AUDIT-FIXES](exec/AUDIT-FIXES.md)) | 1 (free/indiv) → "Upgrade to invite" |
 | Concurrent plans · [moving/route.ts:99](apps/web/src/app/api/moving/route.ts) | **unlimited** (H4 fix) — NOT 3 | 3 (PRO) |
 | AI briefing · `aiBriefing` [briefing:168](apps/web/src/app/api/onboarding/briefing/route.ts) | on (plan→PRO) **+ DAILY_AI_GENERATION_CAP still applies** | Family+Pro only |
 | Home dossier (full) · [dossier:548](apps/web/src/app/api/addresses/[id]/dossier/route.ts) | full | preview subset (free) |
