@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { useRouter, type ErrorBoundaryProps } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import Constants from "expo-constants";
 import {
   HelpCircle,
   ArrowLeft,
@@ -17,17 +19,17 @@ import {
   BookOpen,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   MessageSquare,
   ExternalLink,
   Ticket,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { openWebUrl } from "@/lib/in-app-browser";
-import { Card } from "@/components/ui/Card";
+import { MoveCard, SectionHeader, Pill } from "@/components/move";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
-import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { captureException } from "@/lib/sentry";
 
@@ -244,24 +246,36 @@ export default function HelpScreen() {
           <TouchableOpacity onPress={() => setSelectedArticle(null)} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>{t("help.title")}</Text>
+          <Text style={styles.headerTitle}>{t("help.title")}</Text>
           <View style={{ width: 44 }} />
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <Card variant="default">
-            {!!selectedArticle.category && <Text style={styles.articleDetailCategory}>{selectedArticle.category}</Text>}
+          <MoveCard>
+            {!!selectedArticle.category && (
+              <Pill label={selectedArticle.category} tone="accent" style={{ marginBottom: 10 }} />
+            )}
             <Text style={styles.articleDetailTitle}>{selectedArticle.title}</Text>
             {!!selectedArticle.excerpt && <Text style={styles.articleDetailExcerpt}>{selectedArticle.excerpt}</Text>}
             <Text style={styles.articleDetailBody}>
               {selectedArticle.content || ""}
             </Text>
-          </Card>
+          </MoveCard>
 
-          <Card variant="default" style={{ marginTop: 12 }}>
+          <MoveCard style={{ marginTop: 12 }}>
             <Text style={styles.supportCardTitle}>{t("help.contact")}</Text>
-            <Button title={t("help.contact")} onPress={handleContactUs} style={{ marginTop: 12 }} />
-          </Card>
+            <TouchableOpacity activeOpacity={0.85} onPress={handleContactUs} style={{ marginTop: 14 }}>
+              <LinearGradient
+                colors={theme.colors.gradient.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.ctaBtn}
+              >
+                <MessageSquare size={17} color={theme.colors.onAccent} />
+                <Text style={styles.ctaText}>{t("help.contact")}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </MoveCard>
         </ScrollView>
       </SafeAreaView>
     );
@@ -273,128 +287,144 @@ export default function HelpScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>{t("help.title")}</Text>
+        <Text style={styles.headerTitle}>{t("help.title")}</Text>
         <View style={{ width: 44 }} />
-      </View>
-
-      <View style={styles.hero}>
-        <View style={styles.heroTop}>
-          <View style={styles.heroIcon}>
-            <HelpCircle size={20} color={theme.colors.primary} />
-          </View>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroKicker}>SUPPORT COMMAND</Text>
-            <Text style={styles.heroTitle}>{t("help.title")}</Text>
-            <Text style={styles.heroSub} numberOfLines={1}>
-              {t("help.searchPlaceholder")}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.heroStats}>
-          <View style={styles.heroStat}>
-            <Text style={styles.heroStatValue}>{articles.length}</Text>
-            <Text style={styles.heroStatLabel}>articles</Text>
-          </View>
-          <View style={styles.heroStat}>
-            <Text style={styles.heroStatValue}>{faqs.length}</Text>
-            <Text style={styles.heroStatLabel}>faq</Text>
-          </View>
-          <View style={styles.heroStat}>
-            <Text style={styles.heroStatValue}>2</Text>
-            <Text style={styles.heroStatLabel}>actions</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchRow}>
-        <View style={styles.searchBox}>
-          <Search size={16} color={theme.colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t("help.searchPlaceholder")}
-            placeholderTextColor={theme.colors.textMuted}
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
-        {error ? (
-          <ErrorState title={t("help.unavailable")} message={error} onRetry={load} />
-        ) : null}
-
-        {/* Quick Actions */}
-        <View style={styles.quickRow}>
-          <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={handleContactUs}>
-            <ExternalLink size={20} color={theme.colors.accent} />
-            <Text style={styles.quickLabel}>{t("help.contact")}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={() => router.push("/help/tickets")}>
-            <Ticket size={20} color={theme.colors.primary} />
-            <Text style={styles.quickLabel}>{t("help.supportTickets")}</Text>
-          </TouchableOpacity>
+        {/* Page heading */}
+        <View style={styles.heading}>
+          <View style={styles.headingIcon}>
+            <HelpCircle size={20} color={theme.colors.primary} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.pageTitle}>{t("help.title")}</Text>
+            <Text style={styles.pageSub}>{t("help.searchPlaceholder")}</Text>
+          </View>
         </View>
 
-        {/* Articles */}
+        {/* Search */}
+        <View style={styles.searchBox}>
+          <Search size={16} color={theme.colors.faint} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t("help.searchPlaceholder")}
+            placeholderTextColor={theme.colors.faint}
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+
+        {error ? (
+          <View style={{ marginTop: 16 }}>
+            <ErrorState title={t("help.unavailable")} message={error} onRetry={load} />
+          </View>
+        ) : null}
+
+        {/* Popular topics — help articles */}
         {filteredArticles.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>{t("help.articlesTitle")}</Text>
+            <SectionHeader label={t("help.articlesTitle")} style={styles.sectionHeader} />
             <View style={styles.list}>
               {filteredArticles.slice(0, 5).map((article) => (
-                <TouchableOpacity key={article.id} style={styles.articleItem} activeOpacity={0.6} onPress={() => setSelectedArticle(article)}>
-                  <BookOpen size={16} color={theme.colors.textTertiary} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.articleTitle} numberOfLines={1}>{article.title}</Text>
-                    {article.category && <Text style={styles.articleCategory}>{article.category}</Text>}
+                <MoveCard
+                  key={article.id}
+                  onPress={() => setSelectedArticle(article)}
+                  padding={14}
+                  radius={14}
+                >
+                  <View style={styles.rowItem}>
+                    <View style={styles.rowIcon}>
+                      <BookOpen size={16} color={theme.colors.primary} />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.rowTitle} numberOfLines={1}>{article.title}</Text>
+                      {!!article.category && <Text style={styles.rowMeta}>{article.category}</Text>}
+                    </View>
+                    <ChevronRight size={16} color={theme.colors.faint} />
                   </View>
-                  <ChevronDown size={14} color={theme.colors.textMuted} style={{ transform: [{ rotate: "-90deg" }] }} />
-                </TouchableOpacity>
+                </MoveCard>
               ))}
             </View>
           </>
         )}
 
+        {/* Support actions */}
+        <SectionHeader label={t("help.supportTickets")} style={styles.sectionHeader} />
+        <View style={styles.list}>
+          <MoveCard onPress={() => router.push("/help/tickets")} padding={14} radius={14}>
+            <View style={styles.rowItem}>
+              <View style={styles.rowIcon}>
+                <Ticket size={16} color={theme.colors.primary} />
+              </View>
+              <Text style={[styles.rowTitle, { flex: 1 }]} numberOfLines={1}>{t("help.supportTickets")}</Text>
+              <ChevronRight size={16} color={theme.colors.faint} />
+            </View>
+          </MoveCard>
+        </View>
+
         {/* FAQs */}
-        <Text style={styles.sectionTitle}>{t("help.faqTitle")}</Text>
+        <SectionHeader label={t("help.faqTitle")} style={styles.sectionHeader} />
         {filteredFaqs.length === 0 ? (
-          <Card variant="default">
+          <MoveCard>
             <Text style={styles.emptyText}>
               {t("common.none")}
             </Text>
             {search ? (
               <Text style={styles.emptyHint}>{t("help.emptySearchHint")}</Text>
             ) : null}
-          </Card>
+          </MoveCard>
         ) : (
           <View style={styles.list}>
-            {filteredFaqs.map((faq) => (
-              <TouchableOpacity
-                key={faq.id}
-                style={styles.faqItem}
-                onPress={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.faqHeader}>
-                  <Text style={styles.faqQuestion}>{faq.question}</Text>
-                  {expandedFaq === faq.id ? (
-                    <ChevronUp size={16} color={theme.colors.textTertiary} />
-                  ) : (
-                    <ChevronDown size={16} color={theme.colors.textMuted} />
-                  )}
-                </View>
-                {expandedFaq === faq.id && (
-                  <Text style={styles.faqAnswer}>{faq.answer}</Text>
-                )}
-              </TouchableOpacity>
-            ))}
+            {filteredFaqs.map((faq) => {
+              const expanded = expandedFaq === faq.id;
+              return (
+                <MoveCard
+                  key={faq.id}
+                  onPress={() => setExpandedFaq(expanded ? null : faq.id)}
+                  padding={14}
+                  radius={14}
+                  accent={expanded}
+                >
+                  <View style={styles.faqHeader}>
+                    <Text style={styles.faqQuestion}>{faq.question}</Text>
+                    {expanded ? (
+                      <ChevronUp size={16} color={theme.colors.primary} />
+                    ) : (
+                      <ChevronDown size={16} color={theme.colors.faint} />
+                    )}
+                  </View>
+                  {expanded && <Text style={styles.faqAnswer}>{faq.answer}</Text>}
+                </MoveCard>
+              );
+            })}
           </View>
         )}
+
+        {/* Contact support CTA */}
+        <TouchableOpacity activeOpacity={0.85} onPress={handleContactUs} style={styles.ctaWrap}>
+          <LinearGradient
+            colors={theme.colors.gradient.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.ctaBtn}
+          >
+            <MessageSquare size={17} color={theme.colors.onAccent} />
+            <Text style={styles.ctaText}>{t("help.contact")}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity activeOpacity={0.7} onPress={handleContactUs} style={styles.footerWrap}>
+          <Text style={styles.footerText}>
+            LocateFlow v{Constants.expoConfig?.version ?? "0.0.0"}
+          </Text>
+          <ExternalLink size={11} color={theme.colors.faint} />
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -403,87 +433,78 @@ export default function HelpScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
-  hero: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    borderRadius: 24,
-    padding: 16,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
-  },
-  heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  heroIcon: {
+  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 18, fontFamily: fonts.serifBold, color: theme.colors.text },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 36 },
+
+  heading: { flexDirection: "row", alignItems: "center", gap: 13, marginTop: 4, marginBottom: 16 },
+  headingIcon: {
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
-  heroCopy: { flex: 1, minWidth: 0 },
-  heroKicker: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.3,
-    textTransform: "uppercase",
-    color: theme.colors.accent,
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: theme.colors.text,
-    marginTop: 3,
-    letterSpacing: 0,
-  },
-  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
-  heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
-  heroStat: {
-    flex: 1,
-    minHeight: 56,
-    borderRadius: 15,
-    padding: 9,
+  pageTitle: { fontSize: 25, fontFamily: fonts.serifBold, color: theme.colors.text, letterSpacing: 0.2 },
+  pageSub: { fontSize: 11, color: theme.colors.dim, marginTop: 2, fontFamily: fonts.sans },
+
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     backgroundColor: theme.colors.surface,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  searchInput: { flex: 1, fontSize: 14, color: theme.colors.text, fontFamily: fonts.sans, padding: 0 },
+
+  sectionHeader: { marginTop: 24, marginBottom: 10 },
+  list: { gap: 9 },
+
+  rowItem: { flexDirection: "row", alignItems: "center", gap: 12 },
+  rowIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
+    alignItems: "center",
     justifyContent: "center",
   },
-  heroStatValue: { fontSize: 14, fontWeight: "800", color: theme.colors.text },
-  heroStatLabel: {
-    fontSize: 8,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-    color: theme.colors.textTertiary,
-    textTransform: "uppercase",
-    marginTop: 3,
-  },
-  searchRow: { paddingHorizontal: 20, marginBottom: 12 },
-  searchBox: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: theme.colors.glass.bg, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.glass.highlight, paddingHorizontal: 14, paddingVertical: 10 },
-  searchInput: { flex: 1, fontSize: 15, color: theme.colors.text },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
-  quickRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
-  quickCard: { flex: 1, alignItems: "center", gap: 8, backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 20, ...theme.shadow.sm },
-  quickLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text, marginBottom: 10 },
-  list: { gap: 8, marginBottom: 24 },
-  articleItem: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: theme.colors.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: 14 },
-  articleTitle: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
-  articleCategory: { fontSize: 11, color: theme.colors.textMuted, marginTop: 2 },
-  articleDetailCategory: { fontSize: 12, fontWeight: "700", color: theme.colors.primary, marginBottom: 8 },
-  articleDetailTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, lineHeight: 28 },
-  articleDetailExcerpt: { fontSize: 14, color: theme.colors.textSecondary, marginTop: 10, lineHeight: 20 },
-  articleDetailBody: { fontSize: 14, color: theme.colors.textTertiary, marginTop: 14, lineHeight: 22 },
-  faqItem: { backgroundColor: theme.colors.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: 14 },
+  rowTitle: { fontSize: 13.5, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  rowMeta: { fontSize: 11, color: theme.colors.dim, marginTop: 2, fontFamily: fonts.sans },
+
   faqHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 },
-  faqQuestion: { flex: 1, fontSize: 14, fontWeight: "600", color: theme.colors.text },
-  faqAnswer: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 10, lineHeight: 19 },
-  emptyText: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center" },
-  emptyHint: { fontSize: 12, color: theme.colors.textMuted, textAlign: "center", marginTop: 8, lineHeight: 18 },
-  supportCardTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
-  supportCardText: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 8, lineHeight: 19 },
+  faqQuestion: { flex: 1, fontSize: 13.5, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  faqAnswer: { fontSize: 13, color: theme.colors.dim, marginTop: 10, lineHeight: 19, fontFamily: fonts.sans },
+
+  articleDetailTitle: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text, lineHeight: 28 },
+  articleDetailExcerpt: { fontSize: 14, color: theme.colors.textSecondary, marginTop: 10, lineHeight: 20, fontFamily: fonts.sans },
+  articleDetailBody: { fontSize: 14, color: theme.colors.dim, marginTop: 14, lineHeight: 22, fontFamily: fonts.sans },
+
+  emptyText: { fontSize: 14, color: theme.colors.dim, textAlign: "center", fontFamily: fonts.sans },
+  emptyHint: { fontSize: 12, color: theme.colors.faint, textAlign: "center", marginTop: 8, lineHeight: 18, fontFamily: fonts.sans },
+
+  supportCardTitle: { fontSize: 16, fontFamily: fonts.serifBold, color: theme.colors.text },
+
+  ctaWrap: { marginTop: 26 },
+  ctaBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+    paddingVertical: 16,
+    borderRadius: 16,
+  },
+  ctaText: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+
+  footerWrap: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 16 },
+  footerText: { fontSize: 11, color: theme.colors.faint, fontFamily: fonts.mono },
 });

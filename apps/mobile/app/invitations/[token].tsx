@@ -2,12 +2,14 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Users, Check } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Users, Check, Clock, Mail } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { HeroCard, MoveCard, SectionHeader, Pill, MoveRaccoon } from "@/components/move";
 import { acceptInvite, setPendingInviteToken, type InviteErrorCode } from "@/lib/workspace-invite";
 
 interface InviteDetails {
@@ -113,27 +115,38 @@ export default function InvitationScreen() {
 
   if (loading) return <LoadingScreen />;
 
+  // --- Joined / success state ----------------------------------------------
   if (joined) {
     return (
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <View style={styles.center}>
-          <View style={styles.card}>
-            <View style={styles.iconWrap}>
-              <Check size={28} color={theme.colors.success} />
+          <HeroCard radius={26} padding={24} style={styles.heroWrap}>
+            <View style={styles.heroCenter}>
+              <MoveRaccoon size={84} mood="approved" />
+              <Text style={styles.kicker}>{t("invite.workspaceAccess", "Workspace access")}</Text>
+              <Text style={styles.heroTitle}>{t("invite.successTitle", "You're in!")}</Text>
+              <Text style={styles.heroBody}>
+                {invite?.workspaceName
+                  ? `${t("invite.successJoined", "You've joined")} ${invite.workspaceName}. ${t("invite.successPlanActive", "Your shared plan is now active.")}`
+                  : t("invite.successBody", "You've joined the workspace. Your shared plan is now active.")}
+              </Text>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={() => router.replace("/(tabs)")}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+              >
+                <LinearGradient
+                  colors={theme.colors.gradient.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.primaryBtnFill}
+                >
+                  <Text style={styles.primaryBtnText}>{t("invite.goToDashboard", "Go to dashboard")}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.heroKicker}>WORKSPACE ACCESS</Text>
-            <Text style={styles.title}>
-              {t("invite.successTitle", "You're in!")}
-            </Text>
-            <Text style={styles.body}>
-              {invite?.workspaceName
-                ? `${t("invite.successJoined", "You've joined")} ${invite.workspaceName}. ${t("invite.successPlanActive", "Your shared plan is now active.")}`
-                : t("invite.successBody", "You've joined the workspace. Your shared plan is now active.")}
-            </Text>
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace("/(tabs)")} activeOpacity={0.85}>
-              <Text style={styles.primaryBtnText}>{t("invite.goToDashboard", "Go to dashboard")}</Text>
-            </TouchableOpacity>
-          </View>
+          </HeroCard>
         </View>
       </SafeAreaView>
     );
@@ -148,66 +161,115 @@ export default function InvitationScreen() {
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.center}>
         {!invite ? (
-          <View style={styles.card}>
-            <Text style={styles.heroKicker}>INVITE LINK</Text>
-            <Text style={styles.title}>{t("invite.unavailableTitle", "Invitation unavailable")}</Text>
-            <Text style={styles.body}>{errorMsg}</Text>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace("/(tabs)")}>
-              <Text style={styles.secondaryBtnText}>{t("invite.goHome", "Go home")}</Text>
-            </TouchableOpacity>
-          </View>
+          // --- Error / unavailable state ---------------------------------
+          <HeroCard radius={26} padding={24} style={styles.heroWrap} glow={false}>
+            <View style={styles.heroCenter}>
+              <MoveRaccoon size={84} mood="alert" />
+              <Text style={styles.kicker}>{t("invite.inviteLink", "Invite link")}</Text>
+              <Text style={styles.heroTitle}>{t("invite.unavailableTitle", "Invitation unavailable")}</Text>
+              <Text style={styles.heroBody}>{errorMsg}</Text>
+              <TouchableOpacity
+                style={styles.secondaryBtn}
+                onPress={() => router.replace("/(tabs)")}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+              >
+                <Text style={styles.secondaryBtnText}>{t("invite.goHome", "Go home")}</Text>
+              </TouchableOpacity>
+            </View>
+          </HeroCard>
         ) : (
-          <View style={styles.card}>
-            <View style={styles.iconWrap}>
-              <Users size={28} color={theme.colors.primary} />
+          // --- Invite-accept state ---------------------------------------
+          <View style={styles.stack}>
+            <HeroCard radius={26} padding={22} style={styles.heroWrap}>
+              <View style={styles.heroTop}>
+                <View style={styles.iconWrap}>
+                  <Users size={22} color={theme.colors.primary} />
+                </View>
+                <Pill label={roleLabel} tone="accent" />
+              </View>
+              <Text style={styles.kickerLeft}>{t("invite.workspaceInvite", "Workspace invite")}</Text>
+              <Text style={styles.heroTitleLeft}>
+                {t("invite.joinTitle", "Join")} {invite.workspaceName ?? t("invite.aWorkspace", "a workspace")}
+              </Text>
+              <Text style={styles.heroBodyLeft}>
+                {t("invite.joinBody", "You've been invited to join as")} {roleLabel}.
+              </Text>
+            </HeroCard>
+
+            <View>
+              <SectionHeader label={t("invite.detailsLabel", "Invitation")} style={styles.sectionGap} />
+              <MoveCard padding={14} radius={18}>
+                <View style={styles.detailRow}>
+                  <View style={styles.detailIcon}>
+                    <Mail size={16} color={theme.colors.dim} />
+                  </View>
+                  <View style={styles.detailText}>
+                    <Text style={styles.detailValue} numberOfLines={1}>
+                      {invite.invitedEmail}
+                    </Text>
+                    <Text style={styles.detailLabel}>{t("invite.invitedFor", "Invitation for")}</Text>
+                  </View>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.detailRow}>
+                  <View style={styles.detailIcon}>
+                    <Clock size={16} color={theme.colors.dim} />
+                  </View>
+                  <View style={styles.detailText}>
+                    <Text style={styles.detailValue}>{expiresLabel}</Text>
+                    <Text style={styles.detailLabel}>{t("invite.expiresLabel", "Expires")}</Text>
+                  </View>
+                  <Pill label={roleLabel} tone="muted" />
+                </View>
+              </MoveCard>
             </View>
-            <Text style={styles.heroKicker}>WORKSPACE INVITE</Text>
-            <Text style={styles.title}>
-              {t("invite.joinTitle", "Join")} {invite.workspaceName ?? t("invite.aWorkspace", "a workspace")}
-            </Text>
-            <Text style={styles.body}>
-              {t("invite.joinBody", "You've been invited to join as")} {roleLabel}.
-            </Text>
-            <Text style={styles.note}>
-              {t("invite.invitedFor", "Invitation for")} {invite.invitedEmail}
-            </Text>
-            <View style={styles.heroStats}>
-              <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue} numberOfLines={1}>{roleLabel}</Text>
-                <Text style={styles.heroStatLabel}>role</Text>
-              </View>
-              <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue} numberOfLines={1}>{invite.invitedEmail.split("@")[0]}</Text>
-                <Text style={styles.heroStatLabel}>account</Text>
-              </View>
-              <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue}>{expiresLabel}</Text>
-                <Text style={styles.heroStatLabel}>expires</Text>
-              </View>
-            </View>
-            <View style={styles.consentBox}>
+
+            <MoveCard padding={14} radius={18} accent>
               <Text style={styles.consentText}>
                 {t(
                   "invite.consent",
                   "Joining means an owner or admin can start an address-change sync that affects your connected services. You can leave at any time.",
                 )}
               </Text>
+            </MoveCard>
+
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={accept}
+                disabled={accepting}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+              >
+                <LinearGradient
+                  colors={theme.colors.gradient.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.primaryBtnFill}
+                >
+                  {accepting ? (
+                    <ActivityIndicator size="small" color={theme.colors.onAccent} />
+                  ) : (
+                    <>
+                      <Check size={16} color={theme.colors.onAccent} />
+                      <Text style={styles.primaryBtnText}>
+                        {t("invite.join", "Join as")} {roleLabel}
+                      </Text>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.secondaryBtn}
+                onPress={() => router.replace("/(tabs)")}
+                disabled={accepting}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+              >
+                <Text style={styles.secondaryBtnText}>{t("invite.maybeLater", "Maybe later")}</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.primaryBtn} onPress={accept} disabled={accepting} activeOpacity={0.85}>
-              {accepting ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Check size={16} color="#fff" />
-                  <Text style={styles.primaryBtnText}>
-                    {t("invite.join", "Join as")} {roleLabel}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace("/(tabs)")} disabled={accepting}>
-              <Text style={styles.secondaryBtnText}>{t("invite.maybeLater", "Maybe later")}</Text>
-            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -218,81 +280,76 @@ export default function InvitationScreen() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.colors.background },
-    center: { flex: 1, justifyContent: "center", paddingHorizontal: 20 },
-    card: {
-      backgroundColor: theme.colors.glass.bg,
-      borderRadius: 28,
-      borderWidth: 1,
-      borderColor: theme.colors.glass.highlight,
-      padding: 24,
-      gap: 12,
-      alignItems: "center",
-      ...theme.shadow.sm,
-    },
+    center: { flex: 1, justifyContent: "center", paddingHorizontal: 22 },
+    stack: { gap: 14 },
+
+    // Hero (gradient premium card)
+    heroWrap: { width: "100%" },
+    heroCenter: { alignItems: "center", gap: 10 },
+    heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
     iconWrap: {
-      width: 56,
-      height: 56,
-      borderRadius: 18,
+      width: 44,
+      height: 44,
+      borderRadius: 14,
       backgroundColor: theme.colors.primaryFaded,
       borderWidth: 1,
-      borderColor: theme.colors.primary + "33",
+      borderColor: theme.colors.accentBorder,
       alignItems: "center",
       justifyContent: "center",
     },
-    heroKicker: {
+
+    kicker: {
       fontSize: 10,
-      fontWeight: "800",
-      letterSpacing: 0,
-      color: theme.colors.accent,
+      fontFamily: fonts.sansBold,
+      letterSpacing: 1.4,
+      color: theme.colors.primary,
       textTransform: "uppercase",
       textAlign: "center",
-    },
-    title: { fontSize: 22, fontWeight: "800", color: theme.colors.text, textAlign: "center", letterSpacing: 0 },
-    body: { fontSize: 14, color: theme.colors.textSecondary, textAlign: "center", lineHeight: 20 },
-    note: { fontSize: 12, color: theme.colors.textTertiary, textAlign: "center" },
-    heroStats: { flexDirection: "row", gap: 8, width: "100%" },
-    heroStat: {
-      flex: 1,
-      minHeight: 58,
-      borderRadius: 16,
-      padding: 10,
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      justifyContent: "center",
-    },
-    heroStatValue: { fontSize: 12, fontWeight: "800", color: theme.colors.text, textAlign: "center" },
-    heroStatLabel: {
-      fontSize: 9,
-      fontWeight: "800",
-      letterSpacing: 0,
-      color: theme.colors.textTertiary,
-      textTransform: "uppercase",
-      marginTop: 3,
-      textAlign: "center",
-    },
-    consentBox: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      padding: 12,
       marginTop: 4,
     },
-    consentText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18 },
-    primaryBtn: {
+    kickerLeft: {
+      fontSize: 10,
+      fontFamily: fonts.sansBold,
+      letterSpacing: 1.4,
+      color: theme.colors.primary,
+      textTransform: "uppercase",
+    },
+    heroTitle: { fontSize: 26, fontFamily: fonts.serifBold, color: theme.colors.text, textAlign: "center" },
+    heroTitleLeft: { fontSize: 24, fontFamily: fonts.serifBold, color: theme.colors.text, marginTop: 4 },
+    heroBody: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.dim, textAlign: "center", lineHeight: 20 },
+    heroBodyLeft: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, lineHeight: 19, marginTop: 6 },
+
+    // Section
+    sectionGap: { marginBottom: 10 },
+
+    // Detail rows (member-row pattern from the design)
+    detailRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    detailIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: theme.colors.surface2,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    detailText: { flex: 1, minWidth: 0 },
+    detailValue: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+    detailLabel: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2 },
+    divider: { height: 1, backgroundColor: theme.colors.border, marginVertical: 12 },
+
+    consentText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, lineHeight: 18 },
+
+    // Actions
+    actions: { gap: 6 },
+    primaryBtn: { borderRadius: 16, overflow: "hidden", width: "100%", marginTop: 6, ...theme.shadow.glow },
+    primaryBtnFill: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
-      backgroundColor: theme.colors.primary,
-      borderRadius: 16,
-      paddingVertical: 13,
-      width: "100%",
-      marginTop: 4,
-      ...theme.shadow.glow,
+      paddingVertical: 14,
     },
-    primaryBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
-    secondaryBtn: { paddingVertical: 10, alignItems: "center", width: "100%" },
-    secondaryBtnText: { fontSize: 14, color: theme.colors.textTertiary, fontWeight: "600" },
+    primaryBtnText: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+    secondaryBtn: { paddingVertical: 12, alignItems: "center", width: "100%" },
+    secondaryBtnText: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   });

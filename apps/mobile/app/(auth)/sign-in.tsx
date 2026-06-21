@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
   TouchableOpacity,
@@ -6,10 +6,10 @@ import {
 import { useRouter } from "expo-router";
 import { Mail, Lock, ArrowRight } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { LogoBrand } from "@/components/ui/LogoBrand";
+import { MoveRaccoon } from "@/components/move";
 import { AppleLogoMark, GoogleGMark } from "@/components/ui/BrandLogos";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { api, API_URL } from "@/lib/api";
@@ -200,8 +200,9 @@ export default function SignInScreen() {
       >
         <View style={styles.authPanel}>
           <View style={styles.hero}>
-            <LogoBrand />
-            <Text style={styles.heroKicker}>SECURE ACCESS</Text>
+            <View style={styles.brandBadge}>
+              <MoveRaccoon size={62} mood="calm" />
+            </View>
             <Text style={styles.title}>{t("auth.signIn")}</Text>
             <Text style={styles.subtitle}>{t("auth.signIn_title")}</Text>
           </View>
@@ -210,62 +211,31 @@ export default function SignInScreen() {
 
           {!requiresMfa && (
             <>
-            <TouchableOpacity
-              onPress={() => openOAuth("google")}
-              disabled={!googleReady || Boolean(oauthLoading)}
-              activeOpacity={0.78}
-              style={[styles.oauthButton, styles.oauthGoogle, (!googleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
-              accessibilityLabel={t("auth.continueWithGoogle")}
-              accessibilityRole="button"
-            >
-              <GoogleGMark size={20} />
-              <Text style={styles.oauthGoogleText}>
-                {googleUnavailable ? t("auth.googleUnavailable") : t("auth.continueWithGoogle")}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => openOAuth("apple")}
-              disabled={!appleReady || Boolean(oauthLoading)}
-              activeOpacity={0.78}
-              style={[styles.oauthButton, styles.oauthApple, (!appleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
-              accessibilityLabel={t("auth.continueWithApple")}
-              accessibilityRole="button"
-            >
-              <AppleLogoMark size={18} color="#fff" />
-              <Text style={styles.oauthAppleText}>
-                {appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
-              </Text>
-            </TouchableOpacity>
-
-            {showOAuthReadinessNote ? (
-              <Text style={styles.oauthNote}>
-                {t("auth.socialSignInUnavailable")}
-              </Text>
-            ) : null}
-
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t("auth.or").toUpperCase()}</Text>
-              <View style={styles.dividerLine} />
+            <View style={styles.fields}>
+              <Input
+                placeholder={t("auth.email")}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                leftIcon={<Mail size={16} color={theme.colors.textMuted} />}
+              />
+              <Input
+                placeholder={t("auth.password")}
+                value={password}
+                onChangeText={setPassword}
+                isPassword
+                autoComplete="password"
+                leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
+              />
+              <TouchableOpacity
+                onPress={() => router.push("/(auth)/forgot-password")}
+                style={styles.forgotRow}
+              >
+                <Text style={styles.forgotText}>{t("auth.forgotPassword")}</Text>
+              </TouchableOpacity>
             </View>
-
-            <Input
-              placeholder={t("auth.email")}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              leftIcon={<Mail size={16} color={theme.colors.textMuted} />}
-            />
-            <Input
-              placeholder={t("auth.password")}
-              value={password}
-              onChangeText={setPassword}
-              isPassword
-              autoComplete="password"
-              leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
-            />
             </>
           )}
 
@@ -281,6 +251,8 @@ export default function SignInScreen() {
           )}
 
           <Button
+            variant="gradient"
+            fullWidth
             title={
               loading
                 ? t("common.loading")
@@ -290,18 +262,53 @@ export default function SignInScreen() {
             }
             onPress={handleSubmit}
             disabled={loading || !email || !password || (requiresMfa && mfaCode.length < 6)}
-            rightIcon={<ArrowRight size={16} color="#fff" />}
-            style={{ marginTop: 12 }}
+            rightIcon={<ArrowRight size={16} color={theme.colors.onAccent} />}
+            style={styles.cta}
           />
 
           {!requiresMfa && (
             <>
-            <TouchableOpacity
-              onPress={() => router.push("/(auth)/forgot-password")}
-              style={styles.linkRow}
-            >
-              <Text style={styles.linkText}>{t("auth.forgotPassword")}</Text>
-            </TouchableOpacity>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>{t("auth.or").toUpperCase()}</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.oauthGroup}>
+              <TouchableOpacity
+                onPress={() => openOAuth("apple")}
+                disabled={!appleReady || Boolean(oauthLoading)}
+                activeOpacity={0.78}
+                style={[styles.oauthButton, styles.oauthApple, (!appleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
+                accessibilityLabel={t("auth.continueWithApple")}
+                accessibilityRole="button"
+              >
+                <AppleLogoMark size={18} color="#fff" />
+                <Text style={styles.oauthAppleText}>
+                  {appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => openOAuth("google")}
+                disabled={!googleReady || Boolean(oauthLoading)}
+                activeOpacity={0.78}
+                style={[styles.oauthButton, styles.oauthGoogle, (!googleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
+                accessibilityLabel={t("auth.continueWithGoogle")}
+                accessibilityRole="button"
+              >
+                <GoogleGMark size={20} />
+                <Text style={styles.oauthGoogleText}>
+                  {googleUnavailable ? t("auth.googleUnavailable") : t("auth.continueWithGoogle")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {showOAuthReadinessNote ? (
+              <Text style={styles.oauthNote}>
+                {t("auth.socialSignInUnavailable")}
+              </Text>
+            ) : null}
+
             <TouchableOpacity
               onPress={() => router.push("/(auth)/sign-up")}
               style={styles.linkRow}
@@ -321,75 +328,89 @@ export default function SignInScreen() {
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   keyboard: { flex: 1, backgroundColor: theme.colors.background },
-  scroll: { padding: 20, flexGrow: 1, justifyContent: "center" },
+  scroll: { padding: 24, flexGrow: 1, justifyContent: "center" },
   authPanel: {
-    borderRadius: 28,
-    padding: 18,
-    gap: 10,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
+    gap: 0,
   },
   hero: {
     alignItems: "center",
-    paddingTop: 6,
-    paddingBottom: 8,
+    marginBottom: 28,
   },
-  heroKicker: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.4,
+  brandBadge: {
+    width: 78,
+    height: 78,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
+    ...theme.shadow.sm,
+  },
+  title: {
+    fontFamily: fonts.serifBlack,
+    fontSize: 30,
+    color: theme.colors.text,
+    marginTop: 16,
+    letterSpacing: 0,
+  },
+  subtitle: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    color: theme.colors.dim,
+    marginTop: 6,
+    textAlign: "center",
+    maxWidth: 280,
+  },
+  error: { color: theme.colors.error, fontSize: 13, marginBottom: 10, textAlign: "center" },
+  fields: { gap: 11 },
+  forgotRow: { alignSelf: "flex-end", paddingVertical: 2 },
+  forgotText: {
     color: theme.colors.accent,
-    textTransform: "uppercase",
-    marginTop: 14,
+    fontSize: 12.5,
+    fontFamily: fonts.sansSemibold,
   },
-  title: { fontSize: 26, fontWeight: "800", color: theme.colors.text, marginTop: 8, letterSpacing: 0 },
-  subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
-  error: { color: theme.colors.error, fontSize: 13, marginBottom: 8 },
-  oauthBtn: { marginBottom: 6 },
+  cta: { marginTop: 18 },
   oauthButton: {
-    minHeight: 52,
+    minHeight: 50,
     borderRadius: theme.radius.lg,
     paddingHorizontal: 18,
     paddingVertical: 13,
-    marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: 9,
   },
+  oauthGroup: { gap: 10 },
   oauthGoogle: {
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(20, 32, 47, 0.14)",
-    ...theme.shadow.sm,
+    borderColor: theme.colors.border,
   },
   oauthApple: {
-    backgroundColor: "#000",
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.18)",
-    ...theme.shadow.sm,
+    borderColor: "rgba(20, 32, 47, 0.10)",
   },
   oauthDisabled: { opacity: 0.5 },
-  oauthGoogleText: { color: "#14202F", fontSize: 15, fontWeight: "700" },
-  oauthAppleText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  divider: { flexDirection: "row", alignItems: "center", marginVertical: 12, gap: 8 },
+  oauthGoogleText: { color: theme.colors.text, fontSize: 14, fontFamily: fonts.sansSemibold },
+  oauthAppleText: { color: "#0A0F1C", fontSize: 14, fontFamily: fonts.sansSemibold },
+  divider: { flexDirection: "row", alignItems: "center", marginVertical: 20, gap: 12 },
   dividerLine: { flex: 1, height: 1, backgroundColor: theme.colors.border },
-  dividerText: { color: theme.colors.textMuted, fontSize: 10, letterSpacing: 1.5 },
+  dividerText: { color: theme.colors.faint, fontSize: 11, letterSpacing: 1 },
   oauthNote: {
     color: theme.colors.warning,
     fontSize: 12,
     lineHeight: 18,
     backgroundColor: theme.colors.warningFaded,
     borderWidth: 1,
-    borderColor: "rgba(242, 196, 108, 0.2)",
+    borderColor: theme.colors.amberLine,
     borderRadius: theme.radius.lg,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginTop: 4,
+    marginTop: 12,
   },
-  linkRow: { alignItems: "center", marginTop: 10 },
-  linkText: { color: theme.colors.textMuted, fontSize: 13 },
-  linkEmphasis: { color: theme.colors.primary, fontWeight: "600" },
+  linkRow: { alignItems: "center", marginTop: 24 },
+  linkText: { color: theme.colors.dim, fontSize: 13, fontFamily: fonts.sans },
+  linkEmphasis: { color: theme.colors.accent, fontFamily: fonts.sansSemibold },
 });
