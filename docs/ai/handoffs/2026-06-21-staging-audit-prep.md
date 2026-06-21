@@ -270,6 +270,9 @@ HTTP responses and masked/indirect Dokploy state.
   routing `admin-staging.locateflow.com`, admin healthchecks were changed back
   to liveness `/api/healthz` in Dokploy/prod compose while `/api/ready` remains
   the explicit readiness/config gate for QA.
+- Live smoke also showed admin `/api/ready` was still behind admin middleware
+  and returned 401 externally; middleware public/break-glass health paths now
+  include `/api/ready` without opening child paths.
 - Added `CRON_SCHEDULER_OWNER` guards for GitHub cron and Ofelia cron runner so only the declared scheduler owner fires production cron endpoints.
 
 ### Verification Completed After Docker Node 22 Setup

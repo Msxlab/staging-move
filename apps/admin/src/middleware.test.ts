@@ -193,6 +193,11 @@ describe("admin middleware public auth paths", () => {
     expect(isPublicPath("/api/build-info")).toBe(true);
     expect(isPublicPath("/api/build-info/extra")).toBe(false);
   });
+
+  it("lets readiness stay public without opening readiness child routes", () => {
+    expect(isPublicPath("/api/ready")).toBe(true);
+    expect(isPublicPath("/api/ready/deep")).toBe(false);
+  });
 });
 
 describe("admin middleware session expiry", () => {

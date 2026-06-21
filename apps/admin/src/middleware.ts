@@ -26,6 +26,7 @@ const PUBLIC_EXACT_PATHS = new Set([
   "/api/auth/login",
   "/api/build-info",
   "/api/healthz",
+  "/api/ready",
   "/set-password",
   "/api/auth/set-password",
 ]);
@@ -61,6 +62,7 @@ const BREAK_GLASS_BYPASS_PATHS = new Set([
   "/login",
   "/api/auth/login",
   "/api/healthz",
+  "/api/ready",
 ]);
 
 function isBreakGlassBypassPath(pathname: string): boolean {
