@@ -3,38 +3,38 @@
 @tailwind utilities;
 
 /* =========================================================================
-   Move Admin — Edition VIII · Move Gold
-   Mirrors apps/web/src/styles/globals.css (Move Gold / honey / green).
+   Move Admin — Edition VIII · Move Sapphire
+   Mirrors apps/web/src/styles/globals.css (Move Sapphire / honey / green).
    Source of truth for numeric values: packages/shared/src/design-tokens.ts.
    ========================================================================= */
 :root,
 .dark {
-  --rose:        #CBA45E;
-  --rose-light:  #DCBC7C;
-  --rose-deep:   #B0852F;
-  --rose-dark:   #9A7325;
-  --foil-a:      #DCBC7C;
-  --foil-b:      #CBA45E;
-  --foil-c:      #B0852F;
-  --foil:        #CBA45E;
-  --foil-ink:    #765514;
+  --rose:        #5B8DEF;
+  --rose-light:  #83AAF5;
+  --rose-deep:   #3D6FD6;
+  --rose-dark:   #2E5FB0;
+  --foil-a:      #83AAF5;
+  --foil-b:      #5B8DEF;
+  --foil-c:      #3D6FD6;
+  --foil:        #5B8DEF;
+  --foil-ink:    #2E5FB0;
   --sage:        #54CB7E;
 
-  --brand-orange:       #CBA45E;
-  --brand-orange-light: #DCBC7C;
-  --brand-orange-dark:  #B0852F;
+  --brand-orange:       #5B8DEF;
+  --brand-orange-light: #83AAF5;
+  --brand-orange-dark:  #3D6FD6;
   --brand-amber:        #E0A85A;
 
-  --orange-50:  #FCF7EA;
-  --orange-100: #F6E9C8;
-  --orange-200: #EBD39B;
-  --orange-300: #E4C68B;
-  --orange-400: #CBA45E;
-  --orange-500: #CBA45E;
-  --orange-600: #B89142;
-  --orange-700: #B0852F;
-  --orange-800: #9A7325;
-  --orange-900: #765514;
+  --orange-50:  #EEF5FF;
+  --orange-100: #DBE8FF;
+  --orange-200: #C8D9FB;
+  --orange-300: #A9C5F8;
+  --orange-400: #5B8DEF;
+  --orange-500: #5B8DEF;
+  --orange-600: #3D74C8;
+  --orange-700: #3D6FD6;
+  --orange-800: #2E5FB0;
+  --orange-900: #2E5FB0;
 
   --bg:        #171E2B;
   --surface:   #1C2535;
@@ -43,24 +43,24 @@
 
   --line:        rgba(255, 255, 255, 0.10);
   --line-2:      rgba(255, 255, 255, 0.16);
-  --line-foil:   rgba(203, 164, 94, 0.22);
-  --border-focus: rgba(203, 164, 94, 0.55);
+  --line-foil:   rgba(91, 141, 239, 0.22);
+  --border-focus: rgba(91, 141, 239, 0.55);
 
   --tone-rose-bg: rgba(226, 92, 92, 0.16); --tone-rose-br: rgba(226, 92, 92, 0.32); --tone-rose-fg: #E25C5C;
-  --tone-foil-bg: rgba(203, 164, 94, 0.16); --tone-foil-br: rgba(203, 164, 94, 0.32); --tone-foil-fg: #DCBC7C;
+  --tone-foil-bg: rgba(91, 141, 239, 0.16); --tone-foil-br: rgba(91, 141, 239, 0.32); --tone-foil-fg: #83AAF5;
   --tone-sage-bg: rgba(84, 203, 126, 0.16); --tone-sage-br: rgba(84, 203, 126, 0.32); --tone-sage-fg: #A0EAD2;
   --tone-honey-bg: rgba(224, 168, 90, 0.16); --tone-honey-br: rgba(224, 168, 90, 0.32); --tone-honey-fg: #E0A85A;
   --tone-umber-bg: rgba(217, 154, 78, 0.16); --tone-umber-br: rgba(217, 154, 78, 0.32); --tone-umber-fg: #E2B873;
   --tone-slate-bg: rgba(168, 181, 201, 0.16); --tone-slate-br: rgba(168, 181, 201, 0.32); --tone-slate-fg: #C3CEDD;
-  --tone-orange-bg: rgba(203, 164, 94, 0.16); --tone-orange-br: rgba(203, 164, 94, 0.32); --tone-orange-fg: #CBA45E;
+  --tone-orange-bg: rgba(91, 141, 239, 0.16); --tone-orange-br: rgba(91, 141, 239, 0.32); --tone-orange-fg: #5B8DEF;
   --tone-emerald-bg: rgba(84, 203, 126, 0.16); --tone-emerald-br: rgba(84, 203, 126, 0.32); --tone-emerald-fg: #A0EAD2;
   --tone-amber-bg: rgba(224, 168, 90, 0.16); --tone-amber-br: rgba(224, 168, 90, 0.32); --tone-amber-fg: #E0A85A;
   --tone-sky-bg: rgba(55, 194, 201, 0.14); --tone-sky-br: rgba(55, 194, 201, 0.28); --tone-sky-fg: #37C2C9;
   --tone-cyan-bg: rgba(55, 194, 201, 0.14); --tone-cyan-br: rgba(55, 194, 201, 0.28); --tone-cyan-fg: #37C2C9;
 
-  --shadow-glow: 0 0 10px rgba(203, 164, 94, 0.16);
-  --shadow-rose: 0 0 10px rgba(203, 164, 94, 0.16);
-  --shadow-foil: 0 0 14px rgba(203, 164, 94, 0.07);
+  --shadow-glow: 0 0 10px rgba(91, 141, 239, 0.16);
+  --shadow-rose: 0 0 10px rgba(91, 141, 239, 0.16);
+  --shadow-foil: 0 0 14px rgba(91, 141, 239, 0.07);
 
   /* Semantic — Aurora ramp. Consumed by Tailwind `bg-success` etc. */
   --success:       #54CB7E;
@@ -75,32 +75,32 @@
 
 /* ─────────────── Light mode — Aurora soft sky paper ─────────────── */
 .light {
-  --rose:        #9A7325;
-  --rose-light:  #AD8534;
-  --rose-deep:   #765514;
-  --rose-dark:   #4F3A0E;
-  --foil-a:      #DCBC7C;
-  --foil-b:      #765514;
-  --foil-c:      #B0852F;
-  --foil:        #765514;
-  --foil-ink:    #765514;
+  --rose:        #2E5FB0;
+  --rose-light:  #3D74C8;
+  --rose-deep:   #2E5FB0;
+  --rose-dark:   #18345F;
+  --foil-a:      #83AAF5;
+  --foil-b:      #2E5FB0;
+  --foil-c:      #3D6FD6;
+  --foil:        #2E5FB0;
+  --foil-ink:    #2E5FB0;
   --sage:        #0F6B50;
 
-  --brand-orange:       #9A7325;
-  --brand-orange-light: #AD8534;
-  --brand-orange-dark:  #765514;
-  --brand-amber:        #765514;
+  --brand-orange:       #2E5FB0;
+  --brand-orange-light: #3D74C8;
+  --brand-orange-dark:  #2E5FB0;
+  --brand-amber:        #7A5418;
 
-  --orange-50:  #FCF7EA;
-  --orange-100: #F6E9C8;
-  --orange-200: #EBD39B;
-  --orange-300: #E4C68B;
-  --orange-400: #AD8534;
-  --orange-500: #9A7325;
-  --orange-600: #765514;
-  --orange-700: #765514;
-  --orange-800: #6D5014;
-  --orange-900: #4F3A0E;
+  --orange-50:  #EEF5FF;
+  --orange-100: #DBE8FF;
+  --orange-200: #C8D9FB;
+  --orange-300: #A9C5F8;
+  --orange-400: #3D74C8;
+  --orange-500: #2E5FB0;
+  --orange-600: #2E5FB0;
+  --orange-700: #2E5FB0;
+  --orange-800: #244C90;
+  --orange-900: #18345F;
 
   --bg:        #F2F4F8;
   --surface:   #FFFFFF;
@@ -109,28 +109,28 @@
 
   --line:        rgba(20, 32, 47, 0.06);
   --line-2:      rgba(20, 32, 47, 0.14);
-  --line-foil:   rgba(134, 99, 26, 0.30);
-  --border-focus: rgba(154, 115, 37, 0.55);
+  --line-foil:   rgba(46, 95, 176, 0.30);
+  --border-focus: rgba(46, 95, 176, 0.55);
 
   --tone-rose-bg: rgba(168, 51, 51, 0.10); --tone-rose-br: rgba(168, 51, 51, 0.22); --tone-rose-fg: #A83333;
-  --tone-foil-bg: rgba(134, 99, 26, 0.10); --tone-foil-br: rgba(134, 99, 26, 0.22); --tone-foil-fg: #765514;
+  --tone-foil-bg: rgba(46, 95, 176, 0.10); --tone-foil-br: rgba(46, 95, 176, 0.22); --tone-foil-fg: #244C90;
   --tone-sage-bg: rgba(15, 107, 80, 0.10); --tone-sage-br: rgba(15, 107, 80, 0.22); --tone-sage-fg: #0F6B50;
-  --tone-honey-bg: rgba(185, 131, 24, 0.10); --tone-honey-br: rgba(185, 131, 24, 0.22); --tone-honey-fg: #765514;
-  --tone-umber-bg: rgba(134, 99, 26, 0.10); --tone-umber-br: rgba(134, 99, 26, 0.22); --tone-umber-fg: #765514;
+  --tone-honey-bg: rgba(185, 131, 24, 0.10); --tone-honey-br: rgba(185, 131, 24, 0.22); --tone-honey-fg: #7A5418;
+  --tone-umber-bg: rgba(46, 95, 176, 0.10); --tone-umber-br: rgba(46, 95, 176, 0.22); --tone-umber-fg: #244C90;
   --tone-slate-bg: rgba(74, 92, 117, 0.10); --tone-slate-br: rgba(74, 92, 117, 0.22); --tone-slate-fg: #4A5C75;
-  --tone-orange-bg: rgba(154, 115, 37, 0.10); --tone-orange-br: rgba(154, 115, 37, 0.22); --tone-orange-fg: #9A7325;
+  --tone-orange-bg: rgba(46, 95, 176, 0.10); --tone-orange-br: rgba(46, 95, 176, 0.22); --tone-orange-fg: #244C90;
   --tone-emerald-bg: rgba(15, 107, 80, 0.10); --tone-emerald-br: rgba(15, 107, 80, 0.22); --tone-emerald-fg: #0F6B50;
-  --tone-amber-bg: rgba(185, 131, 24, 0.10); --tone-amber-br: rgba(185, 131, 24, 0.22); --tone-amber-fg: #765514;
+  --tone-amber-bg: rgba(185, 131, 24, 0.10); --tone-amber-br: rgba(185, 131, 24, 0.22); --tone-amber-fg: #7A5418;
   --tone-sky-bg: rgba(22, 102, 107, 0.10); --tone-sky-br: rgba(22, 102, 107, 0.22); --tone-sky-fg: #16666B;
   --tone-cyan-bg: rgba(22, 102, 107, 0.10); --tone-cyan-br: rgba(22, 102, 107, 0.22); --tone-cyan-fg: #16666B;
 
-  --shadow-glow: 0 0 20px rgba(154, 115, 37, 0.18);
-  --shadow-rose: 0 0 20px rgba(154, 115, 37, 0.18);
-  --shadow-foil: 0 0 30px rgba(134, 99, 26, 0.14);
+  --shadow-glow: 0 0 20px rgba(46, 95, 176, 0.18);
+  --shadow-rose: 0 0 20px rgba(46, 95, 176, 0.18);
+  --shadow-foil: 0 0 30px rgba(46, 95, 176, 0.14);
 
   --success:       #0F6B50;
   --success-soft:  rgba(15, 107, 80, 0.10);
-  --warning:       #765514;
+  --warning:       #7A5418;
   --warning-soft:  rgba(185, 131, 24, 0.10);
   --danger:        #A83333;
   --danger-soft:   rgba(168, 51, 51, 0.10);
@@ -147,7 +147,7 @@
     --card-foreground: 213 39% 13%;
     --popover: 218 21% 96%;
     --popover-foreground: 213 39% 13%;
-    --primary: 41 68% 31%;
+    --primary: 217.38 58.56% 43.53%;
     --primary-foreground: 0 0% 100%;
     --secondary: 214 22% 38%;
     --secondary-foreground: 0 0% 100%;
@@ -159,7 +159,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 213 18% 82%;
     --input: 213 18% 82%;
-    --ring: 41 68% 31%;
+    --ring: 217.38 58.56% 43.53%;
     --radius: 0.5rem;
   }
 
@@ -173,7 +173,7 @@
     --card-foreground: 220 16% 98%;
     --popover: 218 22% 19%;
     --popover-foreground: 220 16% 98%;
-    --primary: 39 51% 58%;
+    --primary: 219.73 82.22% 64.71%;
     --primary-foreground: 222 40% 8%;
     --secondary: 220 10% 82%;
     --secondary-foreground: 222 40% 8%;
@@ -185,7 +185,7 @@
     --destructive-foreground: 222 40% 8%;
     --border: 217 20% 30%;
     --input: 217 20% 30%;
-    --ring: 39 51% 58%;
+    --ring: 219.73 82.22% 64.71%;
   }
 }
 
@@ -319,9 +319,9 @@
 }
 .tier-stamp svg { display: block; }
 .tier-stamp.tier-individual {
-  background: rgba(203, 164, 94, 0.10);
-  border-color: rgba(203, 164, 94, 0.32);
-  color: #CBA45E;
+  background: rgba(91, 141, 239, 0.10);
+  border-color: rgba(91, 141, 239, 0.32);
+  color: #5B8DEF;
 }
 .tier-stamp.tier-family {
   background: rgba(52, 216, 166, 0.10);
@@ -331,27 +331,27 @@
 .tier-stamp.tier-pro {
   background: linear-gradient(
     135deg,
-    rgba(251, 231, 189, 0.18),
-    rgba(203, 164, 94, 0.22)
+    rgba(221, 233, 255, 0.18),
+    rgba(91, 141, 239, 0.22)
   );
-  border-color: rgba(203, 164, 94, 0.40);
-  color: #DCBC7C;
-  box-shadow: 0 0 0 1px rgba(203, 164, 94, 0.14) inset;
+  border-color: rgba(91, 141, 239, 0.40);
+  color: #83AAF5;
+  box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.14) inset;
 }
 .tier-stamp.tier-trial {
-  background: rgba(203, 164, 94, 0.10);
-  border-color: rgba(203, 164, 94, 0.32);
-  color: #CBA45E;
+  background: rgba(91, 141, 239, 0.10);
+  border-color: rgba(91, 141, 239, 0.32);
+  color: #5B8DEF;
 }
 
 /* =========================================================================
-   Foil text — single inline span gets the Move Gold gradient.
+   Foil text — single inline span gets the Move Sapphire gradient.
    Used in headlines and accent words.
    ========================================================================= */
 .foil-text {
   font-style: italic;
   font-weight: 400;
-  background: linear-gradient(135deg, #DCBC7C 0%, #CBA45E 50%, #B0852F 100%);
+  background: linear-gradient(135deg, #83AAF5 0%, #5B8DEF 50%, #3D6FD6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -374,7 +374,7 @@
     box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .admin-panel:hover {
-  border-color: rgba(203, 164, 94, 0.32);
+  border-color: rgba(91, 141, 239, 0.32);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.30);
 }
 .admin-panel-head {
@@ -388,9 +388,9 @@
 }
 
 .admin-panel-flagship {
-  border-color: rgba(203, 164, 94, 0.30);
+  border-color: rgba(91, 141, 239, 0.30);
   box-shadow:
-    0 0 0 1px rgba(203, 164, 94, 0.10) inset,
+    0 0 0 1px rgba(91, 141, 239, 0.10) inset,
     0 8px 24px rgba(0, 0, 0, 0.30);
 }
 .admin-panel-flagship::before {
@@ -399,7 +399,7 @@
   inset: 0;
   background: radial-gradient(
     600px 140px at 50% 0%,
-    rgba(203, 164, 94, 0.08),
+    rgba(91, 141, 239, 0.08),
     transparent 60%
   );
   pointer-events: none;
@@ -417,7 +417,7 @@
     transform 200ms ease;
 }
 .kpi-foil:hover {
-  border-color: rgba(203, 164, 94, 0.34);
+  border-color: rgba(91, 141, 239, 0.34);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.30);
   transform: translateY(-1px);
 }
@@ -448,9 +448,9 @@
   background: rgba(236, 241, 248, 0.06);
 }
 .light .tier-bar { background: rgba(20, 32, 47, 0.06); }
-.tier-bar-seg-individual { background: linear-gradient(90deg, #CBA45E, #B0852F); }
+.tier-bar-seg-individual { background: linear-gradient(90deg, #5B8DEF, #3D6FD6); }
 .tier-bar-seg-family     { background: linear-gradient(90deg, #34D8A6, #1FB98A); }
 .tier-bar-seg-pro {
-  background: linear-gradient(90deg, #DCBC7C 0%, #CBA45E 60%, #B0852F 100%);
-  box-shadow: 0 0 8px rgba(203, 164, 94, 0.4);
+  background: linear-gradient(90deg, #83AAF5 0%, #5B8DEF 60%, #3D6FD6 100%);
+  box-shadow: 0 0 8px rgba(91, 141, 239, 0.4);
 }

@@ -30,6 +30,12 @@
       "@locateflow/db": [
         "../../packages/db/src/index.ts"
       ],
+      "@locateflow/connectors": [
+        "../../packages/connectors/src/index.ts"
+      ],
+      "@locateflow/connectors/*": [
+        "../../packages/connectors/src/*"
+      ],
       "@locateflow/shared": [
         "../../packages/shared/src/index.ts"
       ],

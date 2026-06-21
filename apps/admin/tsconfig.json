@@ -25,6 +25,21 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@locateflow/connectors": [
+        "../../packages/connectors/src/index.ts"
+      ],
+      "@locateflow/connectors/*": [
+        "../../packages/connectors/src/*"
+      ],
+      "@locateflow/db": [
+        "../../packages/db/src/index.ts"
+      ],
+      "@locateflow/shared": [
+        "../../packages/shared/src/index.ts"
+      ],
+      "@locateflow/shared/*": [
+        "../../packages/shared/src/*"
       ]
     }
   },

@@ -14,7 +14,7 @@ import { useAppTheme, fonts } from "@/lib/theme";
 // ──────────────────────────────────────────────────────────────────────
 // Move design primitives — the shared building blocks every reskinned
 // screen composes. Faithful to Move.dc.html: navy surfaces, hairline
-// borders, the Gold-accent hero gradient, uppercase section labels,
+// borders, the Sapphire-accent hero gradient, uppercase section labels,
 // accent-gradient progress bars and tonal status pills. All read the
 // active theme, so they flip light/dark with the user's preference.
 // ──────────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export function MoveCard({
   style?: StyleProp<ViewStyle>;
   padding?: number;
   radius?: number;
-  /** Use the Gold-accent hairline instead of the neutral border. */
+  /** Use the Sapphire-accent hairline instead of the neutral border. */
   accent?: boolean;
 }) {
   const { colors } = useAppTheme();
@@ -100,7 +100,7 @@ export function MoveCard({
 
 /**
  * Hero card — the gradient "premium" surface used for the countdown, AI
- * briefing, route and subscription cards. Gold-accent hairline + a soft
+ * briefing, route and subscription cards. Sapphire-accent hairline + a soft
  * accent glow bleeding from the top-right corner.
  */
 export function HeroCard({

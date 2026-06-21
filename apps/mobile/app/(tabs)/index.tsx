@@ -1004,14 +1004,14 @@ export default function DashboardScreen() {
     },
   ];
 
-  // Plan-aware header badge: Family = crystal green, Pro = premium gold, else generic Premium.
+  // Plan-aware header badge: Family = crystal green, Pro = premium Sapphire, else generic Premium.
   const planBadge = (() => {
     const p = (planTier ?? "").toUpperCase();
     if (p === "FAMILY")
       return { label: t("dashboard.familyBadge", "Family"), fg: "#4FD1B5", bg: "rgba(79,209,181,0.12)", border: "rgba(79,209,181,0.32)", Icon: Users };
     if (p === "PRO")
-      return { label: t("dashboard.proBadge", "Pro"), fg: "#CBA45E", bg: "rgba(203, 164, 94,0.12)", border: "rgba(203, 164, 94,0.34)", Icon: Sparkles };
-    return { label: t("dashboard.premiumBadge"), fg: "#CBA45E", bg: "rgba(203, 164, 94,0.12)", border: "rgba(203, 164, 94,0.3)", Icon: Sparkles };
+      return { label: t("dashboard.proBadge", "Pro"), fg: "#5B8DEF", bg: "rgba(91, 141, 239,0.12)", border: "rgba(91, 141, 239,0.34)", Icon: Sparkles };
+    return { label: t("dashboard.premiumBadge"), fg: "#5B8DEF", bg: "rgba(91, 141, 239,0.12)", border: "rgba(91, 141, 239,0.3)", Icon: Sparkles };
   })();
   const PlanBadgeIcon = planBadge.Icon;
   const workspaceRoleLabel = workspace
@@ -1028,7 +1028,7 @@ export default function DashboardScreen() {
   const heroDateLabel = heroPlan ? formatDateOnlyUtc(heroPlan.moveDate) : "";
 
   // ── Move header derivations ─────────────────────────────────────────
-  // Gold eyebrow greeting + Playfair name + today's date. The name falls back
+  // Sapphire eyebrow greeting + Playfair name + today's date. The name falls back
   // to the generic welcome label when the profile name hasn't resolved yet.
   const headerLocale = (i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US";
   const headerName = firstName || t("dashboard.welcome");

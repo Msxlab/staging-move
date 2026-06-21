@@ -1,4 +1,4 @@
-﻿import React, { useMemo } from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Button } from "./Button";
@@ -87,7 +87,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(203, 164, 94, 0.2)",
+    borderColor: "rgba(91, 141, 239, 0.2)",
   },
   mascotWrapper: {
     alignItems: "center",

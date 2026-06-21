@@ -30,10 +30,10 @@ const DARK = "#3a4350";
 
 // Aurora brand tokens, mirrored from packages/shared/src/design-tokens.ts so the
 // pose accents read on-brand (we can't import runtime theme into a pure SVG).
-const AURORA_BLUE = "#CBA45E";
+const AURORA_BLUE = "#5B8DEF";
 const AURORA_MASK_TIP = "#9CCBF2";
 const AURORA_MINT = "#54CB7E";
-const AURORA_AMBER = "#CBA45E";
+const AURORA_SAPPHIRE = "#5B8DEF";
 const BLUSH = "#F58FB4";
 
 /**
@@ -166,9 +166,9 @@ export function RaccoonMascot({ size = 100, fur = "#aeb9c6", variant = "kid", su
         <G>
           <Ellipse cx={62} cy={22} rx={31} ry={6.5} fill="#15171c" />
           <Rect x={44} y={-5} width={36} height={24} rx={3.5} fill="#15171c" />
-          <Rect x={44} y={6} width={36} height={6.5} fill={AURORA_AMBER} />
-          <Path d="M62 90 l-15 -8 v16 z" fill={AURORA_AMBER} />
-          <Path d="M62 90 l15 -8 v16 z" fill={AURORA_AMBER} />
+          <Rect x={44} y={6} width={36} height={6.5} fill={AURORA_SAPPHIRE} />
+          <Path d="M62 90 l-15 -8 v16 z" fill={AURORA_SAPPHIRE} />
+          <Path d="M62 90 l15 -8 v16 z" fill={AURORA_SAPPHIRE} />
           <Circle cx={62} cy={90} r={4.8} fill="#caa24a" />
         </G>
       )}
@@ -178,7 +178,7 @@ export function RaccoonMascot({ size = 100, fur = "#aeb9c6", variant = "kid", su
         <G>
           <Path
             d="M16 30 l1.9 5 l5 1.9 l-5 1.9 l-1.9 5 l-1.9 -5 l-5 -1.9 l5 -1.9 z"
-            fill={AURORA_AMBER}
+            fill={AURORA_SAPPHIRE}
           />
           <Path
             d="M106 24 l1.3 3.3 l3.3 1.3 l-3.3 1.3 l-1.3 3.3 l-1.3 -3.3 l-3.3 -1.3 l3.3 -1.3 z"
@@ -192,11 +192,11 @@ export function RaccoonMascot({ size = 100, fur = "#aeb9c6", variant = "kid", su
         <G>
           <Rect x={10} y={12} width={6} height={6} rx={1.5} fill={AURORA_BLUE} transform="rotate(20 13 15)" />
           <Rect x={106} y={16} width={6} height={6} rx={1.5} fill={AURORA_MINT} transform="rotate(-15 109 19)" />
-          <Circle cx={26} cy={6} r={3} fill={AURORA_AMBER} />
+          <Circle cx={26} cy={6} r={3} fill={AURORA_SAPPHIRE} />
           <Circle cx={98} cy={5} r={3} fill={AURORA_BLUE} />
-          <Rect x={59} y={1} width={5} height={5} rx={1.3} fill={AURORA_AMBER} transform="rotate(30 61 3)" />
+          <Rect x={59} y={1} width={5} height={5} rx={1.3} fill={AURORA_SAPPHIRE} transform="rotate(30 61 3)" />
           <Path d="M4 52 l3 3 M7 52 l-3 3" stroke={AURORA_MINT} strokeWidth={2} strokeLinecap="round" />
-          <Path d="M115 56 l3 3 M118 56 l-3 3" stroke={AURORA_AMBER} strokeWidth={2} strokeLinecap="round" />
+          <Path d="M115 56 l3 3 M118 56 l-3 3" stroke={AURORA_SAPPHIRE} strokeWidth={2} strokeLinecap="round" />
           <Circle cx={14} cy={40} r={2.4} fill={AURORA_MASK_TIP} />
           <Circle cx={110} cy={42} r={2.4} fill={AURORA_MASK_TIP} />
         </G>

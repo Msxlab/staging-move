@@ -233,13 +233,13 @@ function Suitcase({ size }: { size: number }) {
       <Rect x={8} y={12} width={32} height={28} rx={5} fill="#C46A4A" />
       <Rect x={8} y={12} width={32} height={28} rx={5} fill="none" stroke="#9E5239" strokeWidth={1.6} />
       {/* trim band */}
-      <Rect x={8} y={22} width={32} height={6} fill="#CBA45E" />
+      <Rect x={8} y={22} width={32} height={6} fill="#5B8DEF" />
       {/* clasps */}
       <Rect x={15} y={23} width={5} height={4} rx={1} fill="#9E7B2E" />
       <Rect x={28} y={23} width={5} height={4} rx={1} fill="#9E7B2E" />
       {/* corner stud highlight */}
-      <Circle cx={13} cy={17} r={1.5} fill="#CBA45E" opacity={0.8} />
-      <Circle cx={35} cy={17} r={1.5} fill="#CBA45E" opacity={0.8} />
+      <Circle cx={13} cy={17} r={1.5} fill="#5B8DEF" opacity={0.8} />
+      <Circle cx={35} cy={17} r={1.5} fill="#5B8DEF" opacity={0.8} />
     </Svg>
   );
 }

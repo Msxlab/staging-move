@@ -36,11 +36,11 @@ export default function OpengraphImage() {
               width: 72,
               height: 72,
               borderRadius: 18,
-              background: "linear-gradient(135deg, #DCBC7C 0%, #B0852F 100%)",
+              background: "linear-gradient(135deg, #83AAF5 0%, #3D6FD6 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 40px rgba(203, 164, 94, 0.40)",
+              boxShadow: "0 0 40px rgba(91, 141, 239, 0.40)",
             }}
           >
             <span style={{ fontSize: 40, fontWeight: 800, color: "#EFF3FA" }}>M</span>
@@ -87,8 +87,8 @@ export default function OpengraphImage() {
             marginTop: 48,
             padding: "12px 20px",
             borderRadius: 999,
-            background: "rgba(203, 164, 94, 0.10)",
-            border: "1px solid rgba(203, 164, 94, 0.30)",
+            background: "rgba(91, 141, 239, 0.10)",
+            border: "1px solid rgba(91, 141, 239, 0.30)",
           }}
         >
           <div
@@ -96,10 +96,10 @@ export default function OpengraphImage() {
               width: 8,
               height: 8,
               borderRadius: "50%",
-              background: "#CBA45E",
+              background: "#5B8DEF",
             }}
           />
-          <span style={{ fontSize: 20, color: "#DCBC7C", fontWeight: 600 }}>
+          <span style={{ fontSize: 20, color: "#83AAF5", fontWeight: 600 }}>
             locateflow.com
           </span>
         </div>

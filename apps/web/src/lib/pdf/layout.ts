@@ -14,8 +14,8 @@ import type PDFDocumentType from "pdfkit";
  */
 
 export const PDF_THEME = {
-  /** Move Gold — used for the wordmark accent and primary highlights. */
-  accent: "#765514",
+  /** Move Sapphire — used for the wordmark accent and primary highlights. */
+  accent: "#2E5FB0",
   /** Soft brand background tint for cards. */
   accentSoft: "#EAF1F9",
   /** Default text color (matches `slate-800`). */

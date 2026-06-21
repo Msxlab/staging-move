@@ -1,14 +1,14 @@
 import type { Config } from "tailwindcss";
 
-// Edition VIII - Move Gold. The mobile NativeWind palette is sourced from
+// Edition VIII - Move Sapphire. The mobile NativeWind palette is sourced from
 // packages/shared/src/design-tokens.ts so `bg-primary-500` / `bg-primary`
-// / `bg-surface` resolve to the Gold, teal, and green values shipped
+// / `bg-surface` resolve to the Sapphire, teal, and green values shipped
 // system-wide.
 //
 // Legacy names (rose, foil, sage, primary, surface) are preserved on
 // purpose: existing `bg-primary-500` / `bg-rose` / `bg-foil` call sites
-// keep rendering, the values just flip to Move Gold. New code should
-// prefer the semantic aliases (`bg-rose`/gold, `bg-foil`/gold,
+// keep rendering, the values just flip to Move Sapphire. New code should
+// prefer the semantic aliases (`bg-rose`/sapphire, `bg-foil`/sapphire,
 // `bg-sage`/green).
 export default {
   content: [
@@ -19,25 +19,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Move Gold mobile palette aligned with packages/shared/src/design-tokens.ts.
+        // Move Sapphire mobile palette aligned with packages/shared/src/design-tokens.ts.
         // NativeWind className colors are a fixed (dark) palette; runtime
         // light/dark theming is driven by src/lib/theme.ts (useAppTheme).
         // Legacy keys (rose/foil/sage/primary/surface) are kept so existing
         // className call sites keep rendering.
         primary: {
-          DEFAULT: "#CBA45E",
-          light: "#DCBC7C",
-          dark: "#B0852F",
-          50: "#FCF7EA",
-          100: "#F6E9C8",
-          200: "#EBD39B",
-          300: "#DCBC7C",
-          400: "#CBA45E",
-          500: "#CBA45E",
-          600: "#B89142",
-          700: "#B0852F",
-          800: "#9A7325",
-          900: "#86631A",
+          DEFAULT: "#5B8DEF",
+          light: "#83AAF5",
+          dark: "#3D6FD6",
+          50: "#EEF5FF",
+          100: "#DBE8FF",
+          200: "#C8D9FB",
+          300: "#83AAF5",
+          400: "#5B8DEF",
+          500: "#5B8DEF",
+          600: "#3D74C8",
+          700: "#3D6FD6",
+          800: "#2E5FB0",
+          900: "#244C90",
         },
         // Legacy aliases retained for existing class names.
         rose: {
@@ -47,10 +47,10 @@ export default {
           dark: "#A83333",
         },
         foil: {
-          DEFAULT: "#CBA45E",
-          highlight: "#DCBC7C",
-          shadow: "#B0852F",
-          ink: "#86631A",
+          DEFAULT: "#5B8DEF",
+          highlight: "#83AAF5",
+          shadow: "#3D6FD6",
+          ink: "#244C90",
         },
         sage: {
           DEFAULT: "#54CB7E",
@@ -62,7 +62,7 @@ export default {
           card: "#18233A",
           hover: "#16203A",
         },
-        accent: "#CBA45E",
+        accent: "#5B8DEF",
         // Semantic shorthands - green / amber / coral / teal.
         success: "#54CB7E",
         warning: "#E0A85A",

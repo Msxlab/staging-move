@@ -47,7 +47,7 @@ import type { AmbientIntensity, AmbientKind, AmbientVariant } from "@/lib/home-d
 interface Palette {
   /** Foreground ink (web --fg): silhouettes, streaks, clouds. */
   ink: string;
-  /** Move Gold (web --rose): calm water, rain. */
+  /** Move Sapphire (web --rose): calm water, rain. */
   cool: string;
   /** Honey/champagne foil (web --foil-b): bubbles, windows, sun, bolt. */
   honey: string;

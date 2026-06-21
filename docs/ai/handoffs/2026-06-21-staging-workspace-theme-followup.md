@@ -1,5 +1,32 @@
 # 2026-06-21 Staging Workspace, Theme, and Deploy Follow-up
 
+## 2026-06-21 Sapphire Override
+
+- Operator explicitly clarified after the earlier Gold interpretation: "Mavi olan sapphire ise onu istemistim ben her yerde light dark." Treat Sapphire as the product decision for web, admin, mobile, public assets, and light/dark mode.
+- This supersedes the earlier conclusion that the zip bundle's default Gold state should remain runtime default. The zip/prototype evidence still shows Gold/Sapphire/Emerald variants, but the chosen variant is now Sapphire.
+- Canonical Sapphire tokens from the design sources:
+  - Dark accent: `#5B8DEF`; secondary/highlight: `#83AAF5`; pressed/deep: `#3D6FD6`.
+  - Light accent: `#2E5FB0`; deep readable accent: `#244C90`.
+  - Semantic warning remains amber/brown where the UI is warning-specific, e.g. `#7A5418`; do not force all semantic warning states to blue.
+- Current local pass switched shared design tokens, web/admin CSS variables, Tailwind tokens, public SVG/OG assets, mobile theme/app colors, map fallback colors, and relevant tests from Gold to Sapphire.
+- Added explicit web/admin TypeScript path aliases for `@locateflow/connectors` and shared/db workspace packages so Docker/Linux verification does not depend on Windows `node_modules` symlink targets.
+- Gold drift scan over `apps` and `packages/shared/src` is clean for theme tokens; the only remaining hit is the non-theme phrase "golden rule" in the connector webhook comment.
+
+Verification after Sapphire pass:
+
+- `git diff --check` passed with only expected Windows CRLF warnings.
+- Clean Docker Node 22 workspace: `DATABASE_URL=mysql://user:pass@localhost:3306/staging_move pnpm --filter @locateflow/db exec prisma validate --schema prisma/schema.prisma` passed.
+- Clean Docker Node 22 workspace: `pnpm verify:typecheck` passed.
+- Clean Docker Node 22 workspace: all package tests passed via `pnpm --filter @locateflow/web/admin/mobile/shared/connectors test -- --reporter=dot`.
+- The clean Docker install needed ephemeral `strict-ssl=false` / `NODE_TLS_REJECT_UNAUTHORIZED=0` only because this local network/container cannot verify registry/Prisma binary certificates. Do not copy that setting into repo, Dokploy, or production env.
+
+Not yet done for the Sapphire pass:
+
+- Commit, push, and Dokploy redeploy the Sapphire changes.
+- Verify staging `/api/build-info` for web/admin reports the new commit.
+- Use the existing Chrome/Dokploy session only; do not open a new Chrome.
+- Capture/inspect live web/admin screenshots for Sapphire light/dark, then continue authenticated QA and mobile QA.
+
 ## Live Deploy Check
 
 - Existing Chrome window/profile was used only; no new Chrome profile/window was opened.
@@ -24,14 +51,14 @@ Post-fix redeploy:
 
 ## Theme Decision
 
-- The committed design zip bundle under `design-src/handoffs/*.zip` / extracted `design-src/initial-check-requested/project` resolves to default `Gold`.
+- Historical note from the earlier pass: the committed design zip bundle under `design-src/handoffs/*.zip` / extracted `design-src/initial-check-requested/project` resolves to default `Gold`.
 - Direct source evidence:
   - `Admin.dc.html` exposes `Gold`, `Sapphire`, `Emerald`, with default `Gold`.
   - `Move.dc.html` exposes `Gold`, `Sapphire`, `Emerald`, with default `Gold`.
   - Default Gold tokens are `#CBA45E`, `#DCBC7C`, and `#B0852F`.
 - `Sapphire` and `Emerald` are variants/support choices in the pushed zip bundle, not the default.
 - The separate `NEW GENERATION/` folder is `Champagne & Rose` / orange-rose (`#D4846A`, `#EDB99D`, `#A85A42`, plus `#f97316` in prototypes). This likely explains the operator's memory that the theme was not Gold.
-- Do not switch runtime away from Gold unless the product decision is explicitly that `NEW GENERATION/` supersedes the pushed design zip bundle.
+- Superseded product decision: operator chose Sapphire explicitly for all light/dark surfaces. Runtime should now be Sapphire, not Gold.
 
 ## Code Finding Fixed
 
@@ -72,6 +99,9 @@ Docker Node 22 canonical checks:
 
 Agent:
 
+- Commit and push the current Sapphire pass, then trigger Dokploy redeploy from the existing Chrome session only.
+- Verify web/admin build-info, health/readiness, public route smoke, and auth redirect smoke against the new commit.
+- Screenshot-check web/admin live light/dark Sapphire after deploy; Gold/champagne primary CTAs should be treated as drift.
 - Continue authenticated QA on the existing Chrome session only: web dashboard/moving/services/providers/settings/workspace/export and admin overview/users/moves/providers/leads/affiliate/subscriptions/settings/backups/security.
 - Run mobile/emulator QA when an emulator/device path is available: tabs, onboarding, services/providers, moving caps, settings/subscription, connections/export/workspace, OAuth handoff, app lock, staging API config, visual theme.
 - Run the formal product-design screenshot audit from real staging screenshots.
@@ -79,6 +109,6 @@ Agent:
 
 Operator:
 
-- If the intended palette is not Gold, provide or identify the exact source that supersedes the current pushed zip bundle; likely candidate is `NEW GENERATION/`, but this needs an explicit product decision.
+- Palette decision is now clear: Sapphire/blue everywhere in light and dark.
 - Complete admin/web login or 2FA inside the existing Chrome session when authenticated QA reaches protected surfaces.
 - No new env action is currently needed for readiness; live health/readiness remains OK.

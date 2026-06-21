@@ -66,7 +66,7 @@ const config: Config = {
           DEFAULT: "var(--info)",
           light: "var(--info-soft)",
         },
-        // Brand namespace — Edition VIII · Move Gold.
+        // Brand namespace — Edition VIII · Move Sapphire.
         // Legacy `brand-orange` / `brand-amber` aliases remain so existing
         // call sites keep rendering; values now resolve to rose / foil.
         brand: {
@@ -101,7 +101,7 @@ const config: Config = {
           DEFAULT: "var(--sage)",
         },
         // Orange scale — preserved for legacy `bg-orange-500` usage.
-        // Values now point at the Gold scale via CSS custom properties.
+        // Values now point at the Sapphire scale via CSS custom properties.
         orange: {
           50: "var(--orange-50)",
           100: "var(--orange-100)",

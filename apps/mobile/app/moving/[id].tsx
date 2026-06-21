@@ -1638,7 +1638,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 12,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(203, 164, 94,0.22)",
+    borderColor: "rgba(91, 141, 239,0.22)",
   },
   taskRevealText: {
     fontSize: 12,

@@ -16,7 +16,7 @@ interface AdminPanelProps {
 }
 
 /**
- * Move Gold section wrapper used across admin pages. Pairs a head
+ * Move Sapphire section wrapper used across admin pages. Pairs a head
  * row with a body. Apply `flagship` for the section that should pull the
  * eye first on a given page (revenue trend, premium upgrades, etc.).
  *

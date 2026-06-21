@@ -21,7 +21,7 @@ export default async function AdminLayout({
       {/* Animated northern-lights background, pinned to viewport behind
           everything. Honors prefers-reduced-motion and goes calm when
           data-mode="lite" is set on the wrapper. Carries the design's
-          navy → deep-navy operations gradient (text-primary = the gold). */}
+          navy → deep-navy operations gradient (text-primary = Sapphire). */}
       <AuroraBackground />
 
       {/* Skip-link — admin sidebar has 5 nav groups × ~4 links. Without
