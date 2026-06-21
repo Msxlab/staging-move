@@ -4,8 +4,9 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, MapPin, Clock } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { HeroCard, MoveCard, Pill, type PillTone } from "@/components/move";
 
 interface Dispatch {
   connectorKey: string;
@@ -33,11 +34,11 @@ const STATUS_LABEL: Record<string, string> = {
   FAILED: "Failed",
 };
 
-/** Status hues from the active theme so light/dark palettes stay consistent. */
-function statusColor(status: string, colors: Theme["colors"], fallback: string): string {
-  if (status === "CONFIRMED") return colors.success;
-  if (status === "NEEDS_USER" || status === "FAILED") return colors.error;
-  return fallback;
+/** Map dispatch status to a tonal Pill so light/dark palettes stay consistent. */
+function statusTone(status: string): PillTone {
+  if (status === "CONFIRMED") return "success";
+  if (status === "NEEDS_USER" || status === "FAILED") return "error";
+  return "info";
 }
 
 export default function AddressChangesScreen() {
@@ -63,6 +64,12 @@ export default function AddressChangesScreen() {
   const totalDispatches = changes.reduce((sum, change) => sum + change.dispatchCount, 0);
   const confirmedChanges = changes.filter((change) => change.status === "CONFIRMED").length;
 
+  const heroStats = [
+    { label: t("addressChanges.statChanges", { defaultValue: "changes" }), value: String(changes.length) },
+    { label: t("addressChanges.statDispatches", { defaultValue: "dispatches" }), value: String(totalDispatches) },
+    { label: t("addressChanges.statConfirmed", { defaultValue: "confirmed" }), value: String(confirmedChanges) },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -74,13 +81,13 @@ export default function AddressChangesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <MapPin size={20} color={theme.colors.primary} />
             </View>
             <View style={styles.heroCopy}>
-              <Text style={styles.heroKicker}>ADDRESS SYNC</Text>
+              <Text style={styles.heroKicker}>{t("addressChanges.kicker", { defaultValue: "ADDRESS SYNC" })}</Text>
               <Text style={styles.heroTitle}>{t("addressChanges.title", "Address changes")}</Text>
               <Text style={styles.heroSub}>
                 {t("addressChanges.subtitle", "Where each address change was sent, and whether the provider confirmed it.")}
@@ -88,23 +95,17 @@ export default function AddressChangesScreen() {
             </View>
           </View>
           <View style={styles.heroStats}>
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{changes.length}</Text>
-              <Text style={styles.heroStatLabel}>changes</Text>
-            </View>
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{totalDispatches}</Text>
-              <Text style={styles.heroStatLabel}>dispatches</Text>
-            </View>
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{confirmedChanges}</Text>
-              <Text style={styles.heroStatLabel}>confirmed</Text>
-            </View>
+            {heroStats.map((stat) => (
+              <View key={stat.label} style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{stat.value}</Text>
+                <Text style={styles.heroStatLabel}>{stat.label}</Text>
+              </View>
+            ))}
           </View>
-        </View>
+        </HeroCard>
 
         {loading ? (
-          <ActivityIndicator color={theme.colors.text} style={{ marginTop: 32 }} />
+          <ActivityIndicator color={theme.colors.primary} style={{ marginTop: 32 }} />
         ) : error ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>{t("addressChanges.error", "Couldn't load your address changes.")}</Text>
@@ -120,7 +121,9 @@ export default function AddressChangesScreen() {
           </View>
         ) : changes.length === 0 ? (
           <View style={styles.empty}>
-            <MapPin size={28} color={theme.colors.textMuted} />
+            <View style={styles.emptyIcon}>
+              <MapPin size={26} color={theme.colors.primary} />
+            </View>
             <Text style={styles.emptyTitle}>{t("addressChanges.emptyTitle", "No address changes yet")}</Text>
             <Text style={styles.emptyBody}>
               {t(
@@ -131,9 +134,9 @@ export default function AddressChangesScreen() {
           </View>
         ) : (
           changes.map((c) => (
-            <View key={c.id} style={styles.card}>
+            <MoveCard key={c.id} style={styles.card} padding={16} radius={theme.radius.xl}>
               <View style={styles.cardHeader}>
-                <Clock size={14} color={theme.colors.textMuted} />
+                <Clock size={14} color={theme.colors.faint} />
                 <Text style={styles.cardDate}>{new Date(c.createdAt).toLocaleDateString()}</Text>
                 <Text style={styles.cardCount}>
                   {c.dispatchCount} {c.dispatchCount === 1 ? "provider" : "providers"}
@@ -147,13 +150,11 @@ export default function AddressChangesScreen() {
                 c.dispatches.map((d, i) => (
                   <View key={`${d.connectorKey}-${i}`} style={styles.row}>
                     <Text style={styles.connector}>{(d.connectorKey || "").toUpperCase()}</Text>
-                    <Text style={[styles.status, { color: statusColor(d.status, theme.colors, theme.colors.textSecondary) }]}>
-                      {STATUS_LABEL[d.status] ?? d.status}
-                    </Text>
+                    <Pill label={STATUS_LABEL[d.status] ?? d.status} tone={statusTone(d.status)} />
                   </View>
                 ))
               )}
-            </View>
+            </MoveCard>
           ))
         )}
       </ScrollView>
@@ -175,82 +176,86 @@ const makeStyles = (theme: Theme) =>
       width: 44,
       height: 44,
       borderRadius: 14,
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+    title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
     scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
     hero: {
-      borderRadius: 24,
-      padding: 16,
       marginBottom: 16,
-      backgroundColor: theme.colors.glass.bg,
-      borderWidth: 1,
-      borderColor: theme.colors.glass.highlight,
-      ...theme.shadow.sm,
     },
     heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
     heroIcon: {
       width: 46,
       height: 46,
       borderRadius: 16,
-      backgroundColor: theme.colors.primaryFaded,
+      backgroundColor: theme.colors.accentSoft,
       borderWidth: 1,
-      borderColor: theme.colors.primary + "33",
+      borderColor: theme.colors.accentBorder,
       alignItems: "center",
       justifyContent: "center",
     },
     heroCopy: { flex: 1, minWidth: 0 },
-    heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
-    heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
-    heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+    heroKicker: {
+      fontSize: 10,
+      fontFamily: fonts.sansBold,
+      letterSpacing: 1.4,
+      textTransform: "uppercase",
+      color: theme.colors.primary,
+    },
+    heroTitle: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text, marginTop: 3 },
+    heroSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 4, lineHeight: 17 },
     heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
     heroStat: {
       flex: 1,
       minHeight: 58,
-      borderRadius: 16,
+      borderRadius: 14,
       padding: 10,
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       justifyContent: "center",
     },
-    heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+    heroStatValue: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.text },
     heroStatLabel: {
       fontSize: 9,
-      fontWeight: "800",
-      letterSpacing: 0,
-      color: theme.colors.textTertiary,
+      fontFamily: fonts.sansBold,
+      letterSpacing: 0.6,
+      color: theme.colors.faint,
       textTransform: "uppercase",
       marginTop: 3,
     },
     empty: { alignItems: "center", marginTop: 48, gap: 8 },
-    emptyTitle: { fontSize: 15, fontWeight: "600", color: theme.colors.text, marginTop: 8 },
-    emptyBody: { fontSize: 12, color: theme.colors.textMuted, textAlign: "center", maxWidth: 280 },
-    card: {
-      backgroundColor: theme.colors.glass.bg,
-      borderRadius: 22,
+    emptyIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 18,
+      backgroundColor: theme.colors.accentSoft,
       borderWidth: 1,
-      borderColor: theme.colors.glass.highlight,
-      padding: 16,
+      borderColor: theme.colors.accentBorder,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    emptyTitle: { fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text, marginTop: 8 },
+    emptyBody: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, textAlign: "center", maxWidth: 280, lineHeight: 18 },
+    card: {
       marginBottom: 12,
-      ...theme.shadow.sm,
     },
     cardHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
-    cardDate: { fontSize: 12, color: theme.colors.textMuted },
-    cardCount: { fontSize: 12, color: theme.colors.textMuted, marginLeft: "auto" },
-    noProviders: { fontSize: 12, color: theme.colors.textMuted, marginTop: 10 },
+    cardDate: { fontSize: 12, fontFamily: fonts.sansMedium, color: theme.colors.dim },
+    cardCount: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginLeft: "auto" },
+    noProviders: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 10 },
     row: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       marginTop: 10,
     },
-    connector: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
-    status: { fontSize: 13, fontWeight: "500" },
+    connector: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
     retryBtn: {
       marginTop: 12,
       paddingHorizontal: 16,
@@ -258,7 +263,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 12,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.surface,
     },
-    retryText: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
+    retryText: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
   });

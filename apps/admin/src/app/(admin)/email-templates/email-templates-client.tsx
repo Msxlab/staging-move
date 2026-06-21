@@ -139,73 +139,78 @@ export default function EmailTemplatesClient() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <AdminPageHeader
         eyebrow="Comms"
         title="Email <em>Templates</em>"
         subtitle="Manage email templates and view send logs"
         actions={
-          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> New Template</button>
+          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"><Plus className="h-4 w-4" /> New Template</button>
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {statCards.map((c) => (<div key={c.label} className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">{c.label}</p><p className={`mt-1 text-2xl font-bold ${c.color}`}>{c.value}</p></div>))}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {statCards.map((c) => (
+          <div key={c.label} className={`rounded-2xl border border-border ${c.bg} p-4`}>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{c.label}</p>
+            <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${c.color}`}>{c.value}</p>
+          </div>
+        ))}
       </div>
 
       {preview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm" role="presentation" onClick={() => setPreview(null)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="email-preview-title" className="w-full max-w-2xl max-h-[80vh] overflow-auto rounded-xl border border-border bg-card p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4"><h2 id="email-preview-title" className="text-lg font-semibold text-foreground">Preview: {preview.name}</h2><button aria-label="Close preview" onClick={() => setPreview(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
+          <div role="dialog" aria-modal="true" aria-labelledby="email-preview-title" className="w-full max-w-2xl max-h-[80vh] overflow-auto rounded-2xl border border-border bg-card p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4"><h2 id="email-preview-title" className="font-display text-lg font-bold text-foreground">Preview: {preview.name}</h2><button aria-label="Close preview" onClick={() => setPreview(null)} className="text-muted-foreground transition-colors hover:text-foreground"><X className="h-5 w-5" /></button></div>
             <p className="text-sm text-muted-foreground mb-2">Subject: {preview.subject}</p>
             <iframe
               title={`Email preview: ${preview.name}`}
               sandbox=""
               srcDoc={preview.body}
-              className="h-[420px] w-full rounded-lg border border-border bg-background"
+              className="h-[420px] w-full rounded-xl border border-border bg-background"
             />
           </div>
         </div>
       )}
 
       {showForm && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">{editing ? "Edit Template" : "New Template"}</h2>
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <h2 className="font-display text-lg font-bold text-foreground">{editing ? "Edit Template" : "New Template"}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Slug</label><input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} disabled={!!editing} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50" placeholder="welcome-email" /></div>
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Name</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Welcome Email" /></div>
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Subject</label><input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Welcome to LocateFlow!" /></div>
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Category</label><select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
-            <div className="sm:col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">Body (HTML)</label><textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={8} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground font-mono" placeholder="<h1>Hello {{firstName}}</h1>" /></div>
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Variables (comma-separated)</label><input value={form.variables} onChange={(e) => setForm({ ...form, variables: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="firstName, email, link" /></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Slug</label><input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} disabled={!!editing} className="w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50" placeholder="welcome-email" /></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Name</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Welcome Email" /></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Subject</label><input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Welcome to LocateFlow!" /></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Category</label><select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div className="sm:col-span-2"><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Body (HTML)</label><textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={8} className="w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="<h1>Hello {{firstName}}</h1>" /></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Variables (comma-separated)</label><input value={form.variables} onChange={(e) => setForm({ ...form, variables: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="firstName, email, link" /></div>
             <div className="flex items-end"><label className="flex items-center gap-2 text-sm text-foreground cursor-pointer"><input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="accent-primary" /> Active</label></div>
           </div>
-          <div className="flex gap-2"><button onClick={save} disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">{saving ? "Saving…" : editing ? "Update" : "Create"}</button><button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent">Cancel</button></div>
+          <div className="flex gap-2"><button onClick={save} disabled={saving} className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">{saving ? "Saving…" : editing ? "Update" : "Create"}</button><button onClick={reset} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Cancel</button></div>
         </div>
       )}
 
-      <div className="flex gap-2 border-b border-border">
-        {(["templates", "logs"] as const).map((t) => (<button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-sm font-medium border-b-2 transition ${tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{t === "templates" ? "Templates" : "Send Logs"}</button>))}
+      <div className="flex gap-1 border-b border-border">
+        {(["templates", "logs"] as const).map((t) => (<button key={t} onClick={() => setTab(t)} className={`-mb-px border-b-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] transition-colors ${tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{t === "templates" ? "Templates" : "Send Logs"}</button>))}
       </div>
 
       {tab === "templates" && (
         <>
-        <div className="hidden overflow-x-auto rounded-xl border border-border bg-card sm:block">
+        <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card sm:block">
           <table className="w-full min-w-[640px] text-sm">
-            <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">Name</th><th className="px-4 py-3 font-medium">Slug</th><th className="px-4 py-3 font-medium">Category</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Failed</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium w-32">Actions</th></tr></thead>
-            <tbody>
+            <thead className="bg-muted/50"><tr className="text-left"><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Name</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Slug</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Category</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sent</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Failed</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</th><th className="px-4 py-3 w-32 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Actions</th></tr></thead>
+            <tbody className="divide-y divide-border">
               {templates.length === 0 ? (<tr><td colSpan={7} className="px-4"><EmptyState icon={Mail} title="No templates yet" description="Create your first email template to get started." /></td></tr>) : templates.map((t) => (
-                <tr key={t.id} className="border-b border-border hover:bg-accent/30">
+                <tr key={t.id} className="transition-colors hover:bg-accent/30">
                   <td className="px-4 py-3 font-medium text-foreground">{t.name}</td>
                   <td className="px-4 py-3 font-mono text-muted-foreground text-xs">{t.slug}</td>
                   <td className="px-4 py-3"><span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{t.category}</span></td>
-                  <td className="px-4 py-3 text-muted-foreground">{t.sendCounts?.sent ?? t._count?.emailLogs ?? 0}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{t.sendCounts?.failed ?? 0}</td>
-                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{t.isActive ? "Active" : "Inactive"}</span></td>
+                  <td className="px-4 py-3 font-mono text-muted-foreground">{t.sendCounts?.sent ?? t._count?.emailLogs ?? 0}</td>
+                  <td className="px-4 py-3 font-mono text-muted-foreground">{t.sendCounts?.failed ?? 0}</td>
+                  <td className="px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${t.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}><span className={`h-1.5 w-1.5 rounded-full ${t.isActive ? "bg-tone-sage-fg" : "bg-destructive"}`} />{t.isActive ? "Active" : "Inactive"}</span></td>
                   <td className="px-4 py-3 flex gap-1">
-                    <button onClick={() => setPreview(t)} aria-label="Preview template" className="rounded p-1 text-muted-foreground hover:bg-accent"><Eye className="h-4 w-4" /></button>
-                    <button onClick={() => startEdit(t)} aria-label="Edit template" className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
-                    <button onClick={() => setPendingDelete({ id: t.id, name: t.name })} aria-label="Delete template" className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => setPreview(t)} aria-label="Preview template" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"><Eye className="h-4 w-4" /></button>
+                    <button onClick={() => startEdit(t)} aria-label="Edit template" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"><Edit2 className="h-4 w-4" /></button>
+                    <button onClick={() => setPendingDelete({ id: t.id, name: t.name })} aria-label="Delete template" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}
@@ -216,23 +221,23 @@ export default function EmailTemplatesClient() {
           {templates.length === 0 ? (
             <EmptyState icon={Mail} title="No templates yet" description="Create your first email template to get started." />
           ) : templates.map((t) => (
-            <div key={t.id} className="rounded-xl border border-border bg-card p-3">
+            <div key={t.id} className="rounded-2xl border border-border bg-card p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate font-medium text-foreground">{t.name}</p>
                   <p className="truncate font-mono text-xs text-muted-foreground">{t.slug}</p>
                 </div>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${t.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{t.isActive ? "Active" : "Inactive"}</span>
+                <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${t.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}><span className={`h-1.5 w-1.5 rounded-full ${t.isActive ? "bg-tone-sage-fg" : "bg-destructive"}`} />{t.isActive ? "Active" : "Inactive"}</span>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">{t.category}</span>
-                <span>Sent {t.sendCounts?.sent ?? t._count?.emailLogs ?? 0}</span>
-                <span>Failed {t.sendCounts?.failed ?? 0}</span>
+                <span>Sent <span className="font-mono">{t.sendCounts?.sent ?? t._count?.emailLogs ?? 0}</span></span>
+                <span>Failed <span className="font-mono">{t.sendCounts?.failed ?? 0}</span></span>
               </div>
               <div className="mt-2.5 flex gap-2">
-                <button onClick={() => setPreview(t)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent"><Eye className="h-3.5 w-3.5" /> Preview</button>
-                <button onClick={() => startEdit(t)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent"><Edit2 className="h-3.5 w-3.5" /> Edit</button>
-                <button onClick={() => setPendingDelete({ id: t.id, name: t.name })} aria-label="Delete template" className="inline-flex items-center justify-center rounded-md border border-destructive/40 px-3 py-2 text-xs text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
+                <button onClick={() => setPreview(t)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"><Eye className="h-3.5 w-3.5" /> Preview</button>
+                <button onClick={() => startEdit(t)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"><Edit2 className="h-3.5 w-3.5" /> Edit</button>
+                <button onClick={() => setPendingDelete({ id: t.id, name: t.name })} aria-label="Delete template" className="inline-flex items-center justify-center rounded-xl border border-destructive/40 px-3 py-2 text-xs text-destructive transition-colors hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
             </div>
           ))}
@@ -242,26 +247,26 @@ export default function EmailTemplatesClient() {
 
       {tab === "logs" && (
         <>
-        <div className="hidden overflow-x-auto rounded-xl border border-border bg-card sm:block">
+        <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card sm:block">
           <table className="w-full min-w-[640px] text-sm">
-            <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">To</th><th className="px-4 py-3 font-medium">Template</th><th className="px-4 py-3 font-medium">Subject</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Provider ID</th><th className="px-4 py-3 font-medium">Details</th></tr></thead>
-            <tbody>
+            <thead className="bg-muted/50"><tr className="text-left"><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">To</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Template</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Subject</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sent</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Provider ID</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Details</th></tr></thead>
+            <tbody className="divide-y divide-border">
               {logs.length === 0 ? (<tr><td colSpan={7} className="px-4"><EmptyState icon={Send} title="No emails sent yet" description="Send logs will appear here once emails go out." /></td></tr>) : logs.map((l) => (
                 <Fragment key={l.id}>
-                  <tr className="border-b border-border hover:bg-accent/30">
+                  <tr className="transition-colors hover:bg-accent/30">
                     <td className="px-4 py-3 text-foreground">{l.to}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">
                       {l.template ? <span>{l.template.name} <span className="font-mono">({l.template.slug})</span></span> : "Manual"}
                     </td>
                     <td className="px-4 py-3 text-foreground truncate max-w-xs">{l.subject}</td>
-                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${l.status === "SENT" ? "bg-tone-sage-bg text-tone-sage-fg" : l.status === "FAILED" ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}>{l.status}</span></td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">{l.sentAt ? new Date(l.sentAt).toLocaleString() : new Date(l.failedAt || l.createdAt).toLocaleString()}</td>
+                    <td className="px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${l.status === "SENT" ? "bg-tone-sage-bg text-tone-sage-fg" : l.status === "FAILED" ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}><span className={`h-1.5 w-1.5 rounded-full ${l.status === "SENT" ? "bg-tone-sage-fg" : l.status === "FAILED" ? "bg-destructive" : "bg-tone-honey-fg"}`} />{l.status}</span></td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground text-xs">{l.sentAt ? new Date(l.sentAt).toLocaleString() : new Date(l.failedAt || l.createdAt).toLocaleString()}</td>
                     <td className="px-4 py-3 font-mono text-muted-foreground text-xs">{l.providerMessageId || "-"}</td>
                     <td className="px-4 py-3">
                       <button
                         type="button"
                         onClick={() => setExpandedLogId(expandedLogId === l.id ? null : l.id)}
-                        className="rounded p-1 text-muted-foreground hover:bg-accent"
+                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         aria-label="View failure details"
                       >
                         <Eye className="h-4 w-4" />
@@ -269,7 +274,7 @@ export default function EmailTemplatesClient() {
                     </td>
                   </tr>
                   {expandedLogId === l.id && (
-                    <tr className="border-b border-border bg-accent/20">
+                    <tr className="bg-accent/20">
                       <td colSpan={7} className="px-4 py-3">
                         <div className="grid gap-2 text-xs text-muted-foreground md:grid-cols-2">
                           <p><span className="font-medium text-foreground">Failure reason:</span> {l.safeErrorReason || l.error || "-"}</p>
@@ -293,14 +298,14 @@ export default function EmailTemplatesClient() {
           {logs.length === 0 ? (
             <EmptyState icon={Send} title="No emails sent yet" description="Send logs will appear here once emails go out." />
           ) : logs.map((l) => (
-            <div key={l.id} className="rounded-xl border border-border bg-card p-3">
+            <div key={l.id} className="rounded-2xl border border-border bg-card p-4">
               <div className="flex items-start justify-between gap-2">
                 <p className="min-w-0 truncate font-medium text-foreground">{l.to}</p>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${l.status === "SENT" ? "bg-tone-sage-bg text-tone-sage-fg" : l.status === "FAILED" ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}>{l.status}</span>
+                <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${l.status === "SENT" ? "bg-tone-sage-bg text-tone-sage-fg" : l.status === "FAILED" ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}><span className={`h-1.5 w-1.5 rounded-full ${l.status === "SENT" ? "bg-tone-sage-fg" : l.status === "FAILED" ? "bg-destructive" : "bg-tone-honey-fg"}`} />{l.status}</span>
               </div>
               <p className="mt-1 truncate text-xs text-foreground">{l.subject}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {l.template ? `${l.template.name} (${l.template.slug})` : "Manual"} · {l.sentAt ? new Date(l.sentAt).toLocaleString() : new Date(l.failedAt || l.createdAt).toLocaleString()}
+                {l.template ? `${l.template.name} (${l.template.slug})` : "Manual"} · <span className="font-mono">{l.sentAt ? new Date(l.sentAt).toLocaleString() : new Date(l.failedAt || l.createdAt).toLocaleString()}</span>
               </p>
               <button type="button" onClick={() => setExpandedLogId(expandedLogId === l.id ? null : l.id)} className="mt-1.5 text-xs text-primary hover:underline">
                 {expandedLogId === l.id ? "Hide details" : "Details"}
@@ -310,7 +315,7 @@ export default function EmailTemplatesClient() {
                   <p><span className="font-medium text-foreground">Failure reason:</span> {l.safeErrorReason || l.error || "-"}</p>
                   <p><span className="font-medium text-foreground">From:</span> {l.fromAddress || "-"}</p>
                   <p><span className="font-medium text-foreground">Recipient domain:</span> {l.toDomain || "-"}</p>
-                  <p><span className="font-medium text-foreground">Provider ID:</span> {l.providerMessageId || "-"}</p>
+                  <p><span className="font-medium text-foreground">Provider ID:</span> <span className="font-mono">{l.providerMessageId || "-"}</span></p>
                 </div>
               )}
             </div>

@@ -11,19 +11,22 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MinistatStrip } from "@/components/ministat-strip";
 
-const statusBadge: Record<string, string> = {
-  OPEN: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br",
-  IN_PROGRESS: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br",
-  WAITING_USER: "bg-tone-orange-bg text-tone-orange-fg border-tone-orange-br",
-  RESOLVED: "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br",
-  CLOSED: "bg-muted text-muted-foreground border-border",
+// Dot-indicator status pills: the swatch color is carried on a leading dot,
+// the pill itself stays neutral (bg-muted) so the Move admin status column
+// reads as one consistent column of chips rather than a rainbow of fills.
+const statusDot: Record<string, string> = {
+  OPEN: "bg-tone-sky-fg",
+  IN_PROGRESS: "bg-tone-honey-fg",
+  WAITING_USER: "bg-tone-orange-fg",
+  RESOLVED: "bg-tone-emerald-fg",
+  CLOSED: "bg-muted-foreground",
 };
 
-const priorityBadge: Record<string, string> = {
-  URGENT: "bg-destructive/10 text-destructive border-destructive/20",
-  HIGH: "bg-tone-orange-bg text-tone-orange-fg border-tone-orange-br",
-  MEDIUM: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br",
-  LOW: "bg-muted text-muted-foreground border-border",
+const priorityDot: Record<string, string> = {
+  URGENT: "bg-destructive",
+  HIGH: "bg-tone-orange-fg",
+  MEDIUM: "bg-tone-honey-fg",
+  LOW: "bg-muted-foreground",
 };
 
 interface Ticket {
@@ -130,7 +133,7 @@ export default function AdminSupportPage() {
       />
 
       {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap rounded-2xl border border-border bg-card p-4">
         <input
           type="text"
           placeholder="Search subject or email..."
@@ -139,9 +142,9 @@ export default function AdminSupportPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 w-56"
+          className="w-56 rounded-xl border border-input bg-background px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {STATUS_FILTERS.map((s) => (
             <button
               key={s || "all"}
@@ -149,7 +152,7 @@ export default function AdminSupportPage() {
                 setStatusFilter(s);
                 setPage(1);
               }}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition ${statusFilter === s ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground"}`}
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-accent hover:text-foreground"}`}
             >
               {s || "All"}
             </button>
@@ -161,7 +164,7 @@ export default function AdminSupportPage() {
             setCategoryFilter(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+          className="rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground"
         >
           <option value="">All Categories</option>
           {CATEGORY_FILTERS.filter(Boolean).map((category) => (
@@ -176,7 +179,7 @@ export default function AdminSupportPage() {
             setPriorityFilter(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+          className="rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground"
         >
           <option value="">All Priorities</option>
           {PRIORITY_FILTERS.filter(Boolean).map((priority) => (
@@ -191,7 +194,7 @@ export default function AdminSupportPage() {
             setAssignmentFilter(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+          className="rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground"
         >
           {ASSIGNMENT_FILTERS.map((assignment) => (
             <option key={assignment.value || "all"} value={assignment.value}>
@@ -209,7 +212,7 @@ export default function AdminSupportPage() {
               setSearch("");
               setPage(1);
             }}
-            className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+            className="rounded-xl border border-border px-3.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             Clear
           </button>
@@ -220,104 +223,110 @@ export default function AdminSupportPage() {
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : tickets.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card">
-          <EmptyState icon={MessageSquare} title="No tickets found" description="No support tickets match your current filters." />
-        </div>
+        <EmptyState
+          icon={MessageSquare}
+          title="No tickets found"
+          description="No support tickets match your current filters."
+          className="rounded-2xl border border-dashed border-border"
+        />
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="border-b border-border bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="border-b border-border bg-muted/20 px-4 py-2.5 text-xs text-muted-foreground">
             Targets are derived from priority for triage only; no configured contractual SLA policy is active.
           </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Subject</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">User</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Priority</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Assignment</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Target</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Updated</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {tickets.map((ticket) => (
-                <tr key={ticket.id} className="hover:bg-muted/20 transition">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-foreground truncate max-w-[220px]">{ticket.subject}</p>
-                    <p className="text-xs text-muted-foreground">{ticket.category} · {ticket._count.messages} messages</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-foreground">{[ticket.user.firstName, ticket.user.lastName].filter(Boolean).join(" ") || "—"}</p>
-                    <p className="text-xs text-muted-foreground">{ticket.user.email}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${statusBadge[ticket.status] || statusBadge.OPEN}`}>
-                      {ticket.status.replace("_", " ")}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${priorityBadge[ticket.priority] || priorityBadge.MEDIUM}`}>
-                      {ticket.priority}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {ticket.assignedTo === null
-                      ? "Unassigned"
-                      : assignmentFilter === "me"
-                        ? "Me"
-                        : getAdminLabel(ticket.assignedAdmin)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
-                      ticket.sla?.breached
-                        ? "bg-destructive/10 text-destructive border-destructive/20"
-                        : "bg-muted text-muted-foreground border-border"
-                    }`}>
-                      {getSlaLabel(ticket.sla)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {new Date(ticket.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link href={`/support/${ticket.id}`}>
-                      <button aria-label="View ticket" className="p-1.5 rounded-lg hover:bg-accent transition">
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                    </Link>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Subject</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">User</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Priority</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Assignment</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Target</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Updated</th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {tickets.map((ticket) => (
+                  <tr key={ticket.id} className="transition-colors hover:bg-accent/40">
+                    <td className="px-4 py-3">
+                      <p className="max-w-[220px] truncate font-medium text-foreground">{ticket.subject}</p>
+                      <p className="text-xs text-muted-foreground">{ticket.category} · <span className="font-mono">{ticket._count.messages}</span> messages</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-foreground">{[ticket.user.firstName, ticket.user.lastName].filter(Boolean).join(" ") || "—"}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{ticket.user.email}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                        <span className={`h-1.5 w-1.5 rounded-full ${statusDot[ticket.status] || statusDot.OPEN}`} />
+                        {ticket.status.replace("_", " ")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                        <span className={`h-1.5 w-1.5 rounded-full ${priorityDot[ticket.priority] || priorityDot.MEDIUM}`} />
+                        {ticket.priority}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {ticket.assignedTo === null
+                        ? "Unassigned"
+                        : assignmentFilter === "me"
+                          ? "Me"
+                          : getAdminLabel(ticket.assignedAdmin)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] ${
+                        ticket.sla?.breached ? "text-destructive" : "text-muted-foreground"
+                      }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${ticket.sla?.breached ? "bg-destructive" : "bg-muted-foreground"}`} />
+                        {getSlaLabel(ticket.sla)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {new Date(ticket.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link href={`/support/${ticket.id}`}>
+                        <button aria-label="View ticket" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
           <p className="text-xs text-muted-foreground">
-            Showing {(pagination.page - 1) * pagination.limit + 1}-
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+            Showing <span className="font-mono">{(pagination.page - 1) * pagination.limit + 1}</span>-
+            <span className="font-mono">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="font-mono">{pagination.total}</span>
           </p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
               disabled={pagination.page <= 1}
               aria-label="Previous page"
-              className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"
+              className="rounded-xl border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="text-xs text-muted-foreground">
+            <span className="font-mono text-xs text-muted-foreground">
               Page {pagination.page} / {pagination.totalPages}
             </span>
             <button
               onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
               disabled={pagination.page >= pagination.totalPages}
               aria-label="Next page"
-              className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"
+              className="rounded-xl border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

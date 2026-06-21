@@ -1219,10 +1219,11 @@ export function BackupControlPlane() {
               </button>
               <div
                 className={cn(
-                  "rounded-lg border px-4 py-2 text-sm font-medium",
+                  "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium",
                   buildToneClass(recoveryPosture.tone),
                 )}
               >
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {recoveryPosture.title}
               </div>
             </>
@@ -1393,7 +1394,7 @@ export function BackupControlPlane() {
                   ) : null}
                 </div>
                 <div className="rounded-xl border border-border bg-background p-4">
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="font-display text-sm font-bold text-foreground">
                     Job summary
                   </p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -1507,15 +1508,15 @@ export function BackupControlPlane() {
                 <div className="overflow-hidden rounded-xl border border-border">
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-border text-sm">
-                      <thead className="bg-background/80 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <thead className="bg-background/80 text-left font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
                         <tr>
-                          <th className="px-4 py-3 font-medium">Job</th>
-                          <th className="px-4 py-3 font-medium">Created</th>
-                          <th className="px-4 py-3 font-medium">Creator</th>
-                          <th className="px-4 py-3 font-medium">Records</th>
-                          <th className="px-4 py-3 font-medium">Archive</th>
-                          <th className="px-4 py-3 font-medium">Offsite</th>
-                          <th className="px-4 py-3 font-medium text-right">
+                          <th className="px-4 py-3 font-semibold">Job</th>
+                          <th className="px-4 py-3 font-semibold">Created</th>
+                          <th className="px-4 py-3 font-semibold">Creator</th>
+                          <th className="px-4 py-3 font-semibold">Records</th>
+                          <th className="px-4 py-3 font-semibold">Archive</th>
+                          <th className="px-4 py-3 font-semibold">Offsite</th>
+                          <th className="px-4 py-3 font-semibold text-right">
                             Actions
                           </th>
                         </tr>
@@ -1560,22 +1561,23 @@ export function BackupControlPlane() {
                                       </p>
                                       <span
                                         className={cn(
-                                          "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
                                           statusClass,
                                         )}
                                       >
+                                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
                                         {backup.status}
                                       </span>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="font-mono text-xs text-muted-foreground">
                                       {truncate(backup.id, 18)} ·{" "}
                                       {getBackupTypeLabel(backup.type)}
                                     </p>
                                   </div>
                                 </td>
                                 <td className="px-4 py-4 align-top text-xs text-muted-foreground">
-                                  <div>{formatDateTime(backup.createdAt)}</div>
-                                  <div className="mt-1 flex items-center gap-1">
+                                  <div className="font-mono">{formatDateTime(backup.createdAt)}</div>
+                                  <div className="mt-1 flex items-center gap-1 font-mono">
                                     <Clock3 className="h-3.5 w-3.5" />
                                     {formatRelativeTime(backup.createdAt)}
                                   </div>
@@ -1585,10 +1587,10 @@ export function BackupControlPlane() {
                                 </td>
                                 <td className="px-4 py-4 align-top text-xs text-muted-foreground">
                                   <div>
-                                    {(backup.recordCount || 0).toLocaleString()}{" "}
+                                    <span className="font-mono text-foreground">{(backup.recordCount || 0).toLocaleString()}</span>{" "}
                                     rows
                                   </div>
-                                  <div className="mt-1">
+                                  <div className="mt-1 font-mono">
                                     {formatBytes(backup.fileSize)}
                                   </div>
                                 </td>
@@ -1618,12 +1620,14 @@ export function BackupControlPlane() {
                                     </InlineBadge>
                                   </div>
                                   <div className="mt-2">
-                                    {selectedBackupId === backup.id
-                                      ? selectedBackupTables.length
-                                      : Object.keys(
-                                          backup.archive?.tableCounts || {},
-                                        ).length ||
-                                        parseTables(backup.tables).length}{" "}
+                                    <span className="font-mono text-foreground">
+                                      {selectedBackupId === backup.id
+                                        ? selectedBackupTables.length
+                                        : Object.keys(
+                                            backup.archive?.tableCounts || {},
+                                          ).length ||
+                                          parseTables(backup.tables).length}
+                                    </span>{" "}
                                     tables
                                   </div>
                                 </td>
@@ -1631,10 +1635,11 @@ export function BackupControlPlane() {
                                   <div className="flex flex-wrap gap-1.5">
                                     <span
                                       className={cn(
-                                        "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
                                         offsiteClass,
                                       )}
                                     >
+                                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
                                       {offsiteStatus === "stored"
                                         ? "Stored"
                                         : offsiteStatus === "failed"
@@ -1725,7 +1730,7 @@ export function BackupControlPlane() {
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-semibold text-foreground">
+                          <p className="font-display text-sm font-bold text-foreground">
                             Archive preview
                           </p>
                           <InlineBadge
@@ -1781,7 +1786,7 @@ export function BackupControlPlane() {
 
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]">
                       <div className="rounded-xl border border-border bg-card p-4">
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="font-display text-sm font-bold text-foreground">
                           Restore mode
                         </p>
                         <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -1830,7 +1835,7 @@ export function BackupControlPlane() {
                       </div>
 
                       <div className="rounded-xl border border-border bg-card p-4">
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="font-display text-sm font-bold text-foreground">
                           Restore workflow
                         </p>
                         <div className="mt-3 space-y-3 rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3">
@@ -2075,7 +2080,7 @@ export function BackupControlPlane() {
                         <div className="flex items-start gap-3">
                           <CheckCircle2 className="mt-0.5 h-5 w-5 text-tone-sage-fg" />
                           <div className="space-y-3">
-                            <p className="text-sm font-semibold text-foreground">
+                            <p className="font-display text-sm font-bold text-foreground">
                               Restore completed
                             </p>
                             <div className="grid grid-cols-3 gap-3">
@@ -2192,7 +2197,7 @@ export function BackupControlPlane() {
                   <div className="rounded-2xl border border-border bg-background p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">
+                        <p className="font-display text-sm font-bold text-foreground">
                           {selectedBackup.fileName ||
                             `backup-${selectedBackup.id}`}
                         </p>
@@ -2205,21 +2210,23 @@ export function BackupControlPlane() {
                       <div className="flex flex-wrap gap-2">
                         <span
                           className={cn(
-                            "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
                             statusToneClasses[selectedBackup.status] ||
                               "bg-tone-slate-bg text-muted-foreground border-tone-slate-br",
                           )}
                         >
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
                           {selectedBackup.status}
                         </span>
                         <span
                           className={cn(
-                            "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
                             offsiteToneClasses[
                               selectedBackup.offsite?.status || "disabled"
                             ] || offsiteToneClasses.disabled,
                           )}
                         >
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
                           {selectedBackup.offsite?.status === "stored"
                             ? "Offsite stored"
                             : selectedBackup.offsite?.status === "failed"
@@ -2315,7 +2322,7 @@ export function BackupControlPlane() {
                   </div>
 
                   <div className="rounded-2xl border border-border bg-background p-4">
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="font-display text-sm font-bold text-foreground">
                       Offsite retention
                     </p>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -2369,7 +2376,7 @@ export function BackupControlPlane() {
                   </div>
 
                   <div className="rounded-2xl border border-border bg-background p-4">
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="font-display text-sm font-bold text-foreground">
                       Included tables
                     </p>
                     <div className="mt-3 space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -2436,7 +2443,7 @@ export function BackupControlPlane() {
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-lg font-semibold text-foreground">
+                <p className="font-display text-lg font-bold text-foreground">
                   {stepUpPrompt.title}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -2468,7 +2475,7 @@ export function BackupControlPlane() {
               }}
             >
               <div>
-                <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <label className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Admin password
                 </label>
                 <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2">
@@ -2488,7 +2495,7 @@ export function BackupControlPlane() {
               {stepUpPrompt.requireMfa ? (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <label className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       MFA code
                     </label>
                     <input
@@ -2501,7 +2508,7 @@ export function BackupControlPlane() {
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <label className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       Backup code
                     </label>
                     <input
@@ -2556,12 +2563,12 @@ function Panel(props: {
     <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary/10 p-2 text-primary">
+          <div className="flex items-center gap-2.5">
+            <div className="rounded-xl bg-primary/10 p-2 text-primary">
               <Icon className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="font-display text-lg font-bold text-foreground">
                 {props.title}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -2596,10 +2603,10 @@ function MetricCard(props: {
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {props.label}
           </p>
-          <p className="mt-2 text-2xl font-bold text-foreground">
+          <p className="mt-2 font-display text-2xl font-extrabold leading-none text-foreground">
             {props.value}
           </p>
           <p className="mt-2 text-xs leading-5 text-muted-foreground">
@@ -2617,7 +2624,7 @@ function MetricCard(props: {
 function SummaryItem(props: { label: string; value: ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-card p-3">
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {props.label}
       </p>
       <div className="mt-2 text-sm font-medium text-foreground break-words">
@@ -2656,7 +2663,7 @@ function ResultCard(props: {
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center gap-2">
         <Icon className="h-4 w-4 text-primary" />
-        <p className="text-sm font-medium text-foreground">{props.title}</p>
+        <p className="font-display text-sm font-bold text-foreground">{props.title}</p>
       </div>
       <div className="mt-4">
         {hasChildren ? (
@@ -2686,10 +2693,10 @@ function MiniStat(props: {
         buildToneClass(props.tone),
       )}
     >
-      <p className="text-lg font-bold text-foreground">
+      <p className="font-display text-lg font-extrabold text-foreground">
         {props.value.toLocaleString()}
       </p>
-      <p className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+      <p className="mt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {props.title}
       </p>
     </div>

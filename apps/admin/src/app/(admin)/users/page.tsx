@@ -186,7 +186,7 @@ export default function UsersPage() {
       key: "plan",
       label: "Plan",
       cell: (user) => (
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${PLAN_COLORS[user.subscription?.plan || "FREE_TRIAL"] || "bg-muted text-muted-foreground"}`}>
+        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${PLAN_COLORS[user.subscription?.plan || "FREE_TRIAL"] || "bg-muted text-muted-foreground"}`}>
           {user.subscription?.plan || "FREE_TRIAL"}
         </span>
       ),
@@ -195,7 +195,8 @@ export default function UsersPage() {
       key: "status",
       label: "Status",
       cell: (user) => (
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.deletedAt ? "BLOCKED" : user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.deletedAt ? "BLOCKED" : user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
+          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" aria-hidden="true" />
           {user.deletedAt ? "BLOCKED" : user.subscription?.status || "—"}
         </span>
       ),
@@ -221,7 +222,7 @@ export default function UsersPage() {
       header: "Addr",
       align: "center",
       defaultVisible: true,
-      cell: (user) => <span className="text-sm text-foreground">{user._count.addresses}</span>,
+      cell: (user) => <span className="font-mono text-sm text-foreground">{user._count.addresses}</span>,
     },
     {
       key: "services",
@@ -229,7 +230,7 @@ export default function UsersPage() {
       header: "Svc",
       align: "center",
       defaultVisible: true,
-      cell: (user) => <span className="text-sm text-foreground">{user._count.services}</span>,
+      cell: (user) => <span className="font-mono text-sm text-foreground">{user._count.services}</span>,
     },
     {
       key: "serviceNotes",
@@ -237,21 +238,21 @@ export default function UsersPage() {
       header: "Notes",
       align: "center",
       defaultVisible: false,
-      cell: (user) => <span className="text-sm text-foreground">{user._count.serviceNotes}</span>,
+      cell: (user) => <span className="font-mono text-sm text-foreground">{user._count.serviceNotes}</span>,
     },
     {
       key: "moves",
       label: "Moves",
       align: "center",
       defaultVisible: true,
-      cell: (user) => <span className="text-sm text-foreground">{user._count.movingPlans}</span>,
+      cell: (user) => <span className="font-mono text-sm text-foreground">{user._count.movingPlans}</span>,
     },
     {
       key: "joined",
       label: "Joined",
       sortKey: "createdAt",
       cell: (user) => (
-        <span className="text-xs text-muted-foreground">
+        <span className="font-mono text-xs text-muted-foreground">
           {new Date(user.createdAt).toLocaleDateString()}
         </span>
       ),
@@ -262,7 +263,7 @@ export default function UsersPage() {
       header: "Blocked / Deleted",
       defaultVisible: true,
       cell: (user) => (
-        <span className="text-xs text-muted-foreground">
+        <span className="font-mono text-xs text-muted-foreground">
           {user.deletedAt ? new Date(user.deletedAt).toLocaleString() : "—"}
         </span>
       ),
@@ -393,7 +394,7 @@ export default function UsersPage() {
         headerActions={() => (
           <button
             onClick={openExport}
-            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent"
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <Download className="h-3.5 w-3.5" /> Export
           </button>
@@ -429,13 +430,13 @@ export default function UsersPage() {
                   setDeleteError(null);
                   setPendingDelete({ type: "bulk", ids: ctx.selectedIds, count: ctx.count });
                 }}
-                className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20"
+                className="flex items-center gap-1.5 rounded-xl bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Delete
               </button>
               <button
                 onClick={openExport}
-                className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+                className="flex items-center gap-1.5 rounded-xl bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <Download className="h-3.5 w-3.5" /> Export
               </button>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { Playfair_Display, DM_Sans, DM_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { Toaster } from "sonner";
 import { NextIntlClientProvider } from "next-intl";
@@ -8,28 +8,31 @@ import { AdminNavigationFallback } from "@/components/admin-navigation-fallback"
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-// Edition VI · Geist drives admin chrome, Fraunces is reserved for h1/h2/h3.
-const geistSans = Geist({
+// Move design system — DM Sans drives admin chrome, Playfair Display for
+// headings, DM Mono for numerals/meta. Repointed onto the existing
+// --font-sans / --font-mono / --font-display CSS vars so every admin page
+// flips fonts from this one file.
+const dmSans = DM_Sans({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
   fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
 });
 
-const geistMono = Geist_Mono({
+const dmMono = DM_Mono({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-mono",
-  fallback: ["JetBrains Mono", "Consolas", "monospace"],
+  weight: ["400", "500"],
+  fallback: ["Geist Mono", "JetBrains Mono", "Consolas", "monospace"],
 });
 
-// Fraunces variable font — `weight` omitted because `axes` is set
-// (Next.js requires one or the other, not both).
-const fraunces = Fraunces({
+const playfair = Playfair_Display({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-display",
-  axes: ["opsz", "SOFT"],
+  weight: ["400", "600", "700", "800", "900"],
   style: ["normal", "italic"],
   fallback: ["Didot", "Georgia", "serif"],
 });
@@ -78,7 +81,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}
+      className={`${dmSans.variable} ${dmMono.variable} ${playfair.variable}`}
       suppressHydrationWarning
     >
       <head>

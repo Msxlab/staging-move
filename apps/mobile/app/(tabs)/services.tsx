@@ -22,11 +22,14 @@ import {
   ArrowRight,
   Check,
   X,
-  Layers,
   Sparkles,
+  Search,
+  Home,
+  Building2,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, type Theme, fonts } from "@/lib/theme";
+import { SectionHeader, MoveProgressBar } from "@/components/move";
 import { api } from "@/lib/api";
 import {
   resolveServiceRenewal,
@@ -352,18 +355,24 @@ export default function ServicesScreen() {
             <Text style={styles.title}>{t("services.title")}</Text>
             <Text style={styles.subtitle}>{t("common.loading")}</Text>
           </View>
-          <View style={styles.addButton}>
-            <Plus size={20} color="#fff" />
+          <View style={styles.headerActions}>
+            <View style={styles.addButton}>
+              <Plus size={16} color={theme.colors.primary} />
+            </View>
+            <View style={styles.searchButton}>
+              <Search size={16} color={theme.colors.dim} />
+            </View>
           </View>
         </View>
-        <View style={styles.hero}>
-          <SkeletonBlock width="45%" height={10} />
-          <View style={{ marginTop: 12 }}>
-            <SkeletonBlock width="60%" height={28} />
-          </View>
-          <View style={{ marginTop: 14 }}>
-            <SkeletonBlock width="100%" height={9} />
-          </View>
+        <View style={styles.healthGrid}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={styles.healthTile}>
+              <SkeletonBlock width="50%" height={22} />
+              <View style={{ marginTop: 6 }}>
+                <SkeletonBlock width="70%" height={9} />
+              </View>
+            </View>
+          ))}
         </View>
         <View style={[styles.scrollContent, styles.list]}>
           {[0, 1, 2, 3].map((i) => (
@@ -485,6 +494,48 @@ export default function ServicesScreen() {
     return { label: t("services.statusActive"), text: theme.colors.emerald.text, bg: theme.colors.emerald.bg, border: theme.colors.emerald.border };
   };
 
+  // ── Category sections — group the (filtered) list by display category so
+  // the list reads as the design's category-sectioned ledger. Sort sections
+  // by label; preserve original ordering inside each section.
+  const groupedCategories = (() => {
+    const map = new Map<string, any[]>();
+    for (const service of filtered) {
+      const key = getMergedDisplayCategoryKey(service.category);
+      const bucket = map.get(key);
+      if (bucket) bucket.push(service);
+      else map.set(key, [service]);
+    }
+    return Array.from(map.entries())
+      .map(([key, items]) => ({ key, items }))
+      .sort((a, b) => serviceCategoryLabel(a.key).localeCompare(serviceCategoryLabel(b.key)));
+  })();
+
+  // Transfer-progress (old → new) — the active-move checklist progress, the
+  // app's real "getting set up at the new place" signal.
+  const transferPct = checklist ? Math.max(0, Math.min(100, checklist.progressPercent)) : null;
+
+  // Header subtitle — address scope + count/total summary line.
+  const headerSubtitle = `${selectedAddress ? `${selectedAddress.nickname || selectedAddress.city} · ` : ""}${t("services.summaryLine", { count: filtered.length, total: formatNumber(totalMonthly, i18n.language) })}`;
+
+  const onAddService = () => {
+    if (serviceLimitReached) {
+      Alert.alert(
+        t("services.limitReachedTitle", { defaultValue: "Service limit reached" }),
+        t("services.limitReachedWithCount", {
+          current: totalServiceCount,
+          limit: serviceLimit,
+          defaultValue: `Your plan includes ${serviceLimit} services. Upgrade to add more.`,
+        }),
+        [
+          { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+          { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+        ],
+      );
+      return;
+    }
+    router.push(selectedAddressId ? { pathname: "/services/new", params: { addressId: selectedAddressId } } : "/services/new");
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
@@ -495,86 +546,121 @@ export default function ServicesScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
+      {/* Header — serif title + add / search actions */}
       <View style={[styles.header, styles.inScrollHeader]}>
-        <View>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.title}>{t("services.title")}</Text>
-          <Text style={styles.subtitle}>
-            {selectedAddress ? `${selectedAddress.nickname || selectedAddress.city} · ` : ""}
-            {t("services.summaryLine", { count: filtered.length, total: formatNumber(totalMonthly, i18n.language) })}
-          </Text>
+          <Text style={styles.subtitle} numberOfLines={1}>{headerSubtitle}</Text>
         </View>
-        <PressableScale
-          style={[styles.addButton, addresses.length === 0 && { opacity: 0.5 }]}
-          onPress={() => {
-            if (serviceLimitReached) {
-              Alert.alert(
-                t("services.limitReachedTitle", { defaultValue: "Service limit reached" }),
-                t("services.limitReachedWithCount", {
-                  current: totalServiceCount,
-                  limit: serviceLimit,
-                  defaultValue: `Your plan includes ${serviceLimit} services. Upgrade to add more.`,
-                }),
-                [
-                  { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-                  { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
-                ],
-              );
-              return;
-            }
-            router.push(selectedAddressId ? { pathname: "/services/new", params: { addressId: selectedAddressId } } : "/services/new");
-          }}
-          disabled={addresses.length === 0}
-          accessibilityLabel={t("services.newTitle")}
-        >
-          <Plus size={20} color="#fff" />
-        </PressableScale>
+        <View style={styles.headerActions}>
+          <PressableScale
+            style={[styles.addButton, addresses.length === 0 && { opacity: 0.5 }]}
+            onPress={onAddService}
+            disabled={addresses.length === 0}
+            accessibilityLabel={t("services.newTitle")}
+          >
+            <Plus size={16} color={theme.colors.primary} />
+          </PressableScale>
+          <PressableScale
+            style={[styles.searchButton, services.length === 0 && { opacity: 0.5 }]}
+            onPress={() => setFilterCat(null)}
+            disabled={services.length === 0}
+            accessibilityLabel={t("common.all")}
+          >
+            <Search size={16} color={theme.colors.dim} />
+          </PressableScale>
+        </View>
       </View>
 
-      {/* Aurora glass hero — monthly overview + category cost distribution */}
-      <View style={[styles.hero, styles.inScrollHero]}>
-        <View style={styles.heroTop}>
-          <Text style={styles.heroKicker}>{t("services.monthlyServices").toUpperCase()}</Text>
-          <View style={styles.heroBadge}>
-            <Layers size={12} color={theme.colors.accent} />
-            <Text style={styles.heroBadgeText}>{t("services.trackedCount", { count: services.length }).toUpperCase()}</Text>
+      {/* Three health stat tiles — active · priced · needs attention */}
+      {services.length > 0 && (
+        <View style={styles.healthGrid}>
+          <View style={styles.healthTile}>
+            <View style={[styles.healthBar, { backgroundColor: theme.colors.green }]} />
+            <Text style={[styles.healthValue, { color: theme.colors.green }]}>{activeServiceCount}</Text>
+            <Text style={styles.healthLabel}>{t("services.statusActive")}</Text>
+          </View>
+          <View style={styles.healthTile}>
+            <View style={[styles.healthBar, { backgroundColor: theme.colors.primary }]} />
+            <Text style={[styles.healthValue, { color: theme.colors.primary }]}>{pricedServiceCount}</Text>
+            <Text style={styles.healthLabel}>{t("services.priced", { defaultValue: "Priced" })}</Text>
+          </View>
+          <View style={styles.healthTile}>
+            <View style={[styles.healthBar, { backgroundColor: serviceHealthTone.text }]} />
+            <Text style={[styles.healthValue, { color: serviceHealthTone.text }]}>{serviceHealthIssueCount}</Text>
+            <Text style={styles.healthLabel}>{t("services.needsAttention")}</Text>
           </View>
         </View>
-        <Text style={styles.heroBig} accessibilityLabel={`${formatCurrency(heroMonthly, i18n.language)} ${t("services.heroMonthlySuffix", { count: activeServiceCount })}`}>
-          {formatCurrency(heroMonthly, i18n.language)}
-          <Text style={styles.heroBigSuffix}>{t("services.heroMonthlySuffix", { count: activeServiceCount })}</Text>
-        </Text>
-        {catTotals.length > 0 && (
-          <View style={styles.heroBar}>
-            {catTotals.map((c) => (
-              <View key={c.cat} style={[styles.heroBarSeg, { flex: c.total, backgroundColor: getServiceCategoryColor(c.cat) }]} />
-            ))}
+      )}
+
+      {/* Transfer progress (old → new) — active-move setup completion */}
+      {transferPct != null && (
+        <View style={styles.transferCard}>
+          <View style={styles.transferRow}>
+            <Home size={18} color={theme.colors.green} />
+            <MoveProgressBar value={transferPct / 100} height={6} style={{ flex: 1 }} />
+            <Building2 size={18} color={theme.colors.primary} />
           </View>
-        )}
-        {heroChips.length > 0 && (
-          <View style={styles.heroChips}>
-            {heroChips.map((c) => {
-              const color = getServiceCategoryColor(c.cat);
-              const on = filterCat === c.cat;
-              return (
-                <View key={c.cat} style={styles.heroChipWrap}>
-                  <PressableScale
-                    style={[styles.heroChip, { backgroundColor: color + "1A", borderColor: color + (on ? "8C" : "42") }]}
-                    onPress={() => setFilterCat(on ? null : c.cat)}
-                    accessibilityLabel={`${serviceCategoryLabel(c.cat)} · ${formatCurrency(c.total, i18n.language)}`}
-                  >
-                    <View style={[styles.heroChipSwatch, { backgroundColor: color }]} />
-                    <Text style={styles.heroChipName} numberOfLines={1}>{serviceCategoryLabel(c.cat).toUpperCase()}</Text>
-                    <Text style={styles.heroChipValue}>{formatCurrency(c.total, i18n.language)}</Text>
-                  </PressableScale>
-                </View>
-              );
-            })}
+          <View style={styles.transferMeta}>
+            <Text style={styles.transferText} numberOfLines={1}>
+              {(() => {
+                const phase = RELOCATION_PHASES.find((p) => p.phase === checklist?.currentPhase);
+                return phase?.label || t("moving.checklist");
+              })()}
+            </Text>
+            <Text style={styles.transferPct}>{transferPct}%</Text>
           </View>
-        )}
-        <Text style={styles.heroHint}>
-          {uncostedCount > 0 ? t("services.missingCostHint", { count: uncostedCount }) : t("services.summaryHint")}
-        </Text>
-      </View>
+        </View>
+      )}
+
+      {/* Monthly cost (old → new) — recurring spend after move */}
+      {services.length > 0 && (
+        <View style={styles.costCard}>
+          <View style={styles.costRow}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.costKicker}>{t("services.monthlyServices").toUpperCase()}</Text>
+              <View style={styles.costFigures}>
+                <Text style={styles.costNew} numberOfLines={1}>{formatCurrency(heroMonthly, i18n.language)}</Text>
+                <Text style={styles.costNewSuffix}>{t("services.heroMonthlySuffix", { count: activeServiceCount })}</Text>
+              </View>
+            </View>
+            <View style={styles.costBadge}>
+              <Text style={styles.costBadgeText}>{t("services.trackedCount", { count: services.length })}</Text>
+            </View>
+          </View>
+          {catTotals.length > 0 && (
+            <View style={styles.heroBar}>
+              {catTotals.map((c) => (
+                <View key={c.cat} style={[styles.heroBarSeg, { flex: c.total, backgroundColor: getServiceCategoryColor(c.cat) }]} />
+              ))}
+            </View>
+          )}
+          {heroChips.length > 0 && (
+            <View style={styles.heroChips}>
+              {heroChips.map((c) => {
+                const color = getServiceCategoryColor(c.cat);
+                const on = filterCat === c.cat;
+                return (
+                  <View key={c.cat} style={styles.heroChipWrap}>
+                    <PressableScale
+                      style={[styles.heroChip, { backgroundColor: color + "1A", borderColor: color + (on ? "8C" : "42") }]}
+                      onPress={() => setFilterCat(on ? null : c.cat)}
+                      accessibilityLabel={`${serviceCategoryLabel(c.cat)} · ${formatCurrency(c.total, i18n.language)}`}
+                    >
+                      <View style={[styles.heroChipSwatch, { backgroundColor: color }]} />
+                      <Text style={styles.heroChipName} numberOfLines={1}>{serviceCategoryLabel(c.cat).toUpperCase()}</Text>
+                      <Text style={styles.heroChipValue}>{formatCurrency(c.total, i18n.language)}</Text>
+                    </PressableScale>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+          <Text style={styles.costHint}>
+            {uncostedCount > 0 ? t("services.missingCostHint", { count: uncostedCount }) : t("services.summaryHint")}
+          </Text>
+        </View>
+      )}
 
       {(addresses.length > 0 || categories.length > 1) && (
         <View style={styles.filterPanel}>
@@ -861,13 +947,13 @@ export default function ServicesScreen() {
           );
         })()}
 
-        {/* Needs attention — services with an imminent/overdue renewal signal */}
+        {/* This week · act now — services with an imminent/overdue renewal */}
         {attentionItems.length > 0 && (
           <View style={styles.attnList}>
-            <View style={styles.secRow}>
-              <Text style={styles.secKicker}>{t("services.needsAttention").toUpperCase()}</Text>
-              <Text style={styles.secCount}>{attentionItems.length}</Text>
-            </View>
+            <SectionHeader
+              label={`⚠  ${t("services.actNow", { defaultValue: "This week · act now" })}`}
+              style={styles.attnHeader}
+            />
             {attentionItems.map((service: any) => {
               const renewal = renewalById.get(service.id);
               if (!renewal) return null;
@@ -879,8 +965,9 @@ export default function ServicesScreen() {
                   onPress={() => router.push({ pathname: "/services/[id]", params: { id: service.id } })}
                   accessibilityLabel={`${service.providerName} · ${headline}`}
                 >
+                  <View style={styles.attnAccent} />
                   <View style={styles.attnIcon}>
-                    <AlertTriangle size={16} color={theme.colors.error} />
+                    <AlertTriangle size={15} color={theme.colors.error} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.attnTitle} numberOfLines={1}>{service.providerName}</Text>
@@ -952,112 +1039,128 @@ export default function ServicesScreen() {
           );
         })() : (
           <View style={styles.list}>
-            {filtered.map((service: any, index: number) => {
+            {groupedCategories.map((group, groupIndex) => {
+              const groupColor = getServiceCategoryColor(group.key);
               return (
-              <ListEntrance key={service.id} index={index}>
-              <Card variant="default" onPress={() => editingCost !== service.id && router.push({ pathname: "/services/[id]", params: { id: service.id } })}>
-                <View style={styles.serviceTop}>
-                  <ServiceLogoMark
-                    service={service}
-                    fallbackIcon={getServiceCategoryIcon(service.category)}
-                    backgroundColor={getServiceCategoryColor(service.category) + "30"}
-                    borderColor={getServiceCategoryColor(service.category) + "50"}
-                  />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={styles.serviceName} numberOfLines={1}>{service.providerName}</Text>
-                    <Text style={styles.serviceCategory} numberOfLines={1}>
-                      {t(`categories.${service.category}`, { defaultValue: getServiceCategoryLabel(service.category) })}
-                      {service.address ? ` · ${service.address.nickname || service.address.city}` : ""}
-                    </Text>
+                <View key={group.key} style={styles.catSection}>
+                  <View style={styles.catHead}>
+                    <CategoryIcon emoji={getServiceCategoryIcon(group.key)} size={15} color={groupColor} />
+                    <Text style={styles.catName} numberOfLines={1}>{serviceCategoryLabel(group.key)}</Text>
+                    <Text style={styles.catCount}>{t("services.trackedCount", { count: group.items.length })}</Text>
                   </View>
-                  <TouchableOpacity
-                    style={{ alignItems: "flex-end" }}
-                    onPress={(e) => {
-                      e.stopPropagation?.();
-                      if (editingCost === service.id) {
-                        setEditingCost(null);
-                      } else {
-                        setEditingCost(service.id);
-                        setCostValue(service.monthlyCost ? String(service.monthlyCost) : "");
-                      }
-                    }}
-                    activeOpacity={0.6}
-                  >
-                    {service.monthlyCost > 0 ? (
-                      <Text style={styles.cost}>{formatCurrency(service.monthlyCost, i18n.language)}<Text style={styles.costPer}>/mo</Text></Text>
-                    ) : (
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(242, 196, 108,0.1)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.25)" }}>
-                        <DollarSign size={10} color="#F2C46C" />
-                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#F2C46C" }}>{t("services.addCost")}</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                </View>
+                  <View style={styles.catRows}>
+                    {group.items.map((service: any, index: number) => {
+                      const accent = getServiceCategoryColor(service.category);
+                      return (
+                      <ListEntrance key={service.id} index={groupIndex * 4 + index}>
+                      <Card variant="default" onPress={() => editingCost !== service.id && router.push({ pathname: "/services/[id]", params: { id: service.id } })}>
+                        <View style={[styles.rowAccent, { backgroundColor: accent }]} />
+                        <View style={styles.serviceTop}>
+                          <ServiceLogoMark
+                            service={service}
+                            fallbackIcon={getServiceCategoryIcon(service.category)}
+                            backgroundColor={getServiceCategoryColor(service.category) + "30"}
+                            borderColor={getServiceCategoryColor(service.category) + "50"}
+                          />
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text style={styles.serviceName} numberOfLines={1}>{service.providerName}</Text>
+                            <Text style={styles.serviceCategory} numberOfLines={1}>
+                              {t(`categories.${service.category}`, { defaultValue: getServiceCategoryLabel(service.category) })}
+                              {service.address ? ` · ${service.address.nickname || service.address.city}` : ""}
+                            </Text>
+                          </View>
+                          <TouchableOpacity
+                            style={{ alignItems: "flex-end" }}
+                            onPress={(e) => {
+                              e.stopPropagation?.();
+                              if (editingCost === service.id) {
+                                setEditingCost(null);
+                              } else {
+                                setEditingCost(service.id);
+                                setCostValue(service.monthlyCost ? String(service.monthlyCost) : "");
+                              }
+                            }}
+                            activeOpacity={0.6}
+                          >
+                            {service.monthlyCost > 0 ? (
+                              <Text style={styles.cost}>{formatCurrency(service.monthlyCost, i18n.language)}<Text style={styles.costPer}>/mo</Text></Text>
+                            ) : (
+                              <View style={styles.addCostPill}>
+                                <DollarSign size={10} color={theme.colors.amberSolid} />
+                                <Text style={styles.addCostText}>{t("services.addCost")}</Text>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                        </View>
 
-                {/* Inline cost editor */}
-                {editingCost === service.id && (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.border }}>
-                    <DollarSign size={14} color={theme.colors.textMuted} />
-                    <TextInput
-                      style={{ flex: 1, fontSize: 14, color: theme.colors.text, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
-                      placeholder={t("services.monthlyCost")}
-                      placeholderTextColor={theme.colors.textMuted}
-                      keyboardType="decimal-pad"
-                      value={costValue}
-                      onChangeText={setCostValue}
-                      autoFocus
-                    />
-                    <TouchableOpacity
-                      onPress={() => handleSaveCost(service.id)}
-                      disabled={savingCost}
-                      style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center" }}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("services.saveCost", { defaultValue: "Save monthly cost" })}
-                    >
-                      <Check size={14} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => { setEditingCost(null); setCostValue(""); }}
-                      style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" }}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("services.cancelCost", { defaultValue: "Cancel cost editing" })}
-                    >
-                      <X size={14} color={theme.colors.textMuted} />
-                    </TouchableOpacity>
+                        {/* Inline cost editor */}
+                        {editingCost === service.id && (
+                          <View style={styles.costEditor}>
+                            <DollarSign size={14} color={theme.colors.textMuted} />
+                            <TextInput
+                              style={styles.costInput}
+                              placeholder={t("services.monthlyCost")}
+                              placeholderTextColor={theme.colors.textMuted}
+                              keyboardType="decimal-pad"
+                              value={costValue}
+                              onChangeText={setCostValue}
+                              autoFocus
+                            />
+                            <TouchableOpacity
+                              onPress={() => handleSaveCost(service.id)}
+                              disabled={savingCost}
+                              style={styles.costSave}
+                              accessibilityRole="button"
+                              accessibilityLabel={t("services.saveCost", { defaultValue: "Save monthly cost" })}
+                            >
+                              <Check size={14} color={theme.colors.onAccent} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() => { setEditingCost(null); setCostValue(""); }}
+                              style={styles.costCancel}
+                              accessibilityRole="button"
+                              accessibilityLabel={t("services.cancelCost", { defaultValue: "Cancel cost editing" })}
+                            >
+                              <X size={14} color={theme.colors.textMuted} />
+                            </TouchableOpacity>
+                          </View>
+                        )}
+
+                        <View style={styles.serviceDetails}>
+                          {service.website && (
+                            <View style={[styles.detailItem, { flexShrink: 1, minWidth: 0 }]}>
+                              <Globe size={12} color={theme.colors.textMuted} />
+                              <Text style={styles.detailText} numberOfLines={1}>{service.website.replace(/^https?:\/\//, "")}</Text>
+                            </View>
+                          )}
+                          {service.phone && (
+                            <View style={[styles.detailItem, { flexShrink: 1, minWidth: 0 }]}>
+                              <Phone size={12} color={theme.colors.textMuted} />
+                              <Text style={styles.detailText} numberOfLines={1}>{service.phone}</Text>
+                            </View>
+                          )}
+                        </View>
+
+                        <View style={styles.serviceFooter}>
+                          {(() => {
+                            const pill = statusPillFor(service);
+                            return (
+                              <View style={[styles.statusPill, { backgroundColor: pill.bg, borderColor: pill.border }]} accessibilityLabel={pill.label}>
+                                <View style={[styles.statusPillDot, { backgroundColor: pill.text }]} />
+                                <Text style={[styles.statusPillText, { color: pill.text }]}>{pill.label.toUpperCase()}</Text>
+                              </View>
+                            );
+                          })()}
+                          {service.billingCycle && (
+                            <UiBadge label={serviceBillingCycleLabel(service.billingCycle)} variant="info" />
+                          )}
+                        </View>
+                      </Card>
+                      </ListEntrance>
+                      );
+                    })}
                   </View>
-                )}
-
-                <View style={styles.serviceDetails}>
-                  {service.website && (
-                    <View style={[styles.detailItem, { flexShrink: 1, minWidth: 0 }]}>
-                      <Globe size={12} color={theme.colors.textMuted} />
-                      <Text style={styles.detailText} numberOfLines={1}>{service.website.replace(/^https?:\/\//, "")}</Text>
-                    </View>
-                  )}
-                  {service.phone && (
-                    <View style={[styles.detailItem, { flexShrink: 1, minWidth: 0 }]}>
-                      <Phone size={12} color={theme.colors.textMuted} />
-                      <Text style={styles.detailText} numberOfLines={1}>{service.phone}</Text>
-                    </View>
-                  )}
                 </View>
-
-                <View style={styles.serviceFooter}>
-                  {(() => {
-                    const pill = statusPillFor(service);
-                    return (
-                      <View style={[styles.statusPill, { backgroundColor: pill.bg, borderColor: pill.border }]} accessibilityLabel={pill.label}>
-                        <View style={[styles.statusPillDot, { backgroundColor: pill.text }]} />
-                        <Text style={[styles.statusPillText, { color: pill.text }]}>{pill.label.toUpperCase()}</Text>
-                      </View>
-                    );
-                  })()}
-                  {service.billingCycle && (
-                    <UiBadge label={serviceBillingCycleLabel(service.billingCycle)} variant="info" />
-                  )}
-                </View>
-              </Card>
-              </ListEntrance>
               );
             })}
           </View>
@@ -1069,55 +1172,102 @@ export default function ServicesScreen() {
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16 },
+  // ── Header (serif title + add / search) ──
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12, paddingHorizontal: 20, paddingVertical: 16 },
   inScrollHeader: { paddingHorizontal: 0 },
-  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
-  subtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
-  addButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center" },
-  // ── Aurora glass hero ──
-  hero: {
-    marginHorizontal: 20,
+  title: { fontSize: 26, fontFamily: fonts.serifBold, color: theme.colors.text, lineHeight: 30 },
+  subtitle: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 3 },
+  headerActions: { flexDirection: "row", gap: 8 },
+  addButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // ── Three health stat tiles ──
+  healthGrid: { flexDirection: "row", gap: 10, marginBottom: 12 },
+  healthTile: {
+    flex: 1,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    alignItems: "center",
+    overflow: "hidden",
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  healthBar: { position: "absolute", top: 0, left: 0, right: 0, height: 2, opacity: 0.5 },
+  healthValue: { fontSize: 22, fontFamily: fonts.monoMedium, lineHeight: 24 },
+  healthLabel: { fontSize: 10, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 5, textAlign: "center" },
+  // ── Transfer progress (old → new) ──
+  transferCard: {
+    marginBottom: 12,
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  transferRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  transferMeta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
+  transferText: { flex: 1, fontSize: 10.5, fontFamily: fonts.sans, color: theme.colors.dim },
+  transferPct: { fontSize: 11, fontFamily: fonts.monoMedium, color: theme.colors.primary },
+  // ── Monthly cost (old → new) ──
+  costCard: {
     marginBottom: 12,
     padding: 16,
-    borderRadius: theme.radius["2xl"],
-    backgroundColor: theme.colors.glass.bg,
+    borderRadius: 18,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.glass.border,
+    borderColor: theme.colors.border,
   },
-  inScrollHero: { marginHorizontal: 0 },
-  heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  heroKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },
-  heroBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
+  costRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10 },
+  costKicker: { fontSize: 9, fontFamily: fonts.sansBold, letterSpacing: 1.4, textTransform: "uppercase", color: theme.colors.faint },
+  costFigures: { flexDirection: "row", alignItems: "baseline", gap: 7, marginTop: 5 },
+  costNew: { fontSize: 20, fontFamily: fonts.monoMedium, color: theme.colors.text },
+  costNewSuffix: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.faint },
+  costBadge: {
+    paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: theme.colors.warningFaded,
+    borderRadius: 8,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.amber.border,
+    borderColor: theme.colors.accentBorder,
   },
-  heroBadgeText: { fontSize: 9, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent },
-  heroBig: { fontSize: 32, fontWeight: "800", letterSpacing: 0, color: theme.colors.text, fontVariant: ["tabular-nums"] },
-  heroBigSuffix: { fontSize: 12, fontWeight: "500", letterSpacing: 0, color: theme.colors.textTertiary },
-  heroBar: { flexDirection: "row", gap: 3, height: 9, marginTop: 14, marginBottom: 12 },
+  costBadgeText: { fontSize: 9.5, fontFamily: fonts.sansBold, color: theme.colors.primary },
+  costHint: { fontSize: 10, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 8, lineHeight: 15 },
+  heroBar: { flexDirection: "row", gap: 3, height: 8, marginTop: 14, marginBottom: 12 },
   heroBarSeg: { borderRadius: 4 },
   heroChips: { flexDirection: "row", gap: 8 },
   heroChipWrap: { flex: 1 },
   heroChip: { alignItems: "flex-start", gap: 6, padding: 10, borderRadius: 13, borderWidth: 1 },
   heroChipSwatch: { width: 18, height: 18, borderRadius: 6 },
-  heroChipName: { fontSize: 8, letterSpacing: 0.8, fontWeight: "700", color: theme.colors.textSecondary },
-  heroChipValue: { fontSize: 14, fontWeight: "800", color: theme.colors.text, fontVariant: ["tabular-nums"] },
-  heroHint: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 12, lineHeight: 16 },
-  // ── Operational health panel ──
+  heroChipName: { fontSize: 8, fontFamily: fonts.sansBold, letterSpacing: 0.8, color: theme.colors.dim },
+  heroChipValue: { fontSize: 14, fontFamily: fonts.monoMedium, color: theme.colors.text },
+  // ── Operational health panel (restyled — surface card) ──
   systemPanel: {
     marginBottom: 16,
     padding: 14,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.glass.bg,
+    borderRadius: 18,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.glass.border,
+    borderColor: theme.colors.border,
   },
   systemHead: {
     flexDirection: "row",
@@ -1132,14 +1282,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  systemTitle: { fontSize: 15, fontWeight: "800", color: theme.colors.text },
-  systemMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2, lineHeight: 17 },
-  systemScore: { fontSize: 24, fontWeight: "900", fontVariant: ["tabular-nums"] },
+  systemTitle: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
+  systemMeta: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2, lineHeight: 17 },
+  systemScore: { fontSize: 22, fontFamily: fonts.monoMedium },
   systemMeter: {
     height: 6,
     marginTop: 13,
     borderRadius: 999,
-    backgroundColor: theme.colors.glass.highlight,
+    backgroundColor: theme.colors.track,
     overflow: "hidden",
   },
   systemMeterFill: { height: "100%", borderRadius: 999 },
@@ -1149,19 +1299,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     minHeight: 58,
     padding: 10,
     borderRadius: 13,
-    backgroundColor: "rgba(255,255,255,0.025)",
+    backgroundColor: theme.colors.surface2,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  systemStatValue: { fontSize: 18, fontWeight: "900", color: theme.colors.text, fontVariant: ["tabular-nums"] },
-  systemStatLabel: { fontSize: 10, color: theme.colors.textTertiary, marginTop: 3, fontWeight: "700" },
+  systemStatValue: { fontSize: 18, fontFamily: fonts.monoMedium, color: theme.colors.text },
+  systemStatLabel: { fontSize: 10, fontFamily: fonts.sansBold, color: theme.colors.faint, marginTop: 3 },
   gapPanel: {
     marginBottom: 16,
     padding: 14,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.amber.bg,
+    borderRadius: 18,
+    backgroundColor: theme.colors.amberSoft,
     borderWidth: 1,
-    borderColor: theme.colors.amber.border,
+    borderColor: theme.colors.amberLine,
     gap: 12,
   },
   gapHead: {
@@ -1179,8 +1329,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.amber.border,
   },
-  gapTitle: { fontSize: 15, fontWeight: "900", color: theme.colors.text },
-  gapBody: { marginTop: 2, fontSize: 12, lineHeight: 17, color: theme.colors.textSecondary },
+  gapTitle: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
+  gapBody: { marginTop: 2, fontSize: 12, fontFamily: fonts.sans, lineHeight: 17, color: theme.colors.dim },
   gapCountPill: {
     minWidth: 30,
     height: 30,
@@ -1188,22 +1338,22 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.amber.border,
   },
-  gapCountText: { fontSize: 13, fontWeight: "900", color: theme.colors.amber.text, fontVariant: ["tabular-nums"] },
+  gapCountText: { fontSize: 13, fontFamily: fonts.monoMedium, color: theme.colors.amber.text },
   gapChips: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
   gapChip: {
     maxWidth: "48%",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  gapChipText: { fontSize: 11, fontWeight: "800", color: theme.colors.textSecondary },
+  gapChipText: { fontSize: 11, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   gapRows: { gap: 8 },
   gapRow: {
     minHeight: 54,
@@ -1212,7 +1362,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 10,
     padding: 10,
     borderRadius: 14,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -1224,9 +1374,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
   },
-  gapRowTitle: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
-  gapRowSub: { marginTop: 1, fontSize: 11, color: theme.colors.textTertiary },
-  gapFallbackText: { fontSize: 12, lineHeight: 17, color: theme.colors.textSecondary },
+  gapRowTitle: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
+  gapRowSub: { marginTop: 1, fontSize: 11, fontFamily: fonts.sans, color: theme.colors.faint },
+  gapFallbackText: { fontSize: 12, fontFamily: fonts.sans, lineHeight: 17, color: theme.colors.dim },
   gapCta: {
     minHeight: 42,
     borderRadius: 13,
@@ -1238,40 +1388,39 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.amber.border,
   },
-  gapCtaText: { fontSize: 13, fontWeight: "900", color: theme.colors.amber.text },
-  // ── Needs attention ──
-  secRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 4, paddingHorizontal: 2 },
-  secKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },
-  secCount: { fontSize: 10, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent },
-  attnList: { gap: 8, marginBottom: 16 },
+  gapCtaText: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.amber.text },
+  // ── This week · act now ──
+  attnList: { gap: 9, marginBottom: 16 },
+  attnHeader: { marginBottom: 2, paddingHorizontal: 2 },
   attnRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 11,
-    padding: 13,
-    borderRadius: 14,
-    backgroundColor: theme.colors.errorFaded,
+    padding: 12,
+    paddingLeft: 14,
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.error + "38",
+    borderColor: theme.colors.redLine,
   },
+  attnAccent: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: theme.colors.red },
   attnIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.errorFaded,
-    borderWidth: 1,
-    borderColor: theme.colors.error + "38",
+    backgroundColor: theme.colors.redSoft,
   },
-  attnTitle: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
-  attnSub: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 1 },
+  attnTitle: { fontSize: 12, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  attnSub: { fontSize: 10.5, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 1 },
   attnGo: {
     width: 26,
     height: 26,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: theme.colors.error + "4D",
+    borderColor: theme.colors.red + "4D",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1286,14 +1435,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1,
   },
   statusPillDot: { width: 5, height: 5, borderRadius: 999 },
-  statusPillText: { fontSize: 8, letterSpacing: 1, fontWeight: "700" },
+  statusPillText: { fontSize: 8, fontFamily: fonts.sansBold, letterSpacing: 1 },
+  // ── Location / category toggle ──
   filterPanel: {
     marginBottom: 14,
     paddingVertical: 7,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.glass.bg,
+    borderRadius: 18,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.glass.border,
+    borderColor: theme.colors.border,
     overflow: "hidden",
   },
   addressRow: { marginHorizontal: 0, marginBottom: 4 },
@@ -1306,14 +1456,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surface2,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.primary + "66" },
-  addressChipText: { fontSize: 12, fontWeight: "800", color: theme.colors.textSecondary, textAlign: "center" },
+  addressChipActive: { backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder },
+  addressChipText: { fontSize: 12, fontFamily: fonts.sansBold, color: theme.colors.dim, textAlign: "center" },
   addressChipTextActive: { color: theme.colors.primary },
   filterRow: { marginHorizontal: 0 },
   filterContent: { paddingHorizontal: 8, paddingVertical: 3, gap: 8, alignItems: "center" },
@@ -1327,23 +1477,57 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surface2,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.primary + "66" },
-  filterDot: { width: 8, height: 8, borderRadius: 4 },
-  filterText: { flexShrink: 1, fontSize: 12, color: theme.colors.textSecondary, fontWeight: "800" },
+  filterChipActive: { backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder },
+  filterText: { flexShrink: 1, fontSize: 12, fontFamily: fonts.sansBold, color: theme.colors.dim },
   filterTextActive: { color: theme.colors.primary },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 140, paddingTop: 8 },
-  list: { gap: 12 },
+  list: { gap: 4 },
+  // ── Category sections ──
+  catSection: { marginBottom: 16 },
+  catHead: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 11, paddingHorizontal: 2 },
+  catName: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  catCount: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.faint },
+  catRows: { gap: 9 },
+  // ── Service row ──
+  rowAccent: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3, borderTopLeftRadius: 18, borderBottomLeftRadius: 18 },
   serviceTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  serviceName: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
-  serviceCategory: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
-  cost: { fontSize: 16, fontWeight: "800", color: theme.colors.emerald.text },
-  costPer: { fontSize: 11, fontWeight: "500", color: theme.colors.textTertiary },
+  serviceName: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
+  serviceCategory: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2 },
+  cost: { fontSize: 15, fontFamily: fonts.monoMedium, color: theme.colors.green },
+  costPer: { fontSize: 10, fontFamily: fonts.sans, color: theme.colors.faint },
+  addCostPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: theme.colors.amberSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.amberLine,
+  },
+  addCostText: { fontSize: 10, fontFamily: fonts.sansSemibold, color: theme.colors.amberSolid },
+  costEditor: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.border },
+  costInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: fonts.sans,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.surface2,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  costSave: { width: 32, height: 32, borderRadius: 8, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center" },
+  costCancel: { width: 32, height: 32, borderRadius: 8, backgroundColor: theme.colors.surface2, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
   serviceDetails: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.border },
   detailItem: { flexDirection: "row", alignItems: "center", gap: 4, maxWidth: "48%" },
-  detailText: { fontSize: 12, color: theme.colors.textTertiary, flexShrink: 1 },
+  detailText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, flexShrink: 1 },
   serviceFooter: { flexDirection: "row", gap: 6, marginTop: 10 },
 });

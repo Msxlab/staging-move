@@ -231,7 +231,7 @@ export default function ProviderGovernancePage() {
   };
 
   if (loading) {
-    return <div className="py-20 text-center text-muted-foreground">Loading provider governance...</div>;
+    return <div className="py-20 text-center text-sm text-muted-foreground">Loading provider governance...</div>;
   }
 
   const queues = data?.queues || {};
@@ -260,26 +260,26 @@ export default function ProviderGovernancePage() {
         subtitle="Review listed provider quality, broad coverage assumptions, duplicate candidates, missing contact data, and private user-created providers. This does not mark providers verified or official."
         actions={
           <>
-            <button onClick={load} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-accent">
+            <button onClick={load} className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
               <RefreshCw className="h-4 w-4" /> Refresh
             </button>
             <button
               onClick={analyzeWithAi}
               disabled={aiBusy}
-              className="inline-flex items-center gap-2 rounded-lg border border-tone-cyan-br bg-tone-cyan-bg px-3 py-2 text-sm text-tone-cyan-fg hover:opacity-90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl border border-tone-cyan-br bg-tone-cyan-bg px-3.5 py-2.5 text-sm font-medium text-tone-cyan-fg transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {aiBusy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Analyze gaps
             </button>
-            <button onClick={exportQueue} className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90">
+            <button onClick={exportQueue} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
               <Download className="h-4 w-4" /> Export queue
             </button>
           </>
         }
       />
 
-      <div className="rounded-lg border border-tone-honey-br bg-tone-honey-bg p-4 text-sm text-tone-honey-fg dark:text-tone-honey-fg">
-        <div className="flex gap-2">
+      <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5 text-sm text-tone-honey-fg dark:text-tone-honey-fg">
+        <div className="flex items-start gap-3">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
             Provider records are listed/unverified unless a future source-backed validation workflow says otherwise. User-created providers are private user records by default.
@@ -288,44 +288,44 @@ export default function ProviderGovernancePage() {
       </div>
 
       {auditReport && (
-        <section className="rounded-lg border bg-card">
-          <div className="border-b p-4">
+        <section className="rounded-2xl border border-border bg-card">
+          <div className="border-b border-border p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">AI-ready audit report</p>
-                <h2 className="mt-1 text-lg font-semibold">Provider gap triage</h2>
-                <p className="text-xs text-muted-foreground">
-                  Deterministic pre-audit. LLM spend estimate: ${Number(auditReport.estimatedLlmCostUsd || 0).toFixed(2)}
+                <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-primary">AI-ready audit report</p>
+                <h2 className="mt-1 font-display text-lg font-bold text-foreground">Provider gap triage</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Deterministic pre-audit. LLM spend estimate: <span className="font-mono">${Number(auditReport.estimatedLlmCostUsd || 0).toFixed(2)}</span>
                 </p>
               </div>
-              <span className="rounded-full border bg-foreground/5 px-3 py-1 text-xs text-muted-foreground">
-                {auditReport.summary?.sourceGapCount || 0} source gaps
-                {auditReport.summary?.sourceHealthIssueCount ? `, ${auditReport.summary.sourceHealthIssueCount} source health` : ""}
+              <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs text-muted-foreground">
+                <span className="font-mono">{auditReport.summary?.sourceGapCount || 0}</span> source gaps
+                {auditReport.summary?.sourceHealthIssueCount ? <>, <span className="font-mono">{auditReport.summary.sourceHealthIssueCount}</span> source health</> : ""}
               </span>
             </div>
           </div>
-          <div className="grid gap-4 p-4 lg:grid-cols-[1fr_1.2fr]">
+          <div className="grid gap-4 p-5 lg:grid-cols-[1fr_1.2fr]">
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <div className="rounded-md border p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Open</p>
-                  <p className="mt-1 text-xl font-semibold">{auditReport.summary?.openQueueCount || 0}</p>
+                <div className="rounded-2xl border border-border p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Open</p>
+                  <p className="mt-1 font-display text-xl font-extrabold text-foreground">{auditReport.summary?.openQueueCount || 0}</p>
                 </div>
-                <div className="rounded-md border p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Health</p>
-                  <p className="mt-1 text-xl font-semibold">{auditReport.summary?.sourceHealthIssueCount || 0}</p>
+                <div className="rounded-2xl border border-border p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Health</p>
+                  <p className="mt-1 font-display text-xl font-extrabold text-foreground">{auditReport.summary?.sourceHealthIssueCount || 0}</p>
                 </div>
-                <div className="rounded-md border p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Repeated</p>
-                  <p className="mt-1 text-xl font-semibold">{auditReport.summary?.repeatedSourceGapCount || 0}</p>
+                <div className="rounded-2xl border border-border p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Repeated</p>
+                  <p className="mt-1 font-display text-xl font-extrabold text-foreground">{auditReport.summary?.repeatedSourceGapCount || 0}</p>
                 </div>
-                <div className="rounded-md border p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">High</p>
-                  <p className="mt-1 text-xl font-semibold">{auditReport.summary?.highSeveritySourceGapCount || 0}</p>
+                <div className="rounded-2xl border border-border p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">High</p>
+                  <p className="mt-1 font-display text-xl font-extrabold text-foreground">{auditReport.summary?.highSeveritySourceGapCount || 0}</p>
                 </div>
               </div>
-              <div className="rounded-md border p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Recommended operator moves</p>
+              <div className="rounded-2xl border border-border p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Recommended operator moves</p>
                 <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
                   {(auditReport.recommendations || []).slice(0, 4).map((item: string) => (
                     <li key={item}>{item}</li>
@@ -334,17 +334,17 @@ export default function ProviderGovernancePage() {
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Top review candidates</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Top review candidates</p>
               {(auditReport.reviewCandidates || []).slice(0, 5).map((candidate: any) => (
-                <div key={`${candidate.source}-${candidate.providerName}-${candidate.category}`} className="rounded-md border p-3 text-xs">
+                <div key={`${candidate.source}-${candidate.providerName}-${candidate.category}`} className="rounded-2xl border border-border p-3 text-xs">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{candidate.providerName}</p>
+                      <p className="truncate font-medium text-foreground">{candidate.providerName}</p>
                       <p className="text-muted-foreground">
                         {candidate.category} - {candidate.source}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full border px-2 py-0.5 text-[10px] text-muted-foreground">
+                    <span className="shrink-0 rounded-full border border-border px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
                       {candidate.occurrenceCount}x
                     </span>
                   </div>
@@ -360,7 +360,7 @@ export default function ProviderGovernancePage() {
                 </div>
               ))}
               {(!auditReport.reviewCandidates || auditReport.reviewCandidates.length === 0) && (
-                <p className="rounded-md border p-3 text-xs text-muted-foreground">No source-backed provider gaps need review.</p>
+                <p className="rounded-2xl border border-border p-3 text-xs text-muted-foreground">No source-backed provider gaps need review.</p>
               )}
             </div>
           </div>
@@ -368,13 +368,13 @@ export default function ProviderGovernancePage() {
       )}
 
       {aiAudit && (
-        <section className="rounded-lg border bg-card">
-          <div className="border-b p-4">
+        <section className="rounded-2xl border border-border bg-card">
+          <div className="border-b border-border p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Haiku on-demand analysis</p>
-                <h2 className="mt-1 text-lg font-semibold">Source-gap decision support</h2>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-primary">Haiku on-demand analysis</p>
+                <h2 className="mt-1 font-display text-lg font-bold text-foreground">Source-gap decision support</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
                   Manual run only. Sends provider/source metadata, not user identifiers or exact addresses.
                 </p>
               </div>
@@ -385,36 +385,36 @@ export default function ProviderGovernancePage() {
               )}
             </div>
           </div>
-          <div className="p-4">
+          <div className="p-5">
             {aiAudit.configured === false ? (
-              <div className="rounded-md border border-tone-honey-br bg-tone-honey-bg p-3 text-sm text-tone-honey-fg">
+              <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-3 text-sm text-tone-honey-fg">
                 Anthropic is not configured in Runtime Config, so no AI call was made. The deterministic report above still gives the safe triage path.
               </div>
             ) : aiAudit.error ? (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                 AI analysis was unavailable for this run. Keep using the deterministic review candidates and try again later.
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-md border bg-foreground/[0.02] p-3">
-                  <p className="text-sm">{aiAudit.analysis?.summary || "AI analysis completed."}</p>
+                <div className="rounded-2xl border border-border bg-muted/40 p-3">
+                  <p className="text-sm text-foreground">{aiAudit.analysis?.summary || "AI analysis completed."}</p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {aiAudit.promptStats?.issueCount || 0} source gaps, {aiAudit.promptStats?.candidateCount || 0} catalog candidates considered.
+                    <span className="font-mono">{aiAudit.promptStats?.issueCount || 0}</span> source gaps, <span className="font-mono">{aiAudit.promptStats?.candidateCount || 0}</span> catalog candidates considered.
                   </p>
                 </div>
                 <div className="grid gap-3 lg:grid-cols-2">
                   {(aiAudit.analysis?.items || []).map((item: any, index: number) => (
-                    <div key={`${item.providerName}-${item.category}-${index}`} className="rounded-md border p-3 text-sm">
+                    <div key={`${item.providerName}-${item.category}-${index}`} className="rounded-2xl border border-border p-3 text-sm">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="truncate font-medium">{item.providerName || item.title || "Provider gap"}</p>
+                          <p className="truncate font-medium text-foreground">{item.providerName || item.title || "Provider gap"}</p>
                           <p className="text-xs text-muted-foreground">{item.category || "Unknown category"}</p>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          <span className="rounded-full border bg-foreground/5 px-2 py-0.5 text-[10px] text-muted-foreground">
+                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
                             {aiActionLabel(item.recommendedAction)}
                           </span>
-                          <span className="rounded-full border bg-foreground/5 px-2 py-0.5 text-[10px] text-muted-foreground">
+                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
                             {item.confidence || "low"} confidence
                           </span>
                         </div>
@@ -422,7 +422,7 @@ export default function ProviderGovernancePage() {
                       <p className="mt-2 text-xs text-muted-foreground">{item.reason}</p>
                       {item.matchedCandidateIds?.length > 0 && (
                         <p className="mt-2 text-xs text-muted-foreground">
-                          Matched catalog IDs: {item.matchedCandidateIds.slice(0, 4).join(", ")}
+                          Matched catalog IDs: <span className="font-mono">{item.matchedCandidateIds.slice(0, 4).join(", ")}</span>
                         </p>
                       )}
                       {item.fieldsToCollect?.length > 0 && (
@@ -435,11 +435,11 @@ export default function ProviderGovernancePage() {
                         item.suggestedCatalogPatch?.phone ||
                         item.suggestedCatalogPatch?.coverageNote ||
                         item.suggestedCatalogPatch?.aliases?.length > 0) && (
-                        <div className="mt-3 rounded-md border bg-foreground/[0.02] p-2 text-xs text-muted-foreground">
+                        <div className="mt-3 rounded-2xl border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
                           {item.suggestedCatalogPatch.officialName && <p>Name: {item.suggestedCatalogPatch.officialName}</p>}
                           {item.suggestedCatalogPatch.aliases?.length > 0 && <p>Aliases: {item.suggestedCatalogPatch.aliases.join(", ")}</p>}
                           {item.suggestedCatalogPatch.website && <p>Website: {item.suggestedCatalogPatch.website}</p>}
-                          {item.suggestedCatalogPatch.phone && <p>Phone: {item.suggestedCatalogPatch.phone}</p>}
+                          {item.suggestedCatalogPatch.phone && <p>Phone: <span className="font-mono">{item.suggestedCatalogPatch.phone}</span></p>}
                           {item.suggestedCatalogPatch.coverageNote && <p>Coverage: {item.suggestedCatalogPatch.coverageNote}</p>}
                         </div>
                       )}
@@ -454,9 +454,9 @@ export default function ProviderGovernancePage() {
 
       <div className="grid gap-3 md:grid-cols-4">
         {QUEUE_ORDER.filter((key) => key in summary).map((key) => (
-          <div key={key} className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">{QUEUE_LABELS[key] || key}</p>
-            <p className="mt-2 text-2xl font-semibold">{String(summary[key] ?? 0)}</p>
+          <div key={key} className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{QUEUE_LABELS[key] || key}</p>
+            <p className="mt-1.5 font-display text-3xl font-extrabold leading-none text-foreground">{String(summary[key] ?? 0)}</p>
           </div>
         ))}
       </div>
@@ -466,12 +466,12 @@ export default function ProviderGovernancePage() {
           const items = (queues[key] || []) as any[];
           const isCustomQueue = key === "userCreatedProviderReview";
           return (
-            <section key={key} className={`rounded-lg border bg-card ${isCustomQueue ? "xl:col-span-2" : ""}`}>
-              <div className="border-b p-4">
-                <h2 className="font-semibold">{QUEUE_LABELS[key] || key}</h2>
-                <p className="text-xs text-muted-foreground">{items.length} open items</p>
+            <section key={key} className={`rounded-2xl border border-border bg-card ${isCustomQueue ? "xl:col-span-2" : ""}`}>
+              <div className="border-b border-border p-5">
+                <h2 className="font-display text-base font-bold text-foreground">{QUEUE_LABELS[key] || key}</h2>
+                <p className="mt-1 text-xs text-muted-foreground"><span className="font-mono">{items.length}</span> open items</p>
               </div>
-              <div className="max-h-[520px] divide-y overflow-y-auto">
+              <div className="max-h-[520px] divide-y divide-border overflow-y-auto">
                 {items.slice(0, 40).map((item, index) => {
                   const provider = item.provider;
                   const customId = isCustomQueue && provider?.id ? provider.id : null;
@@ -521,7 +521,7 @@ export default function ProviderGovernancePage() {
                             {customId && provider?.providerType ? ` - ${String(provider.providerType).replace(/_/g, " ").toLowerCase()}` : ""}
                           </p>
                           {customId && (provider?.city || provider?.state || provider?.zipCode) && (
-                            <p className="mt-1 text-[11px] text-muted-foreground">
+                            <p className="mt-1 font-mono text-[11px] text-muted-foreground">
                               {[provider?.city, provider?.state, provider?.zipCode].filter(Boolean).join(", ")}
                             </p>
                           )}
@@ -546,7 +546,7 @@ export default function ProviderGovernancePage() {
                             </a>
                           )}
                           {issueId && (
-                            <p className="mt-1 text-[11px] text-muted-foreground">
+                            <p className="mt-1 font-mono text-[11px] text-muted-foreground">
                               {[item.metadata?.state, item.metadata?.zip].filter(Boolean).join(" ")}
                               {item.issue?.severity ? ` - ${item.issue.severity} severity` : ""}
                             </p>
@@ -568,13 +568,13 @@ export default function ProviderGovernancePage() {
                       <p className="mt-2 text-sm">{item.warning?.label || item.warning?.code}</p>
                       <p className="mt-1 text-xs text-muted-foreground">{item.warning?.message || "Needs operator review."}</p>
                       {qualityProfile && (
-                        <div className="mt-3 rounded-md border bg-foreground/[0.02] p-3 text-xs">
+                        <div className="mt-3 rounded-2xl border border-border bg-muted/40 p-3 text-xs">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Quality profile</p>
-                              <p className="mt-0.5 font-medium">{qualityProfile.label || "Provider quality"}</p>
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Quality profile</p>
+                              <p className="mt-0.5 font-medium text-foreground">{qualityProfile.label || "Provider quality"}</p>
                             </div>
-                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${qualityLevelClassName(String(qualityProfile.level || ""))}`}>
+                            <span className={`rounded-full border px-2 py-0.5 font-mono text-[10px] font-medium ${qualityLevelClassName(String(qualityProfile.level || ""))}`}>
                               {Number(qualityProfile.score || 0)}/100
                             </span>
                           </div>

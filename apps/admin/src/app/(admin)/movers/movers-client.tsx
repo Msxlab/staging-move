@@ -304,45 +304,46 @@ export default function MoversClient() {
             form-gated, so the script needs a locally-downloaded CSV. ── */}
       {freshness ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-border bg-card px-4 py-3">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               {t("freshness.totalRows")}
             </p>
-            <p className="mt-1 font-mono text-xl tabular-nums text-foreground">
+            <p className="mt-1.5 font-display text-[28px] font-extrabold leading-none tabular-nums text-foreground">
               {freshness.totalRows.toLocaleString()}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-card px-4 py-3">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               {t("freshness.activeRows")}
             </p>
-            <p className="mt-1 font-mono text-xl tabular-nums text-foreground">
+            <p className="mt-1.5 font-display text-[28px] font-extrabold leading-none tabular-nums text-tone-sage-fg">
               {freshness.activeCount.toLocaleString()}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-card px-4 py-3">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               {t("freshness.newestDataAsOf")}
             </p>
-            <p className="mt-1 flex items-center gap-2 text-sm text-foreground">
-              <span className="font-mono tabular-nums">
+            <p className="mt-1.5 flex flex-wrap items-center gap-2 text-foreground">
+              <span className="font-display text-2xl font-extrabold leading-none tabular-nums">
                 {newestDataAsOf ? newestDataAsOf.toLocaleDateString() : t("freshness.never")}
               </span>
               {snapshotStale ? (
                 <span
-                  className="inline-flex rounded-full bg-tone-honey-bg px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-tone-honey-fg"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-tone-honey-bg px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-tone-honey-fg"
                   title={t("freshness.staleHint")}
                 >
+                  <span className="h-1.5 w-1.5 rounded-full bg-tone-honey-fg" />
                   {t("freshness.stale")}
                 </span>
               ) : null}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-card px-4 py-3">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               {t("freshness.statesCovered")}
             </p>
-            <p className="mt-1 font-mono text-xl tabular-nums text-foreground">
+            <p className="mt-1.5 font-display text-[28px] font-extrabold leading-none tabular-nums text-tone-sky-fg">
               {freshness.statesCovered.toLocaleString()}
             </p>
           </div>
@@ -354,7 +355,7 @@ export default function MoversClient() {
           a surprise. */}
       <div
         role="note"
-        className="flex items-start gap-3 rounded-xl border border-tone-sky-br bg-tone-sky-bg px-4 py-3 text-sm text-foreground"
+        className="flex items-start gap-3 rounded-2xl border border-tone-sky-br bg-tone-sky-bg px-4 py-3 text-sm text-foreground"
       >
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <p>{t("etlNote")}</p>
@@ -445,17 +446,17 @@ export default function MoversClient() {
           <div className="hidden overflow-x-auto overscroll-x-contain sm:block">
             <table className="w-full min-w-[760px] text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th scope="col" className="py-2 pr-4">{t("table.name")}</th>
-                  <th scope="col" className="py-2 pr-4">{t("table.usdot")}</th>
-                  <th scope="col" className="py-2 pr-4">{t("table.location")}</th>
-                  <th scope="col" className="py-2 pr-4">{t("table.hhg")}</th>
-                  <th scope="col" className="py-2 pr-4 text-right">{t("table.fleet")}</th>
-                  <th scope="col" className="py-2 pr-4 text-right">{t("table.complaints")}</th>
-                  <th scope="col" className="py-2 pr-4">{t("table.safety")}</th>
-                  <th scope="col" className="py-2 pr-4">{t("table.dataAsOf")}</th>
-                  <th scope="col" className="py-2 pr-4">{t("table.status")}</th>
-                  <th scope="col" className="py-2 text-right">{t("table.actions")}</th>
+                <tr className="border-b border-border text-left text-[10.5px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  <th scope="col" className="py-2.5 pr-4">{t("table.name")}</th>
+                  <th scope="col" className="py-2.5 pr-4">{t("table.usdot")}</th>
+                  <th scope="col" className="py-2.5 pr-4">{t("table.location")}</th>
+                  <th scope="col" className="py-2.5 pr-4">{t("table.hhg")}</th>
+                  <th scope="col" className="py-2.5 pr-4 text-right">{t("table.fleet")}</th>
+                  <th scope="col" className="py-2.5 pr-4 text-right">{t("table.complaints")}</th>
+                  <th scope="col" className="py-2.5 pr-4">{t("table.safety")}</th>
+                  <th scope="col" className="py-2.5 pr-4">{t("table.dataAsOf")}</th>
+                  <th scope="col" className="py-2.5 pr-4">{t("table.status")}</th>
+                  <th scope="col" className="py-2.5 text-right">{t("table.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -507,13 +508,14 @@ export default function MoversClient() {
                         <button
                           type="button"
                           onClick={() => toggleActive(mover)}
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] ${
                             mover.active
                               ? "bg-tone-sage-bg text-tone-sage-fg"
                               : "bg-muted text-muted-foreground"
                           }`}
                           title={mover.active ? t("table.deactivateHint") : t("table.activateHint")}
                         >
+                          <span className={`h-1.5 w-1.5 rounded-full ${mover.active ? "bg-tone-sage-fg" : "bg-muted-foreground"}`} />
                           {mover.active ? t("status.active") : t("status.inactive")}
                         </button>
                       </td>
@@ -537,7 +539,7 @@ export default function MoversClient() {
             {movers.map((mover) => {
               const ratingKey = mover.safetyRating ? safetyKey(mover.safetyRating) : null;
               return (
-                <div key={mover.id} className="rounded-xl border border-border bg-card p-3">
+                <div key={mover.id} className="rounded-2xl border border-border bg-card p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium text-foreground">{moverDisplayName(mover)}</p>
@@ -548,11 +550,12 @@ export default function MoversClient() {
                     <button
                       type="button"
                       onClick={() => toggleActive(mover)}
-                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] ${
                         mover.active ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-muted text-muted-foreground"
                       }`}
                       title={mover.active ? t("table.deactivateHint") : t("table.activateHint")}
                     >
+                      <span className={`h-1.5 w-1.5 rounded-full ${mover.active ? "bg-tone-sage-fg" : "bg-muted-foreground"}`} />
                       {mover.active ? t("status.active") : t("status.inactive")}
                     </button>
                   </div>
@@ -623,7 +626,7 @@ export default function MoversClient() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-base font-semibold text-foreground">{t("drawer.title")}</h2>
+                <h2 className="font-display text-lg font-extrabold leading-tight text-foreground">{t("drawer.title")}</h2>
                 <p className="mt-1 text-xs text-muted-foreground">{t("drawer.subtitle")}</p>
               </div>
               <button
@@ -636,8 +639,8 @@ export default function MoversClient() {
               </button>
             </div>
 
-            <div className="mt-5 rounded-xl border border-border bg-background/60 p-4">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="mt-5 rounded-2xl border border-border bg-background/60 p-4">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 {t("drawer.registry")}
               </p>
               <dl className="mt-2 space-y-1.5 text-sm">
@@ -694,7 +697,7 @@ export default function MoversClient() {
                 submitForm();
               }}
             >
-              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 {t("drawer.corrections")}
               </p>
 

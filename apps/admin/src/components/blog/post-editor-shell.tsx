@@ -55,9 +55,9 @@ interface FormState {
 const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
 
 const inputClass =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
 
-const labelClass = "mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground";
+const labelClass = "mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground";
 const PUBLIC_WEB_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.com").replace(/\/+$/, "");
 
 function toLocalInputValue(value: string | null): string {
@@ -387,24 +387,26 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
+          <Link href="/blog" className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground">
+            <ArrowLeft className="h-3.5 w-3.5" />
             Blog
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-foreground">
+          <h1 className="mt-2 font-display text-2xl font-bold text-foreground">
             {isExisting ? "Edit blog post" : "New blog post"}
           </h1>
           {post ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Status: <span className="font-medium text-foreground">{post.status}</span>
+            <p className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                {post.status}
+              </span>
               {publicUrl ? (
                 <>
-                  {" "}
-                  / Public:{" "}
-                  <Link href={publicUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Public</span>
+                  <Link href={publicUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-primary underline-offset-2 hover:underline">
                     {publicUrl}
                   </Link>
                 </>
@@ -416,7 +418,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
               {autosaving
                 ? "Autosaving..."
                 : lastSavedAt
-                  ? `Saved at ${lastSavedAt.toLocaleTimeString()}`
+                  ? <>Saved at <span className="font-mono">{lastSavedAt.toLocaleTimeString()}</span></>
                   : "Autosave runs every 30 seconds when idle."}
             </p>
           ) : null}
@@ -427,7 +429,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
               type="button"
               onClick={openPreview}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
               <Eye className="h-4 w-4" />
               Preview
@@ -437,7 +439,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
             type="button"
             onClick={() => void savePost()}
             disabled={!canSave}
-            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
             {postId ? "Save" : "Create draft"}
@@ -449,7 +451,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   type="button"
                   onClick={() => void runLifecycle("cancel-schedule")}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                 >
                   <CalendarClock className="h-4 w-4" />
                   Cancel schedule
@@ -459,7 +461,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   type="button"
                   onClick={() => void runLifecycle("schedule")}
                   disabled={saving || !form.scheduledAt}
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                 >
                   <CalendarClock className="h-4 w-4" />
                   Schedule
@@ -470,7 +472,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   type="button"
                   onClick={() => void runLifecycle("unpublish")}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                 >
                   Unpublish
                 </button>
@@ -479,7 +481,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   type="button"
                   onClick={() => void runLifecycle("publish")}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />
                   Publish
@@ -489,7 +491,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                 type="button"
                 onClick={() => setConfirmingDelete(true)}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-md border border-destructive/30 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-destructive/30 bg-card px-3.5 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete
@@ -499,9 +501,9 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="space-y-4">
-          <div className="rounded-lg border border-border bg-card p-4">
+          <div className="rounded-2xl border border-border bg-card p-5">
             <label className={labelClass} htmlFor="blog-title">
               Title
             </label>
@@ -509,7 +511,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
               id="blog-title"
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              className="w-full border-0 bg-transparent p-0 text-3xl font-semibold text-foreground outline-none placeholder:text-muted-foreground"
+              className="w-full border-0 bg-transparent p-0 font-display text-3xl font-bold text-foreground outline-none placeholder:text-muted-foreground"
               placeholder="Post title"
             />
           </div>
@@ -521,7 +523,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
               disabled={saving}
             />
           ) : (
-            <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
               Create the draft first, then the full editor will open.
             </div>
           )}
@@ -529,8 +531,8 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
 
         <aside className="space-y-4">
           {postId ? (
-            <section className="rounded-lg border border-border bg-card p-4">
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Cover image</h2>
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="mb-3 font-display text-base font-bold text-foreground">Cover image</h2>
               <CoverImageUploader
                 ogImageKey={form.ogImageKey}
                 ogImageAlt={form.ogImageAlt}
@@ -543,8 +545,8 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
           ) : null}
 
           {postId ? (
-            <section className="rounded-lg border border-border bg-card p-4">
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Discoverability</h2>
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="mb-3 font-display text-base font-bold text-foreground">Discoverability</h2>
               <SeoScore
                 title={form.title}
                 seoTitle={form.seoTitle}
@@ -558,8 +560,8 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
             </section>
           ) : null}
 
-          <section className="rounded-lg border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Post settings</h2>
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-3 font-display text-base font-bold text-foreground">Post settings</h2>
             <div className="space-y-3">
               <div>
                 <label className={labelClass} htmlFor="blog-slug">
@@ -640,8 +642,8 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
           </section>
 
           {postId ? (
-            <section className="rounded-lg border border-border bg-card p-4">
-              <h2 className="mb-3 text-sm font-semibold text-foreground">SEO meta</h2>
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="mb-3 font-display text-base font-bold text-foreground">SEO meta</h2>
               <div className="space-y-3">
                 <div>
                   <label className={labelClass} htmlFor="seo-title">

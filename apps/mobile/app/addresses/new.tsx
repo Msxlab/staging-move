@@ -15,12 +15,14 @@ import {
 import { useEffect } from "react";
 import { useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, MapPin, Check, Calendar, Sparkles } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useTranslation } from "react-i18next";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
-import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
+import { useAppTheme, useThemePreference, fonts, type Theme } from "@/lib/theme";
+import { HeroCard, MoveCard, SectionHeader } from "@/components/move";
 import { api } from "@/lib/api";
 import { formatLocalDateKey } from "@/lib/date-only";
 import { hapticError } from "@/lib/haptics";
@@ -262,40 +264,42 @@ export default function NewAddressScreen() {
         <EmailVerificationBanner context={t("addresses.title")} />
 
         {addressLimitReached ? (
-          <View style={styles.limitCard}>
-            <View style={styles.limitIcon}>
-              <Sparkles size={18} color={theme.colors.primary} />
+          <MoveCard style={styles.limitCard} accent padding={16} radius={theme.radius.xl}>
+            <View style={styles.limitRow}>
+              <View style={styles.limitIcon}>
+                <Sparkles size={18} color={theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.limitTitle}>
+                  {t("addresses.limitReachedTitle", { defaultValue: "Address limit reached" })}
+                </Text>
+                <Text style={styles.limitBody}>
+                  {t("addresses.limitReachedWithCount", {
+                    current: addressGate?.current ?? 0,
+                    limit: addressGate?.limit ?? 0,
+                    defaultValue: `Your plan includes ${addressGate?.limit ?? 0} addresses. Upgrade to add more.`,
+                  })}
+                </Text>
+                <TouchableOpacity
+                  style={styles.limitCta}
+                  onPress={() => router.push("/settings/subscription")}
+                  activeOpacity={0.72}
+                >
+                  <Text style={styles.limitCtaText}>{t("subscription.upgrade", { defaultValue: "Upgrade" })}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.limitTitle}>
-                {t("addresses.limitReachedTitle", { defaultValue: "Address limit reached" })}
-              </Text>
-              <Text style={styles.limitBody}>
-                {t("addresses.limitReachedWithCount", {
-                  current: addressGate?.current ?? 0,
-                  limit: addressGate?.limit ?? 0,
-                  defaultValue: `Your plan includes ${addressGate?.limit ?? 0} addresses. Upgrade to add more.`,
-                })}
-              </Text>
-              <TouchableOpacity
-                style={styles.limitCta}
-                onPress={() => router.push("/settings/subscription")}
-                activeOpacity={0.72}
-              >
-                <Text style={styles.limitCtaText}>{t("subscription.upgrade", { defaultValue: "Upgrade" })}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          </MoveCard>
         ) : (
           <>
-        <View style={styles.hero}>
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <MapPin size={20} color={theme.colors.primary} />
             </View>
             <View style={styles.heroCopy}>
               <Text style={styles.heroKicker}>ADDRESS COMMAND</Text>
-              <Text style={styles.heroTitle}>{form.nickname || selectedTypeLabel}</Text>
+              <Text style={styles.heroTitle} numberOfLines={1}>{form.nickname || selectedTypeLabel}</Text>
               <Text style={styles.heroSub} numberOfLines={2}>
                 {heroSubline}
               </Text>
@@ -307,7 +311,7 @@ export default function NewAddressScreen() {
               <Text style={styles.heroStatLabel}>fields</Text>
             </View>
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{form.ownership}</Text>
+              <Text style={styles.heroStatValue} numberOfLines={1}>{form.ownership}</Text>
               <Text style={styles.heroStatLabel}>ownership</Text>
             </View>
             <View style={styles.heroStat}>
@@ -315,11 +319,11 @@ export default function NewAddressScreen() {
               <Text style={styles.heroStatLabel}>primary</Text>
             </View>
           </View>
-        </View>
+        </HeroCard>
 
         {/* Type Selector */}
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
+        <SectionHeader label={t("addresses.type")} style={styles.sectionHeader} />
+        <MoveCard style={styles.formSection} padding={14} radius={theme.radius.xl}>
           <View style={styles.chipRow}>
             {ADDRESS_TYPES.map((t) => (
               <TouchableOpacity
@@ -343,11 +347,11 @@ export default function NewAddressScreen() {
             value={form.nickname}
             onChangeText={(v) => update("nickname", v)}
           />
-        </View>
+        </MoveCard>
 
         {/* Street */}
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>Location</Text>
+        <SectionHeader label={t("addresses.street", { defaultValue: "Location" })} style={styles.sectionHeader} />
+        <MoveCard style={styles.formSection} padding={14} radius={theme.radius.xl}>
           <AddressAutocompleteField
             label={t("addresses.street") + " *"}
             value={form.street}
@@ -403,11 +407,11 @@ export default function NewAddressScreen() {
               />
             </View>
           </View>
-        </View>
+        </MoveCard>
 
         {/* Ownership */}
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>{t("addresses.ownership")}</Text>
+        <SectionHeader label={t("addresses.ownership")} style={styles.sectionHeader} />
+        <MoveCard style={styles.formSection} padding={14} radius={theme.radius.xl}>
           <View style={styles.chipRow}>
             {OWNERSHIP_TYPES.map((o) => (
               <TouchableOpacity
@@ -455,7 +459,7 @@ export default function NewAddressScreen() {
               style={{ alignSelf: "flex-end", marginTop: 4 }}
               onPress={() => setShowDatePicker(false)}
             >
-              <Text style={{ fontSize: 14, fontWeight: "600", color: theme.colors.primary }}>{t("common.done")}</Text>
+              <Text style={{ fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.primary }}>{t("common.done")}</Text>
             </TouchableOpacity>
           )}
 
@@ -465,11 +469,11 @@ export default function NewAddressScreen() {
             <Switch
               value={form.isPrimary}
               onValueChange={(v) => update("isPrimary", v)}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-              thumbColor="#fff"
+              trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+              thumbColor={theme.colors.text}
             />
           </View>
-        </View>
+        </MoveCard>
         </>
         )}
       </ScrollView>
@@ -480,16 +484,23 @@ export default function NewAddressScreen() {
           style={[styles.saveBtn, loading && { opacity: 0.6 }]}
           onPress={handleSave}
           disabled={loading}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>{t("addresses.save")}</Text>
-            </>
-          )}
+          <LinearGradient
+            colors={theme.colors.gradient.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.saveBtnGrad}
+          >
+            {loading ? (
+              <ActivityIndicator color={theme.colors.onAccent} />
+            ) : (
+              <>
+                <Check size={18} color={theme.colors.onAccent} />
+                <Text style={styles.saveBtnText}>{t("addresses.save")}</Text>
+              </>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
         </View>
       )}
@@ -516,32 +527,24 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   formShell: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 24 },
   scrollContentWithFooter: { paddingBottom: 136 },
   hero: {
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 18,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
+    marginBottom: 16,
   },
   limitCard: {
+    marginTop: 4,
+  },
+  limitRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    borderRadius: 20,
-    padding: 16,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   limitIcon: {
     width: 42,
@@ -549,21 +552,23 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
   },
-  limitTitle: { fontSize: 16, fontWeight: "800", color: theme.colors.text },
-  limitBody: { fontSize: 13, color: theme.colors.textSecondary, lineHeight: 19, marginTop: 4 },
+  limitTitle: { fontSize: 16, fontFamily: fonts.serifBold, color: theme.colors.text },
+  limitBody: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, lineHeight: 19, marginTop: 4 },
   limitCta: {
     alignSelf: "flex-start",
     marginTop: 12,
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 12,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
   },
-  limitCtaText: { fontSize: 13, fontWeight: "800", color: "#fff" },
+  limitCtaText: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.primary },
   heroTop: {
     flexDirection: "row",
     alignItems: "center",
@@ -573,30 +578,30 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
   heroKicker: {
     fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.3,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 1.4,
     textTransform: "uppercase",
-    color: theme.colors.accent,
+    color: theme.colors.primary,
   },
   heroTitle: {
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 20,
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     marginTop: 3,
-    letterSpacing: 0,
   },
   heroSub: {
     fontSize: 12,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
     marginTop: 3,
     lineHeight: 17,
   },
@@ -608,7 +613,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   heroStat: {
     flex: 1,
     minHeight: 58,
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 10,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
@@ -617,63 +622,57 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   heroStatValue: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.text,
   },
   heroStatLabel: {
     fontSize: 9,
-    fontWeight: "700",
+    fontFamily: fonts.sansBold,
     letterSpacing: 0.9,
-    color: theme.colors.textTertiary,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
   formSection: {
-    borderRadius: 22,
-    padding: 14,
-    marginBottom: 14,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    marginBottom: 6,
   },
-  sectionLabel: {
-    fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.8, marginTop: 0, marginBottom: 10,
-  },
+  sectionHeader: { marginTop: 18, marginBottom: 10, marginLeft: 2 },
   label: {
-    fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6,
+    fontSize: 14, fontFamily: fonts.sansMedium, color: theme.colors.dim, marginTop: 16, marginBottom: 6,
   },
   input: {
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: theme.colors.text,
+    backgroundColor: theme.colors.bg2, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text,
   },
   dateButton: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 14,
+    backgroundColor: theme.colors.bg2, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 14,
   },
   dateButtonText: {
-    fontSize: 15, color: theme.colors.textMuted, flex: 1,
+    fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text, flex: 1,
   },
   row: { flexDirection: "row", gap: 12 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    minHeight: 38,
+    paddingHorizontal: 13, paddingVertical: 8, borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+    justifyContent: "center",
   },
   chipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder,
   },
-  chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
+  chipText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   chipTextActive: { color: theme.colors.primary },
   switchRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginTop: 20, paddingVertical: 14, paddingHorizontal: 16,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.lg,
+    marginTop: 16, paddingVertical: 13, paddingHorizontal: 15,
+    backgroundColor: theme.colors.surface, borderRadius: 16,
     borderWidth: 1, borderColor: theme.colors.border,
   },
-  switchLabel: { fontSize: 15, fontWeight: "500", color: theme.colors.text },
+  switchLabel: { flex: 1, paddingRight: 12, fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text },
   footer: {
     paddingHorizontal: 20,
     paddingTop: 12,
@@ -682,9 +681,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderTopColor: theme.colors.border,
   },
   saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, ...theme.shadow.glow,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
   },
-  saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  saveBtnGrad: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 16,
+  },
+  saveBtnText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 });

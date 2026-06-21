@@ -30,6 +30,20 @@ import {
   Geist_700Bold,
 } from "@expo-google-fonts/geist";
 import { GeistMono_400Regular, GeistMono_500Medium } from "@expo-google-fonts/geist-mono";
+import {
+  PlayfairDisplay_600SemiBold,
+  PlayfairDisplay_700Bold,
+  PlayfairDisplay_700Bold_Italic,
+  PlayfairDisplay_800ExtraBold,
+  PlayfairDisplay_900Black,
+} from "@expo-google-fonts/playfair-display";
+import {
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
+} from "@expo-google-fonts/dm-sans";
+import { DMMono_400Regular, DMMono_500Medium } from "@expo-google-fonts/dm-mono";
 import "../src/styles/global.css";
 import { AnimatedSplash } from "@/components/AnimatedSplash";
 import { AppLockGate } from "@/components/AppLockGate";
@@ -466,10 +480,12 @@ export default function RootLayout() {
     return () => setSessionCleanupHook(null);
   }, [queryClient]);
 
-  // Edition VII · Aurora. Fraunces is the display face (Locate*flow*
-  // wordmark, hero copy); Geist is the UI face. Both are loaded on first
-  // boot and the splash is held until they resolve so the auth screen never
-  // flashes a system fallback for the brand wordmark.
+  // Move design system. Playfair Display is the display/serif face (the
+  // "Move" wordmark, hero numerals, section titles); DM Sans is the UI face;
+  // DM Mono is for numerals/meta. Fraunces + Geist are still loaded during the
+  // reskin transition so any not-yet-migrated screen keeps its font. All are
+  // loaded on first boot and the splash is held until they resolve so no
+  // screen flashes a system fallback for the brand wordmark.
   const [fontsLoaded] = useFraunces({
     Fraunces_400Regular,
     Fraunces_400Regular_Italic,
@@ -481,6 +497,17 @@ export default function RootLayout() {
     Geist_700Bold,
     GeistMono_400Regular,
     GeistMono_500Medium,
+    PlayfairDisplay_600SemiBold,
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_700Bold_Italic,
+    PlayfairDisplay_800ExtraBold,
+    PlayfairDisplay_900Black,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+    DMMono_400Regular,
+    DMMono_500Medium,
   });
 
   useEffect(() => {

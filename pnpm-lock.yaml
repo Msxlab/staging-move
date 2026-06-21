@@ -184,6 +184,12 @@ importers:
       '@babel/runtime':
         specifier: ^7.29.7
         version: 7.29.7
+      '@expo-google-fonts/dm-mono':
+        specifier: ^0.4.2
+        version: 0.4.2
+      '@expo-google-fonts/dm-sans':
+        specifier: ^0.4.2
+        version: 0.4.2
       '@expo-google-fonts/fraunces':
         specifier: ^0.4.0
         version: 0.4.1
@@ -191,6 +197,9 @@ importers:
         specifier: ^0.4.2
         version: 0.4.2
       '@expo-google-fonts/geist-mono':
+        specifier: ^0.4.2
+        version: 0.4.2
+      '@expo-google-fonts/playfair-display':
         specifier: ^0.4.2
         version: 0.4.2
       '@expo/metro-runtime':
@@ -1498,6 +1507,12 @@ packages:
     resolution: {integrity: sha512-rZAP3aVgB9ds9KOeUSL+zZ21hPmo8dh6fnIFwRQj5EAZl9gzR7wxYbYXYysAM8CTqGmUGyp2S4kUdV17MnGuWQ==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
+  '@expo-google-fonts/dm-mono@0.4.2':
+    resolution: {integrity: sha512-loMaZOkQRs1r7yt4rN39zcr9e0J+smwnSx929yuODkuiPfsY4PaW18C9SEZ0BvXfcBKoRhatGoIBl8V2MOYVPQ==}
+
+  '@expo-google-fonts/dm-sans@0.4.2':
+    resolution: {integrity: sha512-e/fLH5aCJzkEenz7axvEn8N7IJAKhUwNjIxS75h9j+Ip1M9S7d22M19gJN3A7QW4egVkBJRyQh1hQFhngQn9yA==}
+
   '@expo-google-fonts/fraunces@0.4.1':
     resolution: {integrity: sha512-gYc9P92ObyWvz1rWPOeWSvVKyBFIuA8hgOdhvo4DSiPBaWLbFA6v8uLIEIBwW+0oWTlXbBzjeBReHQI2H7UNjQ==}
 
@@ -1509,6 +1524,9 @@ packages:
 
   '@expo-google-fonts/material-symbols@0.4.38':
     resolution: {integrity: sha512-IJkBtN1o8u9BW5fvSii1MyHPQ7Q0HxbWcVBvOrOzgMLpVtZw7R2w94wBTVR7kZwv3w1JNTESMmLA5Sqn1+Z36A==}
+
+  '@expo-google-fonts/playfair-display@0.4.2':
+    resolution: {integrity: sha512-mWhBV59RUjSS3aYpytUb7UyHHTnXcHh7epAn7gq+M4XAEh5PuMKUrP8eiUfkJLb6UwHZCi7EhQpUzxHu5OL96w==}
 
   '@expo/apple-utils@2.1.19':
     resolution: {integrity: sha512-f1iMteL+tTOSF1sovVB35ncobdiZvhjWvwEOWGIuAutyeIpcxNJ/2tUZSE748X/VEQLn1cL2Tozkdp2MLXStvA==}
@@ -9861,6 +9879,10 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
+  '@expo-google-fonts/dm-mono@0.4.2': {}
+
+  '@expo-google-fonts/dm-sans@0.4.2': {}
+
   '@expo-google-fonts/fraunces@0.4.1': {}
 
   '@expo-google-fonts/geist-mono@0.4.2': {}
@@ -9868,6 +9890,8 @@ snapshots:
   '@expo-google-fonts/geist@0.4.2': {}
 
   '@expo-google-fonts/material-symbols@0.4.38': {}
+
+  '@expo-google-fonts/playfair-display@0.4.2': {}
 
   '@expo/apple-utils@2.1.19': {}
 

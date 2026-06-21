@@ -3,18 +3,8 @@ import { Appearance, useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "@/lib/auth-store";
 import {
-  brandColors,
-  semanticColors,
-  semanticColorsLight,
-  surfaceDark,
-  surfaceLight,
-  textDark,
-  textLight,
-  borderDark,
-  borderLight,
   tonesDark,
   tonesLight,
-  gradients,
   spacing as tokenSpacing,
   radii as tokenRadii,
   shadowsMobile,
@@ -47,47 +37,50 @@ import {
 // reacts to OS theme flips immediately.
 // ──────────────────────────────────────────────────────────────────────
 
+// Sapphire accent — the single uniform brand accent (Move design).
+const ACCENT_DARK = "#5B8DEF";
+const ACCENT_DARK_LIGHT = "#83AAF5";
+const ACCENT_DARK_DEEP = "#3D6FD6";
+const ACCENT_LIGHT = "#2E5FB0";
+const ACCENT_LIGHT_LIGHT = "#3D74C8";
+const ACCENT_LIGHT_DEEP = "#244C90";
+
 const darkColors = {
-  primary: brandColors.orange,            // Aurora cool #7FB6E8
-  primaryLight: brandColors.orangeLight,  // cool-light #A5C9F0
-  primaryDark: brandColors.orangeDark,    // cool-2 #5C9DDC
-  // Faded primary — Aurora cool at 12%. Keeps key faded surfaces
-  // (active-plan chip, hero ring) on the cool palette.
-  primaryFaded: "rgba(127, 182, 232, 0.12)",
-  accent: brandColors.amber,              // honey/champagne foil #F2C46C
+  primary: ACCENT_DARK, // Sapphire #5B8DEF
+  primaryLight: ACCENT_DARK_LIGHT, // #83AAF5
+  primaryDark: ACCENT_DARK_DEEP, // #3D6FD6
+  primaryFaded: "rgba(91, 141, 239, 0.12)",
+  accent: ACCENT_DARK, // single accent — no separate honey accent
 
-  success: semanticColors.success,        // Aurora mint #87DDC0
-  successFaded: "rgba(135, 221, 192, 0.12)",
-  warning: semanticColors.warning,        // Aurora amber #F2C46C
-  warningFaded: "rgba(242, 196, 108, 0.14)",
-  error: semanticColors.danger,           // Aurora coral #F08C8E
-  errorFaded: "rgba(240, 140, 142, 0.14)",
-  info: semanticColors.info,              // Aurora cool #7FB6E8
-  infoFaded: "rgba(127, 182, 232, 0.12)",
+  success: "#54CB7E", // Move green
+  successFaded: "rgba(84, 203, 126, 0.14)",
+  warning: "#E0A85A", // Move amber
+  warningFaded: "rgba(224, 168, 90, 0.16)",
+  error: "#E25C5C", // Move red
+  errorFaded: "rgba(226, 92, 92, 0.16)",
+  info: "#37C2C9", // Move teal
+  infoFaded: "rgba(55, 194, 201, 0.14)",
 
-  background: surfaceDark.background,
-  surface: surfaceDark.surface,
-  card: surfaceDark.card,
-  cardHover: surfaceDark.cardHover,
-  elevated: surfaceDark.elevated,
+  background: "#0A0F1C", // Move bg
+  surface: "#121B2D", // Move surface (cards)
+  card: "#121B2D",
+  cardHover: "#18233A", // surface2
+  elevated: "#1F2C47", // surface3
 
-  border: borderDark.default,
-  borderLight: borderDark.strong,
-  borderFocus: borderDark.focus,
+  border: "rgba(110, 150, 225, 0.10)",
+  borderLight: "rgba(255, 255, 255, 0.10)",
+  borderFocus: "rgba(91, 141, 239, 0.55)",
 
-  // Glass — Aurora pane alphas. Matches `glassDark` from shared tokens,
-  // which is now cool white-on-navy for the Aurora system.
   glass: {
     bg: "rgba(255, 255, 255, 0.03)",
     border: "rgba(255, 255, 255, 0.05)",
     highlight: "rgba(255, 255, 255, 0.08)",
   },
 
-  // Foreground — Aurora cool ink `#ECF1F8` on navy surfaces (Edition VII).
-  text: textDark.primary,
-  textSecondary: textDark.secondary,
-  textTertiary: textDark.tertiary,
-  textMuted: textDark.muted,
+  text: "#EFF3FA", // Move text
+  textSecondary: "#8A99B6", // dim
+  textTertiary: "#42526F", // faint
+  textMuted: "#42526F",
 
   orange: tonesDark.orange,
   emerald: tonesDark.emerald,
@@ -97,9 +90,41 @@ const darkColors = {
   cyan: tonesDark.cyan,
 
   gradient: {
-    primary: gradients.primary as readonly [string, string],
-    warm: gradients.warm as readonly [string, string],
-    glow: gradients.glow as readonly [string, string],
+    primary: ["#83AAF5", "#5B8DEF"] as readonly [string, string],
+    warm: ["#3D6FD6", "#5B8DEF"] as readonly [string, string],
+    glow: ["rgba(91, 141, 239, 0.40)", "rgba(91, 141, 239, 0.10)"] as readonly [string, string],
+  },
+
+  // ── Move design additions ───────────────────────────────────────────
+  bg2: "#0C1322",
+  surface2: "#18233A",
+  surface3: "#1F2C47",
+  dim: "#8A99B6",
+  faint: "#42526F",
+  onAccent: "#0A0F1C",
+  accentSoft: "rgba(91, 141, 239, 0.09)",
+  accentBorder: "rgba(91, 141, 239, 0.22)",
+  green: "#54CB7E",
+  red: "#E25C5C",
+  amberSolid: "#E0A85A",
+  teal: "#37C2C9",
+  amberSoft: "rgba(224, 168, 90, 0.16)",
+  amberLine: "rgba(224, 168, 90, 0.24)",
+  redSoft: "rgba(226, 92, 92, 0.16)",
+  redLine: "rgba(226, 92, 92, 0.22)",
+  track: "rgba(255, 255, 255, 0.07)",
+  handle: "rgba(255, 255, 255, 0.18)",
+  glassPane: "rgba(6, 11, 24, 0.62)",
+  heroGrad: ["#141C30", "#0C1220"] as readonly [string, string],
+  mapBg: ["#0d1830", "#0a1120"] as readonly [string, string],
+  mapGrid: "rgba(255, 255, 255, 0.06)",
+  mapRouteBase: "rgba(255, 255, 255, 0.10)",
+  raccoon: {
+    head: "#8C9AB2",
+    mask: "#0C1525",
+    ear: "#C4A090",
+    pupil: "#04080F",
+    eye: ACCENT_DARK,
   },
 } as const;
 
@@ -107,34 +132,32 @@ const darkColors = {
 const lightColors = {
   ...darkColors,
 
-  // Brand accents darkened on paper for AA contrast — mirrors web `.light`
-  // (--rose #1F5FA0 / --foil #7A5418) and the design bundle's light scope.
-  // Without these, light mode inherited the dark-mode bright blue/honey, which
-  // fail contrast on the soft-sky paper surface.
-  primary: "#1F5FA0", // paper cool blue
-  primaryLight: "#4D8FCE",
-  primaryDark: "#17518D",
-  accent: "#7A5418", // paper honey/champagne foil
-  primaryFaded: "rgba(31, 95, 160, 0.10)",
+  // Move light scope — warm greige paper, Sapphire accent darkened for AA
+  // contrast on the soft paper surface.
+  primary: ACCENT_LIGHT, // #2E5FB0
+  primaryLight: ACCENT_LIGHT_LIGHT, // #3D74C8
+  primaryDark: ACCENT_LIGHT_DEEP, // #244C90
+  accent: ACCENT_LIGHT,
+  primaryFaded: "rgba(46, 95, 176, 0.10)",
 
-  success: semanticColorsLight.success,
-  successFaded: semanticColorsLight.successLight,
-  warning: semanticColorsLight.warning,
-  warningFaded: semanticColorsLight.warningLight,
-  error: semanticColorsLight.danger,
-  errorFaded: semanticColorsLight.dangerLight,
-  info: semanticColorsLight.info,
-  infoFaded: semanticColorsLight.infoLight,
+  success: "#1C8A63",
+  successFaded: "rgba(28, 138, 99, 0.12)",
+  warning: "#A9761E",
+  warningFaded: "rgba(169, 118, 30, 0.12)",
+  error: "#C73838",
+  errorFaded: "rgba(199, 56, 56, 0.12)",
+  info: "#168E9C",
+  infoFaded: "rgba(22, 142, 156, 0.12)",
 
-  background: surfaceLight.background,
-  surface: surfaceLight.surface,
-  card: surfaceLight.card,
-  cardHover: surfaceLight.cardHover,
-  elevated: surfaceLight.elevated,
+  background: "#EFEADF", // greige paper
+  surface: "#FFFFFF",
+  card: "#FFFFFF",
+  cardHover: "#F5F0E7", // surface2
+  elevated: "#ECE6DA", // surface3
 
-  border: borderLight.default,
-  borderLight: borderLight.strong,
-  borderFocus: borderLight.focus,
+  border: "rgba(16, 29, 45, 0.10)",
+  borderLight: "rgba(16, 29, 45, 0.14)",
+  borderFocus: "rgba(46, 95, 176, 0.55)",
 
   glass: {
     bg: "rgba(255, 255, 255, 0.55)",
@@ -142,10 +165,10 @@ const lightColors = {
     highlight: "rgba(20, 32, 47, 0.04)",
   },
 
-  text: textLight.primary,
-  textSecondary: textLight.secondary,
-  textTertiary: textLight.tertiary,
-  textMuted: textLight.muted,
+  text: "#101D2D",
+  textSecondary: "#48566C", // dim
+  textTertiary: "#8794AC", // faint
+  textMuted: "#8794AC",
 
   orange: tonesLight.orange,
   emerald: tonesLight.emerald,
@@ -153,6 +176,44 @@ const lightColors = {
   rose: tonesLight.rose,
   sky: tonesLight.sky,
   cyan: tonesLight.cyan,
+
+  gradient: {
+    primary: ["#3D74C8", "#2E5FB0"] as readonly [string, string],
+    warm: ["#244C90", "#2E5FB0"] as readonly [string, string],
+    glow: ["rgba(46, 95, 176, 0.30)", "rgba(46, 95, 176, 0.10)"] as readonly [string, string],
+  },
+
+  // ── Move design additions (light) ───────────────────────────────────
+  bg2: "#E7E1D4",
+  surface2: "#F5F0E7",
+  surface3: "#ECE6DA",
+  dim: "#48566C",
+  faint: "#8794AC",
+  onAccent: "#FFFFFF",
+  accentSoft: "rgba(46, 95, 176, 0.10)",
+  accentBorder: "rgba(46, 95, 176, 0.26)",
+  green: "#1C8A63",
+  red: "#C73838",
+  amberSolid: "#A9761E",
+  teal: "#168E9C",
+  amberSoft: "rgba(169, 118, 30, 0.12)",
+  amberLine: "rgba(169, 118, 30, 0.22)",
+  redSoft: "rgba(199, 56, 56, 0.12)",
+  redLine: "rgba(199, 56, 56, 0.22)",
+  track: "rgba(0, 0, 0, 0.08)",
+  handle: "rgba(0, 0, 0, 0.14)",
+  glassPane: "rgba(255, 255, 255, 0.72)",
+  heroGrad: ["#FFFFFF", "#F4EFE5"] as readonly [string, string],
+  mapBg: ["#dde6ef", "#cdd8e6"] as readonly [string, string],
+  mapGrid: "rgba(12, 24, 40, 0.07)",
+  mapRouteBase: "rgba(12, 24, 40, 0.12)",
+  raccoon: {
+    head: "#7E8EA6",
+    mask: "#0F1D2D",
+    ear: "#C4A090",
+    pupil: "#06101E",
+    eye: ACCENT_LIGHT,
+  },
 } as const;
 
 export const theme = {
@@ -175,6 +236,27 @@ export const lightTheme = {
   colors: lightColors,
 } as unknown as Theme;
 
+/**
+ * Move design type faces — explicit font-family constants for use in
+ * StyleSheet `fontFamily`. React Native maps a weight to a *distinct*
+ * loaded font file, so pick the exact constant rather than relying on
+ * `fontWeight`. Playfair Display = serif/display, DM Sans = UI, DM Mono =
+ * numerals/meta. These match the families loaded in app/_layout.tsx.
+ */
+export const fonts = {
+  serif: "PlayfairDisplay_700Bold",
+  serifSemibold: "PlayfairDisplay_600SemiBold",
+  serifBold: "PlayfairDisplay_800ExtraBold",
+  serifBlack: "PlayfairDisplay_900Black",
+  serifItalic: "PlayfairDisplay_700Bold_Italic",
+  sans: "DMSans_400Regular",
+  sansMedium: "DMSans_500Medium",
+  sansSemibold: "DMSans_600SemiBold",
+  sansBold: "DMSans_700Bold",
+  mono: "DMMono_400Regular",
+  monoMedium: "DMMono_500Medium",
+} as const;
+
 /** Explicit opt-in: resolve a palette by name. */
 export function themeForScheme(scheme: "light" | "dark" | "unspecified" | null | undefined): Theme {
   return scheme === "light" ? lightTheme : theme;
@@ -194,129 +276,21 @@ export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedScheme = "light" | "dark";
 
 // ──────────────────────────────────────────────────────────────────────
-// Per-plan accent theming (Family / Pro)
+// Plan accent theming — RETIRED
 //
-// Family and Pro members get a plan-tinted palette: the primary/accent
-// hues + hero gradients shift while surfaces and text stay on the base
-// scheme so contrast/readability are preserved. Individual (or unknown)
-// plans render the base Aurora palette unchanged. The active plan is read
-// from the auth store (set after the client resolves entitlement) and
-// applied via `applyPlanPalette` inside `ThemeProvider`.
+// The Move design ships a single uniform Sapphire accent for every plan;
+// the whole app reads as one premium ("Pro-like") surface. The former
+// per-plan tinting (Free coral / Family mint / Pro honey) was removed.
+// `applyPlanPalette` is kept as a pass-through so existing callers
+// (e.g. ThemeProvider) don't need to change.
 // ──────────────────────────────────────────────────────────────────────
 
-type PlanAccentSet = {
-  primary: string;
-  primaryLight: string;
-  primaryDark: string;
-  primaryFaded: string;
-  gradPrimary: readonly [string, string];
-  gradGlow: readonly [string, string];
-};
-
-// Canonical plan hexes from the Edition VII design handoff (additions.css):
-// Free #FF9DB2/#A8324F · Individual = base cool blue (no entry) ·
-// Family #4FD1B5/#0F6B50 · Pro #F2C46C/#7A5418. Per the handoff, plans
-// retint ONLY the accent set — surfaces/cards/backgrounds stay on the base
-// Aurora navy/paper so every plan shares one canvas (and honey stays
-// reserved for premium moments rather than tinting whole screens).
-const planAccents: Record<"FREE" | "FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet>> = {
-  // Free — candy coral/pink ("Start here"), deliberately distinct from the
-  // paid accents so the upgrade path reads at a glance.
-  FREE: {
-    dark: {
-      primary: "#FF9DB2",
-      primaryLight: "#FFB9C8",
-      primaryDark: "#F4799A",
-      primaryFaded: "rgba(255, 157, 178, 0.12)",
-      gradPrimary: ["#FFB9C8", "#FF9DB2"],
-      gradGlow: ["rgba(255, 157, 178, 0.34)", "rgba(244, 121, 154, 0.10)"],
-    },
-    light: {
-      primary: "#A8324F",
-      primaryLight: "#E97B99",
-      primaryDark: "#963145",
-      primaryFaded: "rgba(168, 50, 79, 0.10)",
-      gradPrimary: ["#E97B99", "#A8324F"],
-      gradGlow: ["rgba(168, 50, 79, 0.28)", "rgba(150, 49, 69, 0.10)"],
-    },
-  },
-  // Family — teal/mint, luxury crystal green.
-  FAMILY: {
-    dark: {
-      primary: "#4FD1B5",
-      primaryLight: "#7FDFC9",
-      primaryDark: "#2FB89C",
-      primaryFaded: "rgba(79, 209, 181, 0.12)",
-      gradPrimary: ["#7FDFC9", "#4FD1B5"],
-      gradGlow: ["rgba(79, 209, 181, 0.40)", "rgba(47, 184, 156, 0.10)"],
-    },
-    light: {
-      primary: "#0F6B50",
-      primaryLight: "#2FB89C",
-      primaryDark: "#0A523C",
-      primaryFaded: "rgba(15, 107, 80, 0.10)",
-      gradPrimary: ["#2FB89C", "#0F6B50"],
-      gradGlow: ["rgba(15, 107, 80, 0.30)", "rgba(47, 184, 156, 0.10)"],
-    },
-  },
-  // Pro — premium honey / champagne foil (the brand's signature gold). Mirrors
-  // web `.plan-pro` (--primary: 41 85% 68%) so Pro reads identically on every
-  // surface.
-  PRO: {
-    dark: {
-      primary: "#F2C46C",
-      primaryLight: "#F9D88E",
-      primaryDark: "#D99A4E",
-      primaryFaded: "rgba(242, 196, 108, 0.12)",
-      gradPrimary: ["#FBE7BD", "#F2C46C"],
-      gradGlow: ["rgba(242, 196, 108, 0.40)", "rgba(217, 154, 78, 0.12)"],
-    },
-    light: {
-      primary: "#7A5418",
-      primaryLight: "#D99A4E",
-      primaryDark: "#5A3D0E",
-      primaryFaded: "rgba(122, 84, 24, 0.10)",
-      gradPrimary: ["#D99A4E", "#7A5418"],
-      gradGlow: ["rgba(122, 84, 24, 0.30)", "rgba(217, 154, 78, 0.10)"],
-    },
-  },
-};
-
-/**
- * Returns the base theme tinted for the given plan. FREE / FAMILY / PRO shift
- * the primary accent + hero gradients; Individual (or unknown) returns the
- * base palette unchanged. Surfaces are never retinted — one Aurora canvas for
- * every plan. Cast through `unknown` because the base palette uses `as const`
- * literal types and the plan values are different literals of the same shape.
- */
 export function applyPlanPalette(
   base: Theme,
-  scheme: ResolvedScheme,
-  plan: string | null | undefined,
+  _scheme: ResolvedScheme,
+  _plan: string | null | undefined,
 ): Theme {
-  const key = (plan ?? "").toUpperCase();
-  const accentSet =
-    key === "FAMILY" ? planAccents.FAMILY
-    : key === "PRO" ? planAccents.PRO
-    : key.startsWith("FREE") ? planAccents.FREE
-    : null;
-  if (!accentSet) return base;
-  const p = accentSet[scheme];
-  return {
-    ...base,
-    colors: {
-      ...base.colors,
-      primary: p.primary,
-      primaryLight: p.primaryLight,
-      primaryDark: p.primaryDark,
-      primaryFaded: p.primaryFaded,
-      gradient: {
-        ...base.colors.gradient,
-        primary: p.gradPrimary,
-        glow: p.gradGlow,
-      },
-    },
-  } as unknown as Theme;
+  return base;
 }
 
 const STORAGE_KEY = "locateflow.theme.preference";

@@ -15,13 +15,14 @@ import {
   Truck, Users, Zap, Crown, type LucideIcon,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
+import { HeroCard } from "@/components/move";
 
 interface FeedNotification {
   id: string;
@@ -239,33 +240,35 @@ export default function NotificationsScreen() {
         ) : (
           <>
             {notifications.length > 0 && (
-              <View style={styles.hero}>
-                <View style={styles.heroIcon}>
-                  <Bell size={22} color={unreadCount > 0 ? theme.colors.error : theme.colors.primary} />
-                </View>
-                <View style={styles.heroBody}>
-                  <Text style={styles.heroKicker}>
-                    {unreadCount > 0
-                      ? t("notifications.unread", { count: unreadCount }).toUpperCase()
-                      : t("notifications.allClear", { defaultValue: "ALL CLEAR" })}
-                  </Text>
-                  <Text style={styles.heroTitle}>
-                    {unreadCount > 0
-                      ? t("notifications.heroTitle")
-                      : t("notifications.allClearTitle", { defaultValue: "Inbox is under control" })}
-                  </Text>
-                  <Text style={styles.heroSub}>
-                    {unreadCount > 0
-                      ? t("notifications.heroSubtitle")
-                      : t("notifications.allClearSubtitle", { defaultValue: "Recent alerts stay here with reminders and deep links when available." })}
-                  </Text>
-                  <View style={styles.heroStats}>
-                    <Text style={styles.heroStat}>{notifications.length} total</Text>
-                    <Text style={styles.heroStat}>{reminderCount} reminders</Text>
-                    <Text style={styles.heroStat}>{linkedCount} linked</Text>
+              <HeroCard style={styles.hero} padding={16} radius={20}>
+                <View style={styles.heroRow}>
+                  <View style={styles.heroIcon}>
+                    <Bell size={22} color={unreadCount > 0 ? theme.colors.error : theme.colors.primary} />
+                  </View>
+                  <View style={styles.heroBody}>
+                    <Text style={styles.heroKicker}>
+                      {unreadCount > 0
+                        ? t("notifications.unread", { count: unreadCount }).toUpperCase()
+                        : t("notifications.allClear", { defaultValue: "ALL CLEAR" })}
+                    </Text>
+                    <Text style={styles.heroTitle}>
+                      {unreadCount > 0
+                        ? t("notifications.heroTitle")
+                        : t("notifications.allClearTitle", { defaultValue: "Inbox is under control" })}
+                    </Text>
+                    <Text style={styles.heroSub}>
+                      {unreadCount > 0
+                        ? t("notifications.heroSubtitle")
+                        : t("notifications.allClearSubtitle", { defaultValue: "Recent alerts stay here with reminders and deep links when available." })}
+                    </Text>
+                    <View style={styles.heroStats}>
+                      <Text style={styles.heroStat}>{notifications.length} total</Text>
+                      <Text style={styles.heroStat}>{reminderCount} reminders</Text>
+                      <Text style={styles.heroStat}>{linkedCount} linked</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
+              </HeroCard>
             )}
 
             <View style={styles.seg}>
@@ -353,8 +356,8 @@ export default function NotificationsScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  // Mark-all-read pill (Aurora pill idiom — icon + mono label).
+  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
+  // Mark-all-read pill (Move accent pill idiom — icon + uppercase label).
   markAllPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -362,55 +365,45 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     height: 36,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: `${theme.colors.primary}30`,
+    borderColor: theme.colors.accentBorder,
   },
-  markAllPillText: { fontSize: 11, letterSpacing: 0.6, fontWeight: "700", color: theme.colors.primary },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  markAllPillText: { fontSize: 11, letterSpacing: 0.6, fontFamily: fonts.sansBold, color: theme.colors.primary },
+  title: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text, letterSpacing: 0 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
   list: { gap: 8 },
-  // ── Aurora hero band — danger-soft glow card shown while unread items exist ──
-  hero: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    padding: 16,
-    borderRadius: theme.radius["2xl"],
-    borderWidth: 1,
-    borderColor: theme.colors.glass.border,
-    backgroundColor: theme.colors.glass.bg,
-    marginBottom: 14,
-    ...theme.shadow.glow,
-  },
+  // ── Move hero band — gradient premium surface shown while items exist ──
+  hero: { marginBottom: 14 },
+  heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   heroIcon: {
     width: 48,
     height: 48,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "30",
+    borderColor: theme.colors.accentBorder,
   },
   heroBody: { flex: 1, minWidth: 0 },
-  heroKicker: { fontSize: 10, letterSpacing: 1, fontWeight: "800", color: theme.colors.textTertiary, marginBottom: 3 },
-  heroTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
-  heroSub: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2, lineHeight: 17 },
+  heroKicker: { fontSize: 10, letterSpacing: 1.2, fontFamily: fonts.sansBold, textTransform: "uppercase", color: theme.colors.primary, marginBottom: 3 },
+  heroTitle: { fontSize: 15, fontFamily: fonts.serifBold, color: theme.colors.text },
+  heroSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 2, lineHeight: 17 },
   heroStats: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },
   heroStat: {
     overflow: "hidden",
     borderRadius: theme.radius.full,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.accentBorder,
+    backgroundColor: theme.colors.accentSoft,
     paddingHorizontal: 8,
     paddingVertical: 3,
     fontSize: 10,
-    fontWeight: "700",
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sansBold,
+    color: theme.colors.primary,
   },
-  // ── Segmented filter chips (addresses Hub idiom) ──
+  // ── Segmented filter chips (Move surface idiom) ──
   seg: {
     flexDirection: "row",
     gap: 4,
@@ -422,25 +415,25 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 14,
   },
   segBtn: { flex: 1, height: 34, alignItems: "center", justifyContent: "center", borderRadius: 10 },
-  segBtnOn: { backgroundColor: theme.colors.primaryFaded },
+  segBtnOn: { backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder },
   segText: {
     fontSize: 10,
     letterSpacing: 1,
     textTransform: "uppercase",
-    fontWeight: "700",
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sansBold,
+    color: theme.colors.faint,
   },
   segTextOn: { color: theme.colors.primary },
-  filterEmpty: { fontSize: 12, color: theme.colors.textTertiary, textAlign: "center", marginTop: 24 },
-  notifRow: { flexDirection: "row", alignItems: "flex-start", gap: 12, backgroundColor: theme.colors.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: 14 },
-  notifUnread: { borderColor: `${theme.colors.primary}30`, backgroundColor: theme.colors.primaryFaded },
+  filterEmpty: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, textAlign: "center", marginTop: 24 },
+  notifRow: { flexDirection: "row", alignItems: "flex-start", gap: 12, backgroundColor: theme.colors.surface, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: 14 },
+  notifUnread: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.accentSoft },
   notifChip: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   notifTopRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   unreadDot: { width: 8, height: 8, borderRadius: 4, marginTop: 6, flexShrink: 0, backgroundColor: theme.colors.primary },
-  notifTitle: { flex: 1, fontSize: 14, fontWeight: "600", color: theme.colors.text },
-  notifTitleRead: { color: theme.colors.textMuted },
-  notifBody: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2, lineHeight: 17 },
-  notifTime: { fontSize: 9, letterSpacing: 0.6, fontWeight: "600", color: theme.colors.textMuted, flexShrink: 0, fontVariant: ["tabular-nums"] },
+  notifTitle: { flex: 1, fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  notifTitleRead: { color: theme.colors.dim },
+  notifBody: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2, lineHeight: 17 },
+  notifTime: { fontSize: 9, letterSpacing: 0.6, fontFamily: fonts.monoMedium, color: theme.colors.faint, flexShrink: 0, fontVariant: ["tabular-nums"] },
   // ── Inline action CTA — shown only when the href maps to a mobile screen ──
   actionRow: { flexDirection: "row", marginTop: 9 },
   actionBtn: {
@@ -450,9 +443,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     height: 30,
     paddingHorizontal: 11,
     borderRadius: 9,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: `${theme.colors.primary}30`,
+    borderColor: theme.colors.accentBorder,
   },
-  actionText: { fontSize: 12, fontWeight: "600", color: theme.colors.primary },
+  actionText: { fontSize: 12, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
 });

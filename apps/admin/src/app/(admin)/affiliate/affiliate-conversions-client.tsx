@@ -28,13 +28,26 @@ const fmtUsd = (cents: number, currency = "USD") =>
 function statusTone(status: string): string {
   switch (status) {
     case "APPROVED":
-      return "bg-sky-500/10 text-sky-600 border-sky-500/30";
+      return "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br";
     case "PAID":
-      return "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
+      return "bg-tone-sage-bg text-tone-sage-fg border-tone-sage-br";
     case "REJECTED":
       return "bg-destructive/10 text-destructive border-destructive/30";
     default:
-      return "bg-muted text-muted-foreground border-border";
+      return "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br";
+  }
+}
+
+function statusDot(status: string): string {
+  switch (status) {
+    case "APPROVED":
+      return "bg-tone-sky-fg";
+    case "PAID":
+      return "bg-tone-sage-fg";
+    case "REJECTED":
+      return "bg-destructive";
+    default:
+      return "bg-tone-honey-fg";
   }
 }
 
@@ -112,13 +125,13 @@ export function AffiliateConversionsClient() {
   const tabs: Array<typeof filter> = ["OPEN", "PENDING", "APPROVED", "PAID", "REJECTED"];
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
+    <section className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <BadgeDollarSign className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-semibold text-foreground">Conversion reconciliation</h2>
+          <h2 className="font-display text-base font-bold text-foreground">Conversion reconciliation</h2>
         </div>
-        <button onClick={load} className="text-muted-foreground hover:text-foreground" aria-label="Refresh">
+        <button onClick={load} className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Refresh">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
@@ -136,17 +149,17 @@ export function AffiliateConversionsClient() {
             <button
               key={t}
               onClick={() => setFilter(t)}
-              className={`rounded-lg border px-2.5 py-1 text-xs font-medium ${active ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+              className={`rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors ${active ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"}`}
             >
               {t === "OPEN" ? "Open" : t.charAt(0) + t.slice(1).toLowerCase()}
-              {s ? <span className="ml-1 opacity-70">{s.count}</span> : null}
+              {s ? <span className="ml-1 font-mono opacity-70">{s.count}</span> : null}
             </button>
           );
         })}
       </div>
 
       {error && (
-        <div role="alert" className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <div role="alert" className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -162,7 +175,7 @@ export function AffiliateConversionsClient() {
         <div className="hidden overflow-x-auto overscroll-x-contain sm:block">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 <th className="px-2 py-2">Provider</th>
                 <th className="px-2 py-2">Network</th>
                 <th className="px-2 py-2">Amount</th>
@@ -172,12 +185,15 @@ export function AffiliateConversionsClient() {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((c) => (
-                <tr key={c.id}>
-                  <td className="px-2 py-2 text-foreground">{c.providerName}</td>
+                <tr key={c.id} className="transition-colors hover:bg-accent/30">
+                  <td className="px-2 py-2 font-medium text-foreground">{c.providerName}</td>
                   <td className="px-2 py-2 text-muted-foreground">{c.network}</td>
-                  <td className="px-2 py-2 font-medium text-foreground tabular-nums">{fmtUsd(c.amountCents, c.currency)}</td>
+                  <td className="px-2 py-2 font-mono font-medium text-foreground tabular-nums">{fmtUsd(c.amountCents, c.currency)}</td>
                   <td className="px-2 py-2">
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone(c.status)}`}>{c.status}</span>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone(c.status)}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot(c.status)}`} />
+                      {c.status}
+                    </span>
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex justify-end gap-1.5">
@@ -211,15 +227,18 @@ export function AffiliateConversionsClient() {
         </div>
         <div className="space-y-2.5 sm:hidden">
           {rows.map((c) => (
-            <div key={c.id} className="rounded-xl border border-border bg-card p-3">
+            <div key={c.id} className="rounded-2xl border border-border bg-card p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate font-medium text-foreground">{c.providerName}</p>
                   <p className="text-xs text-muted-foreground">{c.network}</p>
                 </div>
-                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone(c.status)}`}>{c.status}</span>
+                <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone(c.status)}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${statusDot(c.status)}`} />
+                  {c.status}
+                </span>
               </div>
-              <p className="mt-2 text-sm font-medium tabular-nums text-foreground">{fmtUsd(c.amountCents, c.currency)}</p>
+              <p className="mt-2 font-mono text-sm font-medium tabular-nums text-foreground">{fmtUsd(c.amountCents, c.currency)}</p>
               {(c.status === "PENDING" || c.status === "APPROVED") && (
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {c.status === "PENDING" && (

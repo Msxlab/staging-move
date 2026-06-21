@@ -172,14 +172,14 @@ export default async function BlogListPage({
           <>
             <Link
               href="/blog/analytics"
-              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground transition hover:bg-accent"
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <BarChart3 className="h-4 w-4" />
               Analytics
             </Link>
             <Link
               href="/blog/new"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" />
               New post
@@ -189,7 +189,7 @@ export default async function BlogListPage({
       />
 
       {/* Status tabs + filters */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-3.5">
         <div className="flex flex-wrap gap-1">
           {STATUS_TABS.map((tab) => {
             const isActive = activeStatus === tab.key;
@@ -199,16 +199,16 @@ export default async function BlogListPage({
                 key={tab.key}
                 href={buildHref({ status: tab.key, locale: activeLocale, q: query })}
                 className={
-                  "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition " +
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-colors " +
                   (isActive
-                    ? "bg-primary/10 font-medium text-primary"
+                    ? "bg-primary/10 font-semibold text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground")
                 }
               >
                 {tab.label}
                 <span
                   className={
-                    "rounded-full px-1.5 text-[10px] font-mono " +
+                    "rounded-full px-1.5 py-0.5 font-mono text-[10px] " +
                     (isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")
                   }
                 >
@@ -221,15 +221,15 @@ export default async function BlogListPage({
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {/* Locale filter */}
-          <div className="flex items-center gap-1 rounded-md border border-border p-0.5 text-xs">
+          <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-0.5 text-xs">
             {(["all", "en", "es"] as const).map((loc) => (
               <Link
                 key={loc}
                 href={buildHref({ status: activeStatus, locale: loc, q: query })}
                 className={
-                  "rounded px-2 py-1 transition " +
+                  "rounded-lg px-2.5 py-1.5 transition-colors " +
                   (activeLocale === loc
-                    ? "bg-primary/10 font-medium text-primary"
+                    ? "bg-primary/10 font-semibold text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground")
                 }
               >
@@ -245,30 +245,30 @@ export default async function BlogListPage({
             {activeLocale !== "all" ? (
               <input type="hidden" name="locale" value={activeLocale} />
             ) : null}
-            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               type="search"
               name="q"
               defaultValue={query}
               placeholder="Search title or slug…"
-              className="w-56 rounded-md border border-border bg-background py-1.5 pl-7 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-56 rounded-xl border border-input bg-background py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </form>
         </div>
       </div>
 
       {loadError ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6">
-          <p className="text-sm font-medium text-destructive">Couldn&apos;t load the catalog.</p>
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-6">
+          <p className="text-sm font-semibold text-destructive">Couldn&apos;t load the catalog.</p>
           <p className="mt-2 text-xs text-muted-foreground">{loadError}</p>
           <p className="mt-2 text-xs text-muted-foreground">
             Most often this means the database is mid-migration or the Prisma client is out of date.
-            Run <code className="rounded bg-muted px-1.5 py-0.5">pnpm --filter @locateflow/db generate</code>{" "}
+            Run <code className="rounded bg-muted px-1.5 py-0.5 font-mono">pnpm --filter @locateflow/db generate</code>{" "}
             then redeploy.
           </p>
         </div>
       ) : posts.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card/40">
+        <div className="rounded-2xl border border-dashed border-border bg-card/40">
           <EmptyState
             icon={PenSquare}
             title={
@@ -286,17 +286,17 @@ export default async function BlogListPage({
           />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
           {/* Desktop table */}
           <table className="hidden w-full text-sm md:table">
-            <thead className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <thead className="border-b border-border bg-muted/40 text-left text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium">Title</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Locale</th>
-                <th className="px-4 py-3 font-medium">Author</th>
-                <th className="px-4 py-3 font-medium">Updated</th>
-                <th className="px-4 py-3 font-medium text-right">Views</th>
+                <th className="px-4 py-3 font-semibold">Title</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Locale</th>
+                <th className="px-4 py-3 font-semibold">Author</th>
+                <th className="px-4 py-3 font-semibold">Updated</th>
+                <th className="px-4 py-3 font-semibold text-right">Views</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -310,15 +310,15 @@ export default async function BlogListPage({
                       ? p.publishedAt.toISOString().slice(0, 10)
                       : p.updatedAt.toISOString().slice(0, 10);
                 return (
-                  <tr key={p.id} className="transition hover:bg-accent/40">
+                  <tr key={p.id} className="transition-colors hover:bg-accent/40">
                     <td className="px-4 py-3">
                       <Link
                         href={`/blog/${p.id}/edit`}
-                        className="font-medium text-foreground hover:text-primary hover:underline"
+                        className="font-medium text-foreground transition-colors hover:text-primary"
                       >
                         {p.title || "(untitled)"}
                       </Link>
-                      <div className="mt-0.5 text-xs text-muted-foreground">
+                      <div className="mt-0.5 font-mono text-xs text-muted-foreground">
                         /{p.slug}
                         {p.category ? <span> · {p.category.name}</span> : null}
                       </div>
@@ -334,11 +334,11 @@ export default async function BlogListPage({
                         {p.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs uppercase text-muted-foreground">{p.locale}</td>
+                    <td className="px-4 py-3 font-mono text-xs uppercase text-muted-foreground">{p.locale}</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {p.author?.firstName} {p.author?.lastName}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{dateLabel}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{dateLabel}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
                       {(p.viewCount ?? 0).toLocaleString()}
                     </td>
@@ -349,7 +349,7 @@ export default async function BlogListPage({
                             href={publicPostUrl(p.slug, p.locale)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded p-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                             aria-label="Open public post"
                           >
                             <Eye className="h-4 w-4" />
@@ -357,7 +357,7 @@ export default async function BlogListPage({
                         ) : null}
                         <Link
                           href={`/blog/${p.id}/edit`}
-                          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-foreground transition hover:bg-accent"
+                          className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
                         >
                           Edit
                         </Link>
@@ -377,11 +377,11 @@ export default async function BlogListPage({
                 <li key={p.id} className="flex flex-col gap-2 p-4">
                   <Link
                     href={`/blog/${p.id}/edit`}
-                    className="font-medium text-foreground"
+                    className="font-medium text-foreground transition-colors hover:text-primary"
                   >
                     {p.title || "(untitled)"}
                   </Link>
-                  <div className="text-xs text-muted-foreground">/{p.slug}</div>
+                  <div className="font-mono text-xs text-muted-foreground">/{p.slug}</div>
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span
                       className={
@@ -392,9 +392,9 @@ export default async function BlogListPage({
                       <Icon className="h-3 w-3" />
                       {p.status}
                     </span>
-                    <span className="uppercase text-muted-foreground">{p.locale}</span>
+                    <span className="font-mono uppercase text-muted-foreground">{p.locale}</span>
                     <span className="text-muted-foreground">
-                      {(p.viewCount ?? 0).toLocaleString()} views
+                      <span className="font-mono">{(p.viewCount ?? 0).toLocaleString()}</span> views
                     </span>
                   </div>
                 </li>
@@ -407,33 +407,35 @@ export default async function BlogListPage({
       {totalPages > 1 ? (
         <nav
           aria-label="Pagination"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-xs text-muted-foreground"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground"
         >
           <span>
-            Page {page} of {totalPages} · {totalMatching.toLocaleString()} posts
+            Page <span className="font-mono text-foreground">{page}</span> of{" "}
+            <span className="font-mono text-foreground">{totalPages}</span> ·{" "}
+            <span className="font-mono">{totalMatching.toLocaleString()}</span> posts
           </span>
           <div className="flex items-center gap-1">
             {page > 1 ? (
               <Link
                 href={buildHref({ status: activeStatus, locale: activeLocale, q: query, page: page - 1 })}
-                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 hover:bg-accent"
+                className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 font-medium transition-colors hover:bg-accent hover:text-foreground"
               >
                 Prev
               </Link>
             ) : (
-              <span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 opacity-40">
+              <span className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 opacity-40">
                 Prev
               </span>
             )}
             {page < totalPages ? (
               <Link
                 href={buildHref({ status: activeStatus, locale: activeLocale, q: query, page: page + 1 })}
-                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 hover:bg-accent"
+                className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 font-medium transition-colors hover:bg-accent hover:text-foreground"
               >
                 Next
               </Link>
             ) : (
-              <span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 opacity-40">
+              <span className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 opacity-40">
                 Next
               </span>
             )}

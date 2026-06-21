@@ -163,9 +163,9 @@
   --shadow-glow: 0 0 20px rgba(127, 182, 232, 0.28);
 
   /* ─────────────── Typography ─────────────── */
-  --font-display: var(--font-fraunces), "Fraunces", "Didot", Georgia, serif;
-  --font-sans:    var(--font-geist-sans), "Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono:    var(--font-geist-mono), "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --font-display: var(--font-playfair), "Playfair Display", "Didot", Georgia, serif;
+  --font-sans:    var(--font-dm-sans), "DM Sans", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    var(--font-dm-mono), "DM Mono", "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
 
   --fs-xs:   11px;
   --fs-sm:   12px;

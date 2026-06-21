@@ -28,20 +28,22 @@ import {
   Users,
   Download,
   CalendarClock,
+  Sparkles,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
 import { useAuthStore } from "@/lib/auth-store";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { hapticLight, hapticWarning } from "@/lib/haptics";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import { ThemeSelector } from "@/components/ui/ThemeSelector";
+import { HeroCard, SectionHeader } from "@/components/move";
 import { api } from "@/lib/api";
 import { unregisterPushNotifications } from "@/lib/push";
 import { clearSensitiveLocalState } from "@/lib/local-cleanup";
 
-/** Tonal tile colors for a row's icon chip (Aurora `.pf-row .ti` idiom). */
+/** Tonal tile colors for a row's icon chip (Move `.pf-row .ti` idiom). */
 interface RowTone {
   bg: string;
   border: string;
@@ -108,6 +110,11 @@ export default function MoreScreen() {
           ? t("more.planIndividual", { defaultValue: "Individual" })
           : t("more.planFree", { defaultValue: "Free" });
 
+  // A paid entitlement (FAMILY | PRO | INDIVIDUAL) drives the active-plan
+  // banner copy; FREE* / null fall back to the neutral "manage plan" banner.
+  const hasPaidPlan =
+    planTier === "FAMILY" || planTier === "PRO" || planTier === "INDIVIDUAL";
+
   const handleSignOut = () => {
     hapticWarning();
     Alert.alert(t("common.signOut"), t("common.signOut") + "?", [
@@ -126,7 +133,7 @@ export default function MoreScreen() {
     ]);
   };
 
-  // Tonal tiles per row (Aurora idiom: every menu row gets an icon chip in a
+  // Tonal tiles per row (Move idiom: every menu row gets an icon chip in a
   // tonal tile). All values come from theme tone objects — plan-accent rows
   // (Profile) use the primary set so Family/Pro tints flow through.
   const tonePrimary: RowTone = {
@@ -134,7 +141,7 @@ export default function MoreScreen() {
     border: theme.colors.primary + "33",
     text: theme.colors.primary,
   };
-  const toneCool = theme.colors.rose; // Aurora cool (info)
+  const toneCool = theme.colors.rose; // Move cool (info)
   const toneSage = theme.colors.emerald; // sage / money
   const toneHoney = theme.colors.amber; // honey / foil
   const toneSlate = theme.colors.sky; // muted slate
@@ -194,13 +201,6 @@ export default function MoreScreen() {
     },
   ];
 
-  const quickActions: MenuItem[] = [
-    { icon: User, label: t("settings.profile"), route: "/settings/profile", tone: tonePrimary },
-    { icon: CreditCard, label: planLabel, route: "/settings/subscription", tone: toneHoney },
-    { icon: Download, label: t("settings.export"), route: "/settings/export", tone: toneSage },
-    { icon: HelpCircle, label: t("more.quickSupport", { defaultValue: "Support" }), route: "/help/tickets", tone: toneCool },
-  ];
-
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -211,7 +211,7 @@ export default function MoreScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Profile Card — Aurora `.sv-profilecard`: avatar disc + name/email +
+        {/* Profile Card — Move `.sv-profilecard`: avatar disc + name/email +
             mono-uppercase plan pill tinted by the plan accent. */}
         <TouchableOpacity
           style={styles.profileCard}
@@ -226,40 +226,59 @@ export default function MoreScreen() {
             <Text style={styles.profileEmail} numberOfLines={1}>
               {user?.email || ""}
             </Text>
-          </View>
-          <View style={styles.planPill}>
-            <Text style={styles.planPillText}>{planLabel.toUpperCase()}</Text>
+            <View style={styles.planPill}>
+              <Sparkles size={9} color={theme.colors.primary} />
+              <Text style={styles.planPillText}>{planLabel.toUpperCase()}</Text>
+            </View>
           </View>
           <ChevronRight size={18} color={theme.colors.textMuted} />
         </TouchableOpacity>
 
-        <View style={styles.quickGrid}>
-          {quickActions.map((item) => {
-            const Icon = item.icon;
-            const tone = item.tone ?? toneCool;
-            return (
-              <TouchableOpacity
-                key={item.label}
-                style={styles.quickTile}
-                onPress={() => {
-                  hapticLight();
-                  if (item.route) router.push(item.route);
-                }}
-                activeOpacity={0.72}
-              >
-                <View style={[styles.quickIcon, { backgroundColor: tone.bg, borderColor: tone.border }]}>
-                  <Icon size={17} color={tone.text} />
-                </View>
-                <Text style={styles.quickLabel} numberOfLines={1}>{item.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {/* Plan banner — Move hero gradient. Paid plans surface the active-plan
+            line; FREE / null tiers fall back to a neutral "manage plan" prompt.
+            Both branches route to the real subscription screen via Manage. */}
+        <HeroCard style={styles.planBanner} padding={16} radius={20}>
+          <View style={styles.planBannerRow}>
+            <View style={styles.planBannerCopy}>
+              <View style={styles.planBannerTitleRow}>
+                <Sparkles size={11} color={theme.colors.primary} />
+                <Text style={styles.planBannerTitle} numberOfLines={1}>
+                  {hasPaidPlan
+                    ? t("more.planActive", {
+                        defaultValue: "Move {{plan}} active",
+                        plan: planLabel,
+                      })
+                    : t("more.planManageTitle", { defaultValue: "Your plan" })}
+                </Text>
+              </View>
+              <Text style={styles.planBannerSub} numberOfLines={1}>
+                {hasPaidPlan
+                  ? t("more.planManageSub", {
+                      defaultValue: "{{plan}} plan",
+                      plan: planLabel,
+                    })
+                  : planLabel}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.planBannerBtn}
+              onPress={() => {
+                hapticLight();
+                router.push("/settings/subscription");
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.planBannerBtnText}>
+                {t("more.manage", { defaultValue: "Manage" })}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </HeroCard>
 
         {/* Menu Sections */}
         {sections.map((section) => (
           <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <SectionHeader label={section.title} style={styles.sectionHeader} />
             <View style={styles.sectionCard}>
               {section.items.map((item, i) => {
                 const Icon = item.icon;
@@ -295,23 +314,34 @@ export default function MoreScreen() {
           </View>
         ))}
 
-        {/* Appearance (theme) — was only on the now-removed second Settings
-            screen; surfaced here so the More tab is the single settings hub. */}
-        <View style={{ marginBottom: 16 }}>
-          <ThemeSelector />
+        {/* Appearance — theme + language. The theme toggle was only on the
+            now-removed second Settings screen; surfaced here so the More tab is
+            the single settings hub. */}
+        <View style={styles.section}>
+          <SectionHeader
+            label={t("more.sectionAppearance", { defaultValue: "Appearance" })}
+            style={styles.sectionHeader}
+          />
+          <View style={styles.appearanceWrap}>
+            {/* Theme selector. */}
+            <ThemeSelector />
+            {/* Language selector — mirrored to User.preferredLocale via
+                /api/user/locale so the choice follows the user. */}
+            <LanguageSelector />
+          </View>
         </View>
 
-        {/* Language selector — mirrored to User.preferredLocale via
-            /api/user/locale so the choice follows the user. */}
-        <View style={{ marginBottom: 16 }}>
-          <LanguageSelector />
+        {/* Sign Out — Move row card (red icon + label). */}
+        <View style={styles.signOutCard}>
+          <TouchableOpacity
+            style={styles.signOutBtn}
+            onPress={handleSignOut}
+            activeOpacity={0.6}
+          >
+            <LogOut size={18} color={theme.colors.error} />
+            <Text style={styles.signOutText}>{t("common.signOut")}</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Sign Out */}
-        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-          <LogOut size={18} color={theme.colors.error} />
-          <Text style={styles.signOutText}>{t("common.signOut")}</Text>
-        </TouchableOpacity>
 
         <Text style={styles.version}>LocateFlow v{Constants.expoConfig?.version ?? "0.0.0"}</Text>
         {buildLabel ? <Text style={styles.buildMeta}>{buildLabel}</Text> : null}
@@ -324,8 +354,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { paddingHorizontal: 20, paddingVertical: 16 },
   title: {
-    fontSize: 28,
-    fontWeight: "800",
+    fontSize: 26,
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     letterSpacing: 0,
   },
@@ -334,82 +364,94 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 13,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.xl,
     borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
+    borderColor: theme.colors.border,
     padding: 15,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   profileBody: { flex: 1, minWidth: 0 },
   profileName: {
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: fonts.sansSemibold,
     color: theme.colors.text,
   },
   profileEmail: {
     fontSize: 12,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sans,
+    color: theme.colors.faint,
     marginTop: 2,
+    marginBottom: 6,
   },
   planPill: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "42",
-    flexShrink: 0,
+    borderColor: theme.colors.accentBorder,
   },
   planPillText: {
     fontSize: 9,
-    fontWeight: "700",
+    fontFamily: fonts.sansBold,
     letterSpacing: 1,
     color: theme.colors.primary,
   },
-  quickGrid: {
-    flexDirection: "row",
-    gap: 10,
+  planBanner: {
     marginBottom: 22,
   },
-  quickTile: {
-    flex: 1,
-    minHeight: 76,
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    padding: 10,
-    justifyContent: "space-between",
-  },
-  quickIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 11,
-    borderWidth: 1,
+  planBannerRow: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
-  quickLabel: {
+  planBannerCopy: { flex: 1, minWidth: 0 },
+  planBannerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 3,
+  },
+  planBannerTitle: {
     fontSize: 11,
-    fontWeight: "800",
-    color: theme.colors.text,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: theme.colors.primary,
+    flexShrink: 1,
+  },
+  planBannerSub: {
+    fontSize: 12,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
+  },
+  planBannerBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
+    flexShrink: 0,
+  },
+  planBannerBtnText: {
+    fontSize: 11,
+    fontFamily: fonts.sansSemibold,
+    color: theme.colors.primary,
   },
   section: { marginBottom: 20 },
-  sectionTitle: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: theme.colors.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    marginBottom: 9,
-    marginLeft: 2,
-  },
+  sectionHeader: { marginBottom: 9, marginLeft: 2 },
   sectionCard: {
-    backgroundColor: theme.colors.glass.bg,
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.xl,
     borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
+    borderColor: theme.colors.border,
     overflow: "hidden",
   },
   menuItem: {
@@ -434,38 +476,45 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   menuLabel: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 14,
+    fontFamily: fonts.sansMedium,
     color: theme.colors.text,
+  },
+  appearanceWrap: {
+    gap: 12,
+  },
+  signOutCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: "hidden",
+    marginTop: 4,
   },
   signOutBtn: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.errorFaded,
-    borderWidth: 1,
-    // Aurora coral (#F08C8E) at 20% — matches `theme.colors.error`.
-    borderColor: "rgba(240, 140, 142, 0.20)",
-    marginTop: 8,
+    gap: 13,
+    paddingVertical: 15,
+    paddingHorizontal: 16,
   },
   signOutText: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 14,
+    fontFamily: fonts.sansMedium,
     color: theme.colors.error,
   },
   version: {
     textAlign: "center",
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    marginTop: 24,
+    fontSize: 11,
+    fontFamily: fonts.sans,
+    color: theme.colors.faint,
+    marginTop: 22,
   },
   buildMeta: {
     textAlign: "center",
     fontSize: 11,
-    color: theme.colors.textMuted,
+    fontFamily: fonts.sans,
+    color: theme.colors.faint,
     marginTop: 4,
   },
 });

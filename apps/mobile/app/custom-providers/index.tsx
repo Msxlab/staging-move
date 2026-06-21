@@ -13,8 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Building2, ChevronRight, Plus, Search } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
-import { useAppTheme, type Theme } from "@/lib/theme";
-import { Badge } from "@/components/ui/Badge";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
+import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -98,6 +98,8 @@ export default function CustomProvidersScreen() {
   const localCount = providers.filter((provider) => provider.city || provider.state).length;
   const manualCount = providers.filter((provider) => provider.manualTrackingOnly).length;
 
+  const goAdd = () => router.push({ pathname: "/services/new", params: { mode: "manual" } });
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -111,12 +113,12 @@ export default function CustomProvidersScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>{t("customProviders.title")}</Text>
         <TouchableOpacity
-          onPress={() => router.push({ pathname: "/services/new", params: { mode: "manual" } })}
+          onPress={goAdd}
           style={styles.addBtn}
           accessibilityRole="button"
           accessibilityLabel={t("customProviders.addA11y")}
         >
-          <Plus size={20} color="#fff" />
+          <Plus size={20} color={theme.colors.onAccent} />
         </TouchableOpacity>
       </View>
 
@@ -128,13 +130,13 @@ export default function CustomProvidersScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
-        <View style={styles.hero}>
+        <HeroCard style={styles.hero} padding={18}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <Building2 size={20} color={theme.colors.primary} />
             </View>
             <View style={styles.heroCopy}>
-              <Text style={styles.heroKicker}>LOCAL PROVIDERS</Text>
+              <Text style={styles.heroKicker}>{t("customProviders.userAddedBadge")}</Text>
               <Text style={styles.heroTitle}>{t("customProviders.title")}</Text>
               <Text style={styles.heroSub} numberOfLines={2}>
                 {t("customProviders.noticeText")}
@@ -144,25 +146,18 @@ export default function CustomProvidersScreen() {
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{providers.length}</Text>
-              <Text style={styles.heroStatLabel}>saved</Text>
+              <Text style={styles.heroStatLabel}>{t("customProviders.statSaved", { defaultValue: "saved" })}</Text>
             </View>
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{localCount}</Text>
-              <Text style={styles.heroStatLabel}>local</Text>
+              <Text style={styles.heroStatLabel}>{t("customProviders.statLocal", { defaultValue: "local" })}</Text>
             </View>
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{manualCount}</Text>
-              <Text style={styles.heroStatLabel}>manual</Text>
+              <Text style={styles.heroStatLabel}>{t("customProviders.statManual", { defaultValue: "manual" })}</Text>
             </View>
           </View>
-        </View>
-
-        <View style={styles.notice}>
-          <Badge label={t("customProviders.userAddedBadge")} variant="info" />
-          <Text style={styles.noticeText}>
-            {t("customProviders.noticeText")}
-          </Text>
-        </View>
+        </HeroCard>
 
         <View style={styles.searchBox}>
           <Search size={16} color={theme.colors.textMuted} />
@@ -184,36 +179,57 @@ export default function CustomProvidersScreen() {
             title={t("customProviders.emptyTitle")}
             description={t("customProviders.emptyDescription")}
             actionLabel={t("customProviders.addLocalProvider")}
-            onAction={() => router.push({ pathname: "/services/new", params: { mode: "manual" } })}
+            onAction={goAdd}
           />
         ) : (
-          <View style={styles.list}>
-            {providers.map((provider) => (
-              <TouchableOpacity
-                key={provider.id}
-                style={styles.card}
-                onPress={() => router.push({ pathname: "/custom-providers/[id]", params: { id: provider.id } })}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={t("providers.openProviderA11y", { provider: provider.name })}
-              >
-                <View style={styles.cardIcon}>
-                  <Building2 size={18} color={theme.colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>{provider.name}</Text>
-                  <Text style={styles.cardMeta} numberOfLines={1}>
-                    {t(`categories.${provider.category}`, { defaultValue: provider.category.replace(/_/g, " ") })}
-                    {provider.city || provider.state ? ` - ${[provider.city, provider.state].filter(Boolean).join(", ")}` : ""}
-                  </Text>
-                  <Text style={styles.cardCaveat} numberOfLines={2}>
-                    {provider.availabilityCaveat || t("customProviders.defaultCaveat")}
-                  </Text>
-                </View>
-                <ChevronRight size={18} color={theme.colors.textMuted} />
-              </TouchableOpacity>
-            ))}
-          </View>
+          <>
+            <SectionHeader label={t("customProviders.title")} style={styles.sectionHeader} />
+            <View style={styles.list}>
+              {providers.map((provider) => (
+                <MoveCard
+                  key={provider.id}
+                  onPress={() => router.push({ pathname: "/custom-providers/[id]", params: { id: provider.id } })}
+                  padding={14}
+                  radius={16}
+                  style={styles.card}
+                >
+                  <View style={styles.cardRow}>
+                    <View style={styles.cardIcon}>
+                      <Building2 size={18} color={theme.colors.primary} />
+                    </View>
+                    <View style={styles.cardBody}>
+                      <Text style={styles.cardTitle} numberOfLines={1}>{provider.name}</Text>
+                      <Text style={styles.cardMeta} numberOfLines={1}>
+                        {t(`categories.${provider.category}`, { defaultValue: provider.category.replace(/_/g, " ") })}
+                        {provider.city || provider.state ? ` · ${[provider.city, provider.state].filter(Boolean).join(", ")}` : ""}
+                      </Text>
+                      <Text style={styles.cardCaveat} numberOfLines={2}>
+                        {provider.availabilityCaveat || t("customProviders.defaultCaveat")}
+                      </Text>
+                    </View>
+                    <View style={styles.cardEnd}>
+                      <Pill
+                        label={t("customProviders.trackedPill", { defaultValue: "Tracked" })}
+                        tone={provider.manualTrackingOnly ? "warning" : "success"}
+                      />
+                      <ChevronRight size={18} color={theme.colors.textMuted} />
+                    </View>
+                  </View>
+                </MoveCard>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              onPress={goAdd}
+              style={styles.addProvider}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={t("customProviders.addA11y")}
+            >
+              <Plus size={16} color={theme.colors.primary} />
+              <Text style={styles.addProviderText}>{t("customProviders.addLocalProvider")}</Text>
+            </TouchableOpacity>
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -247,16 +263,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: { fontSize: 20, fontFamily: fonts.serif, color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   hero: {
-    borderRadius: 24,
-    padding: 16,
     marginBottom: 14,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
   },
   heroTop: {
     flexDirection: "row",
@@ -269,28 +279,28 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 16,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
   heroKicker: {
     fontSize: 10,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     letterSpacing: 1.3,
     textTransform: "uppercase",
-    color: theme.colors.accent,
+    color: theme.colors.primary,
   },
   heroTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     marginTop: 3,
-    letterSpacing: 0,
   },
   heroSub: {
     fontSize: 12,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
     marginTop: 3,
     lineHeight: 17,
   },
@@ -310,28 +320,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
   },
   heroStatValue: {
-    fontSize: 14,
-    fontWeight: "800",
+    fontSize: 16,
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
   },
   heroStatLabel: {
     fontSize: 8,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     letterSpacing: 0.8,
-    color: theme.colors.textTertiary,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
-  notice: {
-    borderRadius: theme.radius.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-    padding: 14,
-    gap: 10,
-    marginBottom: 16,
-  },
-  noticeText: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 20 },
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -343,27 +343,40 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 14,
     marginBottom: 16,
   },
-  searchInput: { flex: 1, color: theme.colors.text, fontSize: 15, paddingVertical: 12 },
-  list: { gap: 12 },
-  card: {
+  searchInput: { flex: 1, color: theme.colors.text, fontSize: 15, fontFamily: fonts.sans, paddingVertical: 12 },
+  sectionHeader: { marginBottom: 10 },
+  list: { gap: 10 },
+  card: {},
+  cardRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    borderRadius: theme.radius.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-    padding: 14,
   },
   cardIcon: {
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.surface2,
     alignItems: "center",
     justifyContent: "center",
   },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
-  cardMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
-  cardCaveat: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 6, lineHeight: 17 },
+  cardBody: { flex: 1, minWidth: 0 },
+  cardEnd: { alignItems: "flex-end", gap: 6 },
+  cardTitle: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.text },
+  cardMeta: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 2 },
+  cardCaveat: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.textSecondary, marginTop: 6, lineHeight: 17 },
+  addProvider: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 15,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: theme.colors.accentBorder,
+    backgroundColor: theme.colors.accentSoft,
+  },
+  addProviderText: { fontSize: 13.5, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
 });

@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
   Building2,
@@ -24,13 +26,12 @@ import {
   type LucideIcon,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
+import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 import {
   getCategoryIcon,
   getCategoryLabel,
@@ -202,11 +203,23 @@ export default function EditServiceScreen() {
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("services.editTitle")}</Text>
-        <View style={{ width: 44 }} />
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={saving}
+          style={[styles.headerSaveBtn, saving && { opacity: 0.55 }]}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.saveChanges")}
+        >
+          {saving ? (
+            <ActivityIndicator color={theme.colors.primary} size="small" />
+          ) : (
+            <Check size={17} color={theme.colors.primary} />
+          )}
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
-        <View style={styles.hero}>
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
           <View style={styles.heroTop}>
             <ServiceLogoMark
               service={logoService}
@@ -229,13 +242,13 @@ export default function EditServiceScreen() {
             </View>
           </View>
           <View style={styles.heroBadges}>
-            <Badge label={categoryLabel} variant="info" mono />
-            {form.billingCycle ? <Badge label={t(`billingCycles.${form.billingCycle}`)} variant="neutral" mono /> : null}
+            <Pill label={categoryLabel} tone="info" />
+            {form.billingCycle ? <Pill label={t(`billingCycles.${form.billingCycle}`)} tone="muted" /> : null}
           </View>
-        </View>
+        </HeroCard>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t("services.provider", { defaultValue: "Provider" })}</Text>
+        <SectionHeader label={t("services.provider", { defaultValue: "Provider" })} style={styles.sectionHeader} />
+        <MoveCard style={styles.section} padding={14} radius={theme.radius.xl}>
           <Field
             icon={Building2}
             label={t("services.providerNameRequired")}
@@ -250,10 +263,10 @@ export default function EditServiceScreen() {
             onChangeText={(v) => update("accountNumber", v)}
             placeholder={t("services.accountNumberPlaceholder")}
           />
-        </View>
+        </MoveCard>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t("services.billingCycle")}</Text>
+        <SectionHeader label={t("services.billingCycle")} style={styles.sectionHeader} />
+        <MoveCard style={styles.section} padding={14} radius={theme.radius.xl}>
           <Field
             icon={DollarSign}
             label={`${t("services.monthlyCost")} ($)`}
@@ -283,17 +296,17 @@ export default function EditServiceScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </MoveCard>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t("services.contact", { defaultValue: "Contact" })}</Text>
+        <SectionHeader label={t("services.contact", { defaultValue: "Contact" })} style={styles.sectionHeader} />
+        <MoveCard style={styles.section} padding={14} radius={theme.radius.xl}>
           <Field icon={Phone} label={t("common.phone")} value={form.phone} onChangeText={(v) => update("phone", v)} placeholder="(555) 123-4567" keyboardType="phone-pad" />
           <Field icon={Globe} label={t("common.website")} value={form.website} onChangeText={(v) => update("website", v)} placeholder="https://..." keyboardType="url" autoCapitalize="none" />
           <Field icon={Mail} label={t("common.email")} value={form.email} onChangeText={(v) => update("email", v)} placeholder="support@..." keyboardType="email-address" autoCapitalize="none" />
-        </View>
+        </MoveCard>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t("services.notes")}</Text>
+        <SectionHeader label={t("services.notes")} style={styles.sectionHeader} />
+        <MoveCard style={styles.section} padding={14} radius={theme.radius.xl}>
           <Field
             icon={StickyNote}
             label={t("services.notes")}
@@ -302,17 +315,30 @@ export default function EditServiceScreen() {
             placeholder={t("services.notesPlaceholder")}
             multiline
           />
-        </View>
+        </MoveCard>
 
-        <Button
-          title={t("common.saveChanges")}
+        <TouchableOpacity
+          style={[styles.saveBtn, saving && { opacity: 0.6 }]}
           onPress={handleSave}
-          loading={saving}
           disabled={saving}
-          icon={<Check size={18} color="#fff" />}
-          fullWidth
-          style={styles.saveBtn}
-        />
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={theme.colors.gradient.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.saveBtnGrad}
+          >
+            {saving ? (
+              <ActivityIndicator color={theme.colors.onAccent} />
+            ) : (
+              <>
+                <Check size={18} color={theme.colors.onAccent} />
+                <Text style={styles.saveBtnText}>{t("common.saveChanges")}</Text>
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -321,38 +347,38 @@ export default function EditServiceScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, flex: 1, textAlign: "center" },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 42, gap: 16 },
-  hero: {
-    padding: 16,
-    borderRadius: theme.radius["2xl"],
-    backgroundColor: theme.colors.glass.bg,
+  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
+  headerSaveBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.glass.border,
-    ...theme.shadow.glow,
+    borderColor: theme.colors.accentBorder,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 52 },
+  hero: {
+    marginBottom: 4,
   },
   heroTop: { flexDirection: "row", alignItems: "center", gap: 14 },
-  heroEyebrow: { fontSize: 10, fontWeight: "800", color: theme.colors.textTertiary, letterSpacing: 0.8 },
-  heroName: { marginTop: 4, fontSize: 20, fontWeight: "800", color: theme.colors.text, lineHeight: 25 },
-  heroMeta: { marginTop: 3, fontSize: 13, color: theme.colors.textTertiary },
+  heroEyebrow: { fontSize: 10, fontFamily: fonts.sansBold, color: theme.colors.faint, letterSpacing: 1.2, textTransform: "uppercase" },
+  heroName: { marginTop: 4, fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text, lineHeight: 25 },
+  heroMeta: { marginTop: 3, fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim },
   heroBadges: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
+  sectionHeader: { marginTop: 20, marginBottom: 10, marginLeft: 2 },
   section: {
     gap: 10,
-    padding: 14,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  sectionLabel: { fontSize: 11, fontWeight: "800", color: theme.colors.textTertiary, textTransform: "uppercase", letterSpacing: 0.8 },
   fieldShell: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 11,
     padding: 12,
     borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.bg2,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -362,15 +388,31 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
   },
-  label: { fontSize: 11, fontWeight: "700", color: theme.colors.textTertiary, marginBottom: 6 },
-  input: { minHeight: 22, padding: 0, fontSize: 15, color: theme.colors.text },
+  label: { fontSize: 11, fontFamily: fonts.sansSemibold, color: theme.colors.faint, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.6 },
+  input: { minHeight: 22, padding: 0, fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text },
   textArea: { minHeight: 74, lineHeight: 20 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 2 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: theme.radius.full, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border },
-  chipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.4)" },
-  chipText: { fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary },
+  chip: {
+    minHeight: 38,
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  chipActive: { backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder },
+  chipText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   chipTextActive: { color: theme.colors.primary },
-  saveBtn: { marginTop: 4 },
+  saveBtn: {
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+    marginTop: 28,
+  },
+  saveBtnGrad: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 16,
+  },
+  saveBtnText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 });

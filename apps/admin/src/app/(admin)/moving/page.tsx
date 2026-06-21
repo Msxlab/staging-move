@@ -210,7 +210,7 @@ export default function MovingPage() {
         actions={
           <Link
             href="/moving/at-risk"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-sm font-medium text-tone-honey-fg hover:shadow-md"
+            className="inline-flex items-center gap-2 rounded-xl border border-tone-honey-br bg-tone-honey-bg px-3.5 py-2.5 text-sm font-medium text-tone-honey-fg transition-shadow hover:shadow-md"
           >
             <ShieldAlert className="h-4 w-4" /> At-risk board
           </Link>
@@ -218,7 +218,7 @@ export default function MovingPage() {
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {[
           {
             label: "Total",
@@ -275,15 +275,15 @@ export default function MovingPage() {
                     : s.label.toUpperCase(),
                 );
             }}
-            className={`rounded-xl border border-border ${s.bg} p-4 text-left transition-shadow hover:shadow-md`}
+            className={`rounded-2xl border border-border ${s.bg} p-4 text-left transition-shadow hover:shadow-md`}
           >
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 {s.label}
               </p>
               <s.icon className={`h-4 w-4 ${s.color}`} />
             </div>
-            <p className={`mt-1 text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${s.color}`}>{s.value}</p>
           </button>
         ))}
       </div>
@@ -297,16 +297,16 @@ export default function MovingPage() {
             placeholder="Search by user name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background pl-10 pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full rounded-xl border border-input bg-card pl-10 pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm ${showFilters ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent"}`}
+          className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors ${showFilters ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"}`}
         >
           <Filter className="h-4 w-4" /> Filters
           {activeFilters > 0 && (
-            <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+            <span className="rounded-full bg-primary px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary-foreground">
               {activeFilters}
             </span>
           )}
@@ -322,25 +322,25 @@ export default function MovingPage() {
       </div>
 
       {showFilters && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground">Filters</h3>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display text-base font-bold text-foreground">Advanced filters</h3>
             <button
               onClick={clearFilters}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="text-xs font-medium text-primary transition-colors hover:text-primary/80"
             >
               Clear all
             </button>
           </div>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-5">
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Status
               </label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
               >
                 <option value="">All</option>
                 <option value="PLANNING">Planning</option>
@@ -350,13 +350,13 @@ export default function MovingPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 From State
               </label>
               <select
                 value={fromState}
                 onChange={(e) => setFromState(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
               >
                 <option value="">Any</option>
                 {US_STATES.map((s) => (
@@ -367,13 +367,13 @@ export default function MovingPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 To State
               </label>
               <select
                 value={toState}
                 onChange={(e) => setToState(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
               >
                 <option value="">Any</option>
                 {US_STATES.map((s) => (
@@ -384,25 +384,25 @@ export default function MovingPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Move Date From
               </label>
               <input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Move Date To
               </label>
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
               />
             </div>
           </div>
@@ -411,11 +411,11 @@ export default function MovingPage() {
 
       {/* Plans List */}
       {loading ? (
-        <div className="py-20 text-center text-muted-foreground">
+        <div className="py-20 text-center text-sm text-muted-foreground">
           Loading plans...
         </div>
       ) : plans.length === 0 ? (
-        <EmptyState icon={Truck} title="No moving plans found" description="No relocations match your current search or filters." />
+        <EmptyState icon={Truck} title="No moving plans found" description="No relocations match your current search or filters." className="rounded-2xl border border-dashed border-border" />
       ) : (
         <div className="space-y-3">
           {plans.map((plan) => {
@@ -430,7 +430,7 @@ export default function MovingPage() {
             return (
               <div
                 key={plan.id}
-                className="rounded-xl border border-border bg-card overflow-hidden"
+                className="rounded-2xl border border-border bg-card overflow-hidden"
               >
                 {/* Main Row */}
                 <div
@@ -467,11 +467,11 @@ export default function MovingPage() {
 
                   {/* Date */}
                   <div className="flex-shrink-0 text-right w-24">
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="font-mono text-sm font-medium text-foreground">
                       {new Date(plan.moveDate).toLocaleDateString()}
                     </p>
                     <p
-                      className={`text-[11px] ${days > 7 ? "text-muted-foreground" : days > 0 ? "text-tone-honey-fg" : days === 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}
+                      className={`font-mono text-[11px] ${days > 7 ? "text-muted-foreground" : days > 0 ? "text-tone-honey-fg" : days === 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}
                     >
                       {days > 0
                         ? `${days} days left`
@@ -496,8 +496,8 @@ export default function MovingPage() {
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                       {/* From */}
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-tone-orange-fg" /> FROM
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-2 flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-tone-orange-fg" /> From
                         </p>
                         <p className="text-sm font-medium text-foreground">
                           {plan.fromAddress.street}
@@ -509,8 +509,8 @@ export default function MovingPage() {
                       </div>
                       {/* To */}
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-tone-sage-fg" /> TO
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-2 flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-tone-sage-fg" /> To
                         </p>
                         <p className="text-sm font-medium text-foreground">
                           {plan.toAddress.street}
@@ -524,7 +524,7 @@ export default function MovingPage() {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Created</span>
-                          <span className="text-foreground">
+                          <span className="font-mono text-foreground">
                             {new Date(plan.createdAt).toLocaleDateString()}
                           </span>
                         </div>
@@ -541,43 +541,43 @@ export default function MovingPage() {
                             <span className="text-muted-foreground">
                               Est. Duration
                             </span>
-                            <span className="text-foreground">
+                            <span className="font-mono text-foreground">
                               {plan.estimatedDuration} days
                             </span>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="mt-4 rounded-lg border border-tone-honey-br bg-tone-honey-bg p-3">
+                    <div className="mt-4 rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-4">
                       <div className="flex items-start gap-3">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-tone-honey-fg" />
                         <div className="flex-1">
-                          <p className="text-sm font-semibold text-foreground">
+                          <p className="font-display text-base font-bold text-foreground">
                             Operator transition context
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
                             Guidance is manual support context only. LocateFlow does not update provider accounts or execute address changes.
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                            <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
                               {isInterstate ? "Interstate move" : "Same-state move"}
                             </span>
-                            <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
-                              Origin services: {originServiceCount}
+                            <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+                              Origin services: <span className="font-mono">{originServiceCount}</span>
                             </span>
-                            <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
-                              Destination services: {destinationServiceCount}
+                            <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+                              Destination services: <span className="font-mono">{destinationServiceCount}</span>
                             </span>
-                            <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
-                              Move tasks: {moveTaskCount}
+                            <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+                              Move tasks: <span className="font-mono">{moveTaskCount}</span>
                             </span>
                             {openMoveTaskCount > 0 && (
-                              <span className="rounded-full border border-tone-sky-br bg-tone-sky-bg px-2 py-1 text-[11px] text-tone-sky-fg">
-                                Open tasks: {openMoveTaskCount}
+                              <span className="rounded-full border border-tone-sky-br bg-tone-sky-bg px-2.5 py-1 text-[11px] text-tone-sky-fg">
+                                Open tasks: <span className="font-mono">{openMoveTaskCount}</span>
                               </span>
                             )}
                             {originServiceCount > 0 && destinationServiceCount === 0 && (
-                              <span className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-1 text-[11px] text-tone-honey-fg">
+                              <span className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2.5 py-1 text-[11px] text-tone-honey-fg">
                                 Destination service setup not tracked yet
                               </span>
                             )}
@@ -585,7 +585,7 @@ export default function MovingPage() {
                           {(plan.moveTasks || []).length > 0 && (
                             <div className="mt-3 grid gap-2 lg:grid-cols-2">
                               {(plan.moveTasks || []).slice(0, 4).map((task) => (
-                                <div key={task.id} className="rounded-lg border border-border bg-background/70 p-2">
+                                <div key={task.id} className="rounded-xl border border-border bg-background/70 p-2.5">
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0">
                                       <p className="truncate text-xs font-medium text-foreground">{task.title}</p>
@@ -593,7 +593,8 @@ export default function MovingPage() {
                                         {formatLabel(task.actionType)} · {task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"}
                                       </p>
                                     </div>
-                                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${taskStatusClass(task.status)}`}>
+                                    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${taskStatusClass(task.status)}`}>
+                                      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
                                       {formatLabel(task.status)}
                                     </span>
                                   </div>
@@ -611,7 +612,7 @@ export default function MovingPage() {
                       <Link
                         href={`/moving/${plan.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
+                        className="flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
                       >
                         <Eye className="h-3 w-3" /> View Plan Detail
                       </Link>
@@ -620,7 +621,7 @@ export default function MovingPage() {
                           e.stopPropagation();
                           window.location.assign(`/users/${plan.user.id}`);
                         }}
-                        className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+                        className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       >
                         <Eye className="h-3 w-3" /> View User Profile
                       </button>

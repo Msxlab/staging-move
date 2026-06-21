@@ -98,14 +98,14 @@ export default function BillingClient() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-border bg-card p-5">
+          <div key={k.label} className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{k.label}</p>
-                <p className="mt-1 text-2xl font-bold text-foreground">{k.value}</p>
-                {(k as any).sub && <p className="mt-0.5 text-xs text-muted-foreground">{(k as any).sub}</p>}
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{k.label}</p>
+                <p className="mt-2 font-display text-2xl font-extrabold text-foreground">{k.value}</p>
+                {(k as any).sub && <p className="mt-1 font-mono text-xs text-muted-foreground">{(k as any).sub}</p>}
               </div>
-              <div className={`rounded-lg p-2.5 ${k.bg}`}><k.icon className={`h-5 w-5 ${k.color}`} /></div>
+              <div className={`rounded-xl p-2.5 ${k.bg}`}><k.icon className={`h-5 w-5 ${k.color}`} /></div>
             </div>
           </div>
         ))}
@@ -113,7 +113,7 @@ export default function BillingClient() {
 
       <div className="flex gap-2 border-b border-border">
         {([["overview", "Overview"], ["mobile", `Mobile Ops${data.mobileOps.staleValidationCount + data.mobileOps.missingReceiptIdentifierCount > 0 ? ` (${data.mobileOps.staleValidationCount + data.mobileOps.missingReceiptIdentifierCount})` : ""}`]] as const).map(([key, label]) => (
-          <button key={key} onClick={() => setTab(key)} className={`px-4 py-2 text-sm font-medium border-b-2 transition ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+          <button key={key} onClick={() => setTab(key)} className={`px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] border-b-2 transition ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
             {label}
           </button>
         ))}
@@ -123,27 +123,27 @@ export default function BillingClient() {
        <>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Daily Revenue Trend */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Daily Revenue (30 days)</h2>
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 font-display text-base font-bold text-foreground">Daily Revenue <span className="font-mono text-xs font-normal text-muted-foreground">(30 days)</span></h2>
           <div className="flex items-end gap-0.5 h-40">
             {Object.entries(data.dailyRevenue).map(([date, value]) => (
               <div key={date} className="flex-1 flex flex-col items-center group relative">
-                <div className="absolute -top-8 hidden group-hover:block bg-popover border border-border rounded px-2 py-1 text-[10px] text-foreground whitespace-nowrap z-10">
+                <div className="absolute -top-8 hidden group-hover:block bg-popover border border-border rounded px-2 py-1 font-mono text-[10px] text-foreground whitespace-nowrap z-10">
                   {date}: ${value.toFixed(2)}
                 </div>
                 <div className="w-full bg-primary/60 rounded-t transition-all hover:bg-primary" style={{ height: `${(value / maxRevenue) * 100}%`, minHeight: "2px" }} />
               </div>
             ))}
           </div>
-          <div className="flex justify-between mt-2 text-[10px] text-muted-foreground">
+          <div className="flex justify-between mt-2 font-mono text-[10px] text-muted-foreground">
             <span>{Object.keys(data.dailyRevenue)[0]}</span>
             <span>{Object.keys(data.dailyRevenue).slice(-1)[0]}</span>
           </div>
         </div>
 
         {/* Plan Distribution */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Plan Distribution</h2>
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 font-display text-base font-bold text-foreground">Plan Distribution</h2>
           <div className="space-y-3">
             {Object.entries(data.planDistribution).sort((a, b) => b[1].revenue - a[1].revenue).map(([plan, info]) => {
               const pct = Math.round((info.active / totalActive) * 100);
@@ -155,8 +155,8 @@ export default function BillingClient() {
                       <span className="text-sm font-medium text-foreground">{plan}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{info.active} active</span>
-                      <span className="font-medium text-foreground">${info.revenue.toFixed(2)}/mo</span>
+                      <span><span className="font-mono">{info.active}</span> active</span>
+                      <span className="font-mono font-medium text-foreground">${info.revenue.toFixed(2)}/mo</span>
                     </div>
                   </div>
                   <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -171,21 +171,24 @@ export default function BillingClient() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Trials Expiring Soon */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-tone-honey-fg" /> Trials Expiring (7 days)
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 font-display text-base font-bold text-foreground">
+            <AlertTriangle className="h-4 w-4 text-tone-honey-fg" /> Trials Expiring <span className="font-mono text-xs font-normal text-muted-foreground">(7 days)</span>
           </h2>
           {data.trialExpiring.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No trials expiring soon</p>
           ) : (
             <div className="space-y-2">
               {data.trialExpiring.map((s: any) => (
-                <div key={s.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div key={s.id} className="flex items-center justify-between rounded-xl border border-border p-3">
                   <div>
                     <p className="text-sm font-medium text-foreground">{maskEmail(s.user?.email)}</p>
                     <p className="text-xs text-muted-foreground">{s.plan}</p>
                   </div>
-                  <span className={`text-xs font-medium ${s.daysLeft <= 2 ? "text-destructive" : "text-tone-honey-fg"}`}>{s.daysLeft}d left</span>
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.daysLeft <= 2 ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${s.daysLeft <= 2 ? "bg-destructive" : "bg-tone-honey-fg"}`} />
+                    <span className="font-mono">{s.daysLeft}</span>d left
+                  </span>
                 </div>
               ))}
             </div>
@@ -193,8 +196,8 @@ export default function BillingClient() {
         </div>
 
         {/* Recent Cancellations */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 font-display text-base font-bold text-foreground">
             <ArrowDownRight className="h-4 w-4 text-destructive" /> Recent Cancellations
           </h2>
           {data.recentCancellations.length === 0 ? (
@@ -202,12 +205,12 @@ export default function BillingClient() {
           ) : (
             <div className="space-y-2">
               {data.recentCancellations.map((s: any) => (
-                <div key={s.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div key={s.id} className="flex items-center justify-between rounded-xl border border-border p-3">
                   <div>
                     <p className="text-sm font-medium text-foreground">{maskEmail(s.user?.email)}</p>
                     <p className="text-xs text-muted-foreground">{s.plan}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground">{s.canceledAt ? new Date(s.canceledAt).toLocaleDateString() : ""}</span>
+                  <span className="font-mono text-xs text-muted-foreground">{s.canceledAt ? new Date(s.canceledAt).toLocaleDateString() : ""}</span>
                 </div>
               ))}
             </div>
@@ -215,8 +218,8 @@ export default function BillingClient() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-foreground flex items-center gap-2">
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="mb-4 flex items-center gap-2 font-display text-base font-bold text-foreground">
           <Store className="h-4 w-4 text-tone-sky-fg" /> Billing Provider Distribution
         </h2>
         <div className="grid gap-6 lg:grid-cols-2">
@@ -227,7 +230,7 @@ export default function BillingClient() {
                 <div key={provider}>
                   <div className="mb-1 flex items-center justify-between text-sm">
                     <span className="font-medium text-foreground">{provider}</span>
-                    <span className="text-xs text-muted-foreground">{count} · {pct}%</span>
+                    <span className="font-mono text-xs text-muted-foreground">{count} · {pct}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-muted overflow-hidden">
                     <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
@@ -237,14 +240,14 @@ export default function BillingClient() {
             })}
           </div>
           <div>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Platform Distribution</h3>
+            <h3 className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Platform Distribution</h3>
             <div className="grid grid-cols-2 gap-3">
               {Object.entries(data.platformDistribution).sort((a, b) => b[1] - a[1]).map(([platform, count]) => {
                 const pct = Math.round((count / totalByPlatform) * 100);
                 return (
-                  <div key={platform} className="rounded-lg border border-border p-3">
+                  <div key={platform} className="rounded-xl border border-border p-3">
                     <p className="text-sm font-medium text-foreground">{platform}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{count} subscriptions · {pct}%</p>
+                    <p className="mt-1 font-mono text-xs text-muted-foreground">{count} subscriptions · {pct}%</p>
                   </div>
                 );
               })}
@@ -254,16 +257,16 @@ export default function BillingClient() {
       </div>
 
       {/* Status Breakdown */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Subscription Status Breakdown</h2>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="mb-4 font-display text-base font-bold text-foreground">Subscription Status Breakdown</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {Object.entries(data.statusDistribution).map(([status, count]) => {
             const colors: Record<string, string> = { ACTIVE: "text-tone-sage-fg bg-tone-sage-bg", TRIALING: "text-tone-sky-fg bg-tone-sky-bg", CANCELED: "text-destructive bg-destructive/10", PAST_DUE: "text-tone-honey-fg bg-tone-honey-bg" };
             const c = colors[status] || "text-muted-foreground bg-tone-slate-bg";
             return (
-              <div key={status} className={`rounded-lg p-4 ${c.split(" ")[1]}`}>
-                <p className={`text-2xl font-bold ${c.split(" ")[0]}`}>{count}</p>
-                <p className="text-xs text-muted-foreground mt-1">{status}</p>
+              <div key={status} className={`rounded-xl p-4 ${c.split(" ")[1]}`}>
+                <p className={`font-display text-2xl font-extrabold ${c.split(" ")[0]}`}>{count}</p>
+                <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{status}</p>
               </div>
             );
           })}
@@ -275,47 +278,47 @@ export default function BillingClient() {
       {tab === "mobile" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-5">
+            <div className="rounded-2xl border border-border bg-card p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Mobile Store Subs</p>
-                  <p className="mt-1 text-2xl font-bold text-foreground">{data.mobileOps.totalSubscriptions}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{data.mobileOps.activeSubscriptions} active</p>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Mobile Store Subs</p>
+                  <p className="mt-2 font-display text-2xl font-extrabold text-foreground">{data.mobileOps.totalSubscriptions}</p>
+                  <p className="mt-1 font-mono text-xs text-muted-foreground">{data.mobileOps.activeSubscriptions} active</p>
                 </div>
-                <div className="rounded-lg bg-tone-sky-bg p-2.5"><Smartphone className="h-5 w-5 text-tone-sky-fg" /></div>
+                <div className="rounded-xl bg-tone-sky-bg p-2.5"><Smartphone className="h-5 w-5 text-tone-sky-fg" /></div>
               </div>
-              <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="mt-4 flex items-center gap-2 font-mono text-xs text-muted-foreground">
                 <span>{data.mobileOps.appStoreSubscriptions} App Store</span>
                 <span>·</span>
                 <span>{data.mobileOps.playStoreSubscriptions} Play Store</span>
               </div>
             </div>
-            <div className="rounded-xl border border-border bg-card p-5">
+            <div className="rounded-2xl border border-border bg-card p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Stale Validations</p>
-                  <p className="mt-1 text-2xl font-bold text-foreground">{data.mobileOps.staleValidationCount}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{data.mobileOps.neverValidatedCount} never validated</p>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Stale Validations</p>
+                  <p className="mt-2 font-display text-2xl font-extrabold text-foreground">{data.mobileOps.staleValidationCount}</p>
+                  <p className="mt-1 font-mono text-xs text-muted-foreground">{data.mobileOps.neverValidatedCount} never validated</p>
                 </div>
-                <div className="rounded-lg bg-tone-honey-bg p-2.5"><Clock className="h-5 w-5 text-tone-honey-fg" /></div>
+                <div className="rounded-xl bg-tone-honey-bg p-2.5"><Clock className="h-5 w-5 text-tone-honey-fg" /></div>
               </div>
               <p className="mt-4 text-xs text-muted-foreground">Subscriptions older than 24h should be covered by the mobile billing revalidation cron.</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-5">
+            <div className="rounded-2xl border border-border bg-card p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Store Metadata Gaps</p>
-                  <p className="mt-1 text-2xl font-bold text-foreground">{data.mobileOps.missingReceiptIdentifierCount}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{data.mobileOps.pendingValidationCount} pending or unknown</p>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Store Metadata Gaps</p>
+                  <p className="mt-2 font-display text-2xl font-extrabold text-foreground">{data.mobileOps.missingReceiptIdentifierCount}</p>
+                  <p className="mt-1 font-mono text-xs text-muted-foreground">{data.mobileOps.pendingValidationCount} pending or unknown</p>
                 </div>
-                <div className="rounded-lg bg-destructive/10 p-2.5"><ShieldAlert className="h-5 w-5 text-destructive" /></div>
+                <div className="rounded-xl bg-destructive/10 p-2.5"><ShieldAlert className="h-5 w-5 text-destructive" /></div>
               </div>
               <p className="mt-4 text-xs text-muted-foreground">Missing tokens or transaction IDs block automated store revalidation.</p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="mb-4 text-sm font-semibold text-foreground flex items-center gap-2">
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 flex items-center gap-2 font-display text-base font-bold text-foreground">
               <Clock className="h-4 w-4 text-tone-honey-fg" /> Stale Mobile Validations
             </h2>
             {data.staleMobileSubscriptions.length === 0 ? (
@@ -323,24 +326,25 @@ export default function BillingClient() {
             ) : (
               <div className="space-y-3">
                 {data.staleMobileSubscriptions.map((subscription) => (
-                  <div key={subscription.id} className="rounded-lg border border-border p-4">
+                  <div key={subscription.id} className="rounded-xl border border-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-medium text-foreground">{subscription.user?.email ? maskEmail(subscription.user.email) : "Unknown user"}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{subscription.provider || "UNKNOWN"} · {subscription.platform || "unassigned"} · {subscription.plan || "Unknown plan"}</p>
                       </div>
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${subscription.missingReceiptIdentifier ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${subscription.missingReceiptIdentifier ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${subscription.missingReceiptIdentifier ? "bg-destructive" : "bg-tone-honey-fg"}`} />
                         {subscription.missingReceiptIdentifier ? "Missing receipt" : subscription.status || "UNKNOWN"}
                       </span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
                       <div>
-                        <p>Last validated</p>
-                        <p className="mt-1 font-medium text-foreground">{subscription.lastValidatedAt ? new Date(subscription.lastValidatedAt).toLocaleString() : "Never"}</p>
+                        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Last validated</p>
+                        <p className="mt-1 font-mono font-medium text-foreground">{subscription.lastValidatedAt ? new Date(subscription.lastValidatedAt).toLocaleString() : "Never"}</p>
                       </div>
                       <div>
-                        <p>Last synced</p>
-                        <p className="mt-1 font-medium text-foreground">{subscription.lastSyncedAt ? new Date(subscription.lastSyncedAt).toLocaleString() : "Never"}</p>
+                        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Last synced</p>
+                        <p className="mt-1 font-mono font-medium text-foreground">{subscription.lastSyncedAt ? new Date(subscription.lastSyncedAt).toLocaleString() : "Never"}</p>
                       </div>
                     </div>
                   </div>

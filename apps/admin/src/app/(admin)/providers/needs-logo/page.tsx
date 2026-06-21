@@ -398,14 +398,14 @@ export default function NeedsLogoPage() {
             <Link
               href="/providers"
               aria-label="Back to providers"
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" /> Back to providers
             </Link>
             <button
               type="button"
               onClick={() => load()}
-              className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm hover:bg-muted"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
@@ -414,7 +414,7 @@ export default function NeedsLogoPage() {
               type="button"
               onClick={handleAutoFetchAll}
               disabled={bulkRunning || providers.length === 0}
-              className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
               {bulkRunning ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -427,7 +427,7 @@ export default function NeedsLogoPage() {
               type="button"
               onClick={handleAutoFetchEntireCatalog}
               disabled={bulkRunning || total === 0}
-              className="inline-flex items-center gap-1 rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               {bulkRunning ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -443,20 +443,20 @@ export default function NeedsLogoPage() {
       />
 
       {bulkProgress && (
-        <div className="rounded border bg-card p-3">
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span>
-              {bulkProgress.done} / {bulkProgress.total} processed —{" "}
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              <span className="font-mono text-foreground">{bulkProgress.done}</span> / <span className="font-mono text-foreground">{bulkProgress.total}</span> processed —{" "}
               <span className="text-tone-sage-fg">
-                {bulkProgress.ok} {autoAcceptGenerated ? "accepted" : "candidates"}
+                <span className="font-mono">{bulkProgress.ok}</span> {autoAcceptGenerated ? "accepted" : "candidates"}
               </span> ·{" "}
-              <span className="text-destructive">{bulkProgress.failed} failed</span>
+              <span className="text-destructive"><span className="font-mono">{bulkProgress.failed}</span> failed</span>
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="font-mono text-xs text-muted-foreground">
               {Math.round((bulkProgress.done / Math.max(1, bulkProgress.total)) * 100)}%
             </span>
           </div>
-          <div className="h-2 w-full rounded bg-muted overflow-hidden">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
               className="h-full bg-primary transition-all"
               style={{
@@ -467,8 +467,8 @@ export default function NeedsLogoPage() {
         </div>
       )}
 
-      <div className="flex items-center gap-3 text-sm">
-        <label className="inline-flex items-center gap-2 cursor-pointer">
+      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <label className="inline-flex cursor-pointer items-center gap-2">
           <input
             type="checkbox"
             checked={onlyWithWebsite}
@@ -479,7 +479,7 @@ export default function NeedsLogoPage() {
           />
           Only show providers that have a website
         </label>
-        <label className="inline-flex items-center gap-2 cursor-pointer">
+        <label className="inline-flex cursor-pointer items-center gap-2">
           <input
             type="checkbox"
             checked={autoAcceptGenerated}
@@ -489,18 +489,18 @@ export default function NeedsLogoPage() {
         </label>
       </div>
 
-      <div className="rounded border bg-card overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+          <thead className="bg-muted/50">
             <tr>
-              <th className="px-4 py-2 text-left">Provider</th>
-              <th className="px-4 py-2 text-left">Category</th>
-              <th className="px-4 py-2 text-left">Website</th>
-              <th className="px-4 py-2 text-left">Status</th>
-              <th className="px-4 py-2 text-right">Actions</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Provider</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Category</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Website</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</th>
+              <th className="px-4 py-3 text-right text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border">
             {!loading && providers.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
@@ -516,10 +516,10 @@ export default function NeedsLogoPage() {
                   ? ({ kind: "candidate", candidate: existingCandidate } as const)
                   : ({ kind: "idle" } as const));
               return (
-                <tr key={p.id} className="border-t">
+                <tr key={p.id} className="bg-card transition-colors hover:bg-accent/50">
                   <td className="px-4 py-3">
-                    <div className="font-medium">{p.name}</div>
-                    <div className="text-xs text-muted-foreground">{p.slug}</div>
+                    <div className="font-medium text-foreground">{p.name}</div>
+                    <div className="font-mono text-xs text-muted-foreground">{p.slug}</div>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {p.category}
@@ -542,10 +542,13 @@ export default function NeedsLogoPage() {
                   </td>
                   <td className="px-4 py-3 text-xs">
                     {status.kind === "idle" && (
-                      <span className="text-muted-foreground">Pending</span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-slate-bg px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+                        Pending
+                      </span>
                     )}
                     {status.kind === "running" && (
-                      <span className="inline-flex items-center gap-1 text-tone-sky-fg">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-sky-bg px-2 py-0.5 text-[11px] font-semibold text-tone-sky-fg">
                         <Loader2 className="h-3 w-3 animate-spin" />
                         {status.action === "auto-fetch"
                           ? "Fetching…"
@@ -561,7 +564,8 @@ export default function NeedsLogoPage() {
                           alt=""
                           className="h-6 w-6 rounded object-contain bg-card"
                         />
-                        <span className="text-tone-honey-fg">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-honey-bg px-2 py-0.5 text-[11px] font-semibold text-tone-honey-fg">
+                          <span className="h-1.5 w-1.5 rounded-full bg-tone-honey-fg" />
                           Candidate · {status.candidate.source}
                         </span>
                       </span>
@@ -573,7 +577,10 @@ export default function NeedsLogoPage() {
                           alt=""
                           className="h-6 w-6 rounded object-contain bg-card"
                         />
-                        <span className="text-tone-sage-fg">Done</span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-sage-bg px-2 py-0.5 text-[11px] font-semibold text-tone-sage-fg">
+                          <span className="h-1.5 w-1.5 rounded-full bg-tone-sage-fg" />
+                          Done
+                        </span>
                       </span>
                     )}
                     {status.kind === "error" && (
@@ -593,7 +600,7 @@ export default function NeedsLogoPage() {
                             onClick={() =>
                               reviewCandidate(p.id, status.candidate.id, "approve")
                             }
-                            className="inline-flex items-center gap-1 rounded border border-tone-sage-br px-2 py-1 text-xs text-tone-sage-fg hover:bg-tone-sage-bg"
+                            className="inline-flex items-center gap-1 rounded-xl border border-tone-sage-br px-2.5 py-1.5 text-xs font-medium text-tone-sage-fg transition-colors hover:bg-tone-sage-bg"
                           >
                             <Check className="h-3 w-3" /> Approve
                           </button>
@@ -602,7 +609,7 @@ export default function NeedsLogoPage() {
                             onClick={() =>
                               reviewCandidate(p.id, status.candidate.id, "reject")
                             }
-                            className="inline-flex items-center gap-1 rounded border border-destructive/30 px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
+                            className="inline-flex items-center gap-1 rounded-xl border border-destructive/30 px-2.5 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
                           >
                             <X className="h-3 w-3" /> Reject
                           </button>
@@ -612,13 +619,13 @@ export default function NeedsLogoPage() {
                         type="button"
                         disabled={!p.website || status.kind === "running"}
                         onClick={() => handleAutoFetch(p.id)}
-                        className="inline-flex items-center gap-1 rounded border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                       >
                         <Sparkles className="h-3 w-3" /> Auto
                       </button>
                       <label
-                        className={`inline-flex items-center gap-1 rounded border px-2 py-1 text-xs hover:bg-muted cursor-pointer ${
-                          status.kind === "running" ? "opacity-50 pointer-events-none" : ""
+                        className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
+                          status.kind === "running" ? "pointer-events-none opacity-50" : ""
                         }`}
                       >
                         <Upload className="h-3 w-3" /> Upload
@@ -645,14 +652,14 @@ export default function NeedsLogoPage() {
       {total > perPage && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            Page {page} of {Math.ceil(total / perPage)}
+            Page <span className="font-mono text-foreground">{page}</span> of <span className="font-mono text-foreground">{Math.ceil(total / perPage)}</span>
           </span>
           <div className="flex items-center gap-2">
             <button
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="rounded border px-3 py-1 disabled:opacity-50"
+              className="rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
               Previous
             </button>
@@ -660,7 +667,7 @@ export default function NeedsLogoPage() {
               type="button"
               disabled={page * perPage >= total}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded border px-3 py-1 disabled:opacity-50"
+              className="rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
               Next
             </button>

@@ -39,7 +39,7 @@ function timeUntil(date: string) {
   return new Date(date).toLocaleDateString();
 }
 
-const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+const inputCls = "w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 export default function SecurityDashboardClient() {
   const [tab, setTab] = useState<Tab>("sessions");
@@ -237,7 +237,7 @@ export default function SecurityDashboardClient() {
         subtitle="Active sessions, login history, and security events"
         actions={
           <>
-            <Link href="/security" aria-label="Back to security" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
+            <Link href="/security" aria-label="Back to security" className="rounded-xl p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </>
@@ -246,42 +246,42 @@ export default function SecurityDashboardClient() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Active Sessions</p>
-              <p className="mt-1 text-2xl font-bold text-foreground">{activeSessions.length}</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Active Sessions</p>
+              <p className="mt-1.5 font-display text-3xl font-extrabold leading-none text-foreground">{activeSessions.length}</p>
             </div>
-            <div className="rounded-lg bg-tone-sage-bg p-2.5"><Monitor className="h-5 w-5 text-tone-sage-fg" /></div>
+            <div className="rounded-xl bg-tone-sage-bg p-2.5"><Monitor className="h-5 w-5 text-tone-sage-fg" /></div>
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Trusted Devices</p>
-              <p className="mt-1 text-2xl font-bold text-foreground">{trustedDevices.length}</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Trusted Devices</p>
+              <p className="mt-1.5 font-display text-3xl font-extrabold leading-none text-foreground">{trustedDevices.length}</p>
             </div>
-            <div className="rounded-lg bg-tone-sky-bg p-2.5"><ShieldCheck className="h-5 w-5 text-tone-sky-fg" /></div>
+            <div className="rounded-xl bg-tone-sky-bg p-2.5"><ShieldCheck className="h-5 w-5 text-tone-sky-fg" /></div>
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Failed (24h)</p>
-              <p className="mt-1 text-2xl font-bold text-foreground">{loginStats.failed24h || 0}</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Failed (24h)</p>
+              <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${(loginStats.failed24h || 0) > 5 ? "text-destructive" : "text-foreground"}`}>{loginStats.failed24h || 0}</p>
             </div>
-            <div className={`rounded-lg p-2.5 ${(loginStats.failed24h || 0) > 5 ? "bg-destructive/10" : "bg-tone-honey-bg"}`}>
+            <div className={`rounded-xl p-2.5 ${(loginStats.failed24h || 0) > 5 ? "bg-destructive/10" : "bg-tone-honey-bg"}`}>
               <XCircle className={`h-5 w-5 ${(loginStats.failed24h || 0) > 5 ? "text-destructive" : "text-tone-honey-fg"}`} />
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Failed (7d)</p>
-              <p className="mt-1 text-2xl font-bold text-foreground">{loginStats.failed7d || 0}</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Failed (7d)</p>
+              <p className="mt-1.5 font-display text-3xl font-extrabold leading-none text-foreground">{loginStats.failed7d || 0}</p>
             </div>
-            <div className="rounded-lg bg-tone-orange-bg p-2.5"><AlertTriangle className="h-5 w-5 text-tone-orange-fg" /></div>
+            <div className="rounded-xl bg-tone-orange-bg p-2.5"><AlertTriangle className="h-5 w-5 text-tone-orange-fg" /></div>
           </div>
         </div>
       </div>
@@ -296,7 +296,7 @@ export default function SecurityDashboardClient() {
             ["events", "Security Events", ShieldAlert],
           ] as const).map(([key, label, Icon]) => (
             <button key={key} onClick={() => setTab(key as Tab)}
-              className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] border-b-2 transition ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Icon className="h-4 w-4" /> {label}
             </button>
           ))}
@@ -304,7 +304,7 @@ export default function SecurityDashboardClient() {
         <div className="flex items-center gap-2 pb-2">
           {isSuperAdmin && (
             <button onClick={() => setShowAll(!showAll)}
-              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${showAll ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:bg-accent"}`}>
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition ${showAll ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
               <Eye className="h-3.5 w-3.5" /> {showAll ? "All Admins" : "My Only"}
             </button>
           )}
@@ -315,16 +315,16 @@ export default function SecurityDashboardClient() {
       {tab === "sessions" && (
         <div className="space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">{activeSessions.length} active session(s)</p>
+            <p className="text-sm text-muted-foreground"><span className="font-mono text-foreground">{activeSessions.length}</span> active session(s)</p>
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => loadSessions()} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
+              <button onClick={() => loadSessions()} className="flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                 <RefreshCw className="h-3 w-3" /> Refresh
               </button>
-              <button onClick={() => revokeAllSessions("self")} className="flex items-center gap-1 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">
+              <button onClick={() => revokeAllSessions("self")} className="flex items-center gap-1 rounded-xl border border-destructive/30 px-3 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/10">
                 <Power className="h-3 w-3" /> Sign Out All My Sessions
               </button>
               {isSuperAdmin && showAll && (
-                <button onClick={() => revokeAllSessions("all")} className="flex items-center gap-1 rounded-lg bg-destructive px-3 py-1.5 text-xs text-destructive-foreground hover:bg-destructive/90">
+                <button onClick={() => revokeAllSessions("all")} className="flex items-center gap-1 rounded-xl bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90">
                   <Ban className="h-3 w-3" /> Revoke All
                 </button>
               )}
@@ -332,33 +332,33 @@ export default function SecurityDashboardClient() {
           </div>
 
           {activeSessions.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">No active sessions</div>
+            <div className="rounded-2xl border border-dashed border-border bg-card py-12 text-center text-sm text-muted-foreground">No active sessions</div>
           ) : (
             <div className="grid gap-3">
               {activeSessions.map((s) => (
-                <div key={s.revokeHandle || s.displayId} className={`rounded-xl border p-5 transition ${s.isCurrent ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+                <div key={s.revokeHandle || s.displayId} className={`rounded-2xl border p-5 transition ${s.isCurrent ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`rounded-lg p-2.5 ${s.deviceType === "Mobile" ? "bg-tone-sky-bg" : "bg-tone-emerald-bg"}`}>
+                      <div className={`rounded-xl p-2.5 ${s.deviceType === "Mobile" ? "bg-tone-sky-bg" : "bg-tone-emerald-bg"}`}>
                         {s.deviceType === "Mobile" ? <Smartphone className="h-5 w-5 text-tone-sky-fg" /> : <Laptop className="h-5 w-5 text-tone-emerald-fg" />}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-foreground">{s.browser || "Unknown"} · {s.os || "Unknown"}</p>
-                          {s.isCurrent && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Current</span>}
+                          {s.isCurrent && <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Current</span>}
                         </div>
                         {showAll && s.adminUser && (
                           <p className="text-xs text-muted-foreground">{s.adminUser.firstName} {s.adminUser.lastName} ({s.adminUser.email})</p>
                         )}
                         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {s.ipAddress || "—"}</span>
+                          <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> <span className="font-mono">{s.ipAddress || "—"}</span></span>
                           {s.country && <span>{s.city ? `${s.city}, ` : ""}{s.country}</span>}
-                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {relativeTime(s.lastActivity)}</span>
+                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> <span className="font-mono">{relativeTime(s.lastActivity)}</span></span>
                         </div>
                       </div>
                     </div>
                     <button onClick={() => revokeSession(s)} aria-label="Revoke session"
-                      className="rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10">
+                      className="rounded-xl border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10">
                       <Power className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -374,15 +374,15 @@ export default function SecurityDashboardClient() {
         <div className="space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">{trustedDevices.length} trusted MFA device(s)</p>
+              <p className="text-sm text-muted-foreground"><span className="font-mono text-foreground">{trustedDevices.length}</span> trusted MFA device(s)</p>
               <p className="text-xs text-muted-foreground">Trusted devices can skip MFA on familiar networks for up to 30 days.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => loadTrustedDevices()} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
+              <button onClick={() => loadTrustedDevices()} className="flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                 <RefreshCw className="h-3 w-3" /> Refresh
               </button>
               {trustedDevices.length > 0 && (
-                <button onClick={() => revokeAllTrustedDevices()} className="flex items-center gap-1 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">
+                <button onClick={() => revokeAllTrustedDevices()} className="flex items-center gap-1 rounded-xl border border-destructive/30 px-3 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/10">
                   <Ban className="h-3 w-3" /> Forget All
                 </button>
               )}
@@ -390,36 +390,36 @@ export default function SecurityDashboardClient() {
           </div>
 
           {trustedDevices.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-12 text-center">
+            <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
               <ShieldCheck className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">No trusted MFA devices yet.</p>
             </div>
           ) : (
             <div className="grid gap-3">
               {trustedDevices.map((device) => (
-                <div key={device.id} className={`rounded-xl border p-5 transition ${device.isCurrent ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+                <div key={device.id} className={`rounded-2xl border p-5 transition ${device.isCurrent ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-start gap-4">
-                      <div className="rounded-lg bg-tone-sky-bg p-2.5">
+                      <div className="rounded-xl bg-tone-sky-bg p-2.5">
                         <ShieldCheck className="h-5 w-5 text-tone-sky-fg" />
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-medium text-foreground">{device.deviceLabel || "Trusted device"}</p>
-                          {device.isCurrent && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Current browser</span>}
+                          {device.isCurrent && <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Current browser</span>}
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {device.ipAddress || "unknown IP"}</span>
-                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Expires {timeUntil(device.expiresAt)}</span>
-                          {device.lastUsedAt && <span>Last used {relativeTime(device.lastUsedAt)}</span>}
+                          <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> <span className="font-mono">{device.ipAddress || "unknown IP"}</span></span>
+                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Expires <span className="font-mono">{timeUntil(device.expiresAt)}</span></span>
+                          {device.lastUsedAt && <span>Last used <span className="font-mono">{relativeTime(device.lastUsedAt)}</span></span>}
                         </div>
                         {device.userAgent && (
-                          <p className="mt-2 max-w-2xl truncate text-[11px] text-muted-foreground">{device.userAgent}</p>
+                          <p className="mt-2 max-w-2xl truncate font-mono text-[11px] text-muted-foreground">{device.userAgent}</p>
                         )}
                       </div>
                     </div>
                     <button onClick={() => revokeTrustedDevice(device.id)}
-                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10">
+                      className="inline-flex items-center justify-center gap-1 rounded-xl border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10">
                       <XCircle className="h-3.5 w-3.5" /> Forget
                     </button>
                   </div>
@@ -432,8 +432,8 @@ export default function SecurityDashboardClient() {
 
       {pendingSessionAction && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-4">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-xl">
-            <h2 className="text-lg font-semibold text-foreground">Confirm session action</h2>
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <h2 className="font-display text-lg font-bold text-foreground">Confirm session action</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Enter your password and an authenticator or backup code.
             </p>
@@ -471,13 +471,13 @@ export default function SecurityDashboardClient() {
                   setSessionStepUp({ confirmPassword: "", mfaCode: "", backupCode: "" });
                   setSessionStepUpHint(null);
                 }}
-                className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
+                className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 Cancel
               </button>
               <button
                 onClick={() => submitSessionAction(pendingSessionAction)}
-                className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
+                className="rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90"
               >
                 Confirm
               </button>
@@ -496,27 +496,27 @@ export default function SecurityDashboardClient() {
                 <option value="true">Successful</option>
                 <option value="false">Failed</option>
               </select>
-              <p className="text-xs text-muted-foreground">{loginTotal} total</p>
+              <p className="text-xs text-muted-foreground"><span className="font-mono text-foreground">{loginTotal}</span> total</p>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-border">
+          <div className="overflow-hidden rounded-2xl border border-border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Admin</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">IP</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Browser / OS</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">MFA</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Time</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Admin</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">IP</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Browser / OS</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">MFA</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Time</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {loginLogs.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">No login records</td></tr>
                 ) : loginLogs.map((log: any) => (
-                  <tr key={log.id} className="bg-card hover:bg-accent/30">
+                  <tr key={log.id} className="bg-card transition-colors hover:bg-accent/30">
                     <td className="px-4 py-3">
                       {log.adminUser ? (
                         <div>
@@ -529,15 +529,15 @@ export default function SecurityDashboardClient() {
                     </td>
                     <td className="px-4 py-3">
                       {log.success ? (
-                        <span className="flex items-center gap-1 text-xs font-medium text-tone-sage-fg"><CheckCircle2 className="h-3.5 w-3.5" /> Success</span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-sage-bg px-2 py-0.5 text-[11px] font-semibold text-tone-sage-fg"><span className="h-1.5 w-1.5 rounded-full bg-tone-sage-fg" /> Success</span>
                       ) : (
                         <div>
-                          <span className="flex items-center gap-1 text-xs font-medium text-destructive"><XCircle className="h-3.5 w-3.5" /> Failed</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive"><span className="h-1.5 w-1.5 rounded-full bg-destructive" /> Failed</span>
                           {log.failReason && <p className="text-[10px] text-muted-foreground mt-0.5">{log.failReason}</p>}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground">{log.ipAddress || "—"}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{log.ipAddress || "—"}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{log.browser || "—"} / {log.os || "—"}</td>
                     <td className="px-4 py-3">
                       {log.mfaUsed ? (
@@ -547,8 +547,8 @@ export default function SecurityDashboardClient() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-xs text-foreground">{relativeTime(log.createdAt)}</p>
-                      <p className="text-[10px] text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
+                      <p className="font-mono text-xs text-foreground">{relativeTime(log.createdAt)}</p>
+                      <p className="font-mono text-[10px] text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
                     </td>
                   </tr>
                 ))}
@@ -558,10 +558,10 @@ export default function SecurityDashboardClient() {
 
           {loginPageCount > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Page {loginPage} of {loginPageCount}</p>
+              <p className="text-xs text-muted-foreground">Page <span className="font-mono text-foreground">{loginPage}</span> of <span className="font-mono text-foreground">{loginPageCount}</span></p>
               <div className="flex items-center gap-2">
-                <button onClick={() => setLoginPage(loginPage - 1)} disabled={loginPage <= 1} aria-label="Previous page" className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronLeft className="h-4 w-4" /></button>
-                <button onClick={() => setLoginPage(loginPage + 1)} disabled={loginPage >= loginPageCount} aria-label="Next page" className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronRight className="h-4 w-4" /></button>
+                <button onClick={() => setLoginPage(loginPage - 1)} disabled={loginPage <= 1} aria-label="Previous page" className="rounded-xl border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"><ChevronLeft className="h-4 w-4" /></button>
+                <button onClick={() => setLoginPage(loginPage + 1)} disabled={loginPage >= loginPageCount} aria-label="Next page" className="rounded-xl border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"><ChevronRight className="h-4 w-4" /></button>
               </div>
             </div>
           )}
@@ -571,9 +571,9 @@ export default function SecurityDashboardClient() {
       {/* Security Events Tab */}
       {tab === "events" && (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">{securityEvents.length} recent security events</p>
+          <p className="text-sm text-muted-foreground"><span className="font-mono text-foreground">{securityEvents.length}</span> recent security events</p>
           {securityEvents.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-12 text-center">
+            <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
               <Shield className="h-10 w-10 mx-auto text-tone-sage-fg/30 mb-3" />
               <p className="text-sm text-muted-foreground">No security events detected. Your system is clean.</p>
             </div>
@@ -584,16 +584,16 @@ export default function SecurityDashboardClient() {
                 const severity = event.entityId;
                 const sevColor = severity === "CRITICAL" ? "bg-destructive/10 text-destructive" : severity === "HIGH" ? "bg-tone-orange-bg text-tone-orange-fg" : severity === "MEDIUM" ? "bg-tone-honey-bg text-tone-honey-fg" : "bg-tone-sky-bg text-tone-sky-fg";
                 return (
-                  <div key={event.id} className="rounded-xl border border-border bg-card p-4">
+                  <div key={event.id} className="rounded-2xl border border-border bg-card p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${sevColor}`}>{severity}</span>
+                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] ${sevColor}`}>{severity}</span>
                         <span className="text-sm font-medium text-foreground">{event.entityType}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">{relativeTime(event.createdAt)}</span>
+                      <span className="font-mono text-xs text-muted-foreground">{relativeTime(event.createdAt)}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">{changes.details || "—"}</p>
-                    {changes.ip && <p className="text-xs text-muted-foreground mt-1">IP: {changes.ip}</p>}
+                    {changes.ip && <p className="mt-1 text-xs text-muted-foreground">IP: <span className="font-mono">{changes.ip}</span></p>}
                   </div>
                 );
               })}

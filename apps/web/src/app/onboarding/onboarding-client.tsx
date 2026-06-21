@@ -1135,6 +1135,14 @@ export default function OnboardingClient({
   // Coach copy is keyed by wizard step (Profile → Address → Services → Moving).
   const coachStep: CoachStep =
     (["profile", "address", "providers", "moving"] as const)[step] ?? "profile";
+  // Localized step names for the mobile/tablet progress header (same labels the
+  // ≥lg Aurora rail uses). Keeps the counter copy localized, never hardcoded.
+  const mobileStepLabelKeys = [
+    "aurora_stepProfile",
+    "aurora_stepAddress",
+    "aurora_stepServices",
+    "aurora_stepMoving",
+  ] as const;
   const ritualPct = ritualRows.length > 0 ? Math.round((ritualRevealed / ritualRows.length) * 100) : 0;
   const ritualDone = ritualRows.length > 0 && ritualRevealed >= ritualRows.length;
   const ritualStateLabel = address.state || t("aurora_yourState");
@@ -1441,7 +1449,25 @@ export default function OnboardingClient({
       />
 
       {/* Step Indicator — mobile/tablet only; the aside's vertical rail owns
-          step progress on ≥lg. */}
+          step progress on ≥lg. The design's stepped-card header: a localized
+          step name + numeric counter over a thin gold→honey gradient progress
+          bar, then the existing chip rail underneath. */}
+      <div className="space-y-3 lg:hidden">
+        <div className="flex items-center justify-between">
+          <span className="font-display text-sm font-semibold text-foreground">
+            {t(mobileStepLabelKeys[step] ?? "aurora_stepProfile")}
+          </span>
+          <span className="font-mono text-xs font-semibold tabular-nums text-muted-foreground">
+            {step + 1} / {STEPS.length}
+          </span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-foreground/10">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-primary to-tone-honey-fg transition-[width] duration-300"
+            style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+          />
+        </div>
+      </div>
       <div className="flex items-center justify-center gap-1 lg:hidden">
         {STEPS.map((s, i) => {
           const Icon = s.icon;

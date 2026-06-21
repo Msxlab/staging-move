@@ -22,18 +22,19 @@ import {
   Zap,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   useAppTheme,
   useThemePreference,
   applyPlanPalette,
+  fonts,
   theme as baseDarkTheme,
   lightTheme as baseLightTheme,
   type Theme,
 } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { openWebUrl } from "@/lib/in-app-browser";
-import { Card } from "@/components/ui/Card";
-import { Badge as UiBadge } from "@/components/ui/Badge";
+import { HeroCard, MoveCard, SectionHeader, Pill, MoveRaccoon } from "@/components/move";
 import {
   isMobileStorePurchasesEnabledForPlatform,
   mobileStoreCommerceAdvertisableForPlatform,
@@ -802,10 +803,10 @@ function LegacySubscriptionScreen() {
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t("settings.subscription_a11yBack")} accessibilityHint={t("settings.subscription_a11yBackHint")}>
-            <ArrowLeft size={22} color={theme.colors.text} />
+            <ArrowLeft size={20} color={theme.colors.text} />
           </TouchableOpacity>
           <Text style={styles.title}>{t("settings.subscription")}</Text>
-          <View style={{ width: 44 }} />
+          <View style={{ width: 40 }} />
         </View>
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={theme.colors.primary} />
@@ -825,10 +826,10 @@ function LegacySubscriptionScreen() {
           accessibilityLabel={t("settings.subscription_a11yBack")}
           accessibilityHint={t("settings.subscription_a11yBackHint")}
         >
-          <ArrowLeft size={22} color={theme.colors.text} />
+          <ArrowLeft size={20} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("settings.subscription")}</Text>
-        <View style={{ width: 44 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -836,72 +837,78 @@ function LegacySubscriptionScreen() {
           <TouchableOpacity
             onPress={() => { void fetchSubscription(); }}
             accessibilityRole="button"
-            style={{ borderRadius: 12, borderWidth: 1, borderColor: theme.colors.error, backgroundColor: theme.colors.errorFaded, padding: 12, marginBottom: 12 }}
+            style={styles.loadErrorCard}
           >
-            <Text style={{ color: theme.colors.error, fontWeight: "700", fontSize: 13 }}>
+            <Text style={styles.loadErrorText}>
               {t("settings.subscription_loadError", { defaultValue: "Couldn't load your subscription. Tap to retry." })}
             </Text>
           </TouchableOpacity>
         ) : null}
 
-        <View style={styles.currentPlanCard}>
-          <View style={styles.currentPlanLeft}>
-            <View style={styles.currentPlanIcon}>
-              <Crown size={18} color={theme.colors.amber.text} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                <Text style={styles.currentPlanTitle}>
-                  {effectivePlan?.name
-                    ? effectivePlan.name +
-                      (currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "YEAR"
-                        ? ` · ${t("settings.subscription_billingIntervalAnnual", { defaultValue: "Annual" })}`
-                        : currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "MONTH"
-                          ? ` · ${t("settings.subscription_billingIntervalMonthly", { defaultValue: "Monthly" })}`
-                          : "")
-                    : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
-                </Text>
-                {isPaidEffectivePlan ? <UiBadge label={effectivePlanKey as string} variant="primary" /> : null}
+        {/* Current plan — Move hero gradient with the raccoon mark, plan name,
+            billing cadence and a tonal status pill. */}
+        <HeroCard style={styles.currentPlanCard} padding={18} radius={22}>
+          <View style={styles.currentPlanTop}>
+            <View style={styles.currentPlanLeft}>
+              <View style={styles.currentPlanIcon}>
+                <MoveRaccoon size={26} mood={isPaidEffectivePlan ? "happy" : "calm"} />
               </View>
-              <Text style={styles.currentPlanMeta}>
-                {inheritedEntitlement
-                  ? t("settings.subscription_inheritedNotice", { defaultValue: "Included with your family/workspace plan" })
-                  : periodEndLabel && effectiveStatus === "CANCEL_AT_PERIOD_END"
-                    ? t("settings.subscription_ends", { date: periodEndLabel, defaultValue: "Ends {{date}}" })
-                    : periodEndLabel
-                      ? t("settings.subscription_renews", { date: periodEndLabel })
-                      : trialEndLabel
-                        ? t("settings.subscription_renews", { date: trialEndLabel })
-                        : t("settings.subscription_choosePlan", { defaultValue: "Choose a plan to start." })}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <View style={styles.currentPlanTitleRow}>
+                  <Text style={styles.currentPlanTitle}>
+                    {effectivePlan?.name
+                      ? effectivePlan.name +
+                        (currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "YEAR"
+                          ? ` · ${t("settings.subscription_billingIntervalAnnual", { defaultValue: "Annual" })}`
+                          : currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "MONTH"
+                            ? ` · ${t("settings.subscription_billingIntervalMonthly", { defaultValue: "Monthly" })}`
+                            : "")
+                      : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
+                  </Text>
+                  {isPaidEffectivePlan ? <Pill label={effectivePlanKey as string} tone="accent" /> : null}
+                </View>
+                <Text style={styles.currentPlanMeta}>
+                  {inheritedEntitlement
+                    ? t("settings.subscription_inheritedNotice", { defaultValue: "Included with your family/workspace plan" })
+                    : periodEndLabel && effectiveStatus === "CANCEL_AT_PERIOD_END"
+                      ? t("settings.subscription_ends", { date: periodEndLabel, defaultValue: "Ends {{date}}" })
+                      : periodEndLabel
+                        ? t("settings.subscription_renews", { date: periodEndLabel })
+                        : trialEndLabel
+                          ? t("settings.subscription_renews", { date: trialEndLabel })
+                          : t("settings.subscription_choosePlan", { defaultValue: "Choose a plan to start." })}
+                </Text>
+              </View>
             </View>
           </View>
-          <UiBadge
-            label={effectiveStatus}
-            variant={
-              effectiveStatus === "ACTIVE" || effectiveStatus === "TRIALING" || (effectiveActive && isPaidEffectivePlan)
-                ? "success"
-                : "neutral"
-            }
-          />
-        </View>
+          <View style={styles.currentPlanStatusRow}>
+            <Pill
+              label={effectiveStatus}
+              tone={
+                effectiveStatus === "ACTIVE" || effectiveStatus === "TRIALING" || (effectiveActive && isPaidEffectivePlan)
+                  ? "success"
+                  : "muted"
+              }
+            />
+          </View>
+        </HeroCard>
 
         {effectivePlan && isPaidEffectivePlan && Array.isArray(effectivePlan.features) && effectivePlan.features.length > 0 ? (
-          <View style={styles.planFeaturesCard}>
+          <MoveCard style={styles.planFeaturesCard} padding={16} radius={18}>
             <Text style={styles.planFeaturesTitle}>
               {t("settings.subscription_includedFeatures", { defaultValue: "What's included" })}
             </Text>
             {effectivePlan.features.map((f: string) => (
               <View key={f} style={styles.planFeatureRow}>
-                <Check size={14} color={theme.colors.emerald.text} />
+                <Check size={14} color={theme.colors.success} />
                 <Text style={styles.planFeatureText}>{f}</Text>
               </View>
             ))}
-          </View>
+          </MoveCard>
         ) : null}
 
         {isNativeStorePlatform && (isStripeManaged || isOtherPlatformStoreManaged || !canUseNativePurchases) && (
-          <View style={styles.mobileBillingNotice}>
+          <MoveCard style={styles.mobileBillingNotice} padding={14} radius={16}>
             <Text style={styles.mobileBillingNoticeText}>
               {isStripeManaged || isOtherPlatformStoreManaged
                 ? managedElsewhereMessage
@@ -922,11 +929,11 @@ function LegacySubscriptionScreen() {
                 </Text>
               </TouchableOpacity>
             )}
-          </View>
+          </MoveCard>
         )}
 
         <View style={styles.heroBox}>
-          <Crown size={32} color={theme.colors.amber.text} />
+          <Crown size={28} color={theme.colors.primary} />
           <Text style={styles.heroTitle}>{t("pricing.title")}</Text>
           <Text style={styles.heroDesc}>
             {t("pricing.subtitle")}
@@ -1043,16 +1050,18 @@ function LegacySubscriptionScreen() {
             : planPriceLabel;
           const displayedPlanPeriodLabel = emphasizeAnnualBilledPrice ? "/year" : planPeriodLabel;
           return (
-          <Card
+          <MoveCard
             key={plan.key}
-            variant={plan.key === currentPlanKey ? "glow" : "default"}
+            accent={plan.key === currentPlanKey}
             style={{ marginTop: 14 }}
+            padding={18}
+            radius={20}
           >
             <View style={styles.planHeader}>
               <View>
                 <View style={styles.planNameRow}>
                   <Text style={styles.planName}>{planDisplayName}</Text>
-                  {plan.key === currentPlanKey && <UiBadge label={t("pricing.cta_current")} variant="success" />}
+                  {plan.key === currentPlanKey && <Pill label={t("pricing.cta_current")} tone="success" />}
                 </View>
                 {!hideUnavailableMobileCommerce ? (
                   <>
@@ -1071,7 +1080,7 @@ function LegacySubscriptionScreen() {
             <View style={styles.featureList}>
               {plan.features.map((f) => (
                 <View key={f} style={styles.featureRow}>
-                  <Check size={14} color={theme.colors.emerald.text} />
+                  <Check size={14} color={theme.colors.success} />
                   <Text style={styles.featureText}>{f}</Text>
                 </View>
               ))}
@@ -1083,7 +1092,7 @@ function LegacySubscriptionScreen() {
                   <>
                     <TouchableOpacity
                       style={styles.upgradeBtn}
-                      activeOpacity={0.7}
+                      activeOpacity={0.85}
                       onPress={() => paidPlanKey && handleUpgrade(paidPlanKey, "yearly")}
                       disabled={processingPlan === annualProcessingKey}
                       accessibilityRole="button"
@@ -1093,11 +1102,17 @@ function LegacySubscriptionScreen() {
                       })}
                       accessibilityState={{ disabled: processingPlan === annualProcessingKey }}
                     >
+                      <LinearGradient
+                        colors={theme.colors.gradient.primary}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={StyleSheet.absoluteFill}
+                      />
                       {processingPlan === annualProcessingKey ? (
-                        <ActivityIndicator color="#fff" />
+                        <ActivityIndicator color={theme.colors.onAccent} />
                       ) : (
                         <>
-                          <Zap size={16} color="#fff" />
+                          <Zap size={16} color={theme.colors.onAccent} />
                           <Text style={styles.upgradeBtnText}>{annualButtonLabel}</Text>
                         </>
                       )}
@@ -1187,7 +1202,7 @@ function LegacySubscriptionScreen() {
             ) : (plan.key === "FAMILY" || plan.key === "PRO") && !isNativeStorePlatform ? (
               <TouchableOpacity
                 style={styles.upgradeBtn}
-                activeOpacity={0.7}
+                activeOpacity={0.85}
                 onPress={() => openWebUrl(`${APP_WEB_URL}/pricing#family-pro`)}
                 accessibilityRole="button"
                 accessibilityLabel={t("settings.subscription_a11yUpgradeWeb", {
@@ -1195,7 +1210,13 @@ function LegacySubscriptionScreen() {
                   defaultValue: `Upgrade to ${plan.name} on the web`,
                 })}
               >
-                <ExternalLink size={16} color="#fff" />
+                <LinearGradient
+                  colors={theme.colors.gradient.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <ExternalLink size={16} color={theme.colors.onAccent} />
                 <Text style={styles.upgradeBtnText}>
                   {t("settings.subscription_upgradeOnWeb", { defaultValue: "Upgrade on the web" })}
                 </Text>
@@ -1226,7 +1247,7 @@ function LegacySubscriptionScreen() {
             ) : (
               <TouchableOpacity
                 style={styles.upgradeBtn}
-                activeOpacity={0.7}
+                activeOpacity={0.85}
                 onPress={() => paidPlanKey && handleUpgrade(paidPlanKey)}
                 disabled={!paidPlanKey || isProcessingNativePlan}
                 accessibilityRole="button"
@@ -1236,17 +1257,23 @@ function LegacySubscriptionScreen() {
                   disabled: !paidPlanKey || isProcessingNativePlan,
                 }}
               >
+                <LinearGradient
+                  colors={theme.colors.gradient.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
                 {isProcessingNativePlan ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={theme.colors.onAccent} />
                 ) : (
                   <>
-                    <Zap size={16} color="#fff" />
+                    <Zap size={16} color={theme.colors.onAccent} />
                     <Text style={styles.upgradeBtnText}>{t("pricing.cta_upgrade")}</Text>
                   </>
                 )}
               </TouchableOpacity>
             )}
-          </Card>
+          </MoveCard>
           );
         })}
         {canUseNativePurchases && !managedSubscriptionBlocksPurchase && (
@@ -1268,10 +1295,11 @@ function LegacySubscriptionScreen() {
           </TouchableOpacity>
         )}
 
-        <View style={styles.compareCard}>
-          <Text style={styles.compareTitle}>
-            {t("settings.subscription_compareTitle", { defaultValue: "What you get with each plan" })}
-          </Text>
+        <SectionHeader
+          label={t("settings.subscription_compareTitle", { defaultValue: "What you get with each plan" })}
+          style={styles.compareSectionHeader}
+        />
+        <MoveCard style={styles.compareCard} padding={16} radius={18}>
           <Text style={styles.compareSubtitle}>
             {t("settings.subscription_compareSubtitle", { defaultValue: "Tap a plan to see everything it includes." })}
           </Text>
@@ -1298,7 +1326,7 @@ function LegacySubscriptionScreen() {
                   <View style={styles.compareHeaderLeft}>
                     <Text style={styles.comparePlanName}>{entry.name}</Text>
                     {entry.isCurrent ? (
-                      <UiBadge label={t("pricing.cta_current")} variant="success" />
+                      <Pill label={t("pricing.cta_current")} tone="success" />
                     ) : null}
                   </View>
                   <View style={styles.compareHeaderRight}>
@@ -1328,7 +1356,7 @@ function LegacySubscriptionScreen() {
               </View>
             );
           })}
-        </View>
+        </MoveCard>
 
         <View style={styles.legalLinksRow}>
           <TouchableOpacity
@@ -1381,59 +1409,55 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 12,
   },
   backBtn: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    width: 40, height: 40, borderRadius: 13,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: { fontSize: 18, fontFamily: fonts.serifBold, color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
-  loadingText: { fontSize: 14, color: theme.colors.textTertiary },
-  currentPlanCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderRadius: theme.radius.xl,
+  loadingText: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.faint },
+  loadErrorCard: {
+    borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "4D",
-    backgroundColor: theme.colors.primaryFaded,
-    padding: 16,
+    borderColor: theme.colors.error,
+    backgroundColor: theme.colors.errorFaded,
+    padding: 12,
+    marginBottom: 12,
   },
-  currentPlanLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, paddingRight: 12 },
+  loadErrorText: { color: theme.colors.error, fontFamily: fonts.sansBold, fontSize: 13 },
+  currentPlanCard: { marginBottom: 2 },
+  currentPlanTop: { flexDirection: "row", alignItems: "center" },
+  currentPlanLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   currentPlanIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.primaryFaded,
-  },
-  currentPlanTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
-  currentPlanMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
-  planFeaturesCard: {
-    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-    padding: 16,
+    borderColor: theme.colors.accentBorder,
+  },
+  currentPlanTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
+  currentPlanTitle: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.text },
+  currentPlanMeta: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 3 },
+  currentPlanStatusRow: { flexDirection: "row", marginTop: 12 },
+  planFeaturesCard: {
     marginTop: 12,
     gap: 8,
   },
-  planFeaturesTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text, marginBottom: 2 },
+  planFeaturesTitle: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text, marginBottom: 2 },
   planFeatureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  planFeatureText: { fontSize: 13, color: theme.colors.textSecondary, flex: 1 },
+  planFeatureText: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, flex: 1 },
   mobileBillingNotice: {
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    padding: 14,
     marginTop: 12,
   },
   mobileBillingNoticeText: {
     fontSize: 13,
     lineHeight: 19,
-    color: theme.colors.textSecondary,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
   },
   openWebBillingBtn: {
     flexDirection: "row",
@@ -1445,35 +1469,35 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.accentBorder,
+    backgroundColor: theme.colors.accentSoft,
   },
   openWebBillingBtnText: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: fonts.sansSemibold,
     color: theme.colors.primary,
   },
   heroBox: { alignItems: "center", paddingVertical: 24, gap: 8 },
-  heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text },
-  heroDesc: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center", maxWidth: 280 },
+  heroTitle: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text },
+  heroDesc: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.dim, textAlign: "center", maxWidth: 280 },
   planHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   planNameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  planName: { fontSize: 18, fontWeight: "700", color: theme.colors.text },
-  planPrice: { fontSize: 28, fontWeight: "800", color: theme.colors.text, marginTop: 4 },
-  planPeriod: { fontSize: 14, fontWeight: "400", color: theme.colors.textTertiary },
+  planName: { fontSize: 18, fontFamily: fonts.serifBold, color: theme.colors.text },
+  planPrice: { fontSize: 28, fontFamily: fonts.serifBlack, color: theme.colors.text, marginTop: 4 },
+  planPeriod: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.faint },
   currentAnnualValueText: {
     fontSize: 12,
     lineHeight: 17,
-    fontWeight: "600",
-    color: theme.colors.emerald.text,
+    fontFamily: fonts.sansSemibold,
+    color: theme.colors.success,
     marginTop: 4,
   },
   featureList: { marginTop: 16, gap: 8 },
   featureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  featureText: { fontSize: 13, color: theme.colors.textSecondary },
+  featureText: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim },
   disabledPurchaseNotice: {
     borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surface2,
     borderWidth: 1,
     borderColor: theme.colors.border,
     paddingVertical: 12,
@@ -1483,26 +1507,26 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   disabledPurchaseText: {
     fontSize: 13,
     lineHeight: 18,
-    color: theme.colors.textSecondary,
+    fontFamily: fonts.sansMedium,
+    color: theme.colors.dim,
     textAlign: "center",
-    fontWeight: "600",
   },
   upgradeBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 14, marginTop: 16, ...theme.shadow.glow,
+    borderRadius: theme.radius.lg, overflow: "hidden",
+    paddingVertical: 14, marginTop: 16,
   },
   manageBtn: {
     alignItems: "center",
     justifyContent: "center",
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.accentBorder,
+    backgroundColor: theme.colors.accentSoft,
     paddingVertical: 14,
     marginTop: 16,
   },
-  manageBtnText: { fontSize: 15, fontWeight: "700", color: theme.colors.primary },
+  manageBtnText: { fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
   currentBtn: {
     alignItems: "center",
     justifyContent: "center",
@@ -1513,39 +1537,33 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 16,
     opacity: 0.7,
   },
-  currentBtnText: { fontSize: 15, fontWeight: "700", color: theme.colors.textMuted },
-  upgradeBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  currentBtnText: { fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.faint },
+  upgradeBtnText: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
   splitCtaWrap: { marginTop: 16, gap: 10 },
   annualMetaRow: { gap: 2 },
-  annualMetaText: { fontSize: 12, color: theme.colors.textTertiary, textAlign: "center" },
-  savingsText: { fontSize: 12, fontWeight: "600", color: theme.colors.emerald.text, textAlign: "center" },
+  annualMetaText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, textAlign: "center" },
+  savingsText: { fontSize: 12, fontFamily: fonts.sansSemibold, color: theme.colors.success, textAlign: "center" },
   secondaryBtn: {
     alignItems: "center",
     justifyContent: "center",
     borderRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     paddingVertical: 14,
   },
-  secondaryBtnText: { fontSize: 14, fontWeight: "700", color: theme.colors.primary },
+  secondaryBtnText: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
   legalCopy: {
     fontSize: 11,
-    color: theme.colors.textMuted,
+    fontFamily: fonts.sans,
+    color: theme.colors.faint,
     lineHeight: 15,
     textAlign: "center",
     marginTop: 4,
   },
-  compareCard: {
-    borderRadius: theme.radius.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-    padding: 16,
-    marginTop: 24,
-  },
-  compareTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
-  compareSubtitle: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2, marginBottom: 4 },
+  compareSectionHeader: { marginTop: 26, marginBottom: 9, marginLeft: 2 },
+  compareCard: {},
+  compareSubtitle: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginBottom: 4 },
   compareSection: {
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
@@ -1560,16 +1578,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   compareHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
   compareHeaderRight: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
-  comparePlanName: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  comparePlanName: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
   comparePlanPrice: {
     fontSize: 12,
-    fontWeight: "600",
-    color: theme.colors.textSecondary,
+    fontFamily: fonts.monoMedium,
+    color: theme.colors.dim,
     flexShrink: 1,
     textAlign: "right",
   },
   compareFeatureList: { marginTop: 10, gap: 8 },
-  compareDescription: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 17 },
+  compareDescription: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, lineHeight: 17 },
   restoreBtn: {
     alignItems: "center",
     justifyContent: "center",
@@ -1577,7 +1595,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingVertical: 12,
     marginTop: 16,
   },
-  restoreBtnText: { fontSize: 14, fontWeight: "600", color: theme.colors.primary },
+  restoreBtnText: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
   legalLinksRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1592,13 +1610,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
-  legalLinkText: { fontSize: 12, fontWeight: "700", color: theme.colors.primary },
+  legalLinkText: { fontSize: 12, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
   footer: {
-    textAlign: "center", fontSize: 12, color: theme.colors.textMuted, marginTop: 24,
+    textAlign: "center", fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 24,
   },
 });
 

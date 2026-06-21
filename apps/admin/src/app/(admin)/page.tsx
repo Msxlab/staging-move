@@ -437,7 +437,17 @@ export default async function DashboardPage() {
   // (server) and passed as ReactNode so the function reference never
   // crosses the RSC boundary.
   const kpiCards = [
-    { label: "Total Users", value: stats.totalUsers, icon: <Users className="h-5 w-5" />, href: "/users" as const, spark: stats.usersSpark },
+    {
+      label: "Total Users",
+      value: stats.totalUsers,
+      icon: <Users className="h-5 w-5" />,
+      href: "/users" as const,
+      spark: stats.usersSpark,
+      // Design's delta pill — wired to the already-computed weekly trend so
+      // the Total Users tile carries direction-of-travel like the mock.
+      delta: stats.weeklyTrend !== 0 ? `${stats.weeklyTrend > 0 ? "+" : ""}${stats.weeklyTrend}%` : undefined,
+      deltaDir: (stats.weeklyTrend >= 0 ? "up" : "down") as "up" | "down",
+    },
     { label: "Active Subscriptions", value: stats.activeSubscriptions, icon: <CreditCard className="h-5 w-5" />, href: "/subscriptions" as const, spark: paidSubsSpark, sparkColor: "var(--au-family)" },
     {
       label: "MRR",
@@ -503,10 +513,10 @@ export default async function DashboardPage() {
               <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
                 New this week
               </p>
-              <div className="flex items-center justify-center gap-1.5">
-                <span className="text-lg font-semibold text-foreground">{stats.newUsersThisWeek}</span>
+              <div className="mt-0.5 flex items-center justify-center gap-1.5">
+                <span className="font-display text-xl font-semibold leading-none text-foreground au-num">{stats.newUsersThisWeek}</span>
                 {stats.weeklyTrend !== 0 && (
-                  <span className={`text-xs font-medium ${stats.weeklyTrend > 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
+                  <span className={`font-mono text-xs font-medium ${stats.weeklyTrend > 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
                     {stats.weeklyTrend > 0 ? "+" : ""}{stats.weeklyTrend}%
                   </span>
                 )}
@@ -516,9 +526,9 @@ export default async function DashboardPage() {
               <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
                 Active sessions
               </p>
-              <div className="flex items-center justify-center gap-1.5">
+              <div className="mt-0.5 flex items-center justify-center gap-1.5">
                 <Activity className="h-3.5 w-3.5 text-tone-sage-fg" />
-                <span className="text-lg font-semibold text-foreground">{stats.activeSessions}</span>
+                <span className="font-display text-xl font-semibold leading-none text-foreground au-num">{stats.activeSessions}</span>
               </div>
             </div>
           </>
@@ -537,13 +547,18 @@ export default async function DashboardPage() {
             sub={card.sub}
             spark={card.spark}
             sparkColor={card.sparkColor}
+            delta={card.delta}
+            deltaDir={card.deltaDir}
             icon={card.icon}
             href={card.href}
           />
         ))}
       </div>
 
-      <AdminPanel title="Command shortcuts" caption="Frequent operational routes">
+      {/* Live ops — design's "needs attention now" rail. Same three
+          operational routes, hrefs, icons and real counts as before; restyled
+          to the mock's icon-tile + title/sub + trailing arrow rhythm. */}
+      <AdminPanel title="Live ops" caption="Frequent operational routes">
         <div className="grid gap-2 sm:grid-cols-3">
           {[
             { label: "Add Provider", desc: "New service provider", href: "/providers/new", icon: Building2, color: "text-tone-umber-fg" },
@@ -553,13 +568,13 @@ export default async function DashboardPage() {
             <Link
               key={action.label}
               href={action.href}
-              className="group flex items-center gap-3 rounded-lg border border-border bg-background/45 px-3 py-2.5 transition hover:border-primary/25 hover:bg-accent/30"
+              className="group flex items-center gap-3 rounded-xl border border-border bg-background/45 px-3 py-3 transition hover:border-primary/25 hover:bg-accent/30"
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.625rem] border border-border bg-card">
                 <action.icon className={`h-4 w-4 ${action.color}`} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-foreground">{action.label}</span>
+                <span className="block truncate text-[13px] font-semibold text-foreground">{action.label}</span>
                 <span className="block truncate text-xs text-muted-foreground">{action.desc}</span>
               </span>
               <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition group-hover:text-primary" />
@@ -692,9 +707,16 @@ export default async function DashboardPage() {
                       ? { label: "Free", color: "#8A94A6" }
                       : null;
               const moving = (user.movingPlans?.length || 0) > 0;
+              // Initials avatar (design motif) — derived from existing name
+              // fields only; no extra data fetch.
+              const initials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "?";
               return (
                 <Link key={user.id} href={`/users/${user.id}`} className="flex items-center justify-between gap-2 rounded-lg border border-border p-2.5 hover:bg-accent/30 transition-colors">
-                  <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-primary">
+                      {initials}
+                    </span>
+                    <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="font-medium text-foreground text-sm truncate">
                         {user.firstName} {user.lastName}
@@ -710,6 +732,7 @@ export default async function DashboardPage() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{maskEmail(user.email)}</p>
+                    </div>
                   </div>
                   <div className="flex flex-shrink-0 flex-col items-end gap-1">
                     {plan && (
@@ -756,7 +779,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex items-center justify-between mt-1.5">
                     <span className="text-[11px] text-muted-foreground truncate">{maskEmail(move.user?.email)}</span>
-                    <span className={`text-[11px] font-medium ${days <= 3 ? "text-destructive" : days <= 7 ? "text-tone-honey-fg" : "text-muted-foreground"}`}>
+                    <span className={`font-mono text-[11px] font-medium au-num ${days <= 3 ? "text-destructive" : days <= 7 ? "text-tone-honey-fg" : "text-muted-foreground"}`}>
                       {days}d left
                     </span>
                   </div>

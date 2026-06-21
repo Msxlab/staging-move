@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Trash2, AlertTriangle } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { hapticWarning, hapticSuccess, hapticError } from "@/lib/haptics";
@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/Input";
 import { unregisterPushNotifications } from "@/lib/push";
 import { clearSensitiveLocalState } from "@/lib/local-cleanup";
 import { isDeleteConfirmationValid } from "@/lib/account-deletion-confirmation";
+import { MoveCard } from "@/components/move";
 
 export default function DeleteAccountScreen() {
 
@@ -132,33 +133,35 @@ export default function DeleteAccountScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>{t("common.confirm")}</Text>
-        <Text style={styles.bodyText}>
-          {t("settings.delete_confirmDescription")} <Text style={styles.strong}>{t("settings.delete_confirmInput")}</Text>
-        </Text>
+        <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
+          <Text style={styles.bodyText}>
+            {t("settings.delete_confirmDescription")} <Text style={styles.strong}>{t("settings.delete_confirmInput")}</Text>
+          </Text>
 
-        <Input
-          placeholder={t("settings.delete_confirmInput")}
-          value={confirmText}
-          onChangeText={setConfirmText}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          accessibilityLabel={t("settings.deleteConfirmA11y")}
-          accessibilityHint={t("settings.deleteConfirmHint")}
-        />
-
-        {hasPasswordLogin !== false && (
           <Input
-            containerStyle={{ marginTop: 12 }}
-            placeholder={t("auth.password")}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            isPassword
-            autoCapitalize="none"
+            placeholder={t("settings.delete_confirmInput")}
+            value={confirmText}
+            onChangeText={setConfirmText}
+            autoCapitalize="characters"
             autoCorrect={false}
-            accessibilityLabel={t("settings.currentPasswordA11y")}
-            accessibilityHint={t("settings.currentPasswordHint")}
+            accessibilityLabel={t("settings.deleteConfirmA11y")}
+            accessibilityHint={t("settings.deleteConfirmHint")}
           />
-        )}
+
+          {hasPasswordLogin !== false && (
+            <Input
+              containerStyle={{ marginTop: 12 }}
+              placeholder={t("auth.password")}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              isPassword
+              autoCapitalize="none"
+              autoCorrect={false}
+              accessibilityLabel={t("settings.currentPasswordA11y")}
+              accessibilityHint={t("settings.currentPasswordHint")}
+            />
+          )}
+        </MoveCard>
 
         {(() => {
           const oauthOnly = hasPasswordLogin === false;
@@ -176,10 +179,10 @@ export default function DeleteAccountScreen() {
               accessibilityState={{ disabled: blocked }}
             >
               {deleting ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.colors.onAccent} />
               ) : (
                 <>
-                  <Trash2 size={18} color="#fff" />
+                  <Trash2 size={18} color={theme.colors.onAccent} />
                   <Text style={styles.deleteBtnText}>{t("settings.delete_button")}</Text>
                 </>
               )}
@@ -194,19 +197,17 @@ export default function DeleteAccountScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  warningCard: { flexDirection: "row", gap: 12, padding: 16, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.20)", backgroundColor: theme.colors.errorFaded, marginBottom: 24 },
-  passwordRequiredCard: { gap: 10, padding: 16, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: "rgba(242, 196, 108,0.25)", backgroundColor: theme.colors.warningFaded, marginBottom: 20 },
-  secondaryBtn: { alignItems: "center", justifyContent: "center", borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 12, backgroundColor: theme.colors.card },
-  secondaryBtnText: { fontSize: 14, fontWeight: "700", color: theme.colors.primary },
-  warningIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(240, 140, 142, 0.12)" },
-  warningTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.error },
-  warningText: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 18 },
-  sectionTitle: { fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10, marginLeft: 4 },
-  bodyText: { fontSize: 14, color: theme.colors.textSecondary, lineHeight: 20, marginBottom: 12 },
-  strong: { fontWeight: "800", color: theme.colors.error },
+  warningCard: { flexDirection: "row", gap: 12, padding: 16, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.errorFaded, backgroundColor: theme.colors.errorFaded, marginBottom: 24 },
+  formCard: { marginBottom: 4 },
+  warningIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.errorFaded },
+  warningTitle: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.error },
+  warningText: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 18 },
+  sectionTitle: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.textTertiary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10, marginLeft: 4 },
+  bodyText: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.textSecondary, lineHeight: 20, marginBottom: 12 },
+  strong: { fontFamily: fonts.sansBold, color: theme.colors.error },
   deleteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: theme.colors.error, borderRadius: theme.radius.lg, paddingVertical: 16, marginTop: 24 },
-  deleteBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  deleteBtnText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 });

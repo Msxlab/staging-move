@@ -13,11 +13,12 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check, Mail, Smartphone } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { registerForPushNotifications } from "@/lib/push";
+import { HeroCard, SectionHeader } from "@/components/move";
 
 interface Prefs {
   emailTaskReminders: boolean;
@@ -116,8 +117,7 @@ export default function NotificationSettingsScreen() {
       title: t("notifications.section_email"),
       hint: t("notifications.section_email_hint"),
       Icon: Mail,
-      tint: theme.colors.sky.text,
-      tintBg: theme.colors.sky.bg,
+      tone: theme.colors.sky,
       items: [
         {
           key: "emailTaskReminders" as keyof Prefs,
@@ -155,8 +155,7 @@ export default function NotificationSettingsScreen() {
       title: t("notifications.section_push"),
       hint: t("notifications.section_push_hint"),
       Icon: Smartphone,
-      tint: theme.colors.emerald.text,
-      tintBg: theme.colors.emerald.bg,
+      tone: theme.colors.emerald,
       items: [
         {
           key: "pushTaskReminders" as keyof Prefs,
@@ -182,22 +181,24 @@ export default function NotificationSettingsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ArrowLeft size={22} color={theme.colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+          <ArrowLeft size={20} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("notifications.title")}</Text>
-        <View style={{ width: 44 }} />
+        <View style={{ width: 42 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.hero}>
+        {/* Move hero — alert-command kicker, title, and a tri-stat strip
+            mirroring enabled / email / push counts. */}
+        <HeroCard style={styles.hero} padding={16} radius={20}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <Smartphone size={20} color={theme.colors.primary} />
             </View>
             <View style={styles.heroCopy}>
               <Text style={styles.heroKicker}>ALERT COMMAND</Text>
-              <Text style={styles.heroTitle}>{t("notifications.title")}</Text>
+              <Text style={styles.heroTitle} numberOfLines={1}>{t("notifications.title")}</Text>
               <Text style={styles.heroSub}>{enabledTotal}/{totalPrefs} preferences enabled</Text>
             </View>
           </View>
@@ -215,19 +216,20 @@ export default function NotificationSettingsScreen() {
               <Text style={styles.heroStatLabel}>push</Text>
             </View>
           </View>
-        </View>
+        </HeroCard>
 
         {sections.map((section) => {
           const SectionIcon = section.Icon;
           const enabledCount = section.items.filter((item) => prefs[item.key]).length;
           return (
           <View key={section.title} style={styles.section}>
-            {/* Aurora grouped-card header - icon chip + kicker + on-count */}
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIcon, { backgroundColor: section.tintBg }]}>
-                <SectionIcon size={14} color={section.tint} />
+            {/* Move grouped-card header — tonal icon chip + section header +
+                on-count. */}
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionIcon, { backgroundColor: section.tone.bg, borderColor: section.tone.border }]}>
+                <SectionIcon size={15} color={section.tone.text} />
               </View>
-              <Text style={styles.sectionTitle}>{section.title.toUpperCase()}</Text>
+              <SectionHeader label={section.title} style={styles.sectionHeaderLabel} />
               <View style={{ flex: 1 }} />
               <Text style={styles.sectionCount}>
                 {enabledCount}/{section.items.length}
@@ -240,15 +242,15 @@ export default function NotificationSettingsScreen() {
                   key={item.key}
                   style={[styles.row, i < section.items.length - 1 && styles.rowBorder]}
                 >
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.rowLabel}>{item.label}</Text>
                     <Text style={styles.rowDesc}>{item.desc}</Text>
                   </View>
                   <Switch
                     value={prefs[item.key]}
                     onValueChange={() => toggle(item.key)}
-                    trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-                    thumbColor="#fff"
+                    trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+                    thumbColor={theme.colors.onAccent}
                   />
                 </View>
               ))}
@@ -261,13 +263,13 @@ export default function NotificationSettingsScreen() {
           style={[styles.saveBtn, saving && { opacity: 0.6 }]}
           onPress={handleSave}
           disabled={saving}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
           {saving ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.colors.onAccent} />
           ) : (
             <>
-              <Check size={18} color="#fff" />
+              <Check size={18} color={theme.colors.onAccent} />
               <Text style={styles.saveBtnText}>{t("common.save")}</Text>
             </>
           )}
@@ -281,92 +283,131 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 20, paddingVertical: 12,
+    paddingHorizontal: 20, paddingVertical: 14,
   },
   backBtn: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    width: 42, height: 42, borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: {
+    fontSize: 19,
+    fontFamily: fonts.serifBold,
+    color: theme.colors.text,
+    letterSpacing: 0,
+  },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   hero: {
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 2,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
+    marginBottom: 4,
   },
   heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   heroIcon: {
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
-  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
-  heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
-  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  heroKicker: {
+    fontSize: 10,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: theme.colors.primary,
+  },
+  heroTitle: {
+    fontSize: 20,
+    fontFamily: fonts.serifBold,
+    color: theme.colors.text,
+    marginTop: 3,
+    letterSpacing: 0,
+  },
+  heroSub: {
+    fontSize: 12,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
+    marginTop: 3,
+  },
   heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
   heroStat: {
     flex: 1,
     minHeight: 58,
     borderRadius: 16,
     padding: 10,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surface2,
     borderWidth: 1,
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
-  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatValue: {
+    fontSize: 17,
+    fontFamily: fonts.serifBold,
+    color: theme.colors.text,
+  },
   heroStatLabel: {
     fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 1,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
-  section: { marginTop: 20 },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6, marginLeft: 2 },
+  section: { marginTop: 22 },
+  sectionHeaderRow: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 8, marginLeft: 2 },
   sectionIcon: {
-    width: 26, height: 26, borderRadius: 9,
+    width: 28, height: 28, borderRadius: 10, borderWidth: 1,
     alignItems: "center", justifyContent: "center",
   },
-  sectionTitle: {
-    fontSize: 10, letterSpacing: 0, fontWeight: "700", color: theme.colors.textTertiary,
-  },
+  sectionHeaderLabel: { marginBottom: 0 },
   sectionCount: {
-    fontSize: 10, letterSpacing: 0, fontWeight: "700", color: theme.colors.accent,
+    fontSize: 11,
+    fontFamily: fonts.monoMedium,
+    color: theme.colors.primary,
     fontVariant: ["tabular-nums"],
   },
   sectionHint: {
-    fontSize: 12, color: theme.colors.textMuted, lineHeight: 16,
-    marginLeft: 2, marginBottom: 8,
+    fontSize: 12,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
+    lineHeight: 16,
+    marginLeft: 2,
+    marginBottom: 10,
   },
   card: {
-    backgroundColor: theme.colors.glass.bg, borderRadius: 22,
-    borderWidth: 1, borderColor: theme.colors.glass.highlight, overflow: "hidden",
-    ...theme.shadow.sm,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: "hidden",
   },
   row: {
     flexDirection: "row", alignItems: "center", gap: 12,
     paddingVertical: 14, paddingHorizontal: 16,
   },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  rowLabel: { fontSize: 15, fontWeight: "500", color: theme.colors.text },
-  rowDesc: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  rowLabel: {
+    fontSize: 15,
+    fontFamily: fonts.sansMedium,
+    color: theme.colors.text,
+  },
+  rowDesc: {
+    fontSize: 12,
+    fontFamily: fonts.sans,
+    color: theme.colors.faint,
+    marginTop: 2,
+  },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, marginTop: 28, ...theme.shadow.glow,
+    paddingVertical: 16, marginTop: 28,
   },
-  saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  saveBtnText: {
+    fontSize: 16,
+    fontFamily: fonts.sansBold,
+    color: theme.colors.onAccent,
+  },
 });

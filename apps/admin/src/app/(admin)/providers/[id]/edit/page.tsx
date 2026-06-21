@@ -122,100 +122,101 @@ export default function EditProviderPage() {
     }));
   }
 
-  if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
+  if (loading) return <div className="py-20 text-center text-sm text-muted-foreground">Loading provider...</div>;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-5">
       <AdminPageHeader
         eyebrow="Catalog"
         title="Edit <em>Provider</em>"
+        subtitle="Update catalog details, coverage, and affiliate routing."
         actions={
           <>
-            <button onClick={() => window.location.assign("/providers")} aria-label="Back to providers" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <button onClick={() => window.location.assign("/providers")} aria-label="Back to providers" className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
               <ArrowLeft className="h-4 w-4" /> Back to Providers
             </button>
           </>
         }
       />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h2 className="font-semibold text-foreground">Basic Information</h2>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-primary">Basic Information</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Name *</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Name *</label>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Slug *</label>
-              <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Slug *</label>
+              <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required className="w-full rounded-xl border border-input bg-background px-4 py-2.5 font-mono text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Category *</label>
-              <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Category *</label>
+              <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none">
                 {CATEGORY_OPTIONS.map((category) => (
                   <option key={category.value} value={category.value}>{category.icon} {category.label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Sub Category</label>
-              <input value={form.subCategory} onChange={(e) => setForm({ ...form, subCategory: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Sub Category</label>
+              <input value={form.subCategory} onChange={(e) => setForm({ ...form, subCategory: e.target.value })} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-muted-foreground">Description</label>
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Description</label>
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h2 className="font-semibold text-foreground">Contact & Links</h2>
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-primary">Contact &amp; Links</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Website</label>
-              <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Website</label>
+              <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Phone</label>
-              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Phone</label>
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 font-mono text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-muted-foreground">Logo URL</label>
-            <input value={form.logoUrl} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Logo URL</label>
+            <input value={form.logoUrl} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-muted-foreground">Tags (comma separated)</label>
-            <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Tags (comma separated)</label>
+            <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
           <div>
-            <h2 className="font-semibold text-foreground">Affiliate (revenue)</h2>
-            <p className="mt-1 text-xs text-muted-foreground">When active with a valid https link, a &ldquo;Get started&rdquo; CTA appears for users and clicks are tracked. Leave inactive to hide it.</p>
+            <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-primary">Affiliate (revenue)</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">When active with a valid https link, a &ldquo;Get started&rdquo; CTA appears for users and clicks are tracked. Leave inactive to hide it.</p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Affiliate URL (https)</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Affiliate URL (https)</label>
               <input
                 type="url"
                 value={form.affiliateUrl}
                 onChange={(e) => setForm({ ...form, affiliateUrl: e.target.value })}
                 placeholder="https://partner.example/offer?ref=locateflow"
-                className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-input bg-background px-4 py-2.5 font-mono text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Network</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Network</label>
               <input
                 value={form.affiliateNetwork}
                 onChange={(e) => setForm({ ...form, affiliateNetwork: e.target.value })}
                 placeholder="impact, cj, direct…"
-                className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
@@ -231,23 +232,23 @@ export default function EditProviderPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h2 className="font-semibold text-foreground">Scope & Coverage</h2>
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-primary">Scope &amp; Coverage</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Scope</label>
-              <select value={form.scope} onChange={(e) => setForm({ ...form, scope: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Scope</label>
+              <select value={form.scope} onChange={(e) => setForm({ ...form, scope: e.target.value })} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none">
                 <option value="FEDERAL">Federal (All States)</option>
                 <option value="STATE">State-specific</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Popularity Score</label>
-              <input type="number" value={form.popularityScore} onChange={(e) => setForm({ ...form, popularityScore: parseInt(e.target.value) || 0 })} min={0} max={100} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Popularity Score</label>
+              <input type="number" value={form.popularityScore} onChange={(e) => setForm({ ...form, popularityScore: parseInt(e.target.value) || 0 })} min={0} max={100} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 font-mono text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">Display Order</label>
-              <input type="number" value={form.displayOrder} onChange={(e) => setForm({ ...form, displayOrder: parseInt(e.target.value) || 0 })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Display Order</label>
+              <input type="number" value={form.displayOrder} onChange={(e) => setForm({ ...form, displayOrder: parseInt(e.target.value) || 0 })} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 font-mono text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -256,11 +257,11 @@ export default function EditProviderPage() {
           </div>
           {form.scope === "STATE" && (
             <div>
-              <label className="mb-2 block text-sm font-medium text-muted-foreground">Select States ({form.states.length} selected)</label>
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Select States (<span className="font-mono text-foreground">{form.states.length}</span> selected)</label>
               <div className="flex flex-wrap gap-1.5">
                 {US_STATES.map((st) => (
                   <button key={st} type="button" onClick={() => toggleState(st)}
-                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${form.states.includes(st) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>
+                    className={`rounded-lg px-2.5 py-1 font-mono text-xs font-medium transition-colors ${form.states.includes(st) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>
                     {st}
                   </button>
                 ))}
@@ -269,23 +270,23 @@ export default function EditProviderPage() {
           )}
           {form.scope === "STATE" && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">ZIP Codes / Prefixes</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">ZIP Codes / Prefixes</label>
               <input
                 value={form.zipCodes}
                 onChange={(e) => setForm({ ...form, zipCodes: e.target.value })}
                 placeholder="78701, 787, 94105"
-                className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-input bg-background px-4 py-2.5 font-mono text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-              <p className="mt-1 text-xs text-muted-foreground">Comma separated exact ZIPs or prefixes. Leave blank to keep state-wide coverage.</p>
+              <p className="mt-1.5 text-xs text-muted-foreground">Comma separated exact ZIPs or prefixes. Leave blank to keep state-wide coverage.</p>
             </div>
           )}
         </div>
 
         <div className="flex gap-3">
-          <button type="submit" disabled={saving} className="rounded-lg bg-primary px-8 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+          <button type="submit" disabled={saving} className="rounded-xl bg-primary px-8 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">
             {saving ? "Saving..." : "Save Changes"}
           </button>
-          <button type="button" onClick={() => window.location.assign("/providers")} className="rounded-lg border border-border px-8 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent">
+          <button type="button" onClick={() => window.location.assign("/providers")} className="rounded-xl border border-border bg-card px-8 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
             Cancel
           </button>
         </div>

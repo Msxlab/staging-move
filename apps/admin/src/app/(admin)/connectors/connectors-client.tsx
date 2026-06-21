@@ -44,7 +44,7 @@ const MODE_META: Record<string, { label: string; cls: string }> = {
   API_SYNC: { label: "API sync", cls: "bg-tone-sage-bg text-tone-sage-fg" },
   GUIDED_UPDATE: { label: "Guided update", cls: "bg-tone-sky-bg text-tone-sky-fg" },
   COMING_SOON: { label: "Coming soon", cls: "bg-tone-honey-bg text-tone-honey-fg" },
-  DISABLED: { label: "Disabled", cls: "bg-foreground/5 text-muted-foreground" },
+  DISABLED: { label: "Disabled", cls: "bg-muted text-muted-foreground" },
 };
 
 interface ConnectorLastFailure {
@@ -309,26 +309,33 @@ export default function ConnectorsClient() {
         actions={
           <button
             onClick={() => startRegister(firstRegisterableConnector)}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" /> {firstRegisterableConnector ? `Register ${firstRegisterableConnector.displayName}` : "Register"}
           </button>
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Supported</p><p className="mt-1 text-2xl font-bold text-foreground">{availableConnectors.length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Registered</p><p className="mt-1 text-2xl font-bold text-foreground">{connectors.length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Enabled</p><p className="mt-1 text-2xl font-bold text-tone-sage-fg">{connectors.filter((c) => c.enabled).length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">API sync ready</p><p className="mt-1 text-2xl font-bold text-tone-sky-fg">{apiSyncCount}</p></div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: "Supported", value: availableConnectors.length, color: "text-foreground", bg: "bg-card" },
+          { label: "Registered", value: connectors.length, color: "text-foreground", bg: "bg-card" },
+          { label: "Enabled", value: connectors.filter((c) => c.enabled).length, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
+          { label: "API sync ready", value: apiSyncCount, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg" },
+        ].map((s) => (
+          <div key={s.label} className={`rounded-2xl border border-border ${s.bg} p-4`}>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{s.label}</p>
+            <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
       {availableConnectors.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="mb-4 flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-foreground">Supported connector setup</p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Supported connector setup</p>
+              <p className="mt-1.5 text-xs text-muted-foreground">
                 Built-in adapters are visible here even before a control-plane row is registered.
               </p>
             </div>
@@ -344,30 +351,30 @@ export default function ConnectorsClient() {
               return (
                 <div key={available.connectorKey} className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
                       <Plug className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-foreground">{available.displayName}</p>
+                        <p className="font-display text-base font-bold text-foreground">{available.displayName}</p>
                         <span className="font-mono text-xs text-muted-foreground">{available.connectorKey}</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${mode?.cls ?? "bg-foreground/5 text-muted-foreground"}`} title={available.reason}>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${mode?.cls ?? "bg-muted text-muted-foreground"}`} title={available.reason}>
                           {mode?.label ?? available.mode}
                         </span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${available.registered ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-foreground/5 text-muted-foreground"}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${available.registered ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-muted text-muted-foreground"}`}>
                           {available.registered ? "registered" : "not registered"}
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">{available.reason}</p>
                       <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
                         {setup.map((item) => (
-                          <span key={item.label} className="inline-flex items-center gap-1.5 rounded-lg bg-background px-2 py-1">
+                          <span key={item.label} className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2 py-1">
                             {item.ok ? <CheckCircle2 className="h-3.5 w-3.5 text-tone-sage-fg" /> : <Circle className="h-3.5 w-3.5 text-muted-foreground" />}
-                            {item.label}: {item.value}
+                            {item.label}: <span className="font-mono">{item.value}</span>
                           </span>
                         ))}
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-background px-2 py-1">
-                          Host: {available.allowedHosts.join(", ")}
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2 py-1">
+                          Host: <span className="font-mono">{available.allowedHosts.join(", ")}</span>
                         </span>
                       </div>
                     </div>
@@ -376,7 +383,7 @@ export default function ConnectorsClient() {
                     <Link
                       href={`/connectors/${available.connectorKey}`}
                       aria-label={`Open ${available.displayName} detail`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
                       Detail <ChevronRight className="h-4 w-4" />
                     </Link>
@@ -384,12 +391,12 @@ export default function ConnectorsClient() {
                       <button
                         onClick={() => startRegister(available)}
                         aria-label={`Register ${available.displayName}`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+                        className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       >
                         <Plus className="h-4 w-4" /> Register
                       </button>
                     ) : (
-                      <span className="rounded-lg bg-background px-3 py-2 text-xs text-muted-foreground">Managed below</span>
+                      <span className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">Managed below</span>
                     )}
                   </div>
                 </div>
@@ -400,8 +407,8 @@ export default function ConnectorsClient() {
       )}
 
       {Object.keys(dispatchHealth).length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="mb-3 text-sm font-medium text-foreground">Dispatch health</p>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Dispatch health</p>
           <div className="flex flex-wrap gap-2">
             {["QUEUED", "DISPATCHING", "SUBMITTED", "CONFIRMED", "NEEDS_USER", "FAILED"].map((s) => (
               <span
@@ -411,10 +418,10 @@ export default function ConnectorsClient() {
                     ? "bg-destructive/10 text-destructive"
                     : s === "CONFIRMED"
                       ? "bg-tone-sage-bg text-tone-sage-fg"
-                      : "bg-foreground/5 text-muted-foreground"
+                      : "bg-muted text-muted-foreground"
                 }`}
               >
-                {s.replace("_", " ").toLowerCase()}: {dispatchHealth[s] ?? 0}
+                {s.replace("_", " ").toLowerCase()}: <span className="font-mono">{dispatchHealth[s] ?? 0}</span>
               </span>
             ))}
           </div>
@@ -422,46 +429,49 @@ export default function ConnectorsClient() {
       )}
 
       {showForm && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">{editing ? `Edit ${editing.connectorKey}` : "Register connector"}</h2>
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <h2 className="font-display text-lg font-bold text-foreground">{editing ? `Edit ${editing.connectorKey}` : "Register connector"}</h2>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Connector key</label><input value={form.connectorKey} onChange={(e) => setForm({ ...form, connectorKey: e.target.value })} disabled={!!editing} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50" placeholder="usps" /></div>
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Version</label><input value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} disabled={!!editing} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50" placeholder="1.0.0" /></div>
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Stage</label><select value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">{STAGES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Rollout %</label><input type="number" min={0} max={100} value={form.rolloutPercent} onChange={(e) => setForm({ ...form, rolloutPercent: parseInt(e.target.value || "0", 10) })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" /></div>
-            <div className="col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">Notes</label><input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Internal notes..." /></div>
-            <div><label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} className="accent-primary" /> Enabled</label></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Connector key</label><input value={form.connectorKey} onChange={(e) => setForm({ ...form, connectorKey: e.target.value })} disabled={!!editing} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50" placeholder="usps" /></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Version</label><input value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} disabled={!!editing} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50" placeholder="1.0.0" /></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Stage</label><select value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground">{STAGES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Rollout %</label><input type="number" min={0} max={100} value={form.rolloutPercent} onChange={(e) => setForm({ ...form, rolloutPercent: parseInt(e.target.value || "0", 10) })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground" /></div>
+            <div className="col-span-2"><label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Notes</label><input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="Internal notes..." /></div>
+            <div><label className="flex items-center gap-2 text-sm cursor-pointer text-foreground"><input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} className="accent-primary" /> Enabled</label></div>
           </div>
-          <div className="flex gap-2"><button onClick={save} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">{editing ? "Update" : "Register"}</button><button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent">Cancel</button></div>
+          <div className="flex gap-2"><button onClick={save} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">{editing ? "Update" : "Register"}</button><button onClick={reset} className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Cancel</button></div>
         </div>
       )}
 
       <div className="space-y-3">
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Loading...</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Loading...</div>
         ) : connectors.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card">
+          <div className="rounded-2xl border border-dashed border-border bg-card">
             <EmptyState icon={Plug} title="No connector rows registered yet" description="Supported adapters are listed above; register one to create its control-plane row." />
           </div>
         ) : (
           connectors.map((c) => (
-            <div key={c.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between">
+            <div key={c.id} className="rounded-2xl border border-border bg-card p-4 flex items-center justify-between transition-colors hover:bg-accent/30">
               <div className="flex items-center gap-4">
                 <button onClick={() => toggle(c)} aria-label={c.enabled ? "Disable connector (kill switch)" : "Enable connector"} aria-pressed={c.enabled} className="transition-colors" title={c.enabled ? "Disable (kill switch)" : "Enable"}>
                   {c.enabled ? <ToggleRight className="h-7 w-7 text-tone-sage-fg" /> : <ToggleLeft className="h-7 w-7 text-muted-foreground" />}
                 </button>
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background"><Plug className="h-4 w-4 text-muted-foreground" /></div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted"><Plug className="h-4 w-4 text-muted-foreground" /></div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <Link href={`/connectors/${c.connectorKey}`} className="font-mono font-medium text-foreground hover:underline" title="Open connector detail">
+                    <Link href={`/connectors/${c.connectorKey}`} className="font-mono font-medium text-foreground hover:text-primary hover:underline" title="Open connector detail">
                       {c.connectorKey}
                     </Link>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${c.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{c.enabled ? "ON" : "OFF"}</span>
-                    <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{c.stage}</span>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${c.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${c.enabled ? "bg-tone-sage-fg" : "bg-destructive"}`} />
+                      {c.enabled ? "ON" : "OFF"}
+                    </span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{c.stage}</span>
                     {c.circuitState !== "CLOSED" && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">{c.circuitState}</span>}
                     {modeByConnector[c.connectorKey] && (
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${MODE_META[modeByConnector[c.connectorKey].mode]?.cls ?? "bg-foreground/5 text-muted-foreground"}`}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${MODE_META[modeByConnector[c.connectorKey].mode]?.cls ?? "bg-muted text-muted-foreground"}`}
                         title={modeByConnector[c.connectorKey].reason}
                       >
                         {MODE_META[modeByConnector[c.connectorKey].mode]?.label ?? modeByConnector[c.connectorKey].mode}
@@ -477,18 +487,18 @@ export default function ConnectorsClient() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                    <span>v{c.version}</span>
+                    <span className="font-mono">v{c.version}</span>
                     <span>·</span>
-                    <span>rollout {c.rolloutPercent}%</span>
+                    <span>rollout <span className="font-mono">{c.rolloutPercent}%</span></span>
                   </div>
                   {renderConnectorHealth(c.connectorKey)}
                 </div>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => runHealthCheck(c.connectorKey)} disabled={healthChecks[c.connectorKey]?.running} aria-label="Test connection (health check)" className="rounded p-1.5 text-muted-foreground hover:bg-accent disabled:opacity-50" title="Test connection (health check)"><Activity className={`h-4 w-4 ${healthChecks[c.connectorKey]?.running ? "animate-pulse" : ""}`} /></button>
-                <button onClick={() => startEdit(c)} aria-label="Edit connector" className="rounded p-1.5 text-muted-foreground hover:bg-accent" title="Edit"><Edit2 className="h-4 w-4" /></button>
-                <button onClick={() => bulkRevoke(c)} aria-label="Revoke all consents (incident)" className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Revoke all consents (incident)"><ShieldAlert className="h-4 w-4" /></button>
-                <Link href={`/connectors/${c.connectorKey}`} aria-label="Open connector detail" className="rounded p-1.5 text-muted-foreground hover:bg-accent" title="Open detail"><ChevronRight className="h-4 w-4" /></Link>
+                <button onClick={() => runHealthCheck(c.connectorKey)} disabled={healthChecks[c.connectorKey]?.running} aria-label="Test connection (health check)" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50" title="Test connection (health check)"><Activity className={`h-4 w-4 ${healthChecks[c.connectorKey]?.running ? "animate-pulse" : ""}`} /></button>
+                <button onClick={() => startEdit(c)} aria-label="Edit connector" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="Edit"><Edit2 className="h-4 w-4" /></button>
+                <button onClick={() => bulkRevoke(c)} aria-label="Revoke all consents (incident)" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive" title="Revoke all consents (incident)"><ShieldAlert className="h-4 w-4" /></button>
+                <Link href={`/connectors/${c.connectorKey}`} aria-label="Open connector detail" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="Open detail"><ChevronRight className="h-4 w-4" /></Link>
               </div>
             </div>
           ))

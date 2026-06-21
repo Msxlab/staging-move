@@ -250,7 +250,7 @@ export default function NewProviderPage() {
             <button
               onClick={() => i < step && setStep(i)}
               disabled={i > step}
-              className={`flex items-center gap-3 rounded-xl border p-4 flex-1 transition-all ${
+              className={`flex items-center gap-3 rounded-2xl border p-4 flex-1 transition-all ${
                 i === step
                   ? "border-primary bg-primary/5"
                   : i < step
@@ -259,7 +259,7 @@ export default function NewProviderPage() {
               }`}
             >
               <div
-                className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                   i < step
                     ? "bg-tone-sage-bg"
                     : i === step
@@ -276,10 +276,13 @@ export default function NewProviderPage() {
                 )}
               </div>
               <div className="text-left">
+                <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  Step <span className="font-mono">{i + 1}</span>
+                </p>
                 <p
-                  className={`text-sm font-medium ${i === step ? "text-primary" : i < step ? "text-tone-sage-fg" : "text-muted-foreground"}`}
+                  className={`font-display text-sm font-bold ${i === step ? "text-primary" : i < step ? "text-tone-sage-fg" : "text-muted-foreground"}`}
                 >
-                  Step {i + 1}: {s.label}
+                  {s.label}
                 </p>
                 <p className="text-[11px] text-muted-foreground">{s.desc}</p>
               </div>
@@ -293,13 +296,13 @@ export default function NewProviderPage() {
 
       {/* Step 1: Basic Info */}
       {step === 0 && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+          <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" /> Basic Information
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Provider Name *
               </label>
               <input
@@ -317,7 +320,7 @@ export default function NewProviderPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Slug *
               </label>
               <input
@@ -335,7 +338,7 @@ export default function NewProviderPage() {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Category *
               </label>
               <select
@@ -351,7 +354,7 @@ export default function NewProviderPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Sub Category
               </label>
               <input
@@ -365,7 +368,7 @@ export default function NewProviderPage() {
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+            <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Description
             </label>
             <textarea
@@ -378,7 +381,7 @@ export default function NewProviderPage() {
               className={inputCls}
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              {form.description.length}/500 characters
+              <span className="font-mono">{form.description.length}/500</span> characters
             </p>
           </div>
         </div>
@@ -386,13 +389,13 @@ export default function NewProviderPage() {
 
       {/* Step 2: Contact & Media */}
       {step === 1 && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+          <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
             <Phone className="h-5 w-5 text-primary" /> Contact & Media
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Globe className="inline h-3.5 w-3.5 mr-1" /> Website
               </label>
               <input
@@ -403,7 +406,7 @@ export default function NewProviderPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Phone className="inline h-3.5 w-3.5 mr-1" /> Phone
               </label>
               <input
@@ -440,8 +443,8 @@ export default function NewProviderPage() {
               </div>
             )}
           </div>
-          <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
-            <p className="text-sm font-medium text-foreground">Affiliate (optional)</p>
+          <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-3">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Affiliate (optional)</p>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Affiliate URL (https)</label>
               <input
@@ -504,8 +507,8 @@ export default function NewProviderPage() {
 
       {/* Step 3: Scope & Settings */}
       {step === 2 && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+          <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" /> Scope & Settings
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -540,7 +543,7 @@ export default function NewProviderPage() {
                   }
                   className="flex-1 h-2 rounded-full appearance-none bg-muted accent-primary"
                 />
-                <span className="text-sm font-bold text-foreground w-8 text-right">
+                <span className="font-mono text-sm font-bold text-foreground w-8 text-right">
                   {form.popularityScore}
                 </span>
               </div>
@@ -562,7 +565,7 @@ export default function NewProviderPage() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+          <div className="flex items-center gap-3 rounded-2xl border border-border p-3">
             <button
               type="button"
               onClick={() => setForm({ ...form, isActive: !form.isActive })}
@@ -587,9 +590,9 @@ export default function NewProviderPage() {
           {form.scope === "STATE" && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Select States ({form.states.length} of {US_STATES.length}{" "}
-                  selected)
+                <label className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  Select States (<span className="font-mono">{form.states.length}</span> of{" "}
+                  <span className="font-mono">{US_STATES.length}</span> selected)
                 </label>
                 <div className="flex gap-2">
                   <button
@@ -608,13 +611,13 @@ export default function NewProviderPage() {
                   </button>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 rounded-lg border border-border p-3 max-h-48 overflow-y-auto">
+              <div className="flex flex-wrap gap-1.5 rounded-2xl border border-border p-3 max-h-48 overflow-y-auto">
                 {US_STATES.map((st) => (
                   <button
                     key={st}
                     type="button"
                     onClick={() => toggleState(st)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${form.states.includes(st) ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-accent"}`}
+                    className={`rounded-lg px-3 py-1.5 font-mono text-xs font-medium transition-all ${form.states.includes(st) ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-accent"}`}
                   >
                     {st}
                   </button>
@@ -645,31 +648,31 @@ export default function NewProviderPage() {
 
       {/* Summary (on last step) */}
       {step === 2 && (
-        <div className="rounded-xl border border-dashed border-border bg-muted/30 p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-3">
+        <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-5">
+          <h3 className="font-display text-base font-bold text-foreground mb-3">
             Review Summary
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-sm">
             <div>
-              <p className="text-xs text-muted-foreground">Name</p>
-              <p className="font-medium text-foreground">{form.name || "—"}</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Name</p>
+              <p className="mt-1 font-medium text-foreground">{form.name || "—"}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Category</p>
-              <p className="font-medium text-foreground">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Category</p>
+              <p className="mt-1 font-medium text-foreground">
                 {form.category.replace(/_/g, " ")}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Scope</p>
-              <p className="font-medium text-foreground">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Scope</p>
+              <p className="mt-1 font-medium text-foreground">
                 {form.scope}{" "}
                 {form.scope === "STATE" ? `(${form.states.length} states)` : ""}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">ZIP Rules</p>
-              <p className="font-medium text-foreground">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">ZIP Rules</p>
+              <p className="mt-1 font-mono font-medium text-foreground">
                 {form.scope === "STATE" && form.zipCodes.trim()
                   ? form.zipCodes
                       .split(",")
@@ -679,22 +682,23 @@ export default function NewProviderPage() {
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Website</p>
-              <p className="font-medium text-foreground truncate">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Website</p>
+              <p className="mt-1 font-medium text-foreground truncate">
                 {form.website || "—"}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Score</p>
-              <p className="font-medium text-foreground">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Score</p>
+              <p className="mt-1 font-mono font-medium text-foreground">
                 {form.popularityScore}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Status</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Status</p>
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${form.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}
+                className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${form.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}
               >
+                <span className={`h-1.5 w-1.5 rounded-full ${form.isActive ? "bg-tone-sage-fg" : "bg-muted-foreground"}`} />
                 {form.isActive ? "Active" : "Inactive"}
               </span>
             </div>
@@ -707,7 +711,7 @@ export default function NewProviderPage() {
         <button
           type="button"
           onClick={() => (step > 0 ? setStep(step - 1) : window.location.assign("/providers"))}
-          className="flex items-center gap-2 rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent"
+          className="flex items-center gap-2 rounded-xl border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent"
         >
           <ArrowLeft className="h-4 w-4" /> {step > 0 ? "Previous" : "Cancel"}
         </button>
@@ -724,7 +728,7 @@ export default function NewProviderPage() {
             type="button"
             onClick={() => setStep(step + 1)}
             disabled={!canProceed()}
-            className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             Next <ArrowRight className="h-4 w-4" />
           </button>
@@ -733,7 +737,7 @@ export default function NewProviderPage() {
             type="button"
             onClick={handleSubmit}
             disabled={saving || !canProceed()}
-            className="flex items-center gap-2 rounded-lg bg-tone-sage-fg px-8 py-2.5 text-sm font-medium text-white hover:bg-tone-sage-fg disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-tone-sage-fg px-8 py-2.5 text-sm font-semibold text-white hover:bg-tone-sage-fg disabled:opacity-50"
           >
             {saving ? (
               "Creating..."

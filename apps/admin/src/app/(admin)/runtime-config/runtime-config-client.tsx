@@ -237,26 +237,26 @@ export default function RuntimeConfigClient() {
         }
       />
 
-      <div className="rounded-[1.4rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
+      <div className="rounded-2xl border border-border bg-card p-5">
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <p className="text-[11px] font-semibold uppercase text-muted-foreground">Runtime control plane</p>
-            <h2 className="mt-1 text-xl font-semibold text-foreground">Config readiness stays visible before deploy impact.</h2>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Runtime control plane</p>
+            <h2 className="mt-1.5 font-display text-xl font-bold text-foreground">Config readiness stays visible before deploy impact.</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
               Production secrets still belong in deployment env. Runtime overrides remain a controlled recovery path with masked values, validation status, and step-up authentication.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="rounded-xl border border-tone-sage-br bg-tone-sage-bg p-3 text-tone-sage-fg">
-              <p className="text-lg font-semibold">{configs.filter((item) => item.configured).length}</p>
+            <div className="rounded-2xl border border-tone-sage-br bg-tone-sage-bg p-3 text-tone-sage-fg">
+              <p className="font-display text-lg font-bold">{configs.filter((item) => item.configured).length}</p>
               <p className="mt-0.5 opacity-80">configured</p>
             </div>
-            <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-tone-honey-fg">
-              <p className="text-lg font-semibold">{configs.filter((item) => item.status === "Conflict").length}</p>
+            <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-3 text-tone-honey-fg">
+              <p className="font-display text-lg font-bold">{configs.filter((item) => item.status === "Conflict").length}</p>
               <p className="mt-0.5 opacity-80">conflicts</p>
             </div>
-            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-destructive">
-              <p className="text-lg font-semibold">{configs.filter((item) => item.status === "Missing" && item.requiredInProduction).length}</p>
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-destructive">
+              <p className="font-display text-lg font-bold">{configs.filter((item) => item.status === "Missing" && item.requiredInProduction).length}</p>
               <p className="mt-0.5 opacity-80">required</p>
             </div>
           </div>
@@ -288,36 +288,36 @@ export default function RuntimeConfigClient() {
         />
       </div>
 
-      <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 text-sm text-tone-honey-fg">
+      <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5 text-sm text-tone-honey-fg">
         <div className="flex items-start gap-3">
           <ShieldAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <div>
-            <p className="font-medium">Secrets are never shown in full.</p>
-            <p className="mt-1 text-tone-honey-fg/80">For production, the safest model is still deployment-level secret management. DB overrides are encrypted at rest and intended for controlled break-glass or managed runtime updates.</p>
+            <p className="font-display text-base font-bold text-foreground">Secrets are never shown in full.</p>
+            <p className="mt-1 text-xs text-tone-honey-fg/80">For production, the safest model is still deployment-level secret management. DB overrides are encrypted at rest and intended for controlled break-glass or managed runtime updates.</p>
           </div>
         </div>
       </div>
 
       {loading ? (
-        <div className="rounded-[1.2rem] border border-border bg-card/70 p-10 text-center text-muted-foreground shadow-sm backdrop-blur-xl">Loading runtime config...</div>
+        <div className="rounded-2xl border border-border bg-card p-10 text-center text-sm text-muted-foreground">Loading runtime config...</div>
       ) : (
         <div className="space-y-6">
           {Object.entries(grouped).map(([category, items]) => (
             <div key={category} className="space-y-3">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">{category.replace(/_/g, " ")}</h2>
-                <p className="text-sm text-muted-foreground">{items.length} managed key{items.length === 1 ? "" : "s"}</p>
+                <h2 className="font-display text-lg font-bold text-foreground">{category.replace(/_/g, " ")}</h2>
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground"><span className="font-mono">{items.length}</span> managed key{items.length === 1 ? "" : "s"}</p>
               </div>
               <div className="space-y-3">
                 {items.map((item) => {
                   const isEditing = editingKey === item.key;
                   const editLocked = item.editable === "No";
                   return (
-                    <div key={item.key} className="rounded-[1.2rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
+                    <div key={item.key} className="rounded-2xl border border-border bg-card p-5">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="font-semibold text-foreground">{item.label}</h3>
+                            <h3 className="font-display text-base font-bold text-foreground">{item.label}</h3>
                             <StatusBadge label={item.status} tone={STATUS_TONE[item.status]} />
                             {item.requiredInProduction && <StatusBadge label="Required" tone="warning" />}
                             {item.isSecret && <StatusBadge label="Secret" tone="neutral" />}
@@ -325,29 +325,29 @@ export default function RuntimeConfigClient() {
                           </div>
                           <p className="text-sm text-muted-foreground">{item.description}</p>
                           {item.warning ? (
-                            <p className="rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-xs text-tone-honey-fg">
+                            <p className="rounded-xl border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-xs text-tone-honey-fg">
                               {item.warning}
                             </p>
                           ) : null}
                           {item.notes && item.notes.length > 0 ? (
-                            <ul className="list-disc rounded-lg border border-border bg-background/50 px-5 py-2 text-xs text-muted-foreground">
+                            <ul className="list-disc rounded-xl border border-border bg-muted/50 px-5 py-2 text-xs text-muted-foreground">
                               {item.notes.map((note, idx) => (
                                 <li key={idx}>{note}</li>
                               ))}
                             </ul>
                           ) : null}
                           <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground md:grid-cols-2">
-                            <div><span className="font-medium text-foreground">Key:</span> <span className="font-mono">{item.key}</span></div>
-                            <div><span className="font-medium text-foreground">Scope:</span> {item.scope}</div>
-                            <div><span className="font-medium text-foreground">Source:</span> {item.source === "Missing" ? "-" : item.source}</div>
-                            <div><span className="font-medium text-foreground">Value:</span> {getRuntimeConfigDisplayValue(item)}</div>
+                            <div><span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Key</span> <span className="ml-1 font-mono text-foreground">{item.key}</span></div>
+                            <div><span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Scope</span> <span className="ml-1 text-foreground">{item.scope}</span></div>
+                            <div><span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Source</span> <span className="ml-1 text-foreground">{item.source === "Missing" ? "-" : item.source}</span></div>
+                            <div><span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Value</span> <span className="ml-1 font-mono text-foreground">{getRuntimeConfigDisplayValue(item)}</span></div>
                             {item.validation ? (
-                              <div><span className="font-medium text-foreground">Validation:</span> {item.validation}</div>
+                              <div><span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Validation</span> <span className="ml-1 text-foreground">{item.validation}</span></div>
                             ) : null}
                             {item.usedBy && item.usedBy.length > 0 ? (
-                              <div><span className="font-medium text-foreground">Used by:</span> {item.usedBy.join(", ")}</div>
+                              <div><span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Used by</span> <span className="ml-1 text-foreground">{item.usedBy.join(", ")}</span></div>
                             ) : null}
-                            <div><span className="font-medium text-foreground">Last validation:</span> {item.lastValidatedAt ? new Date(item.lastValidatedAt).toLocaleString() : "-"}</div>
+                            <div><span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Last validation</span> <span className="ml-1 font-mono text-foreground">{item.lastValidatedAt ? new Date(item.lastValidatedAt).toLocaleString() : "-"}</span></div>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -359,7 +359,7 @@ export default function RuntimeConfigClient() {
                               setStepUpHint(null);
                               setForm({ ...EMPTY_FORM });
                             }}
-                            className="flex items-center gap-2 rounded-xl border border-border bg-background/70 px-3 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                             title={editLocked ? "Deployment-only key - update in DigitalOcean env." : undefined}
                           >
                             <KeyRound className="h-4 w-4" /> Edit
@@ -368,59 +368,59 @@ export default function RuntimeConfigClient() {
                       </div>
 
                       {isEditing && (
-                        <div className="mt-4 grid grid-cols-1 gap-3 rounded-[1rem] border border-border bg-background/60 p-4 lg:grid-cols-2">
+                        <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl border border-border bg-muted/50 p-4 lg:grid-cols-2">
                           {stepUpHint ? (
-                            <div className="lg:col-span-2 rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-sm text-tone-honey-fg">
+                            <div className="lg:col-span-2 rounded-xl border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-sm text-tone-honey-fg">
                               {stepUpHint}
                             </div>
                           ) : null}
                           <div className="lg:col-span-2">
-                            <label className="mb-1 block text-sm font-medium text-muted-foreground">New value</label>
+                            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">New value</label>
                             <textarea
                               value={form.value}
                               onChange={(event) => setForm((prev) => ({ ...prev, value: event.target.value }))}
-                              className="min-h-24 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              className="min-h-24 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                               placeholder={item.isSecret ? "Paste secret value" : "Enter runtime value"}
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-sm font-medium text-muted-foreground">Change note</label>
+                            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Change note</label>
                             <input
                               value={form.note}
                               onChange={(event) => setForm((prev) => ({ ...prev, note: event.target.value }))}
-                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                               placeholder="Rotation, override, emergency, etc."
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-sm font-medium text-muted-foreground">Confirm password</label>
+                            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Confirm password</label>
                             <input
                               type="password"
                               value={form.confirmPassword}
                               onChange={(event) => setForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
-                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                               placeholder="Required"
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-sm font-medium text-muted-foreground">MFA code</label>
+                            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">MFA code</label>
                             <input
                               inputMode="numeric"
                               autoComplete="one-time-code"
                               value={form.mfaCode}
                               onChange={(event) => setForm((prev) => ({ ...prev, mfaCode: event.target.value }))}
-                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                               placeholder="Authenticator code"
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-sm font-medium text-muted-foreground">Backup code</label>
+                            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Backup code</label>
                             <input
                               type="password"
                               autoComplete="one-time-code"
                               value={form.backupCode}
                               onChange={(event) => setForm((prev) => ({ ...prev, backupCode: event.target.value }))}
-                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                               placeholder="Recovery code"
                             />
                           </div>
@@ -428,14 +428,14 @@ export default function RuntimeConfigClient() {
                             <button
                               onClick={() => void save(item.key)}
                               disabled={Boolean(savingKey)}
-                              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                             >
                               <Save className="h-4 w-4" /> {savingKey === item.key ? "Saving..." : "Save Override"}
                             </button>
                             <button
                               onClick={() => void reset(item.key)}
                               disabled={Boolean(savingKey)}
-                              className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                              className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
                             >
                               <EyeOff className="h-4 w-4" /> Reset to ENV
                             </button>
@@ -445,7 +445,7 @@ export default function RuntimeConfigClient() {
                                 setStepUpHint(null);
                                 setForm({ ...EMPTY_FORM });
                               }}
-                              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+                              className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                             >
                               Cancel
                             </button>
@@ -466,12 +466,12 @@ export default function RuntimeConfigClient() {
 
 function MetricCard({ label, value, tone = "default", hint }: { label: string; value: number; tone?: "default" | "danger"; hint?: string }) {
   return (
-    <div className="rounded-[1.1rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
-      <p className="flex items-center gap-1 text-sm text-muted-foreground">
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <p className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
         {label}
         {hint ? <InfoHint text={hint} label={label} /> : null}
       </p>
-      <p className={`mt-1 text-2xl font-bold ${tone === "danger" ? "text-destructive" : "text-foreground"}`}>{value}</p>
+      <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${tone === "danger" ? "text-destructive" : "text-foreground"}`}>{value}</p>
     </div>
   );
 }
@@ -483,6 +483,17 @@ function StatusBadge({ label, tone }: { label: string; tone: "success" | "warnin
     danger: "bg-destructive/10 text-destructive",
     neutral: "bg-muted text-muted-foreground",
   } as const;
+  const dots = {
+    success: "bg-tone-sage-fg",
+    warning: "bg-tone-honey-fg",
+    danger: "bg-destructive",
+    neutral: "bg-muted-foreground",
+  } as const;
 
-  return <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${tones[tone]}`}>{label}</span>;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${tones[tone]}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${dots[tone]}`} />
+      {label}
+    </span>
+  );
 }

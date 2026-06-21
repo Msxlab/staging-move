@@ -12,6 +12,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView, Swipeable } from "react-native-gesture-handler";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -32,10 +33,16 @@ import {
   Mailbox,
   ExternalLink,
 } from "lucide-react-native";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
+import {
+  MoveRaccoon,
+  HeroCard,
+  SectionHeader,
+  MoveProgressBar,
+  Pill,
+} from "@/components/move";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { Avatar } from "@/components/ui/Avatar";
-import { GradientProgress } from "@/components/ui/GradientProgress";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
@@ -52,9 +59,10 @@ import { asObject } from "@/lib/offline-cache";
 import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
 import { formatDateOnlyUtc, getMoveCountdown, normalizeMovingPlanStatus, USPS_MOVERS_GUIDE_URL } from "@locateflow/shared";
 
-const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
-  PLANNING: "neutral",
-  IN_PROGRESS: "primary",
+// Move-design Pill tone for each plan status.
+const pillTone: Record<string, "accent" | "success" | "warning" | "error" | "muted" | "info"> = {
+  PLANNING: "muted",
+  IN_PROGRESS: "accent",
   COMPLETED: "success",
   CANCELED: "error",
   CANCELLED: "error",
@@ -396,7 +404,10 @@ export default function MovingDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>{t("moving.detailTitle")}</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.eyebrow}>{t("moving.title")}</Text>
+            <Text style={styles.title}>{t("moving.detailTitle")}</Text>
+          </View>
           <View style={{ width: 44 }} />
         </View>
         <View style={[styles.scrollContent, { gap: 16 }]}>
@@ -414,7 +425,10 @@ export default function MovingDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>{t("common.notFound")}</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.eyebrow}>{t("moving.title")}</Text>
+            <Text style={styles.title}>{t("common.notFound")}</Text>
+          </View>
           <View style={{ width: 44 }} />
         </View>
         <ErrorState
@@ -478,7 +492,10 @@ export default function MovingDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>{t("moving.detailTitle")}</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.eyebrow}>{t("moving.title")}</Text>
+          <Text style={styles.title}>{t("moving.detailTitle")}</Text>
+        </View>
         <View style={{ width: 44 }} />
       </View>
 
@@ -489,31 +506,38 @@ export default function MovingDetailScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
       >
-        {/* Hero Card */}
-        <Card variant="glow">
+        {/* Hero Card — Move gradient surface with raccoon + serif route */}
+        <HeroCard style={styles.heroCard} radius={24} padding={18}>
           <View style={styles.heroRow}>
             <View style={styles.heroIcon}>
               <Truck size={24} color={theme.colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>
+              <Text style={styles.heroEyebrow}>{t("moving.route")}</Text>
+              <Text style={styles.heroTitle} numberOfLines={2}>
                 {plan.fromAddress?.city || t("moving.origin")} → {plan.toAddress?.city || t("moving.destination")}
               </Text>
               <View style={styles.heroMeta}>
-                <Calendar size={12} color={theme.colors.textMuted} />
+                <Calendar size={12} color={theme.colors.dim} />
                 <Text style={styles.heroDate}>
                   {moveDateLabel}
                 </Text>
               </View>
             </View>
+            <MoveRaccoon size={36} mood={plan.status === "IN_PROGRESS" ? "alert" : "calm"} />
           </View>
           <View style={styles.heroBadges}>
-            <UiBadge label={t(`moving.status_${plan.status}`, { defaultValue: plan.status.replace("_", " ") })} variant={statusVariant[plan.status] || "neutral"} />
-            {daysUntil !== null && daysUntil > 0 && <UiBadge label={t("moving.daysLeft", { count: daysUntil })} variant="warning" />}
-            {plan.isTemporary && <UiBadge label={t("moving.temporary")} variant="info" />}
-            <UiBadge label={moveScopeLabel} variant={isInterstateMove ? "warning" : "success"} />
+            <Pill
+              label={t(`moving.status_${plan.status}`, { defaultValue: plan.status.replace("_", " ") })}
+              tone={pillTone[plan.status] || "muted"}
+            />
+            {daysUntil !== null && daysUntil > 0 && (
+              <Pill label={t("moving.daysLeft", { count: daysUntil })} tone="warning" />
+            )}
+            {plan.isTemporary && <Pill label={t("moving.temporary")} tone="info" />}
+            <Pill label={moveScopeLabel} tone={isInterstateMove ? "warning" : "success"} />
           </View>
-        </Card>
+        </HeroCard>
 
         {/* Lifecycle action — Start moving (PLANNING) / Mark complete (IN_PROGRESS) */}
         {plan.status === "PLANNING" || plan.status === "IN_PROGRESS" ? (
@@ -521,22 +545,31 @@ export default function MovingDetailScreen() {
             onPress={() => changeStatus(plan.status === "PLANNING" ? "IN_PROGRESS" : "COMPLETED")}
             disabled={taskBusy === "status"}
             accessibilityRole="button"
-            style={{
-              backgroundColor: plan.status === "PLANNING" ? theme.colors.primary : theme.colors.emerald.text,
-              paddingVertical: 14,
-              borderRadius: 12,
-              alignItems: "center",
-              marginBottom: 12,
-              opacity: taskBusy === "status" ? 0.6 : 1,
-            }}
+            activeOpacity={0.85}
+            style={{ marginTop: 14, opacity: taskBusy === "status" ? 0.6 : 1 }}
           >
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
-              {taskBusy === "status"
-                ? t("common.saving", { defaultValue: "Saving…" })
-                : plan.status === "PLANNING"
-                  ? t("moving.startMoving", { defaultValue: "Start moving" })
-                  : t("moving.markComplete", { defaultValue: "Mark complete" })}
-            </Text>
+            {plan.status === "PLANNING" ? (
+              <LinearGradient
+                colors={theme.colors.gradient.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.lifecycleBtn}
+              >
+                <Text style={[styles.lifecycleBtnText, { color: theme.colors.onAccent }]}>
+                  {taskBusy === "status"
+                    ? t("common.saving", { defaultValue: "Saving…" })
+                    : t("moving.startMoving", { defaultValue: "Start moving" })}
+                </Text>
+              </LinearGradient>
+            ) : (
+              <View style={[styles.lifecycleBtn, { backgroundColor: theme.colors.success }]}>
+                <Text style={[styles.lifecycleBtnText, { color: theme.colors.onAccent }]}>
+                  {taskBusy === "status"
+                    ? t("common.saving", { defaultValue: "Saving…" })
+                    : t("moving.markComplete", { defaultValue: "Mark complete" })}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         ) : null}
 
@@ -605,21 +638,27 @@ export default function MovingDetailScreen() {
               }}
               accessibilityRole="link"
               accessibilityLabel={t("moving.uspsCta", { defaultValue: "Open the official USPS site" })}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                backgroundColor: theme.colors.primary,
-                borderRadius: 12,
-                paddingVertical: 12,
-                marginTop: 12,
-              }}
+              activeOpacity={0.85}
+              style={{ marginTop: 12 }}
             >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#fff" }}>
-                {t("moving.uspsCta", { defaultValue: "Open the official USPS site" })}
-              </Text>
-              <ExternalLink size={15} color="#fff" />
+              <LinearGradient
+                colors={theme.colors.gradient.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  borderRadius: 12,
+                  paddingVertical: 12,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.onAccent }}>
+                  {t("moving.uspsCta", { defaultValue: "Open the official USPS site" })}
+                </Text>
+                <ExternalLink size={15} color={theme.colors.onAccent} />
+              </LinearGradient>
             </TouchableOpacity>
             <Text style={{ fontSize: 11, color: theme.colors.textTertiary, textAlign: "center", marginTop: 6 }}>
               moversguide.usps.com
@@ -700,7 +739,7 @@ export default function MovingDetailScreen() {
           </View>
         </CollapsibleCard>
 
-        <Text style={styles.sectionTitle}>{t("moving.moveTasks")}</Text>
+        <SectionHeader label={t("moving.moveTasks")} style={styles.sectionHeader} />
         <Card variant="default">
           <View style={styles.transitionHeader}>
             <View style={{ flex: 1 }}>
@@ -740,7 +779,7 @@ export default function MovingDetailScreen() {
                   {t("moving.taskCountOfTotal", { done: doneTaskCount, total: trackedTaskCount })}
                 </Text>
               </View>
-              <GradientProgress progress={taskProgressPct} height={7} />
+              <MoveProgressBar value={taskProgressPct / 100} height={7} />
             </View>
           )}
           {moveTasks.length === 0 ? (
@@ -1217,32 +1256,45 @@ export default function MovingDetailScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    flexDirection: "row", alignItems: "center", gap: 12,
     paddingHorizontal: 20, paddingVertical: 12,
   },
+  headerText: { flex: 1 },
   backBtn: {
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  eyebrow: {
+    fontSize: 10, fontFamily: fonts.sansBold, letterSpacing: 1.8,
+    textTransform: "uppercase", color: theme.colors.primary,
+  },
+  title: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text, marginTop: 2, lineHeight: 26 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  heroCard: { marginBottom: 4 },
   heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   heroIcon: {
     width: 52, height: 52, borderRadius: 16,
     backgroundColor: theme.colors.primaryFaded, alignItems: "center", justifyContent: "center",
   },
-  heroTitle: { fontSize: 18, fontWeight: "800", color: theme.colors.text },
-  heroMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
-  heroDate: { fontSize: 13, color: theme.colors.textTertiary },
+  heroEyebrow: {
+    fontSize: 9, fontFamily: fonts.sansBold, letterSpacing: 1.4,
+    textTransform: "uppercase", color: theme.colors.primary,
+  },
+  heroTitle: { fontSize: 19, fontFamily: fonts.serifBold, color: theme.colors.text, marginTop: 3, lineHeight: 24 },
+  heroMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 5 },
+  heroDate: { fontSize: 13, color: theme.colors.dim },
   heroBadges: { flexDirection: "row", gap: 6, marginTop: 14, flexWrap: "wrap" },
+  lifecycleBtn: { paddingVertical: 14, borderRadius: 12, alignItems: "center", ...theme.shadow.glow },
+  lifecycleBtnText: { fontFamily: fonts.sansBold, fontSize: 15 },
+  sectionHeader: { marginTop: 24, marginBottom: 12 },
   addressCards: { flexDirection: "row", gap: 12, marginTop: 16 },
-  addrLabel: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 6, textTransform: "uppercase", letterSpacing: 0.5 },
-  addrValue: { fontSize: 13, fontWeight: "600", color: theme.colors.text, marginTop: 4 },
+  addrLabel: { fontSize: 11, fontFamily: fonts.sansBold, color: theme.colors.faint, marginTop: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+  addrValue: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.text, marginTop: 4 },
   // Move-focused split (Aurora Direction C)
   moveLbl: {
-    fontSize: 10, letterSpacing: 1, textTransform: "uppercase", fontWeight: "700",
-    color: theme.colors.textTertiary, marginTop: 16, marginBottom: 9, marginLeft: 2,
+    fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", fontFamily: fonts.sansBold,
+    color: theme.colors.faint, marginTop: 16, marginBottom: 9, marginLeft: 2,
   },
   moveSplits: { flexDirection: "row", gap: 10 },
   moveSplit: {
@@ -1457,7 +1509,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   celebrateTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: fonts.serifBold,
     letterSpacing: 0,
     color: theme.colors.text,
   },

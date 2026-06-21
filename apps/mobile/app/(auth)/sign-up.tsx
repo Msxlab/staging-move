@@ -6,10 +6,10 @@ import {
 import { useRouter } from "expo-router";
 import { Mail, Lock, User, Check, CheckCircle2, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, type Theme, fonts } from "@/lib/theme";
+import { MoveRaccoon } from "@/components/move";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { LogoBrand } from "@/components/ui/LogoBrand";
 import { AppleLogoMark, GoogleGMark } from "@/components/ui/BrandLogos";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { api, API_URL } from "@/lib/api";
@@ -240,17 +240,23 @@ export default function SignUpScreen() {
 
   if (done) {
     return (
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <CheckCircle2 size={48} color={theme.colors.success} style={{ alignSelf: "center" }} />
-        <Text style={styles.title}>{t("auth.checkEmail")}</Text>
-        <Text style={styles.subtitle}>
-          {t("auth.checkEmailDescription", { email })}
-        </Text>
-        <Button
-          title={t("auth.signIn")}
-          onPress={() => router.replace("/(auth)/sign-in")}
-          style={{ marginTop: 16 }}
-        />
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.authPanel}>
+          <View style={styles.confirmHero}>
+            <View style={styles.confirmIcon}>
+              <CheckCircle2 size={32} color={theme.colors.success} />
+            </View>
+            <Text style={styles.confirmTitle}>{t("auth.checkEmail")}</Text>
+            <Text style={styles.confirmSubtitle}>
+              {t("auth.checkEmailDescription", { email })}
+            </Text>
+          </View>
+          <Button
+            title={t("auth.signIn")}
+            onPress={() => router.replace("/(auth)/sign-in")}
+            style={{ marginTop: 8 }}
+          />
+        </View>
       </ScrollView>
     );
   }
@@ -260,8 +266,9 @@ export default function SignUpScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.authPanel}>
           <View style={styles.hero}>
-            <LogoBrand />
-            <Text style={styles.heroKicker}>START LOCATEFLOW</Text>
+            <View style={styles.markBadge}>
+              <MoveRaccoon size={56} mood="calm" />
+            </View>
             <Text style={styles.title}>{t("auth.signUp_title")}</Text>
             <Text style={styles.subtitle}>{t("auth.signUp")}</Text>
           </View>
@@ -402,16 +409,57 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingTop: 6,
     paddingBottom: 8,
   },
-  heroKicker: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.4,
-    color: theme.colors.accent,
-    textTransform: "uppercase",
-    marginTop: 14,
+  markBadge: {
+    width: 78,
+    height: 78,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
   },
-  title: { fontSize: 26, fontWeight: "800", color: theme.colors.text, marginTop: 8, letterSpacing: 0 },
-  subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
+  title: {
+    fontSize: 28,
+    fontFamily: fonts.serifBlack,
+    color: theme.colors.text,
+    marginTop: 16,
+    textAlign: "center",
+    letterSpacing: 0,
+  },
+  subtitle: {
+    fontSize: 13.5,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
+    marginTop: 6,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  confirmHero: { alignItems: "center", paddingTop: 8, paddingBottom: 8 },
+  confirmIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.successFaded,
+  },
+  confirmTitle: {
+    fontSize: 22,
+    fontFamily: fonts.serifBold,
+    color: theme.colors.text,
+    marginTop: 16,
+    textAlign: "center",
+  },
+  confirmSubtitle: {
+    fontSize: 13.5,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
+    lineHeight: 20,
+    marginTop: 8,
+    marginBottom: 8,
+    textAlign: "center",
+  },
   inviteBanner: {
     padding: 12,
     borderRadius: theme.radius.lg,
@@ -420,8 +468,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.primaryFaded,
     marginBottom: 12,
   },
-  inviteBannerText: { fontSize: 12, color: theme.colors.text, lineHeight: 18 },
-  error: { color: theme.colors.error, fontSize: 13, marginBottom: 8 },
+  inviteBannerText: { fontSize: 12, color: theme.colors.text, lineHeight: 18, fontFamily: fonts.sans },
+  error: { color: theme.colors.error, fontSize: 13, marginBottom: 8, fontFamily: fonts.sansMedium },
   oauthBtn: { marginBottom: 6 },
   oauthButton: {
     minHeight: 52,
@@ -447,15 +495,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     ...theme.shadow.sm,
   },
   oauthDisabled: { opacity: 0.5 },
-  oauthGoogleText: { color: "#14202F", fontSize: 15, fontWeight: "700" },
-  oauthAppleText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  oauthGoogleText: { color: "#14202F", fontSize: 14.5, fontFamily: fonts.sansSemibold },
+  oauthAppleText: { color: "#fff", fontSize: 14.5, fontFamily: fonts.sansSemibold },
   oauthNote: {
     color: theme.colors.warning,
     fontSize: 12,
     lineHeight: 18,
+    fontFamily: fonts.sans,
     backgroundColor: theme.colors.warningFaded,
     borderWidth: 1,
-    borderColor: "rgba(242, 196, 108, 0.2)",
+    borderColor: theme.colors.amberLine,
     borderRadius: theme.radius.lg,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -463,7 +512,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   divider: { flexDirection: "row", alignItems: "center", marginVertical: 12, gap: 8 },
   dividerLine: { flex: 1, height: 1, backgroundColor: theme.colors.border },
-  dividerText: { color: theme.colors.textMuted, fontSize: 10, letterSpacing: 1.5 },
+  dividerText: { color: theme.colors.faint, fontSize: 10, letterSpacing: 1.5, fontFamily: fonts.sansMedium },
   row: { flexDirection: "row", gap: 8 },
   hint: { fontSize: 11, color: theme.colors.textMuted, marginTop: -4 },
   rulesBox: {
@@ -476,7 +525,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingVertical: 10,
   },
   ruleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  ruleText: { fontSize: 12, lineHeight: 16 },
-  linkText: { color: theme.colors.textMuted, fontSize: 13 },
-  linkEmphasis: { color: theme.colors.primary, fontWeight: "600" },
+  ruleText: { fontSize: 12, lineHeight: 16, fontFamily: fonts.sans },
+  linkText: { color: theme.colors.dim, fontSize: 13, fontFamily: fonts.sans },
+  linkEmphasis: { color: theme.colors.primary, fontFamily: fonts.sansSemibold },
 });

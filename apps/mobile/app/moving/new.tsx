@@ -16,16 +16,18 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Check, MapPin, ArrowRight, Calendar } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
+import { useAppTheme, useThemePreference, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { formatLocalDateKey } from "@/lib/date-only";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
+import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 
 type DestinationMode = "existing" | "new";
 const MOVING_KEYBOARD_ACCESSORY_ID = "moving-plan-keyboard-done";
@@ -341,7 +343,7 @@ export default function NewMovingPlanScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.hero}>
+          <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
             <View style={styles.heroTop}>
               <View style={styles.heroIcon}>
                 <MapPin size={20} color={theme.colors.primary} />
@@ -353,6 +355,7 @@ export default function NewMovingPlanScreen() {
                   {originPreview} to {destinationPreview}
                 </Text>
               </View>
+              <Pill label={routeReady ? "Ready" : "Draft"} tone={routeReady ? "success" : "muted"} />
             </View>
             <View style={styles.heroRoute}>
               <Text style={styles.heroRouteText} numberOfLines={1}>{originPreview}</Text>
@@ -375,7 +378,7 @@ export default function NewMovingPlanScreen() {
                 <Text style={styles.heroStatLabel}>status</Text>
               </View>
             </View>
-          </View>
+          </HeroCard>
 
           {addresses.length === 0 ? (
             <View style={styles.warningBox}>
@@ -391,9 +394,9 @@ export default function NewMovingPlanScreen() {
             </View>
           ) : (
             <>
-              <View style={styles.formSection}>
+              <MoveCard style={styles.formSection} padding={14} radius={theme.radius.xl}>
               {/* From Address */}
-              <Text style={styles.sectionLabel}>{t("moving.fromAddress")} *</Text>
+              <SectionHeader label={`${t("moving.fromAddress")} *`} style={styles.sectionHeader} />
               <View style={styles.chipRow}>
                 {addresses.map((a) => (
                   <TouchableOpacity
@@ -419,7 +422,7 @@ export default function NewMovingPlanScreen() {
               ) : null}
 
               {/* To Address */}
-              <Text style={styles.sectionLabel}>{t("moving.toAddress")} *</Text>
+              <SectionHeader label={`${t("moving.toAddress")} *`} style={styles.sectionHeader} />
               {availableDestinationAddresses.length > 0 ? (
                 <View style={styles.modeRow}>
                   <TouchableOpacity
@@ -525,9 +528,9 @@ export default function NewMovingPlanScreen() {
                   </View>
                 </View>
               )}
-              </View>
+              </MoveCard>
 
-              <View style={styles.formSection}>
+              <MoveCard style={styles.formSection} padding={14} radius={theme.radius.xl}>
               {/* Move Date */}
               <Text style={styles.label}>{t("moving.moveDate")} *</Text>
               <TouchableOpacity
@@ -616,7 +619,7 @@ export default function NewMovingPlanScreen() {
                   />
                 </>
               )}
-              </View>
+              </MoveCard>
             </>
           )}
         </ScrollView>
@@ -627,16 +630,23 @@ export default function NewMovingPlanScreen() {
               style={[styles.saveBtn, saving && { opacity: 0.6 }]}
               onPress={handleSave}
               disabled={saving}
-              activeOpacity={0.7}
+              activeOpacity={0.85}
             >
-              {saving ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Check size={18} color="#fff" />
-                  <Text style={styles.saveBtnText}>{t("moving.createPlan")}</Text>
-                </>
-              )}
+              <LinearGradient
+                colors={theme.colors.gradient.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.saveBtnGrad}
+              >
+                {saving ? (
+                  <ActivityIndicator color={theme.colors.onAccent} />
+                ) : (
+                  <>
+                    <Check size={18} color={theme.colors.onAccent} />
+                    <Text style={styles.saveBtnText}>{t("moving.createPlan")}</Text>
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         )}
@@ -668,50 +678,43 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   formShell: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 24 },
   scrollContentWithFooter: { paddingBottom: 260 },
   hero: {
-    borderRadius: 24,
-    padding: 16,
     marginBottom: 14,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
   },
   heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   heroIcon: {
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
   heroKicker: {
     fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 1.4,
     textTransform: "uppercase",
-    color: theme.colors.accent,
+    color: theme.colors.primary,
   },
   heroTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     marginTop: 3,
-    letterSpacing: 0,
   },
-  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  heroSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 3 },
   heroRoute: {
     flexDirection: "row",
     alignItems: "center",
@@ -724,7 +727,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  heroRouteText: { flex: 1, fontSize: 12, fontWeight: "700", color: theme.colors.text, textAlign: "center" },
+  heroRouteText: { flex: 1, fontSize: 12, fontFamily: fonts.sansBold, color: theme.colors.text, textAlign: "center" },
   heroStats: { flexDirection: "row", gap: 8, marginTop: 10 },
   heroStat: {
     flex: 1,
@@ -736,37 +739,31 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
-  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
-  heroStatReady: { color: theme.colors.emerald.text },
+  heroStatValue: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
+  heroStatReady: { color: theme.colors.success },
   heroStatLabel: {
     fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 0.6,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
   formSection: {
-    borderRadius: 22,
-    padding: 14,
     marginBottom: 14,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  sectionLabel: {
-    fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0, marginTop: 0, marginBottom: 10,
+  sectionHeader: {
+    marginTop: 0, marginBottom: 12, marginLeft: 2,
   },
-  helperText: { fontSize: 12, color: theme.colors.textMuted, marginBottom: 10 },
+  helperText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginBottom: 10 },
   label: {
-    fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6,
+    fontSize: 14, fontFamily: fonts.sansMedium, color: theme.colors.dim, marginTop: 16, marginBottom: 6,
   },
   input: {
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
+    backgroundColor: theme.colors.bg2, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
     minHeight: 52,
-    fontSize: 15, color: theme.colors.text,
+    fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text,
   },
   footer: {
     flexShrink: 0,
@@ -789,16 +786,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
   },
-  keyboardDoneText: { fontSize: 14, fontWeight: "800", color: theme.colors.primary },
+  keyboardDoneText: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.primary },
   dateButton: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 14,
+    backgroundColor: theme.colors.bg2, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 14,
   },
   dateButtonText: {
-    fontSize: 15, color: theme.colors.textMuted, flex: 1,
+    fontSize: 15, fontFamily: fonts.sans, color: theme.colors.faint, flex: 1,
   },
   datePickerPanel: {
     marginTop: 10,
@@ -817,56 +814,56 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
-  datePickerTitle: { fontSize: 13, fontWeight: "800", color: theme.colors.textSecondary },
+  datePickerTitle: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.dim },
   datePickerDone: {
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.borderFocus,
+    borderColor: theme.colors.accentBorder,
   },
-  datePickerDoneText: { fontSize: 13, fontWeight: "800", color: theme.colors.primary },
+  datePickerDoneText: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.primary },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
   },
   chipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder,
   },
-  chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
+  chipText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   chipTextActive: { color: theme.colors.primary },
   arrowRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
     marginTop: 16, paddingVertical: 12, paddingHorizontal: 16,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.bg2, borderRadius: 14,
     borderWidth: 1, borderColor: theme.colors.border,
   },
-  arrowLabel: { flex: 1, fontSize: 13, fontWeight: "600", color: theme.colors.text, textAlign: "center" },
+  arrowLabel: { flex: 1, fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.text, textAlign: "center" },
   modeRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
   modeButton: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: theme.radius.lg,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
   },
   modeButtonActive: {
-    backgroundColor: theme.colors.primaryFaded,
-    borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.accentSoft,
+    borderColor: theme.colors.accentBorder,
   },
-  modeButtonText: { fontSize: 12, fontWeight: "600", color: theme.colors.textTertiary, textAlign: "center" },
+  modeButtonText: { fontSize: 12, fontFamily: fonts.sansSemibold, color: theme.colors.dim, textAlign: "center" },
   modeButtonTextActive: { color: theme.colors.primary },
   inlineDestinationCard: {
     marginTop: 8,
     padding: 14,
     borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.bg2,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -874,24 +871,28 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   switchRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     marginTop: 20, paddingVertical: 14, paddingHorizontal: 16,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.bg2, borderRadius: 16,
     borderWidth: 1, borderColor: theme.colors.border,
   },
-  switchLabel: { fontSize: 15, fontWeight: "500", color: theme.colors.text },
+  switchLabel: { fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text },
   warningBox: {
     alignItems: "center", padding: 24,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.surface, borderRadius: theme.radius.xl,
     borderWidth: 1, borderColor: theme.colors.border, marginTop: 20,
   },
-  warningText: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center", marginBottom: 16 },
+  warningText: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.dim, textAlign: "center", marginBottom: 16 },
   warningBtn: {
     backgroundColor: theme.colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12,
   },
-  warningBtnText: { fontSize: 14, fontWeight: "600", color: "#fff" },
+  warningBtnText: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
   saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, ...theme.shadow.glow,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+    ...theme.shadow.glow,
   },
-  saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  saveBtnGrad: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 16,
+  },
+  saveBtnText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 });

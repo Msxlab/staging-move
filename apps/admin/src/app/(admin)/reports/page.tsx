@@ -147,22 +147,24 @@ export default function ReportsPage() {
         }
       />
 
-      <div className="flex items-center gap-3 flex-wrap">
-        {["7d", "30d", "90d", "1y"].map((p) => (
-          <button
-            key={p}
-            onClick={() => applyPreset(p)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium border transition ${preset === p ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent"}`}
-          >
-            {p === "7d"
-              ? "7 Days"
-              : p === "30d"
-                ? "30 Days"
-                : p === "90d"
-                  ? "90 Days"
-                  : "1 Year"}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
+        <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5">
+          {["7d", "30d", "90d", "1y"].map((p) => (
+            <button
+              key={p}
+              onClick={() => applyPreset(p)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${preset === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {p === "7d"
+                ? "7 Days"
+                : p === "30d"
+                  ? "30 Days"
+                  : p === "90d"
+                    ? "90 Days"
+                    : "1 Year"}
+            </button>
+          ))}
+        </div>
         <div className="flex items-center gap-2 ml-auto">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <input
@@ -172,7 +174,7 @@ export default function ReportsPage() {
               setStartDate(e.target.value);
               setPreset("");
             }}
-            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground"
+            className="rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-xs text-foreground"
           />
           <span className="text-muted-foreground">—</span>
           <input
@@ -182,17 +184,17 @@ export default function ReportsPage() {
               setEndDate(e.target.value);
               setPreset("");
             }}
-            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground"
+            className="rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-xs text-foreground"
           />
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-20 text-muted-foreground">
+        <div className="text-center py-20 font-mono text-sm text-muted-foreground">
           Loading report...
         </div>
       ) : !data ? (
-        <div className="text-center py-20 text-muted-foreground">
+        <div className="text-center py-20 font-mono text-sm text-muted-foreground">
           Failed to load
         </div>
       ) : (
@@ -203,32 +205,34 @@ export default function ReportsPage() {
               return (
                 <div
                   key={m.label}
-                  className="rounded-xl border border-border bg-card p-5"
+                  className="rounded-2xl border border-border bg-card p-[18px]"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-muted-foreground">{m.label}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      {m.label}
+                    </p>
                     <Icon className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="mt-1.5 font-display text-[28px] font-extrabold text-foreground">
                     {m.current.toLocaleString()}
                   </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      vs prev: {m.previous}
-                    </span>
+                  <div className="mt-1 flex items-center gap-2 text-[11px]">
                     {m.change !== 0 && (
                       <span
-                        className={`flex items-center gap-0.5 text-xs font-medium ${m.change > 0 ? "text-tone-sage-fg" : "text-destructive"}`}
+                        className={`inline-flex items-center gap-0.5 font-mono font-medium ${m.change > 0 ? "text-tone-sage-fg" : "text-destructive"}`}
                       >
                         {m.change > 0 ? (
-                          <TrendingUp className="h-3 w-3" />
+                          <TrendingUp className="h-3.5 w-3.5" />
                         ) : (
-                          <TrendingDown className="h-3 w-3" />
+                          <TrendingDown className="h-3.5 w-3.5" />
                         )}
                         {m.change > 0 ? "+" : ""}
                         {m.change}%
                       </span>
                     )}
+                    <span className="font-mono text-muted-foreground">
+                      vs prev ({m.previous.toLocaleString()})
+                    </span>
                   </div>
                 </div>
               );
@@ -236,13 +240,13 @@ export default function ReportsPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="text-sm font-semibold text-foreground mb-4">
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Daily User Registrations
-              </h2>
+              </p>
               <div className="flex items-end gap-0.5 h-32">
                 {Object.entries(data.dailyUsers).length === 0 ? (
-                  <p className="w-full text-center text-sm text-muted-foreground py-8">
+                  <p className="w-full text-center font-mono text-sm text-muted-foreground py-8">
                     No data
                   </p>
                 ) : (
@@ -255,7 +259,7 @@ export default function ReportsPage() {
                         aria-label={`${date}: ${count} registrations`}
                         className="group relative flex h-full flex-1 items-end appearance-none bg-transparent p-0"
                       >
-                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block group-focus:block bg-card border border-border rounded px-1.5 py-0.5 text-[9px] text-foreground whitespace-nowrap z-10">
+                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block group-focus:block bg-card border border-border rounded px-1.5 py-0.5 font-mono text-[9px] text-foreground whitespace-nowrap z-10">
                           {date}: {count}
                         </div>
                         <div
@@ -272,13 +276,13 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="text-sm font-semibold text-foreground mb-3">
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Moving Plans by Status
-              </h2>
+              </p>
               <div className="space-y-2">
                 {data.movingByStatus.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">No data</p>
+                  <p className="font-mono text-sm text-muted-foreground text-center py-8">No data</p>
                 ) : (
                   data.movingByStatus.map((m) => {
                     const colors: Record<string, string> = {
@@ -290,8 +294,8 @@ export default function ReportsPage() {
                       <div key={m.status} className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${colors[m.status] || "bg-tone-slate-fg"}`} />
                         <span className="text-sm text-foreground flex-1">{m.status}</span>
-                        <span className="text-sm font-medium text-foreground">{m.count}</span>
-                        <span className="text-xs text-muted-foreground w-10 text-right">
+                        <span className="font-mono text-sm font-medium text-foreground">{m.count}</span>
+                        <span className="font-mono text-xs text-muted-foreground w-10 text-right">
                           {Math.round((m.count / total) * 100)}%
                         </span>
                       </div>
@@ -303,28 +307,28 @@ export default function ReportsPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="text-sm font-semibold text-foreground mb-3">
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Top Providers by Popularity
-              </h2>
+              </p>
               <div className="space-y-2">
                 {data.topProviders.slice(0, 7).map((p, i) => (
                   <div key={p.name} className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-4">{i + 1}</span>
+                    <span className="font-mono text-xs text-muted-foreground w-4">{i + 1}</span>
                     <span className="text-sm text-foreground flex-1 truncate">{p.name}</span>
-                    <span className="text-xs text-muted-foreground">score: {p.popularityScore}</span>
+                    <span className="font-mono text-xs text-muted-foreground">score: {p.popularityScore}</span>
                   </div>
                 ))}
                 {data.topProviders.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-2">No data</p>
+                  <p className="font-mono text-sm text-muted-foreground text-center py-2">No data</p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="text-sm font-semibold text-foreground mb-3">
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Top States
-              </h2>
+              </p>
               <div className="space-y-2">
                 {data.topStates.slice(0, 7).map((s, i) => {
                   const max = data.topStates[0]?.count || 1;
@@ -334,7 +338,7 @@ export default function ReportsPage() {
                         <span className="text-sm text-foreground">
                           {s.state}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="font-mono text-xs text-muted-foreground">
                           {s.count}
                         </span>
                       </div>
@@ -348,7 +352,7 @@ export default function ReportsPage() {
                   );
                 })}
                 {data.topStates.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-2">
+                  <p className="font-mono text-sm text-muted-foreground text-center py-2">
                     No data
                   </p>
                 )}

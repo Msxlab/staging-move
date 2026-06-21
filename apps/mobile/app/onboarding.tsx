@@ -40,7 +40,8 @@ import {
 import type { ScoredProvider } from "@/lib/recommendation-engine";
 import { getLocalizedProviderDescription, getLocalizedProviderReason } from "@/lib/provider-localization";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
+import { useAppTheme, useThemePreference, fonts, type Theme } from "@/lib/theme";
+import { MoveRaccoon, MoveProgressBar } from "@/components/move";
 import { api } from "@/lib/api";
 import { formatLocalDateKey, parseLocalDateKey } from "@/lib/date-only";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
@@ -93,7 +94,6 @@ import { consumePendingInviteJoin } from "@/lib/workspace-invite";
 import {
   StepTransition,
   StaggerItem,
-  OnboardingProgressBar,
   useShake,
 } from "@/components/onboarding/onboarding-motion";
 import Animated, {
@@ -272,6 +272,30 @@ export default function OnboardingScreen() {
   // Drives the progress-bar's one-shot confirmation shimmer; paired with a
   // success haptic. Purely cosmetic — never gates navigation.
   const [pulseTick, setPulseTick] = useState(0);
+  // One-shot confirmation shimmer on the gradient progress bar, driven by
+  // pulseTick (bumped in celebrateStepComplete). A brief brighten + lift;
+  // reduce-motion holds it steady. Cosmetic only — never gates navigation.
+  const progressReduceMotion = useReducedMotion();
+  const progressPulse = useSharedValue(0);
+  const firstProgressPulse = useRef(true);
+  useEffect(() => {
+    if (firstProgressPulse.current) {
+      firstProgressPulse.current = false;
+      return;
+    }
+    if (progressReduceMotion) return;
+    progressPulse.value = withSequence(
+      withTiming(1, { duration: 180, easing: Easing.out(Easing.quad) }),
+      withTiming(0, { duration: 420, easing: Easing.in(Easing.quad) }),
+    );
+    return () => {
+      cancelAnimation(progressPulse);
+    };
+  }, [pulseTick, progressReduceMotion, progressPulse]);
+  const progressPulseStyle = useAnimatedStyle(() => ({
+    opacity: 0.85 + progressPulse.value * 0.15,
+    transform: [{ scaleY: 1 + progressPulse.value * 0.6 }],
+  }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   // Per-field validation errors (currently the required name fields). Surfacing
@@ -1390,7 +1414,9 @@ export default function OnboardingScreen() {
           ) : (
             <>
               <View style={styles.headerBrandRow}>
-                <LogoBrand size="sm" />
+                <View style={styles.headerRaccoonTile}>
+                  <MoveRaccoon size={30} mood={step >= STEP_KEYS.length - 1 ? "approved" : "calm"} />
+                </View>
                 <View style={styles.headerCopy}>
                   <Text style={styles.headerKicker}>
                     {t("onboarding.headerKicker", { defaultValue: "A moving companion" })}
@@ -1437,7 +1463,13 @@ export default function OnboardingScreen() {
               </View>
             </>
           )}
-          <OnboardingProgressBar step={step} total={STEP_KEYS.length} pulseTick={pulseTick} />
+          {/* Sapphire gradient progress (design's MoveProgressBar). pulseTick
+              still drives celebrateStepComplete's success haptic + the one-shot
+              confirmation shimmer (a brief brighten on the gradient bar);
+              reduce-motion settles it instantly. */}
+          <Animated.View style={[styles.progressWrap, progressPulseStyle]}>
+            <MoveProgressBar value={(step + 1) / STEP_KEYS.length} />
+          </Animated.View>
         </View>
         {!headerCompact && !headerHidden && (
           <Text style={styles.stepLabel}>
@@ -2055,12 +2087,12 @@ export default function OnboardingScreen() {
                       action and "plan a move" the secondary one. */}
                   {joinedAsMember ? (
                     <>
-                      <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} fullWidth size="cta" />
+                      <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} variant="gradient" fullWidth size="cta" />
                       <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} variant="ghost" fullWidth size="lg" />
                     </>
                   ) : (
                     <>
-                      <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} fullWidth size="cta" />
+                      <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} variant="gradient" fullWidth size="cta" />
                       <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} variant="ghost" fullWidth size="lg" />
                     </>
                   )}
@@ -2071,7 +2103,7 @@ export default function OnboardingScreen() {
                 <View style={{ marginTop: 24, alignItems: "center", gap: 12, width: "100%" }}>
                   <Check size={40} color={theme.colors.success} style={{ opacity: 0.5 }} />
                   <Text style={[styles.stepDesc, { marginTop: 0 }]}>{t("onboarding.moving_skipped")}</Text>
-                  <Button title={t("onboarding.goToDashboard")} onPress={handleComplete} loading={saving} fullWidth size="cta" />
+                  <Button title={t("onboarding.goToDashboard")} onPress={handleComplete} loading={saving} variant="gradient" fullWidth size="cta" />
                 </View>
               )}
 
@@ -2127,7 +2159,7 @@ export default function OnboardingScreen() {
                 <View style={{ marginTop: 20, gap: 12, width: "100%" }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <MapPin size={16} color={theme.colors.primary} />
-                    <Text style={{ fontSize: 14, fontWeight: "700", color: theme.colors.text }}>{t("onboarding.moving_destinationHeader")}</Text>
+                    <Text style={{ fontFamily: fonts.sansBold, fontSize: 14, color: theme.colors.text }}>{t("onboarding.moving_destinationHeader")}</Text>
                   </View>
                   <AddressAutocompleteField label={t("addresses.street")} placeholder="123 New St (optional)" value={movingForm.street}
                     onValueChange={(value) => updateMoving("street", value)} onSelect={handleMovingAutocompleteSelect} containerStyle={{ width: "100%" }} />
@@ -2270,6 +2302,7 @@ export default function OnboardingScreen() {
                           }
                           onPress={() => handleComplete()}
                           loading={saving}
+                          variant="gradient"
                           fullWidth
                           size="cta"
                         />
@@ -2279,6 +2312,7 @@ export default function OnboardingScreen() {
                           title={buildingTeaser ? t("common.loading") : t("onboarding.teaser_preview", { defaultValue: "See my plan preview" })}
                           onPress={() => buildTeaser()}
                           loading={buildingTeaser}
+                          variant="gradient"
                           fullWidth
                           size="cta"
                           iconRight={<Sparkles size={16} color="#fff" />}
@@ -2402,6 +2436,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     display: "none",
   },
   headerBrandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  // Welcome-motif raccoon tile from the design — rounded navy chip with an
+  // accent hairline holding the brand mark.
+  headerRaccoonTile: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
+  },
+  progressWrap: { marginTop: 12 },
   compactHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   compactHeaderCopy: { flex: 1, minWidth: 0 },
   compactHeaderKicker: {
@@ -2412,16 +2459,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   compactHeaderTitle: { marginTop: 1, fontSize: 13, fontWeight: "800", color: theme.colors.text },
   headerCopy: { flex: 1, minWidth: 0 },
   headerKicker: {
-    fontFamily: Platform.select({ ios: "GeistMono_500Medium", android: "GeistMono_500Medium" }),
+    fontFamily: fonts.monoMedium,
     fontSize: 9.5,
-    fontWeight: "700",
     letterSpacing: 1.25,
     textTransform: "uppercase",
     color: theme.colors.textTertiary,
   },
   headerTitle: {
     marginTop: 2,
-    fontFamily: Platform.select({ ios: "Fraunces_500Medium", android: "Fraunces_500Medium" }),
+    fontFamily: fonts.serif,
     fontSize: 17,
     color: theme.colors.text,
   },
@@ -2472,12 +2518,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 5,
     maxWidth: "100%",
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.sansBold,
     color: theme.colors.textMuted,
     textAlign: "center",
   },
   stepRailLabelOn: { color: theme.colors.primary },
-  stepLabel: { fontSize: 13, color: theme.colors.textTertiary, textAlign: "center", marginTop: 12 },
+  stepLabel: { fontFamily: fonts.sans, fontSize: 13, color: theme.colors.textSecondary, textAlign: "center", marginTop: 12 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 140 },
   scrollContentCompact: { paddingTop: 14 },
   scrollContentHeaderHidden: { paddingTop: 12 },
@@ -2486,12 +2532,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   stepIcon: {
     width: 64, height: 64, borderRadius: 20,
     backgroundColor: theme.colors.primaryFaded, borderWidth: 1,
-    borderColor: theme.colors.rose.border, alignItems: "center",
+    borderColor: theme.colors.accentBorder, alignItems: "center",
     justifyContent: "center", marginBottom: 20,
   },
-  stepTitle: { fontSize: 24, fontWeight: "800", color: theme.colors.text, textAlign: "center", letterSpacing: 0 },
-  stepDesc: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center", marginTop: 8, lineHeight: 20 },
-  fieldLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary, alignSelf: "flex-start", marginTop: 20, marginBottom: 8 },
+  stepTitle: { fontFamily: fonts.serifBold, fontSize: 28, color: theme.colors.text, textAlign: "center", letterSpacing: 0, lineHeight: 32 },
+  stepDesc: { fontFamily: fonts.sans, fontSize: 14, color: theme.colors.textSecondary, textAlign: "center", marginTop: 8, lineHeight: 20 },
+  fieldLabel: { fontFamily: fonts.sansSemibold, fontSize: 13, color: theme.colors.textSecondary, alignSelf: "flex-start", marginTop: 20, marginBottom: 8 },
   errorBox: {
     marginHorizontal: 24, marginTop: 8, padding: 12, borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: theme.colors.error + "44",
@@ -2510,21 +2556,21 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   row: { flexDirection: "row", gap: 12, width: "100%" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: "100%" },
   chip: {
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
   },
-  chipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus },
-  chipText: { fontSize: 14, color: theme.colors.textTertiary, fontWeight: "500" },
-  chipTextActive: { color: theme.colors.primary },
+  chipActive: { backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.borderFocus },
+  chipText: { fontFamily: fonts.sansMedium, fontSize: 14, color: theme.colors.textSecondary },
+  chipTextActive: { color: theme.colors.primary, fontFamily: fonts.sansSemibold },
   toggleGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: "100%" },
   toggleChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
   },
-  toggleChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus },
-  toggleChipText: { fontSize: 13, color: theme.colors.textTertiary, fontWeight: "500" },
-  toggleChipTextActive: { color: theme.colors.primary },
+  toggleChipActive: { backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.borderFocus },
+  toggleChipText: { fontFamily: fonts.sansMedium, fontSize: 13, color: theme.colors.textSecondary },
+  toggleChipTextActive: { color: theme.colors.primary, fontFamily: fonts.sansSemibold },
   counterRow: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     width: "100%", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: theme.colors.border,
@@ -2542,19 +2588,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   loadingText: { fontSize: 14, color: theme.colors.textMuted },
   emptyProviders: { alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 40, width: "100%" },
   emptyText: { fontSize: 14, color: theme.colors.textMuted, textAlign: "center" },
-  dateLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary, marginBottom: 6 },
+  dateLabel: { fontFamily: fonts.sansSemibold, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: theme.colors.dim, marginBottom: 8 },
   dateButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    minHeight: 48,
-    borderRadius: theme.radius.lg,
+    gap: 11,
+    minHeight: 50,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
   },
-  dateButtonText: { flex: 1, fontSize: 15, color: theme.colors.textMuted },
+  dateButtonText: { flex: 1, fontFamily: fonts.sansSemibold, fontSize: 14, color: theme.colors.textMuted },
   datePickerPanel: {
     marginTop: 10,
     overflow: "hidden",
@@ -2619,7 +2665,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   recoSection: {
     marginTop: 12, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card, padding: 14, width: "100%",
+    backgroundColor: theme.colors.surface, padding: 14, width: "100%",
   },
   missingNudge: {
     flexDirection: "row", alignItems: "center", gap: 8,
@@ -2630,8 +2676,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   missingNudgeText: { flex: 1, fontSize: 12, lineHeight: 17, color: theme.colors.amber.text, fontWeight: "600" },
   recoHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   recoHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 },
-  recoTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-  recoTitleMuted: { fontSize: 13, fontWeight: "700", color: theme.colors.textSecondary, marginBottom: 8 },
+  recoTitle: { fontFamily: fonts.sansBold, fontSize: 14, color: theme.colors.text },
+  recoTitleMuted: { fontFamily: fonts.sansBold, fontSize: 13, color: theme.colors.textSecondary, marginBottom: 8 },
   recoSubtle: { fontSize: 11, color: theme.colors.textTertiary, marginBottom: 12 },
   recoSectionExtras: { marginTop: 10, backgroundColor: "transparent" },
   addAllBtn: {

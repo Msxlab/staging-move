@@ -78,8 +78,8 @@ export default async function PricingPage() {
       />
 
       <section className="container pb-4">
-        <div className="mx-auto max-w-3xl rounded-2xl border bg-card/60 p-5 text-center">
-          <p className="text-sm text-muted-foreground">
+        <div className="mx-auto max-w-3xl rounded-[22px] border border-border bg-card/60 p-6 text-center">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             LocateFlow tracks moving workflows and local services. It does not
             log into or change your accounts with any provider on your behalf —
             you complete each change yourself with guided checklists, reminders,

@@ -709,12 +709,12 @@ export default function SubscriptionsClient() {
       />
 
       {/* Top-level tabs: the day-to-day LIST vs the MRR/churn drill-down. */}
-      <div className="flex gap-2 border-b border-border">
+      <div className="flex gap-6 border-b border-border">
         {([["list", "Subscriptions"], ["analytics", "MRR & Churn"]] as const).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setView(key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition ${view === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            className={`-mb-px border-b-2 px-1 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition-colors ${view === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
           >
             {label}
           </button>
@@ -822,21 +822,21 @@ export default function SubscriptionsClient() {
             className="w-full rounded-lg border border-input bg-background pl-10 pr-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
         </div>
         <button onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${showFilters ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:bg-accent"}`}>
-          <Filter className="h-3.5 w-3.5" /> Filters {activeFilterCount > 0 && <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{activeFilterCount}</span>}
+          className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs font-medium transition-colors ${showFilters ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
+          <Filter className="h-3.5 w-3.5" /> Filters {activeFilterCount > 0 && <span className="rounded-full bg-primary px-1.5 font-mono text-[10px] font-bold text-primary-foreground">{activeFilterCount}</span>}
         </button>
         {activeFilterCount > 0 && (
-          <button onClick={() => { setFilters({ plan: "", status: "", provider: "", platform: "", accessType: "", dateFrom: "", dateTo: "" }); setPage(1); }} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent">
+          <button onClick={() => { setFilters({ plan: "", status: "", provider: "", platform: "", accessType: "", dateFrom: "", dateTo: "" }); setPage(1); }} className="flex items-center gap-1 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground">
             <X className="h-3 w-3" /> Clear
           </button>
         )}
       </div>
 
       {showFilters && (
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Plan</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Plan</label>
               <select value={filters.plan} onChange={(e) => { setFilters({ ...filters, plan: e.target.value }); setPage(1); }} className={inputCls}>
                 <option value="">All Plans</option>
                 <option value="FREE_TRIAL">Free Trial</option>
@@ -846,7 +846,7 @@ export default function SubscriptionsClient() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Provider</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Provider</label>
               <select value={filters.provider} onChange={(e) => { setFilters({ ...filters, provider: e.target.value }); setPage(1); }} className={inputCls}>
                 <option value="">All Providers</option>
                 <option value="TRIAL">Trial</option>
@@ -856,7 +856,7 @@ export default function SubscriptionsClient() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Platform</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Platform</label>
               <select value={filters.platform} onChange={(e) => { setFilters({ ...filters, platform: e.target.value }); setPage(1); }} className={inputCls}>
                 <option value="">All Platforms</option>
                 <option value="web">Web</option>
@@ -866,7 +866,7 @@ export default function SubscriptionsClient() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Access Type</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Access Type</label>
               <select value={filters.accessType} onChange={(e) => { setFilters({ ...filters, accessType: e.target.value }); setPage(1); }} className={inputCls}>
                 <option value="">All Access</option>
                 <option value="PAID">Paid</option>
@@ -876,11 +876,11 @@ export default function SubscriptionsClient() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">From Date</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">From Date</label>
               <input type="date" value={filters.dateFrom} onChange={(e) => { setFilters({ ...filters, dateFrom: e.target.value }); setPage(1); }} className={inputCls} />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">To Date</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">To Date</label>
               <input type="date" value={filters.dateTo} onChange={(e) => { setFilters({ ...filters, dateTo: e.target.value }); setPage(1); }} className={inputCls} />
             </div>
           </div>
@@ -891,19 +891,19 @@ export default function SubscriptionsClient() {
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-border">
+      <div className="overflow-x-auto overscroll-x-contain rounded-2xl border border-border">
         <table className="w-full min-w-[720px]">
           <thead className="bg-muted/50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">User</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Plan</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Source</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Recorded Health</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Trial Ends</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Period End</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Created</th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-muted-foreground">Actions</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">User</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Plan</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Source</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Recorded Health</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Trial Ends</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Period End</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Created</th>
+              <th className="px-4 py-3 text-right text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -932,16 +932,18 @@ export default function SubscriptionsClient() {
                     <p className="text-[11px] text-muted-foreground">{sub.platform || "unassigned"}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[sub.status] || "bg-muted text-muted-foreground"}`}>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[sub.status] || "bg-muted text-muted-foreground"}`}>
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
                       {sub.status}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${opsStatus.cls}`}>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${opsStatus.cls}`}>
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
                       {opsStatus.label}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                     {sub.trialEndsAt ? (
                       <span className={trialDays !== null && trialDays <= 3 ? "text-destructive font-medium" : trialDays !== null && trialDays <= 7 ? "text-tone-honey-fg" : ""}>
                         {new Date(sub.trialEndsAt).toLocaleDateString()}
@@ -949,10 +951,10 @@ export default function SubscriptionsClient() {
                       </span>
                     ) : "—"}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                     {sub.stripeCurrentPeriodEnd ? new Date(sub.stripeCurrentPeriodEnd).toLocaleDateString() : "—"}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(sub.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{new Date(sub.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => setDetail(sub)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details" aria-label="View details">
@@ -973,13 +975,13 @@ export default function SubscriptionsClient() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}</p>
+          <p className="text-xs text-muted-foreground">Showing <span className="font-mono">{(page - 1) * perPage + 1}</span>–<span className="font-mono">{Math.min(page * perPage, total)}</span> of <span className="font-mono">{total}</span></p>
           <div className="flex items-center gap-2">
-            <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50" aria-label="Previous page">
+            <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-xl border border-border bg-card p-2 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50" aria-label="Previous page">
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="px-3 text-sm text-muted-foreground">Page {page} / {totalPages}</span>
-            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50" aria-label="Next page">
+            <span className="px-3 text-sm text-muted-foreground">Page <span className="font-mono">{page}</span> / <span className="font-mono">{totalPages}</span></span>
+            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="rounded-xl border border-border bg-card p-2 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50" aria-label="Next page">
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -993,7 +995,7 @@ export default function SubscriptionsClient() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4 pb-[calc(96px+env(safe-area-inset-bottom))] sm:pb-4" role="presentation" onClick={() => setDetail(null)}>
           <div role="dialog" aria-modal="true" aria-labelledby="subscription-detail-title" className="w-full max-w-lg max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
-              <h2 id="subscription-detail-title" className="text-lg font-semibold text-foreground">Subscription Detail</h2>
+              <h2 id="subscription-detail-title" className="font-display text-xl font-bold text-foreground">Subscription Detail</h2>
               <button aria-label="Close detail" onClick={() => setDetail(null)} className="rounded-lg p-1 text-muted-foreground hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
 
@@ -1039,7 +1041,7 @@ export default function SubscriptionsClient() {
               {/* ── Lifecycle actions — each opens the step-up confirm modal ── */}
               {(isStripe || isStore) && (
                 <div className="rounded-lg border border-border p-3">
-                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lifecycle actions</p>
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Lifecycle actions</p>
                   <div className="flex flex-wrap gap-2">
                     {stripeCancellable && (
                       <>
@@ -1084,7 +1086,7 @@ export default function SubscriptionsClient() {
                     <div className="mt-3 rounded-lg border border-border/70 bg-muted/30 p-3">
                       <div className="mb-2 flex items-center gap-1.5">
                         <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
-                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Change plan</p>
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Change plan</p>
                       </div>
                       <div className="flex flex-wrap items-end gap-2">
                         <div>
@@ -1133,7 +1135,7 @@ export default function SubscriptionsClient() {
                     <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
                       <div className="mb-2 flex items-center gap-1.5">
                         <Undo2 className="h-3.5 w-3.5 text-destructive" />
-                        <p className="text-[11px] font-medium uppercase tracking-wide text-destructive">Refund</p>
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-destructive">Refund</p>
                       </div>
                       <div className="flex flex-wrap items-end gap-2">
                         <div>
@@ -1233,8 +1235,8 @@ export default function SubscriptionsClient() {
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-muted/50 p-3">
-      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+    <div className="rounded-xl bg-muted/50 p-3">
+      <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-foreground">{value}</p>
     </div>
   );
@@ -1269,7 +1271,7 @@ function InvoiceHistory({
     <div className="rounded-lg border border-border p-3">
       <div className="mb-2 flex items-center gap-1.5">
         <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Invoice &amp; payment history</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Invoice &amp; payment history</p>
       </div>
 
       {loading ? (
@@ -1291,17 +1293,18 @@ function InvoiceHistory({
               <li key={inv.maskedInvoiceId + (inv.number || "")} className="flex items-center justify-between gap-2 py-2">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="font-mono text-sm font-medium text-foreground">
                       {formatMinorAmount(displayAmount, inv.currency)}
                     </span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusCls}`}>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusCls}`}>
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
                       {inv.status || "unknown"}
                     </span>
                     {inv.refunded && (
                       <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">refunded</span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
                     {inv.number ? `${inv.number} · ` : ""}
                     {inv.created ? new Date(inv.created).toLocaleDateString() : "—"}
                   </p>
@@ -1433,11 +1436,11 @@ function AnalyticsPanel({
       />
 
       {/* MRR trend (trailing 12 months) */}
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="rounded-2xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-foreground">MRR Trend</h3>
-          <span className="text-[11px] text-muted-foreground">Trailing 12 months · estimated</span>
+          <h3 className="font-display text-base font-bold text-foreground">MRR Trend</h3>
+          <span className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Trailing 12 months · estimated</span>
         </div>
         <div className="flex h-40 items-end gap-1.5">
           {mrrTrend.map((p) => (
@@ -1447,7 +1450,7 @@ function AnalyticsPanel({
                 style={{ height: `${Math.max((p.mrr / maxTrend) * 100, 2)}%` }}
                 title={`${p.month}: ${formatUsd(p.mrr)}`}
               />
-              <span className="text-[9px] text-muted-foreground">{p.month.slice(5)}</span>
+              <span className="font-mono text-[9px] text-muted-foreground">{p.month.slice(5)}</span>
             </div>
           ))}
         </div>
@@ -1458,8 +1461,8 @@ function AnalyticsPanel({
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* New vs churned MRR */}
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">New vs Churned MRR</h3>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h3 className="mb-4 font-display text-base font-bold text-foreground">New vs Churned MRR</h3>
           <div className="space-y-4">
             {(
               [
@@ -1471,17 +1474,17 @@ function AnalyticsPanel({
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{label}</span>
                   <span className="inline-flex items-center gap-2 text-xs">
-                    <span className={`font-medium ${m.netMrr >= 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
+                    <span className={`font-mono font-medium ${m.netMrr >= 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
                       net {formatUsd(m.netMrr)}
                     </span>
                     {prev && <TrendDelta current={m.netMrr} previous={prev.netMrr} />}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-[11px]">
-                  <span className="inline-flex items-center gap-1 text-tone-sage-fg">
+                  <span className="inline-flex items-center gap-1 font-mono text-tone-sage-fg">
                     <ArrowUpRight className="h-3 w-3" /> +{formatUsd(m.newMrr)} new
                   </span>
-                  <span className="inline-flex items-center gap-1 text-destructive">
+                  <span className="inline-flex items-center gap-1 font-mono text-destructive">
                     <ArrowDownRight className="h-3 w-3" /> −{formatUsd(m.churnedMrr)} churned
                   </span>
                 </div>
@@ -1503,8 +1506,8 @@ function AnalyticsPanel({
         </div>
 
         {/* Trial → paid conversion */}
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">Trial → Paid Conversion</h3>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h3 className="mb-4 font-display text-base font-bold text-foreground">Trial → Paid Conversion</h3>
           <div className="space-y-4">
             {(
               [
@@ -1516,12 +1519,12 @@ function AnalyticsPanel({
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{label}</span>
                   <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
-                    {c.conversionRatePct}%
+                    <span className="font-mono">{c.conversionRatePct}%</span>
                     {prev && <TrendDelta current={c.conversionRatePct} previous={prev.conversionRatePct} />}
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  {c.converted} of {c.trialsStarted} trial{c.trialsStarted === 1 ? "" : "s"} converted to a paying plan
+                  <span className="font-mono">{c.converted}</span> of <span className="font-mono">{c.trialsStarted}</span> trial{c.trialsStarted === 1 ? "" : "s"} converted to a paying plan
                 </p>
                 <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
                   <div className="h-full bg-tone-cyan-fg" style={{ width: `${Math.min(c.conversionRatePct, 100)}%` }} />
@@ -1536,21 +1539,21 @@ function AnalyticsPanel({
       </div>
 
       {/* ARPU by plan */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">ARPU by Plan</h3>
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <h3 className="mb-4 font-display text-base font-bold text-foreground">ARPU by Plan</h3>
         {arpuByPlan.length === 0 ? (
           <p className="py-3 text-center text-xs text-muted-foreground">No active subscriptions to break down.</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border">
+          <div className="overflow-hidden rounded-xl border border-border">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase text-muted-foreground">Plan</th>
-                  <th className="px-4 py-2 text-right text-[11px] font-medium uppercase text-muted-foreground">Active</th>
-                  <th className="px-4 py-2 text-right text-[11px] font-medium uppercase text-muted-foreground">Paying</th>
-                  <th className="px-4 py-2 text-right text-[11px] font-medium uppercase text-muted-foreground">MRR</th>
-                  <th className="px-4 py-2 text-right text-[11px] font-medium uppercase text-muted-foreground">ARPU</th>
-                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase text-muted-foreground">Share</th>
+                  <th className="px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Plan</th>
+                  <th className="px-4 py-2 text-right text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Active</th>
+                  <th className="px-4 py-2 text-right text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Paying</th>
+                  <th className="px-4 py-2 text-right text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">MRR</th>
+                  <th className="px-4 py-2 text-right text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">ARPU</th>
+                  <th className="px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Share</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -1561,10 +1564,10 @@ function AnalyticsPanel({
                         {row.plan.replace("_", " ")}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-right text-xs text-foreground">{row.activeCount}</td>
-                    <td className="px-4 py-2 text-right text-xs text-foreground">{row.payingCount}</td>
-                    <td className="px-4 py-2 text-right text-xs font-medium text-foreground">{formatUsd(row.mrr)}</td>
-                    <td className="px-4 py-2 text-right text-xs font-medium text-foreground">{formatUsd(row.arpu)}</td>
+                    <td className="px-4 py-2 text-right font-mono text-xs text-foreground">{row.activeCount}</td>
+                    <td className="px-4 py-2 text-right font-mono text-xs text-foreground">{row.payingCount}</td>
+                    <td className="px-4 py-2 text-right font-mono text-xs font-medium text-foreground">{formatUsd(row.mrr)}</td>
+                    <td className="px-4 py-2 text-right font-mono text-xs font-medium text-foreground">{formatUsd(row.arpu)}</td>
                     <td className="px-4 py-2">
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                         <div className="h-full bg-tone-sky-fg" style={{ width: `${(row.mrr / maxPlanMrr) * 100}%` }} />

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -23,11 +23,12 @@ import {
   type LucideIcon,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 import {
   buildUpcomingFeed,
   daysUntil,
@@ -99,6 +100,11 @@ function feedPresentation(type: string, theme: Theme): { Icon: LucideIcon; tint:
     default: return { Icon: Bell, tint: theme.colors.textTertiary };
   }
 }
+
+// Urgency buckets — mirrors the design's grouped sections (Overdue / This week /
+// Upcoming). Each bucket carries the dot/accent tone used to colour its header
+// and the left accent bar on every card inside it.
+type Bucket = "overdue" | "week" | "soon";
 
 export default function RemindersScreen() {
   const theme = useAppTheme();
@@ -229,13 +235,78 @@ export default function RemindersScreen() {
   const reminderCount = rows.length - renewalCount;
   const nextRow = rows[0] || null;
 
+  // Bucket the date-sorted timeline into the design's three urgency groups.
+  // Order matches the design: Overdue → This week → Upcoming.
+  const bucketOf = (days: number): Bucket =>
+    days < 0 ? "overdue" : days <= 7 ? "week" : "soon";
+
+  const bucketMeta: Record<Bucket, { label: string; tone: string }> = {
+    overdue: { label: t("reminders.overdue", { defaultValue: "Overdue" }), tone: theme.colors.error },
+    week: { label: t("reminders.soon", { defaultValue: "Soon" }), tone: theme.colors.amberSolid },
+    soon: { label: t("reminders.heroTitle", { defaultValue: "Your upcoming timeline" }), tone: theme.colors.teal },
+  };
+
+  const groups = (["overdue", "week", "soon"] as const)
+    .map((b) => ({ bucket: b, items: rows.filter((row) => bucketOf(row.days) === b) }))
+    .filter((g) => g.items.length > 0);
+
+  const renderRow = (row: TimelineRow) => {
+    const Icon = row.Icon;
+    const urgent = row.days <= 7;
+    const catLabel =
+      row.kind === "renewal"
+        ? (row.source === "contract"
+            ? t("reminders.contractLabel", { defaultValue: "Contract" })
+            : t("reminders.renewalLabel", { defaultValue: "Renewal" }))
+        : t("reminders.reminderLabel", { defaultValue: "Reminder" });
+    return (
+      <MoveCard
+        key={row.key}
+        onPress={() => handleRowPress(row)}
+        accent={urgent}
+        padding={0}
+        radius={16}
+        style={styles.rowCard}
+      >
+        <View style={[styles.rowAccent, { backgroundColor: row.tint }]} />
+        <View style={styles.rowInner}>
+          <View style={[styles.rowIcon, { backgroundColor: row.tint + "22" }]}>
+            <Icon size={18} color={row.tint} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={styles.rowTop}>
+              <Text style={styles.rowTitle} numberOfLines={1}>{row.title}</Text>
+              <Text style={[styles.rowWhen, { color: row.tint }]}>{relativeLabel(row.days, row.date)}</Text>
+            </View>
+            <Text style={styles.rowSub} numberOfLines={1}>
+              {t("reminders.dueOn", {
+                defaultValue: "Due {{date}}",
+                date: row.date.toLocaleDateString(dateLocale, { month: "short", day: "numeric" }),
+              })}
+              {row.subtitle ? ` · ${row.subtitle}` : ""}
+            </Text>
+          </View>
+          <Pill label={catLabel} tone="muted" style={styles.rowPill} />
+          <ChevronRight size={16} color={theme.colors.faint} />
+        </View>
+      </MoveCard>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t("common.back")}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>{t("reminders.title", { defaultValue: "Reminders" })}</Text>
+        <View style={styles.headerTitleWrap}>
+          <Text style={styles.title}>{t("reminders.title", { defaultValue: "Reminders" })}</Text>
+          {!loading && rows.length > 0 ? (
+            <Text style={styles.headerMeta}>
+              {t("reminders.intro", { count: rows.length, defaultValue: `${rows.length} coming up` })}
+            </Text>
+          ) : null}
+        </View>
         <View style={{ width: 44 }} />
       </View>
 
@@ -254,27 +325,29 @@ export default function RemindersScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
         >
           {rows.length > 0 ? (
-            <View style={styles.hero}>
-              <View style={styles.heroIcon}>
-                <CalendarClock size={22} color={theme.colors.primary} />
+            <HeroCard style={styles.hero} padding={18}>
+              <View style={styles.heroRow}>
+                <View style={styles.heroIcon}>
+                  <CalendarClock size={22} color={theme.colors.primary} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.heroKicker}>{t("reminders.heroKicker", { defaultValue: "REMINDER COMMAND" })}</Text>
+                  <Text style={styles.heroTitle} numberOfLines={2}>
+                    {nextRow
+                      ? t("reminders.heroTitleNext", {
+                          defaultValue: "Next: {{title}}",
+                          title: nextRow.title,
+                        })
+                      : t("reminders.heroTitle", { defaultValue: "Your upcoming timeline" })}
+                  </Text>
+                  <Text style={styles.heroSub} numberOfLines={2}>
+                    {nextRow
+                      ? `${relativeLabel(nextRow.days, nextRow.date)} · ${nextRow.date.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}`
+                      : t("reminders.heroDescription", { defaultValue: "Renewals and reminders stay grouped by urgency." })}
+                  </Text>
+                </View>
               </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.heroKicker}>{t("reminders.heroKicker", { defaultValue: "REMINDER COMMAND" })}</Text>
-                <Text style={styles.heroTitle}>
-                  {nextRow
-                    ? t("reminders.heroTitleNext", {
-                        defaultValue: "Next: {{title}}",
-                        title: nextRow.title,
-                      })
-                    : t("reminders.heroTitle", { defaultValue: "Your upcoming timeline" })}
-                </Text>
-                <Text style={styles.heroSub} numberOfLines={2}>
-                  {nextRow
-                    ? `${relativeLabel(nextRow.days, nextRow.date)} - ${nextRow.date.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}`
-                    : t("reminders.heroDescription", { defaultValue: "Renewals and reminders stay grouped by urgency." })}
-                </Text>
-              </View>
-            </View>
+            </HeroCard>
           ) : null}
 
           {error && rows.length === 0 ? (
@@ -295,9 +368,9 @@ export default function RemindersScreen() {
               <View style={styles.statGrid}>
                 {[
                   { label: t("reminders.overdue", { defaultValue: "Overdue" }), value: overdueCount, tone: theme.colors.error, Icon: AlertTriangle },
-                  { label: t("reminders.soon", { defaultValue: "Soon" }), value: soonCount, tone: theme.colors.amber.text, Icon: Clock },
+                  { label: t("reminders.soon", { defaultValue: "Soon" }), value: soonCount, tone: theme.colors.amberSolid, Icon: Clock },
                   { label: t("reminders.renewalLabel", { defaultValue: "Renewal" }), value: renewalCount, tone: theme.colors.primary, Icon: RefreshCw },
-                  { label: t("reminders.reminderLabel", { defaultValue: "Reminder" }), value: reminderCount, tone: theme.colors.emerald.text, Icon: Bell },
+                  { label: t("reminders.reminderLabel", { defaultValue: "Reminder" }), value: reminderCount, tone: theme.colors.green, Icon: Bell },
                 ].map(({ label, value, tone, Icon }) => (
                   <View key={label} style={styles.statChip}>
                     <Icon size={13} color={tone} />
@@ -306,43 +379,22 @@ export default function RemindersScreen() {
                   </View>
                 ))}
               </View>
-              <Text style={styles.intro}>
-                {t("reminders.intro", { count: rows.length, defaultValue: `${rows.length} coming up` })}
-              </Text>
-              <View style={styles.list}>
-                {rows.map((row) => {
-                  const Icon = row.Icon;
-                  const urgent = row.days <= 7;
-                  return (
-                    <TouchableOpacity
-                      key={row.key}
-                      style={[styles.row, urgent && { borderColor: row.tint + "44" }]}
-                      onPress={() => handleRowPress(row)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[styles.rowIcon, { backgroundColor: row.tint + "22" }]}>
-                        <Icon size={18} color={row.tint} />
-                      </View>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <View style={styles.rowTop}>
-                          <Text style={styles.rowTitle} numberOfLines={1}>{row.title}</Text>
-                          <Text style={[styles.rowWhen, { color: row.tint }]}>{relativeLabel(row.days, row.date)}</Text>
-                        </View>
-                        <Text style={styles.rowSub} numberOfLines={1}>
-                          {row.kind === "renewal"
-                            ? (row.source === "contract"
-                                ? t("reminders.contractLabel", { defaultValue: "Contract" })
-                                : t("reminders.renewalLabel", { defaultValue: "Renewal" }))
-                            : t("reminders.reminderLabel", { defaultValue: "Reminder" })}
-                          {row.subtitle ? ` · ${row.subtitle}` : ""}
-                          {` · ${row.date.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}`}
-                        </Text>
-                      </View>
-                      <ChevronRight size={16} color={theme.colors.textMuted} />
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+
+              {groups.map(({ bucket, items }) => {
+                const meta = bucketMeta[bucket];
+                return (
+                  <View key={bucket} style={styles.group}>
+                    <View style={styles.groupHeader}>
+                      <View style={[styles.groupDot, { backgroundColor: meta.tone }]} />
+                      <SectionHeader label={meta.label} style={styles.groupLabel} />
+                      <Text style={styles.groupCount}>{items.length}</Text>
+                    </View>
+                    <View style={styles.list}>
+                      {items.map(renderRow)}
+                    </View>
+                  </View>
+                );
+              })}
             </>
           )}
         </ScrollView>
@@ -355,20 +407,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  headerTitleWrap: { flex: 1, alignItems: "center" },
+  title: { fontSize: 25, fontFamily: fonts.serifBold, color: theme.colors.text },
+  headerMeta: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 2 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 4 },
-  hero: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    padding: 16,
-    borderRadius: theme.radius["2xl"],
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.border,
-    marginBottom: 12,
-    ...theme.shadow.glow,
-  },
+  hero: { marginBottom: 14 },
+  heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   heroIcon: {
     width: 48,
     height: 48,
@@ -379,10 +423,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.primary + "30",
   },
-  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 1, color: theme.colors.textTertiary },
-  heroTitle: { marginTop: 3, fontSize: 18, fontWeight: "800", color: theme.colors.text },
-  heroSub: { marginTop: 4, fontSize: 12, color: theme.colors.textTertiary, lineHeight: 17 },
-  statGrid: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  heroKicker: { fontSize: 10, fontFamily: fonts.sansBold, letterSpacing: 1.2, color: theme.colors.faint, textTransform: "uppercase" },
+  heroTitle: { marginTop: 3, fontSize: 18, fontFamily: fonts.serifBold, color: theme.colors.text },
+  heroSub: { marginTop: 4, fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, lineHeight: 17 },
+  statGrid: { flexDirection: "row", gap: 8, marginBottom: 18 },
   statChip: {
     flex: 1,
     minWidth: 0,
@@ -395,23 +439,23 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 4,
   },
-  statValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text, fontVariant: ["tabular-nums"] },
-  statLabel: { maxWidth: "100%", fontSize: 9.5, color: theme.colors.textTertiary },
-  intro: { fontSize: 12, color: theme.colors.textMuted, marginBottom: 12, marginLeft: 4 },
-  list: { gap: 8 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
-  },
+  statValue: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text, fontVariant: ["tabular-nums"] },
+  statLabel: { maxWidth: "100%", fontSize: 9.5, fontFamily: fonts.sans, color: theme.colors.dim },
+  group: { marginBottom: 18 },
+  // Coloured bullet + uppercase label + faint count, mirroring the design's
+  // group header row.
+  groupHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
+  groupDot: { width: 7, height: 7, borderRadius: 4 },
+  groupLabel: { flexShrink: 1 },
+  groupCount: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.faint },
+  list: { gap: 9 },
+  rowCard: { position: "relative", overflow: "hidden" },
+  rowAccent: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3 },
+  rowInner: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   rowIcon: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   rowTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
-  rowTitle: { flex: 1, fontSize: 14, fontWeight: "700", color: theme.colors.text },
-  rowWhen: { fontSize: 12, fontWeight: "700", flexShrink: 0 },
-  rowSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  rowTitle: { flex: 1, fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  rowWhen: { fontSize: 12, fontFamily: fonts.sansBold, flexShrink: 0 },
+  rowSub: { fontSize: 11.5, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 2 },
+  rowPill: { flexShrink: 0 },
 });

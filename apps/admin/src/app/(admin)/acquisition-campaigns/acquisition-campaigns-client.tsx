@@ -56,7 +56,7 @@ type PriceValidationFeedback = {
   };
 } | null;
 
-const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+const inputCls = "w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 // Every campaign mutation (create/edit/activate-status-change/duplicate/delete)
 // binds or rewrites a LIVE Stripe price + public pricing copy, so each is gated
@@ -213,29 +213,29 @@ function SlotCard({
   const live = Boolean(campaign);
   return (
     <div
-      className={`rounded-xl border p-5 ${
+      className={`rounded-2xl border p-5 ${
         live ? "border-tone-emerald-br bg-tone-emerald-bg" : "border-tone-honey-br bg-tone-honey-bg"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
-          <div className="mt-1 flex items-center gap-2">
-            {live ? (
-              <CheckCircle2 className="h-5 w-5 text-tone-emerald-fg" aria-hidden="true" />
-            ) : (
-              <AlertTriangle className="h-5 w-5 text-tone-honey-fg" aria-hidden="true" />
-            )}
-            <h3 className="text-base font-semibold text-foreground">
+          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${live ? "bg-tone-emerald-bg text-tone-emerald-fg" : "bg-tone-honey-bg text-tone-honey-fg"}`}>
+              {live ? (
+                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
               {live ? "Live" : "Empty"}
-            </h3>
+            </span>
           </div>
         </div>
         {live && campaign ? (
           <button
             type="button"
             onClick={() => onEdit(campaign)}
-            className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-accent"
+            className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <Pencil className="h-3.5 w-3.5" /> Edit
           </button>
@@ -243,7 +243,7 @@ function SlotCard({
           <button
             type="button"
             onClick={onCreate}
-            className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+            className="inline-flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <Plus className="h-3.5 w-3.5" /> {createLabel}
           </button>
@@ -252,9 +252,9 @@ function SlotCard({
       <p className="mt-3 text-xs text-muted-foreground">{description}</p>
       {live && campaign ? (
         <div className="mt-3 space-y-1 text-sm">
-          <p className="font-medium text-foreground">{campaign.name}</p>
+          <p className="font-display text-base font-bold text-foreground">{campaign.name}</p>
           <p className="text-xs text-muted-foreground">
-            Code: <span className="font-mono">{campaign.code}</span>
+            Code: <span className="font-mono text-foreground">{campaign.code}</span>
             {campaign.displayPriceLabel ? ` · ${campaign.displayPriceLabel}` : ""}
             {campaign.accessType === "FREE_TRIAL" && campaign.trialDays ? ` · ${campaign.trialDays}-day trial` : ""}
           </p>
@@ -263,7 +263,7 @@ function SlotCard({
           ) : null}
           {campaign.endsAt ? (
             <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              <Calendar className="h-3 w-3" /> Ends {new Date(campaign.endsAt).toLocaleDateString()}
+              <Calendar className="h-3 w-3" /> Ends <span className="font-mono">{new Date(campaign.endsAt).toLocaleDateString()}</span>
             </p>
           ) : null}
         </div>
@@ -635,11 +635,11 @@ export default function AcquisitionCampaignsClient() {
       />
 
       {slotConflicts.length > 0 ? (
-        <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 text-sm">
-          <div className="flex items-start gap-2">
+        <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5 text-sm">
+          <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-tone-honey-fg" aria-hidden="true" />
             <div>
-              <p className="font-medium text-foreground">Multiple active campaigns detected</p>
+              <p className="font-display text-base font-bold text-foreground">Multiple active campaigns detected</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 The public site picks the most recently updated one in each slot. Pause or end the
                 duplicates so the live offer is unambiguous.
@@ -648,7 +648,7 @@ export default function AcquisitionCampaignsClient() {
                 {slotConflicts.map((conflict) => (
                   <li key={conflict.key}>
                     <span className="font-mono text-[11px]">{conflict.key.replace(":", " · ")}</span>:{" "}
-                    {conflict.campaigns.map((c) => c.code).join(", ")}
+                    <span className="font-mono">{conflict.campaigns.map((c) => c.code).join(", ")}</span>
                   </li>
                 ))}
               </ul>
@@ -679,10 +679,10 @@ export default function AcquisitionCampaignsClient() {
       </div>
 
       {!formVisible ? (
-        <div className="rounded-xl border border-dashed border-border bg-card/40 p-5">
+        <div className="rounded-2xl border border-dashed border-border bg-card/40 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-foreground">Need another campaign?</p>
+              <p className="font-display text-base font-bold text-foreground">Need another campaign?</p>
               <p className="text-xs text-muted-foreground">
                 Drafts can coexist with the active campaign. Activate when you&apos;re ready to publish.
               </p>
@@ -691,28 +691,28 @@ export default function AcquisitionCampaignsClient() {
               <button
                 type="button"
                 onClick={() => startCreate(annualTrialPreset)}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent"
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <Plus className="h-3.5 w-3.5" /> New Annual Trial
               </button>
               <button
                 type="button"
                 onClick={() => startCreate(monthlyPaidPreset)}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent"
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <Plus className="h-3.5 w-3.5" /> New Monthly Paid
               </button>
               <button
                 type="button"
                 onClick={() => startCreate(freeAccessPreset)}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent"
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <Plus className="h-3.5 w-3.5" /> New Free Access
               </button>
               <button
                 type="button"
                 onClick={() => startCreate(emptyForm)}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent"
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <Plus className="h-3.5 w-3.5" /> Blank Campaign
               </button>
@@ -722,11 +722,11 @@ export default function AcquisitionCampaignsClient() {
       ) : null}
 
       {formVisible ? (
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="rounded-2xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center gap-2">
           <Ticket className="h-5 w-5 text-primary" />
           <div>
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="font-display text-lg font-bold text-foreground">
               {editingCampaign ? "Edit Campaign" : "Create Campaign"}
             </h2>
             {editingCampaign ? (
@@ -742,15 +742,15 @@ export default function AcquisitionCampaignsClient() {
         </div>
         <div className="grid gap-3 md:grid-cols-4">
           <div className="md:col-span-2">
-            <label className="mb-1 block text-xs text-muted-foreground">Name</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Name</label>
             <input className={inputCls} value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Individual Annual - Spring" />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Code</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Code</label>
             <input className={inputCls} value={form.code} onChange={(event) => update("code", event.target.value)} placeholder="SPRING90" />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Access Type</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Access Type</label>
             <select className={inputCls} value={form.accessType} onChange={(event) => updateAccessType(event.target.value)}>
               <option value="FREE_TRIAL">Free Trial</option>
               <option value="FREE_ACCESS">Free Access</option>
@@ -760,18 +760,18 @@ export default function AcquisitionCampaignsClient() {
           {form.accessType === "FREE_TRIAL" ? (
             <>
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Trial Days</label>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Trial Days</label>
                 <input className={inputCls} type="number" min="1" value={form.trialDays} onChange={(event) => update("trialDays", event.target.value)} />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Stripe Price ID</label>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Stripe Price ID</label>
                 <input className={inputCls} value={form.stripePriceId} onChange={(event) => update("stripePriceId", event.target.value)} placeholder="price_..." />
               </div>
             </>
           ) : form.accessType === "PAID" ? (
             <>
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Billing Interval</label>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Billing Interval</label>
                 <select className={inputCls} value={form.billingInterval} onChange={(event) => updateBillingInterval(event.target.value)}>
                   <option value="MONTH">Monthly</option>
                   {form.billingInterval === "YEAR" ? <option value="YEAR">Yearly (legacy)</option> : null}
@@ -783,18 +783,18 @@ export default function AcquisitionCampaignsClient() {
                 ) : null}
               </div>
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Stripe Price ID</label>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Stripe Price ID</label>
                 <input className={inputCls} value={form.stripePriceId} onChange={(event) => update("stripePriceId", event.target.value)} placeholder="price_..." />
               </div>
             </>
           ) : (
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Free Access Days</label>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Free Access Days</label>
               <input className={inputCls} type="number" min="1" value={form.freeAccessDays} onChange={(event) => update("freeAccessDays", event.target.value)} />
             </div>
           )}
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Display Price</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Display Price</label>
             <input
               className={inputCls}
               value={form.displayPriceLabel}
@@ -806,19 +806,19 @@ export default function AcquisitionCampaignsClient() {
             </p>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Max Redemptions</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Max Redemptions</label>
             <input className={inputCls} type="number" min="1" value={form.maxRedemptions} onChange={(event) => update("maxRedemptions", event.target.value)} placeholder="Optional" />
           </div>
           <div className="md:col-span-2">
-            <label className="mb-1 block text-xs text-muted-foreground">Public Headline</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Public Headline</label>
             <input className={inputCls} value={form.publicHeadline} onChange={(event) => update("publicHeadline", event.target.value)} />
           </div>
           <div className="md:col-span-2">
-            <label className="mb-1 block text-xs text-muted-foreground">Public Subheadline</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Public Subheadline</label>
             <input className={inputCls} value={form.publicSubheadline} onChange={(event) => update("publicSubheadline", event.target.value)} />
           </div>
           <div className="md:col-span-4">
-            <label className="mb-1 block text-xs text-muted-foreground">Checkout Disclosure Copy</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Checkout Disclosure Copy</label>
             <textarea className={inputCls} rows={2} value={form.checkoutDisclosureCopy} onChange={(event) => update("checkoutDisclosureCopy", event.target.value)} />
           </div>
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -826,21 +826,21 @@ export default function AcquisitionCampaignsClient() {
             New users only
           </label>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Starts At</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Starts At</label>
             <input className={inputCls} type="datetime-local" value={form.startsAt} onChange={(event) => update("startsAt", event.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Ends At</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Ends At</label>
             <input className={inputCls} type="datetime-local" value={form.endsAt} onChange={(event) => update("endsAt", event.target.value)} />
           </div>
           <div className="md:col-span-4">
-            <label className="mb-1 block text-xs text-muted-foreground">Internal Notes</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Internal Notes</label>
             <textarea className={inputCls} rows={2} value={form.internalNotes} onChange={(event) => update("internalNotes", event.target.value)} placeholder="Admin-only notes" />
           </div>
         </div>
         {priceValidation ? (
           <div
-            className={`mt-4 flex flex-wrap items-start justify-between gap-3 rounded-lg border px-3 py-2 text-sm ${
+            className={`mt-4 flex flex-wrap items-start justify-between gap-3 rounded-xl border px-3 py-2 text-sm ${
               priceValidation.error
                 ? "border-destructive/30 bg-destructive/10 text-destructive"
                 : priceValidation.warning
@@ -862,7 +862,7 @@ export default function AcquisitionCampaignsClient() {
                 onClick={() =>
                   update("displayPriceLabel", priceValidation.canonicalDisplayPriceLabel || "")
                 }
-                className="shrink-0 rounded border border-current px-2 py-1 text-xs font-medium hover:bg-foreground/5"
+                className="shrink-0 rounded-lg border border-current px-2 py-1 text-xs font-medium transition-colors hover:bg-foreground/5"
               >
                 Use {priceValidation.canonicalDisplayPriceLabel}
               </button>
@@ -874,7 +874,7 @@ export default function AcquisitionCampaignsClient() {
             type="button"
             onClick={() => submitCampaignForm()}
             disabled={mutationBusy}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
           >
             {editingCampaign ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             {editingCampaign ? "Save Changes" : "Create Draft"}
@@ -884,7 +884,7 @@ export default function AcquisitionCampaignsClient() {
               type="button"
               onClick={() => void validatePriceOnly()}
               disabled={validatingPrice || mutationBusy || !form.stripePriceId.trim()}
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-60"
               title={!form.stripePriceId.trim() ? "Enter a Stripe Price ID first" : "Validate against Stripe without saving"}
             >
               <RefreshCw className={`h-4 w-4 ${validatingPrice ? "animate-spin" : ""}`} />
@@ -895,7 +895,7 @@ export default function AcquisitionCampaignsClient() {
             type="button"
             onClick={resetForm}
             disabled={mutationBusy}
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-60"
           >
             <X className="h-4 w-4" />
             {editingCampaign ? "Cancel Edit" : "Close"}
@@ -904,17 +904,17 @@ export default function AcquisitionCampaignsClient() {
       </div>
       ) : null}
 
-      <div className="rounded-xl border border-border bg-card">
+      <div className="rounded-2xl border border-border bg-card">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <h2 className="font-semibold text-foreground">All Campaigns</h2>
+            <h2 className="font-display text-base font-bold text-foreground">All Campaigns</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Drafts, paused, and ended campaigns live here. Activate to publish to the matching slot.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              className="rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
               value={filterStatus}
               onChange={(event) => setFilterStatus(event.target.value as typeof filterStatus)}
               aria-label="Filter by status"
@@ -926,7 +926,7 @@ export default function AcquisitionCampaignsClient() {
               <option value="ENDED">Ended</option>
             </select>
             <select
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              className="rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
               value={filterAccessType}
               onChange={(event) => setFilterAccessType(event.target.value as typeof filterAccessType)}
               aria-label="Filter by access type"
@@ -949,7 +949,7 @@ export default function AcquisitionCampaignsClient() {
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
                 placeholder="Search name, code, headline..."
-                className="w-56 rounded-md border border-border bg-background py-1 pl-7 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-56 rounded-xl border border-border bg-background py-1.5 pl-7 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </form>
           </div>
@@ -970,9 +970,12 @@ export default function AcquisitionCampaignsClient() {
                 <div key={campaign.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_auto]">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-foreground">{campaign.name}</h3>
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{campaign.code}</span>
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">{campaign.status}</span>
+                      <h3 className="font-display text-base font-bold text-foreground">{campaign.name}</h3>
+                      <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground">{campaign.code}</span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+                        {campaign.status}
+                      </span>
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{campaign.accessType.replace("_", " ")}</span>
                     </div>
                     <p className="mt-2 text-sm text-muted-foreground">{campaign.publicHeadline}</p>
@@ -986,11 +989,11 @@ export default function AcquisitionCampaignsClient() {
                             : `Free Access: ${campaign.freeAccessDays || 0} days`}
                       </span>
                       <span>Payment method: {campaign.requiresPaymentMethod ? "Required" : "Not required"}</span>
-                      <span>Redemptions: {campaign.redemptionCount}{campaign.maxRedemptions ? ` / ${campaign.maxRedemptions}` : ""}</span>
+                      <span>Redemptions: <span className="font-mono text-foreground">{campaign.redemptionCount}{campaign.maxRedemptions ? ` / ${campaign.maxRedemptions}` : ""}</span></span>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                       {creatorLabel ? <span>Created by {creatorLabel}</span> : null}
-                      {updatedAt ? <span>Updated {updatedAt.toLocaleString()}</span> : null}
+                      {updatedAt ? <span>Updated <span className="font-mono">{updatedAt.toLocaleString()}</span></span> : null}
                     </div>
                     {campaign.redemptions?.length ? (
                       <div className="mt-3 text-xs text-muted-foreground">
@@ -999,32 +1002,32 @@ export default function AcquisitionCampaignsClient() {
                     ) : null}
                   </div>
                   <div className="flex flex-wrap items-start gap-2 lg:justify-end">
-                    <button onClick={() => startEditing(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                    <button onClick={() => startEditing(campaign)} className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                       <Pencil className="h-3.5 w-3.5" /> Edit
                     </button>
                     {campaign.status !== "ACTIVE" ? (
-                      <button onClick={() => changeCampaignStatus(campaign, "ACTIVE")} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                      <button onClick={() => changeCampaignStatus(campaign, "ACTIVE")} className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                         <Play className="h-3.5 w-3.5" /> Activate
                       </button>
                     ) : (
-                      <button onClick={() => changeCampaignStatus(campaign, "PAUSED")} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                      <button onClick={() => changeCampaignStatus(campaign, "PAUSED")} className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                         <Pause className="h-3.5 w-3.5" /> Pause
                       </button>
                     )}
-                    <button onClick={() => changeCampaignStatus(campaign, "ENDED")} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                    <button onClick={() => changeCampaignStatus(campaign, "ENDED")} className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                       <Square className="h-3.5 w-3.5" /> End
                     </button>
-                    <button onClick={() => duplicateCampaign(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                    <button onClick={() => duplicateCampaign(campaign)} className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                       <Copy className="h-3.5 w-3.5" /> Duplicate
                     </button>
-                    <button onClick={() => void loadRedemptions(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                    <button onClick={() => void loadRedemptions(campaign)} className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                       <BarChart3 className="h-3.5 w-3.5" /> Redemptions
                     </button>
                     <button
                       onClick={() => requestDeleteCampaign(campaign)}
                       disabled={campaign.redemptionCount > 0}
                       title={campaign.redemptionCount > 0 ? "End this campaign — it has redemptions on record." : "Delete draft / unused campaign"}
-                      className="inline-flex items-center gap-1 rounded-lg border border-destructive/30 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                      className="inline-flex items-center gap-1 rounded-xl border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Delete
                     </button>
@@ -1038,20 +1041,20 @@ export default function AcquisitionCampaignsClient() {
         {total > PAGE_SIZE ? (
           <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs text-muted-foreground">
             <span>
-              Page {page} of {Math.max(1, Math.ceil(total / PAGE_SIZE))} · {total} campaigns
+              Page <span className="font-mono text-foreground">{page}</span> of <span className="font-mono text-foreground">{Math.max(1, Math.ceil(total / PAGE_SIZE))}</span> · <span className="font-mono text-foreground">{total}</span> campaigns
             </span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={page <= 1 || loading}
-                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 font-medium transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent"
               >
                 <ChevronLeft className="h-3 w-3" /> Prev
               </button>
               <button
                 onClick={() => setPage((current) => current + 1)}
                 disabled={page * PAGE_SIZE >= total || loading}
-                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 font-medium transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent"
               >
                 Next <ChevronRight className="h-3 w-3" />
               </button>
@@ -1073,14 +1076,14 @@ export default function AcquisitionCampaignsClient() {
           <div className="flex h-full w-full max-w-xl flex-col border-l border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <div>
-                <h3 id="redemptions-title" className="font-semibold text-foreground">Redemptions</h3>
+                <h3 id="redemptions-title" className="font-display text-base font-bold text-foreground">Redemptions</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {redemptionsFor.campaign.name} · <span className="font-mono">{redemptionsFor.campaign.code}</span>
                 </p>
               </div>
               <button
                 onClick={() => setRedemptionsFor(null)}
-                className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="rounded-xl border border-border p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 aria-label="Close redemptions panel"
               >
                 <X className="h-4 w-4" />
@@ -1096,7 +1099,7 @@ export default function AcquisitionCampaignsClient() {
                   {redemptionsFor.rows.map((row) => {
                     const fullName = [row.user?.firstName, row.user?.lastName].filter(Boolean).join(" ");
                     return (
-                      <li key={row.id} className="rounded-lg border border-border p-3 text-xs">
+                      <li key={row.id} className="rounded-xl border border-border p-3 text-xs">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div>
                             <p className="font-medium text-foreground">
@@ -1106,16 +1109,19 @@ export default function AcquisitionCampaignsClient() {
                               <p className="text-muted-foreground">{row.user.email}</p>
                             ) : null}
                           </div>
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">{row.status}</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+                            {row.status}
+                          </span>
                         </div>
                         <div className="mt-2 grid grid-cols-2 gap-1 text-muted-foreground">
                           <span>Access: {row.accessType.replace("_", " ")}</span>
-                          <span>Redeemed: {new Date(row.createdAt).toLocaleString()}</span>
+                          <span>Redeemed: <span className="font-mono">{new Date(row.createdAt).toLocaleString()}</span></span>
                           {row.subscription?.trialEndsAt ? (
-                            <span>Trial ends: {new Date(row.subscription.trialEndsAt).toLocaleDateString()}</span>
+                            <span>Trial ends: <span className="font-mono">{new Date(row.subscription.trialEndsAt).toLocaleDateString()}</span></span>
                           ) : null}
                           {row.subscription?.freeAccessEndsAt ? (
-                            <span>Free Access ends: {new Date(row.subscription.freeAccessEndsAt).toLocaleDateString()}</span>
+                            <span>Free Access ends: <span className="font-mono">{new Date(row.subscription.freeAccessEndsAt).toLocaleDateString()}</span></span>
                           ) : null}
                         </div>
                       </li>

@@ -10,13 +10,15 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Link2, ExternalLink, Trash2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { openWebUrl } from "@/lib/in-app-browser";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 
 interface Consent {
   id: string;
@@ -145,13 +147,13 @@ export default function ConnectionsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.hero}>
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <Link2 size={20} color={theme.colors.primary} />
             </View>
             <View style={styles.heroCopy}>
-              <Text style={styles.heroKicker}>PARTNER SYNC</Text>
+              <Text style={styles.heroKicker}>{t("connections.kicker", { defaultValue: "PARTNER SYNC" })}</Text>
               <Text style={styles.heroTitle}>{t("connections.title", "Connections")}</Text>
               <Text style={styles.heroSub}>
                 {t(
@@ -164,38 +166,42 @@ export default function ConnectionsScreen() {
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{connectedCount}</Text>
-              <Text style={styles.heroStatLabel}>connected</Text>
+              <Text style={styles.heroStatLabel}>{t("connections.stat_connected", { defaultValue: "connected" })}</Text>
             </View>
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{connectable.length}</Text>
-              <Text style={styles.heroStatLabel}>available</Text>
+              <Text style={styles.heroStatLabel}>{t("connections.stat_available", { defaultValue: "available" })}</Text>
             </View>
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{apiSync ? "On" : "Plan"}</Text>
-              <Text style={styles.heroStatLabel}>auto sync</Text>
+              <Text style={styles.heroStatValue}>
+                {apiSync
+                  ? t("connections.stat_on", { defaultValue: "On" })
+                  : t("connections.stat_plan", { defaultValue: "Plan" })}
+              </Text>
+              <Text style={styles.heroStatLabel}>{t("connections.stat_autoSync", { defaultValue: "auto sync" })}</Text>
             </View>
           </View>
-        </View>
+        </HeroCard>
 
         {consents.length > 0 && (
           <View style={styles.section}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t("connections.connected", "Connected")}</Text>
-              <TouchableOpacity onPress={syncNow} disabled={syncing} style={styles.connectBtn} activeOpacity={0.7}>
+            <View style={styles.sectionRow}>
+              <SectionHeader label={t("connections.connected", "Connected")} style={styles.sectionHeader} />
+              <TouchableOpacity onPress={syncNow} disabled={syncing} style={styles.syncBtn} activeOpacity={0.85}>
                 {syncing ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
                 ) : (
-                  <Text style={styles.connectBtnText}>{t("connections.syncNow", { defaultValue: "Sync now" })}</Text>
+                  <Text style={styles.syncBtnText}>{t("connections.syncNow", { defaultValue: "Sync now" })}</Text>
                 )}
               </TouchableOpacity>
             </View>
-            <View style={styles.card}>
+            <MoveCard padding={0} radius={theme.radius.xl}>
               {consents.map((c, i) => (
                 <View key={c.id} style={[styles.row, i < consents.length - 1 && styles.rowBorder]}>
                   <View style={styles.rowIcon}>
                     <Link2 size={18} color={theme.colors.primary} />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.rowLabel}>{(c.connectorKey || "").toUpperCase()}</Text>
                     <Text style={styles.rowDesc}>{statusLabel(c.status, t)}</Text>
                   </View>
@@ -205,23 +211,23 @@ export default function ConnectionsScreen() {
                     style={styles.iconBtn}
                   >
                     {busyKey === c.connectorKey ? (
-                      <ActivityIndicator size="small" color={theme.colors.textTertiary} />
+                      <ActivityIndicator size="small" color={theme.colors.faint} />
                     ) : (
                       <Trash2 size={18} color={theme.colors.error} />
                     )}
                   </TouchableOpacity>
                 </View>
               ))}
-            </View>
+            </MoveCard>
           </View>
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t("connections.available", "Available")}</Text>
+          <SectionHeader label={t("connections.available", "Available")} style={styles.sectionHeader} />
           {connectable.length === 0 ? (
             <Text style={styles.empty}>{t("connections.allConnected", "All available partners are connected.")}</Text>
           ) : (
-            <View style={styles.card}>
+            <MoveCard padding={0} radius={theme.radius.xl}>
               {connectable.map((c, i) => {
                 // Only an API_SYNC partner the user is entitled to gets a live
                 // OAuth "Connect". API_SYNC without entitlement -> upsell; a
@@ -237,10 +243,10 @@ export default function ConnectionsScreen() {
                       : t("connections.mode_guided", { defaultValue: "Guided update" });
                 return (
                 <View key={c.connectorKey} style={[styles.row, i < connectable.length - 1 && styles.rowBorder]}>
-                  <View style={styles.rowIcon}>
-                    <Link2 size={18} color={theme.colors.textTertiary} />
+                  <View style={styles.rowIconMuted}>
+                    <Link2 size={18} color={theme.colors.faint} />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.rowLabel}>{c.displayName}</Text>
                     <Text style={styles.rowDesc}>{modeLabel}</Text>
                   </View>
@@ -249,37 +255,45 @@ export default function ConnectionsScreen() {
                     onPress={() => connect(c.connectorKey)}
                     disabled={busyKey === c.connectorKey}
                     style={styles.connectBtn}
-                    activeOpacity={0.7}
+                    activeOpacity={0.85}
                   >
                     {busyKey === c.connectorKey ? (
-                      <ActivityIndicator size="small" color="#fff" />
+                      <ActivityIndicator size="small" color={theme.colors.onAccent} />
                     ) : (
-                      <>
-                        <ExternalLink size={14} color="#fff" />
+                      <LinearGradient
+                        colors={theme.colors.gradient.primary}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.connectBtnGrad}
+                      >
+                        <ExternalLink size={14} color={theme.colors.onAccent} />
                         <Text style={styles.connectBtnText}>{t("connections.connect", "Connect")}</Text>
-                      </>
+                      </LinearGradient>
                     )}
                   </TouchableOpacity>
                   ) : c.mode === "API_SYNC" ? (
-                    <TouchableOpacity onPress={() => router.push("/settings/subscription")} style={styles.connectBtn} activeOpacity={0.7}>
-                      <Text style={styles.connectBtnText}>{t("connections.upgrade", { defaultValue: "Upgrade" })}</Text>
+                    <TouchableOpacity onPress={() => router.push("/settings/subscription")} style={styles.ghostBtn} activeOpacity={0.85}>
+                      <Text style={styles.ghostBtnText}>{t("connections.upgrade", { defaultValue: "Upgrade" })}</Text>
                     </TouchableOpacity>
                   ) : c.mode === "GUIDED_UPDATE" && c.guidedAction?.url ? (
-                    <TouchableOpacity onPress={() => openWebUrl(c.guidedAction!.url)} style={styles.connectBtn} activeOpacity={0.7}>
-                      <ExternalLink size={14} color="#fff" />
-                      <Text style={styles.connectBtnText}>{t("connections.howTo", { defaultValue: "How to" })}</Text>
+                    <TouchableOpacity onPress={() => openWebUrl(c.guidedAction!.url)} style={styles.ghostBtn} activeOpacity={0.85}>
+                      <ExternalLink size={14} color={theme.colors.primary} />
+                      <Text style={styles.ghostBtnText}>{t("connections.howTo", { defaultValue: "How to" })}</Text>
                     </TouchableOpacity>
                   ) : (
-                    <View style={[styles.connectBtn, { opacity: 0.5 }]}>
-                      <Text style={styles.connectBtnText}>
-                        {c.mode === "COMING_SOON" ? t("connections.soon", { defaultValue: "Soon" }) : t("connections.guided", { defaultValue: "Guide" })}
-                      </Text>
-                    </View>
+                    <Pill
+                      tone="muted"
+                      label={
+                        c.mode === "COMING_SOON"
+                          ? t("connections.soon", { defaultValue: "Soon" })
+                          : t("connections.guided", { defaultValue: "Guide" })
+                      }
+                    />
                   )}
                 </View>
                 );
               })}
-            </View>
+            </MoveCard>
           )}
         </View>
       </ScrollView>
@@ -309,66 +323,53 @@ const makeStyles = (theme: Theme) =>
     },
     backBtn: {
       width: 44, height: 44, borderRadius: 14,
-      backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
       alignItems: "center", justifyContent: "center",
     },
-    title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+    title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
     scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
     hero: {
-      borderRadius: 24,
-      padding: 16,
       marginBottom: 2,
-      backgroundColor: theme.colors.glass.bg,
-      borderWidth: 1,
-      borderColor: theme.colors.glass.highlight,
-      ...theme.shadow.sm,
     },
     heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
     heroIcon: {
       width: 46,
       height: 46,
       borderRadius: 16,
-      backgroundColor: theme.colors.primaryFaded,
+      backgroundColor: theme.colors.accentSoft,
       borderWidth: 1,
-      borderColor: theme.colors.primary + "33",
+      borderColor: theme.colors.accentBorder,
       alignItems: "center",
       justifyContent: "center",
     },
     heroCopy: { flex: 1, minWidth: 0 },
-    heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
-    heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
-    heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+    heroKicker: { fontSize: 10, fontFamily: fonts.sansBold, letterSpacing: 1.4, textTransform: "uppercase", color: theme.colors.primary },
+    heroTitle: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text, marginTop: 3 },
+    heroSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 3, lineHeight: 17 },
     heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
     heroStat: {
       flex: 1,
       minHeight: 58,
-      borderRadius: 16,
+      borderRadius: 14,
       padding: 10,
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       justifyContent: "center",
     },
-    heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+    heroStatValue: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
     heroStatLabel: {
       fontSize: 9,
-      fontWeight: "800",
-      letterSpacing: 0,
-      color: theme.colors.textTertiary,
+      fontFamily: fonts.sansBold,
+      letterSpacing: 0.6,
+      color: theme.colors.faint,
       textTransform: "uppercase",
       marginTop: 3,
     },
     section: { marginTop: 20 },
-    sectionTitle: {
-      fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary,
-      textTransform: "uppercase", letterSpacing: 0, marginBottom: 8, marginLeft: 4,
-    },
-    empty: { fontSize: 13, color: theme.colors.textMuted, marginLeft: 4 },
-    card: {
-      backgroundColor: theme.colors.glass.bg, borderRadius: 22,
-      borderWidth: 1, borderColor: theme.colors.glass.highlight, overflow: "hidden",
-      ...theme.shadow.sm,
-    },
+    sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    sectionHeader: { flex: 1, marginBottom: 10, marginLeft: 2 },
+    empty: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, marginLeft: 2 },
     row: {
       flexDirection: "row", alignItems: "center", gap: 12,
       paddingVertical: 14, paddingHorizontal: 16,
@@ -376,16 +377,37 @@ const makeStyles = (theme: Theme) =>
     rowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
     rowIcon: {
       width: 36, height: 36, borderRadius: 12,
-      backgroundColor: theme.colors.surface, alignItems: "center", justifyContent: "center",
+      backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder,
+      alignItems: "center", justifyContent: "center",
     },
-    rowLabel: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
-    rowDesc: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+    rowIconMuted: {
+      width: 36, height: 36, borderRadius: 12,
+      backgroundColor: theme.colors.surface2, borderWidth: 1, borderColor: theme.colors.border,
+      alignItems: "center", justifyContent: "center",
+    },
+    rowLabel: { fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+    rowDesc: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 2 },
     iconBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
     connectBtn: {
-      flexDirection: "row", alignItems: "center", gap: 6,
-      backgroundColor: theme.colors.primary, borderRadius: 14,
-      paddingVertical: 8, paddingHorizontal: 14,
-      ...theme.shadow.sm,
+      borderRadius: 14,
+      overflow: "hidden",
     },
-    connectBtnText: { fontSize: 13, fontWeight: "700", color: "#fff" },
+    connectBtnGrad: {
+      flexDirection: "row", alignItems: "center", gap: 6,
+      paddingVertical: 8, paddingHorizontal: 14,
+    },
+    connectBtnText: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+    ghostBtn: {
+      flexDirection: "row", alignItems: "center", gap: 6,
+      backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder,
+      borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14,
+    },
+    ghostBtnText: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.primary },
+    syncBtn: {
+      backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder,
+      borderRadius: 12, paddingVertical: 7, paddingHorizontal: 13,
+      marginBottom: 10,
+      alignItems: "center", justifyContent: "center",
+    },
+    syncBtnText: { fontSize: 12, fontFamily: fonts.sansBold, color: theme.colors.primary },
   });

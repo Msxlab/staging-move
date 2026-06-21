@@ -11,12 +11,14 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Check, Crown, DollarSign } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { isMobileStorePurchasesEnabledForPlatform } from "@/lib/billing-flags";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { HeroCard, MoveCard, SectionHeader } from "@/components/move";
 
 function getCurrentMonthValue() {
   const now = new Date();
@@ -156,13 +158,13 @@ export default function NewBudgetScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
-        <View style={styles.hero}>
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <DollarSign size={20} color={theme.colors.primary} />
             </View>
             <View style={styles.heroCopy}>
-              <Text style={styles.heroKicker}>BUDGET COMMAND</Text>
+              <Text style={styles.heroKicker}>{t("budget.title")}</Text>
               <Text style={styles.heroTitle}>{t("budget.newBudget")}</Text>
               <Text style={styles.heroSub} numberOfLines={1}>{form.month}</Text>
             </View>
@@ -183,7 +185,7 @@ export default function NewBudgetScreen() {
               <Text style={styles.heroStatLabel}>balance</Text>
             </View>
           </View>
-        </View>
+        </HeroCard>
 
         {subscriptionRequired === true ? (
           <View style={styles.gateCard}>
@@ -208,8 +210,8 @@ export default function NewBudgetScreen() {
           </View>
         ) : null}
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>Period</Text>
+        <SectionHeader label={t("budget.month")} style={styles.sectionHeader} />
+        <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
           <Text style={styles.label}>{t("budget.month")} *</Text>
           <TextInput
             style={[styles.input, formDisabled && styles.inputDisabled]}
@@ -232,10 +234,11 @@ export default function NewBudgetScreen() {
             maxLength={4}
             editable={!formDisabled}
           />
-        </View>
+        </MoveCard>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>{t("budget.actualIncome")}</Text>
+        <SectionHeader label={t("budget.actualIncome")} style={styles.sectionHeader} />
+        <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
+          <Text style={styles.label}>{t("budget.plannedIncome")}</Text>
           <TextInput
             style={[styles.input, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.plannedIncome")}
@@ -245,8 +248,9 @@ export default function NewBudgetScreen() {
             keyboardType="decimal-pad"
             editable={!formDisabled}
           />
+          <Text style={styles.label}>{t("budget.actualIncome")}</Text>
           <TextInput
-            style={[styles.input, styles.inputSpacing, formDisabled && styles.inputDisabled]}
+            style={[styles.input, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.actualIncome")}
             placeholderTextColor={theme.colors.textMuted}
             value={form.actualIncome}
@@ -254,10 +258,11 @@ export default function NewBudgetScreen() {
             keyboardType="decimal-pad"
             editable={!formDisabled}
           />
-        </View>
+        </MoveCard>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>{t("budget.actualExpenses")}</Text>
+        <SectionHeader label={t("budget.actualExpenses")} style={styles.sectionHeader} />
+        <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
+          <Text style={styles.label}>{t("budget.plannedExpenses")}</Text>
           <TextInput
             style={[styles.input, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.plannedExpenses")}
@@ -267,8 +272,9 @@ export default function NewBudgetScreen() {
             keyboardType="decimal-pad"
             editable={!formDisabled}
           />
+          <Text style={styles.label}>{t("budget.actualExpenses")}</Text>
           <TextInput
-            style={[styles.input, styles.inputSpacing, formDisabled && styles.inputDisabled]}
+            style={[styles.input, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.actualExpenses")}
             placeholderTextColor={theme.colors.textMuted}
             value={form.actualExpenses}
@@ -276,10 +282,10 @@ export default function NewBudgetScreen() {
             keyboardType="decimal-pad"
             editable={!formDisabled}
           />
-        </View>
+        </MoveCard>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>{t("budget.notes")}</Text>
+        <SectionHeader label={t("budget.notes")} style={styles.sectionHeader} />
+        <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
           <TextInput
             style={[styles.input, styles.notesInput, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.notes")}
@@ -289,22 +295,29 @@ export default function NewBudgetScreen() {
             multiline
             editable={!formDisabled}
           />
-        </View>
+        </MoveCard>
 
         <TouchableOpacity
           style={[styles.saveBtn, formDisabled && { opacity: 0.6 }]}
           onPress={handleSave}
           disabled={formDisabled}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>{t("common.save")}</Text>
-            </>
-          )}
+          <LinearGradient
+            colors={theme.colors.gradient.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.saveBtnGrad}
+          >
+            {saving ? (
+              <ActivityIndicator color={theme.colors.onAccent} />
+            ) : (
+              <>
+                <Check size={18} color={theme.colors.onAccent} />
+                <Text style={styles.saveBtnText}>{t("common.save")}</Text>
+              </>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -319,19 +332,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 52 },
   hero: {
-    borderRadius: 24,
-    padding: 16,
     marginBottom: 14,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
   },
   heroTop: {
     flexDirection: "row",
@@ -342,30 +349,31 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
   heroKicker: {
     fontSize: 10,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     letterSpacing: 1.3,
     textTransform: "uppercase",
-    color: theme.colors.accent,
+    color: theme.colors.primary,
   },
   heroTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     marginTop: 3,
     letterSpacing: 0,
   },
   heroSub: {
     fontSize: 12,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
     marginTop: 3,
   },
   heroStats: {
@@ -385,7 +393,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   heroStatValue: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.text,
   },
   heroStatWarn: {
@@ -393,55 +401,51 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   heroStatLabel: {
     fontSize: 9,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     letterSpacing: 0.8,
-    color: theme.colors.textTertiary,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
-  formSection: {
-    borderRadius: 22,
-    padding: 14,
-    marginBottom: 14,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  sectionHeader: { marginTop: 20, marginBottom: 10, marginLeft: 2 },
+  formCard: {
+    marginBottom: 4,
   },
-  label: { fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6 },
-  sectionLabel: {
-    fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.8, marginTop: 0, marginBottom: 10,
-  },
+  label: { fontSize: 14, fontFamily: fonts.sansMedium, color: theme.colors.dim, marginTop: 16, marginBottom: 6 },
   input: {
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: theme.colors.text,
+    backgroundColor: theme.colors.bg2, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text,
   },
   inputDisabled: { opacity: 0.55 },
-  inputSpacing: { marginTop: 10 },
   notesInput: { minHeight: 100, textAlignVertical: "top" },
   saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, marginTop: 28, ...theme.shadow.glow,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+    marginTop: 28,
   },
-  saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  saveBtnGrad: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 16,
+  },
+  saveBtnText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
   gateCard: {
     flexDirection: "row", gap: 12, padding: 14, borderRadius: theme.radius.xl,
-    borderWidth: 1, borderColor: theme.colors.rose.border,
-    backgroundColor: theme.colors.primaryFaded, marginBottom: 16,
+    borderWidth: 1, borderColor: theme.colors.accentBorder,
+    backgroundColor: theme.colors.accentSoft, marginBottom: 16,
   },
   gateIcon: {
     width: 36, height: 36, borderRadius: 12,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1, borderColor: theme.colors.accentBorder,
     alignItems: "center", justifyContent: "center",
   },
-  gateTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-  gateBody: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 4, lineHeight: 17 },
+  gateTitle: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
+  gateBody: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 4, lineHeight: 17 },
   gateCta: {
     alignSelf: "flex-start", marginTop: 10,
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.primary,
   },
-  gateCtaText: { fontSize: 12, fontWeight: "700", color: "#fff" },
+  gateCtaText: { fontSize: 12, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 });

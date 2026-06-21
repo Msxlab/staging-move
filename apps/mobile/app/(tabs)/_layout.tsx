@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import { Tabs } from "expo-router";
 import { Platform, StyleSheet, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   LayoutDashboard,
   MapPin,
@@ -10,7 +9,7 @@ import {
   Menu,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 
 function TabBarBackground() {
 
@@ -19,13 +18,11 @@ function TabBarBackground() {
   const theme = useAppTheme();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  // Move nav surface: a slightly-elevated navy (bg2) with a single hairline
+  // top border — matches the design's flat bottom-nav treatment.
   return (
     <View style={StyleSheet.absoluteFill}>
       <View style={styles.tabBarFill} />
-      <LinearGradient
-        colors={["rgba(127,182,232,0.28)", "rgba(127,182,232,0.07)", "transparent"]}
-        style={styles.topGlow}
-      />
       <View style={styles.tabBarBorder} />
     </View>
   );
@@ -45,10 +42,10 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarBackground: () => <TabBarBackground />,
+        // Active tint = Sapphire (the design's gold maps to colors.primary).
         tabBarActiveTintColor: theme.colors.primary,
-        // Aurora cool-ink at the tertiary alpha — matches the inactive
-        // tint used by tab labels in `theme.colors.textTertiary`.
-        tabBarInactiveTintColor: theme.colors.textTertiary,
+        // Inactive tint = Move faint ink (colors.faint).
+        tabBarInactiveTintColor: theme.colors.faint,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,
       }}
@@ -57,8 +54,8 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: t("tabs.dashboard"),
-          tabBarIcon: ({ color, size }) => (
-            <LayoutDashboard size={size - 2} color={color} />
+          tabBarIcon: ({ color }) => (
+            <LayoutDashboard size={20} color={color} />
           ),
         }}
       />
@@ -66,8 +63,8 @@ export default function TabsLayout() {
         name="addresses"
         options={{
           title: t("tabs.addresses"),
-          tabBarIcon: ({ color, size }) => (
-            <MapPin size={size - 2} color={color} />
+          tabBarIcon: ({ color }) => (
+            <MapPin size={20} color={color} />
           ),
         }}
       />
@@ -75,8 +72,8 @@ export default function TabsLayout() {
         name="moving"
         options={{
           title: t("tabs.moving"),
-          tabBarIcon: ({ color, size }) => (
-            <Truck size={size - 2} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Truck size={20} color={color} />
           ),
         }}
       />
@@ -84,8 +81,8 @@ export default function TabsLayout() {
         name="services"
         options={{
           title: t("tabs.services"),
-          tabBarIcon: ({ color, size }) => (
-            <Zap size={size - 2} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Zap size={20} color={color} />
           ),
         }}
       />
@@ -93,8 +90,8 @@ export default function TabsLayout() {
         name="more"
         options={{
           title: t("tabs.more"),
-          tabBarIcon: ({ color, size }) => (
-            <Menu size={size - 2} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Menu size={20} color={color} />
           ),
         }}
       />
@@ -104,16 +101,16 @@ export default function TabsLayout() {
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   tabBar: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.bg2,
     borderTopWidth: 0,
-    height: Platform.OS === "ios" ? 86 : 68,
-    paddingTop: 7,
-    paddingBottom: Platform.OS === "ios" ? 26 : 9,
-    elevation: 18,
+    height: Platform.OS === "ios" ? 84 : 66,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === "ios" ? 26 : 8,
+    elevation: 12,
     shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: -6 },
   },
   tabBarFill: {
     position: "absolute",
@@ -121,18 +118,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    // `theme.colors.surface` is the Aurora au-base-2 surface; keeping the
-    // literal value here lets the existing-instance read at module-load
-    // time stay in sync if a user toggles the appearance setting before
-    // the navigator re-mounts.
-    backgroundColor: theme.colors.surface,
-  },
-  topGlow: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 4,
+    // Move bottom-nav fill: bg2 (slightly elevated navy).
+    backgroundColor: theme.colors.bg2,
   },
   tabBarBorder: {
     position: "absolute",
@@ -140,11 +127,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "rgba(236, 241, 248, 0.14)",
+    backgroundColor: theme.colors.border,
   },
   tabLabel: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontFamily: fonts.sansSemibold,
+    fontSize: 10,
     letterSpacing: 0.2,
   },
   tabItem: {
