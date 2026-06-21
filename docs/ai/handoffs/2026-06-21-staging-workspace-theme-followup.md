@@ -9,6 +9,19 @@
 - Local/GitHub branch HEAD is newer (`138d6353` before this pass), but the newer commits before this fix were memory/comment-only. Staging is healthy, but "fully deployed to HEAD" is not true until Dokploy rebuilds a commit newer than `9d9ae964`.
 - Admin login in the existing Chrome tab rendered the dark Move Admin page with Gold/champagne primary CTA. The password field was already filled, so no sign-in submit was clicked.
 
+Post-fix redeploy:
+
+- Commit `d434a37dae0dad804259d8c488cdcffd44f8c946` (`Fix consumer-free workspace theme drift`) was pushed to `codex/staging-audit-2026-06-21`.
+- Dokploy manual deployment was started from the existing Chrome/Dokploy session and completed.
+- Web `/api/build-info`: `d434a37dae0dad804259d8c488cdcffd44f8c946`, built `2026-06-21T22:29:31.531Z`.
+- Admin `/api/build-info`: `d434a37dae0dad804259d8c488cdcffd44f8c946`, built `2026-06-21T22:29:31.531Z`.
+- Web `/api/health`: `healthy`, `ready: true`, `requiredOk: true`, `missingRequiredCount: 0`.
+- Admin `/api/ready`: `ready: true`, `database: ready`, `requiredOk: true`, `missingRequiredCount: 0`.
+- Public route smoke after deploy: web `/`, `/features`, `/why-free`, `/blog`, `/sign-in` returned `200`.
+- Auth-gated route smoke after deploy: web `/dashboard` and `/onboarding` returned `307` to sign-in; admin `/users` returned `307` to `/login`.
+- Admin public smoke after deploy: `/login` and `/api/healthz` returned `200`.
+- Existing Chrome `Move Admin` tab was hard-refreshed after deploy and still rendered the dark Gold/champagne admin sign-in. The prefilled password field was not submitted.
+
 ## Theme Decision
 
 - The committed design zip bundle under `design-src/handoffs/*.zip` / extracted `design-src/initial-check-requested/project` resolves to default `Gold`.
@@ -59,9 +72,7 @@ Docker Node 22 canonical checks:
 
 Agent:
 
-- Commit/push this fix and memory update.
-- Trigger or ask for Dokploy redeploy after push; then verify `/api/build-info` moves past `9d9ae964`.
-- After deploy, continue authenticated QA on existing Chrome session only: web dashboard/moving/services/providers/settings/workspace/export and admin overview/users/moves/providers/leads/affiliate/subscriptions/settings/backups/security.
+- Continue authenticated QA on the existing Chrome session only: web dashboard/moving/services/providers/settings/workspace/export and admin overview/users/moves/providers/leads/affiliate/subscriptions/settings/backups/security.
 - Run mobile/emulator QA when an emulator/device path is available: tabs, onboarding, services/providers, moving caps, settings/subscription, connections/export/workspace, OAuth handoff, app lock, staging API config, visual theme.
 - Run the formal product-design screenshot audit from real staging screenshots.
 - Run the full Codex Security deep scan workflow only when the required six-worker scan can be completed honestly.
