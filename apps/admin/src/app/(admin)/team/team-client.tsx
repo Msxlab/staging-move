@@ -77,7 +77,7 @@ const RESOURCE_LABELS: Record<string, string> = {
 };
 
 const inputCls =
-  "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none";
+  "w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 const emptyPermissionMatrix = ADMIN_RESOURCES.map((resource) => ({
   resource,
@@ -424,7 +424,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
           currentAdminRole === "SUPER_ADMIN" && (
             <button
               onClick={() => setShowForm((current) => !current)}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" /> Add Admin
             </button>
@@ -442,10 +442,11 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
       {showForm && currentAdminRole === "SUPER_ADMIN" && (
         <form
           onSubmit={handleCreate}
-          className="rounded-xl border border-border bg-card p-6 space-y-4"
+          className="rounded-2xl border border-primary/20 bg-primary/5 p-6 space-y-4"
         >
           <div>
-            <h2 className="font-semibold text-foreground">Create New Admin</h2>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">New member</p>
+            <h2 className="font-display text-base font-bold text-foreground">Create New Admin</h2>
             <p className="text-sm text-muted-foreground">
               New admins receive the default permission matrix for their role.
             </p>
@@ -454,7 +455,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
           {/* Invite vs. explicit-password mode. Invite is the default and
               recommended path: the new admin sets their own password via an
               emailed single-use link and is forced to rotate on first login. */}
-          <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
+          <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3">
             <label className="flex items-start gap-3 text-sm">
               <input
                 type="radio"
@@ -574,14 +575,14 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
             <button
               type="submit"
               disabled={creating}
-              className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               {creating ? "Creating..." : "Create Admin"}
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent"
+              className="rounded-xl border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               Cancel
             </button>
@@ -589,14 +590,14 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
         </form>
       )}
 
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 lg:flex-row">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 lg:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email"
-            className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            className="w-full rounded-xl border border-input bg-background py-2.5 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <select
@@ -624,9 +625,9 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
 
       <div className="grid gap-3">
         {loading ? (
-          <div className="py-12 text-center text-muted-foreground">Loading...</div>
+          <div className="py-20 text-center text-sm text-muted-foreground">Loading team...</div>
         ) : filteredAdmins.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card">
+          <div className="rounded-2xl border border-dashed border-border bg-card">
             <EmptyState
               icon={Users}
               title="No admins match the current filters."
@@ -644,14 +645,14 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
             return (
               <div
                 key={admin.id}
-                className={`rounded-xl border bg-card p-5 transition-colors ${
+                className={`rounded-2xl border bg-card p-5 transition-colors ${
                   admin.isActive ? "border-border" : "border-border/50 opacity-75"
                 }`}
               >
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                   <div className="flex items-start gap-4">
                     <div
-                      className={`rounded-lg p-2.5 ${
+                      className={`rounded-xl p-2.5 ${
                         ROLE_COLORS[admin.role] || "bg-muted text-muted-foreground"
                       }`}
                     >
@@ -659,27 +660,30 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                     </div>
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-foreground">
+                        <p className="font-display text-base font-bold text-foreground">
                           {admin.firstName} {admin.lastName}
                         </p>
                         <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.06em] ${
                             ROLE_COLORS[admin.role] || "bg-muted text-muted-foreground"
                           }`}
                         >
                           {admin.role.replace("_", " ")}
                         </span>
                         {!admin.isActive && (
-                          <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-[10px] font-medium text-destructive">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-1 text-[10px] font-medium text-destructive">
+                            <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
                             Inactive
                           </span>
                         )}
                         {admin.mfaEnabled ? (
-                          <span className="rounded-full bg-tone-sage-bg px-2.5 py-1 text-[10px] font-medium text-tone-sage-fg">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-sage-bg px-2.5 py-1 text-[10px] font-medium text-tone-sage-fg">
+                            <span className="h-1.5 w-1.5 rounded-full bg-tone-sage-fg" />
                             MFA enabled
                           </span>
                         ) : (
-                          <span className="rounded-full bg-tone-honey-bg px-2.5 py-1 text-[10px] font-medium text-tone-honey-fg">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-honey-bg px-2.5 py-1 text-[10px] font-medium text-tone-honey-fg">
+                            <span className="h-1.5 w-1.5 rounded-full bg-tone-honey-fg" />
                             MFA missing
                           </span>
                         )}
@@ -688,13 +692,15 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                       <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
                         <span>
                           Last login:{" "}
-                          {admin.lastLoginAt
-                            ? new Date(admin.lastLoginAt).toLocaleString()
-                            : "Never"}
+                          <span className="font-mono text-foreground">
+                            {admin.lastLoginAt
+                              ? new Date(admin.lastLoginAt).toLocaleString()
+                              : "Never"}
+                          </span>
                         </span>
-                        <span>Joined {new Date(admin.createdAt).toLocaleDateString()}</span>
-                        <span>{admin.activeSessionCount} active session(s)</span>
-                        <span>{admin.recentFailedLogins} failed logins in 30d</span>
+                        <span>Joined <span className="font-mono text-foreground">{new Date(admin.createdAt).toLocaleDateString()}</span></span>
+                        <span><span className="font-mono text-foreground">{admin.activeSessionCount}</span> active session(s)</span>
+                        <span><span className="font-mono text-foreground">{admin.recentFailedLogins}</span> failed logins in 30d</span>
                       </div>
                     </div>
                   </div>
@@ -702,7 +708,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => openEdit(admin)}
-                      className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent"
+                      className="rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
                       <span className="inline-flex items-center gap-1">
                         <Pencil className="h-3.5 w-3.5" /> Edit
@@ -711,7 +717,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                     {currentAdminRole === "SUPER_ADMIN" && (
                       <button
                         onClick={() => void toggleActive(admin)}
-                        className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent"
+                        className="rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       >
                         <span className="inline-flex items-center gap-1">
                           <Power className="h-3.5 w-3.5" />
@@ -725,7 +731,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                           setArchiveTarget(admin);
                           setArchiveError(null);
                         }}
-                        className="rounded-lg border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
+                        className="rounded-xl border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
                       >
                         <span className="inline-flex items-center gap-1">
                           <Trash2 className="h-3.5 w-3.5" /> Archive
@@ -737,7 +743,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
 
                 <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_220px]">
                   <div>
-                    <p className="mb-2 text-[10px] font-medium uppercase text-muted-foreground">
+                    <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                       Permission coverage
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -758,7 +764,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                             <span
                               key={permission.resource}
                               title={`Read:${permission.canRead ? "✓" : "·"} Create:${permission.canCreate ? "✓" : "·"} Update:${permission.canUpdate ? "✓" : "·"} Delete:${permission.canDelete ? "✓" : "·"}`}
-                              className={`rounded px-2 py-1 text-[10px] font-medium ${tone}`}
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${tone}`}
                             >
                               {RESOURCE_LABELS[permission.resource] || permission.resource}
                               <span className="ml-1 opacity-70">· {label}</span>
@@ -766,19 +772,19 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                           );
                         })
                       ) : (
-                        <span className="rounded bg-muted px-2 py-1 text-[10px] text-muted-foreground">
+                        <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] text-muted-foreground">
                           Read-only across assigned modules
                         </span>
                       )}
                     </div>
                   </div>
-                  <div className="rounded-lg bg-muted/40 p-3">
-                    <p className="text-[10px] font-medium uppercase text-muted-foreground">
+                  <div className="rounded-xl bg-muted/40 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                       Recent login health
                     </p>
                     <div className="mt-2 grid gap-2 text-xs text-muted-foreground">
-                      <span>{admin.recentSuccessfulLogins} successful logins in 30d</span>
-                      <span>{admin.recentFailedLogins} failed logins in 30d</span>
+                      <span><span className="font-mono text-foreground">{admin.recentSuccessfulLogins}</span> successful logins in 30d</span>
+                      <span><span className="font-mono text-foreground">{admin.recentFailedLogins}</span> failed logins in 30d</span>
                     </div>
                   </div>
                 </div>
@@ -799,7 +805,8 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
           >
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Edit Admin</h2>
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Member</p>
+                <h2 className="font-display text-lg font-bold text-foreground">Edit Admin</h2>
                 <p className="text-sm text-muted-foreground">
                   Update identity, role, and operational access for {editAdmin.email}
                 </p>
@@ -807,7 +814,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
               <button
                 onClick={() => setEditAdmin(null)}
                 aria-label="Close"
-                className="rounded-lg p-1 text-muted-foreground hover:bg-accent"
+                className="rounded-xl p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -943,16 +950,16 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                 </div>
               )}
 
-              <div className="rounded-xl border border-border bg-background/40">
+              <div className="rounded-2xl border border-border bg-background/40">
                 <button
                   type="button"
                   onClick={() => setPermissionsOpen((v) => !v)}
-                  className="flex w-full items-center justify-between gap-3 p-4 text-left hover:bg-muted/20"
+                  className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-muted/20"
                 >
                   <div className="flex items-center gap-2">
                     {permissionsOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                     <div>
-                      <h3 className="font-medium text-foreground">Permission Matrix</h3>
+                      <h3 className="font-display text-base font-bold text-foreground">Permission Matrix</h3>
                       <p className="text-xs text-muted-foreground">
                         {currentAdminRole === "SUPER_ADMIN"
                           ? `${editForm.permissions.filter((p) => p.canCreate || p.canUpdate || p.canDelete).length} resources with write access · expand to edit`
@@ -965,12 +972,12 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                   <div className="overflow-x-auto border-t border-border p-4">
                     <table className="min-w-full text-sm">
                       <thead>
-                        <tr className="border-b border-border text-left text-muted-foreground">
-                          <th className="px-3 py-2 font-medium">Resource</th>
-                          <th className="px-3 py-2 font-medium">Read</th>
-                          <th className="px-3 py-2 font-medium">Create</th>
-                          <th className="px-3 py-2 font-medium">Update</th>
-                          <th className="px-3 py-2 font-medium">Delete</th>
+                        <tr className="border-b border-border text-left text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
+                          <th className="px-3 py-2 font-semibold">Resource</th>
+                          <th className="px-3 py-2 font-semibold">Read</th>
+                          <th className="px-3 py-2 font-semibold">Create</th>
+                          <th className="px-3 py-2 font-semibold">Update</th>
+                          <th className="px-3 py-2 font-semibold">Delete</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1010,14 +1017,14 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                 <button
                   type="button"
                   onClick={() => setEditAdmin(null)}
-                  className="rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-accent"
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-primary px-6 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-6 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
@@ -1079,13 +1086,13 @@ function MetricCard({
   icon: typeof Users;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+          <p className="mt-1.5 font-display text-3xl font-extrabold leading-none text-foreground">{value}</p>
         </div>
-        <div className="rounded-lg bg-muted p-2">
+        <div className="rounded-xl bg-muted p-2.5">
           <Icon className="h-4 w-4 text-muted-foreground" />
         </div>
       </div>

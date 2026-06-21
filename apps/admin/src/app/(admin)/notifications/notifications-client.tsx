@@ -349,27 +349,31 @@ export default function NotificationsClient() {
         actions={
           <button
             onClick={() => setShowForm((current) => !current)}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            <Plus className="h-4 w-4" /> Send Notification
+            <Plus className="h-4 w-4" /> Send notification
           </button>
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="rounded-xl border border-border bg-card p-5"
+            className="rounded-2xl border border-border bg-card p-5"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{card.label}</p>
-                <p className="mt-1 text-2xl font-bold text-foreground">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  {card.label}
+                </p>
+                <p
+                  className={`mt-2 font-display text-3xl font-extrabold leading-none ${card.color}`}
+                >
                   {card.value.toLocaleString()}
                 </p>
               </div>
-              <div className={`rounded-lg p-2.5 ${card.bg}`}>
+              <div className={`rounded-xl p-2.5 ${card.bg}`}>
                 <card.icon className={`h-5 w-5 ${card.color}`} />
               </div>
             </div>
@@ -377,11 +381,11 @@ export default function NotificationsClient() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4">
+      <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5">
         <div className="flex items-start gap-3">
           <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-tone-honey-fg" />
           <div className="space-y-1 text-sm">
-            <p className="font-medium text-foreground">
+            <p className="font-display text-base font-bold text-foreground">
               Delivery is synchronous and unscheduled.
             </p>
             <p className="text-muted-foreground">
@@ -395,13 +399,13 @@ export default function NotificationsClient() {
       </div>
 
       {showForm && (
-        <div className="space-y-4 rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground">
-            Send Notification
+        <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-lg font-bold text-foreground">
+            Send notification
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Title
               </label>
               <input
@@ -412,12 +416,12 @@ export default function NotificationsClient() {
                     title: event.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 placeholder="Notification title"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Type
               </label>
               <select
@@ -428,7 +432,7 @@ export default function NotificationsClient() {
                     type: event.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 {TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -438,7 +442,7 @@ export default function NotificationsClient() {
               </select>
             </div>
             <div className="col-span-2">
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Body
               </label>
               <textarea
@@ -450,12 +454,12 @@ export default function NotificationsClient() {
                   }))
                 }
                 rows={4}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 placeholder="Notification message"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Channel
               </label>
               <select
@@ -466,7 +470,7 @@ export default function NotificationsClient() {
                     channel: event.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 {CHANNELS.map((channel) => (
                   <option key={channel} value={channel}>
@@ -486,7 +490,7 @@ export default function NotificationsClient() {
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Link (optional)
               </label>
               <input
@@ -497,7 +501,7 @@ export default function NotificationsClient() {
                     href: event.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 placeholder="/dashboard"
               />
             </div>
@@ -536,7 +540,7 @@ export default function NotificationsClient() {
             {!form.broadcast && (
               <div className="col-span-2 space-y-3">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-muted-foreground">
+                  <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                     Search user
                   </label>
                   <div className="relative">
@@ -552,14 +556,14 @@ export default function NotificationsClient() {
                         }));
                         setRecipientSearch(event.target.value);
                       }}
-                      className="w-full rounded-lg border border-border bg-background py-2 pl-10 pr-3 text-sm text-foreground"
+                      className="w-full rounded-xl border border-input bg-background py-2 pl-10 pr-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                       placeholder="Search by name or email"
                     />
                   </div>
                 </div>
 
                 {selectedRecipient && (
-                  <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                  <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
                     <div className="flex items-center gap-2 text-sm text-foreground">
                       <UserRound className="h-4 w-4 text-primary" />
                       <span>{getRecipientLabel(selectedRecipient)}</span>
@@ -583,16 +587,16 @@ export default function NotificationsClient() {
                 )}
 
                 {recipientLoading ? (
-                  <div className="rounded-lg border border-border bg-background px-3 py-3 text-sm text-muted-foreground">
+                  <div className="rounded-xl border border-border bg-background px-3 py-3 text-sm text-muted-foreground">
                     Searching users...
                   </div>
                 ) : recipientResults.length > 0 ? (
-                  <div className="overflow-hidden rounded-lg border border-border bg-background">
+                  <div className="overflow-hidden rounded-xl border border-border bg-background">
                     {recipientResults.map((user) => (
                       <button
                         key={user.id}
                         onClick={() => selectRecipient(user)}
-                        className="flex w-full items-center justify-between border-b border-border px-3 py-3 text-left last:border-b-0 hover:bg-accent/40"
+                        className="flex w-full items-center justify-between border-b border-border px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-accent/40"
                       >
                         <div>
                           <p className="text-sm font-medium text-foreground">
@@ -604,14 +608,14 @@ export default function NotificationsClient() {
                             {user.email}
                           </p>
                         </div>
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="font-mono text-[11px] text-muted-foreground">
                           {user.id.slice(0, 8)}...
                         </span>
                       </button>
                     ))}
                   </div>
                 ) : recipientSearch.trim().length >= 2 ? (
-                  <div className="rounded-lg border border-border bg-background px-3 py-3 text-sm text-muted-foreground">
+                  <div className="rounded-xl border border-border bg-background px-3 py-3 text-sm text-muted-foreground">
                     No matching users found.
                   </div>
                 ) : (
@@ -626,13 +630,13 @@ export default function NotificationsClient() {
           <div className="flex gap-2 pt-2">
             <button
               onClick={send}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <Send className="h-4 w-4" /> Send
             </button>
             <button
               onClick={resetForm}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+              className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               Cancel
             </button>
@@ -644,7 +648,7 @@ export default function NotificationsClient() {
         <select
           value={filterType}
           onChange={(event) => setFilterType(event.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+          className="rounded-xl border border-input bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <option value="">All Types</option>
           {TYPES.map((type) => (
@@ -656,7 +660,7 @@ export default function NotificationsClient() {
         <select
           value={filterChannel}
           onChange={(event) => setFilterChannel(event.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+          className="rounded-xl border border-input bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <option value="">All Channels</option>
           {CHANNELS.map((channel) => (
@@ -667,11 +671,14 @@ export default function NotificationsClient() {
         </select>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="rounded-2xl border border-border bg-card p-5">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">
-              Delivery Queue
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Pipeline
+            </p>
+            <h2 className="mt-1 font-display text-lg font-bold text-foreground">
+              Delivery queue
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Read-only visibility into queued records until a delivery worker is
@@ -679,12 +686,12 @@ export default function NotificationsClient() {
             </p>
           </div>
           <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-            {queue.length} visible
+            <span className="font-mono">{queue.length}</span> visible
           </span>
         </div>
 
         {queue.length === 0 ? (
-          <div className="mt-4 rounded-lg border border-dashed border-border">
+          <div className="mt-4 rounded-xl border border-dashed border-border">
             <EmptyState
               icon={Clock}
               title="No queued records currently visible."
@@ -693,37 +700,37 @@ export default function NotificationsClient() {
             />
           </div>
         ) : (
-          <div className="mt-4 overflow-x-auto overscroll-x-contain rounded-lg border border-border">
+          <div className="mt-4 overflow-x-auto overscroll-x-contain rounded-xl border border-border">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30 text-left text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Title</th>
-                  <th className="px-4 py-3 font-medium">Target</th>
-                  <th className="px-4 py-3 font-medium">Channel</th>
-                  <th className="px-4 py-3 font-medium">Send At</th>
-                  <th className="px-4 py-3 font-medium">Queued</th>
+                <tr className="border-b border-border bg-muted/30 text-left">
+                  <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Title</th>
+                  <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Target</th>
+                  <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Channel</th>
+                  <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Send At</th>
+                  <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Queued</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border/50">
                 {queue.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-border last:border-b-0 hover:bg-accent/20"
+                    className="transition-colors hover:bg-accent/30"
                   >
                     <td className="px-4 py-3">
                       <p className="font-medium text-foreground">{item.title}</p>
-                      <p className="text-xs text-muted-foreground">{item.type}</p>
+                      <p className="text-xs uppercase tracking-[0.06em] text-muted-foreground">{item.type}</p>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {item.broadcast ? "Broadcast" : "Direct"}
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                    <td className="px-4 py-3 font-mono text-sm text-muted-foreground">
                       {item.channel}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                       {new Date(item.sendAt).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                       {new Date(item.createdAt).toLocaleString()}
                     </td>
                   </tr>
@@ -734,19 +741,19 @@ export default function NotificationsClient() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border bg-card">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="px-4 py-3 font-medium">User</th>
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Type</th>
-              <th className="px-4 py-3 font-medium">Channel</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Date</th>
+            <tr className="border-b border-border bg-muted/30 text-left">
+              <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">User</th>
+              <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Title</th>
+              <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Type</th>
+              <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Channel</th>
+              <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</th>
+              <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Date</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/50">
             {loading ? (
               <tr>
                 <td
@@ -770,9 +777,9 @@ export default function NotificationsClient() {
               notifications.map((notification) => (
                 <tr
                   key={notification.id}
-                  className="border-b border-border hover:bg-accent/30"
+                  className="transition-colors hover:bg-accent/30"
                 >
-                  <td className="px-4 py-3 text-foreground">
+                  <td className="px-4 py-3 font-mono text-xs text-foreground">
                     {notification.user?.email || notification.userId}
                   </td>
                   <td className="px-4 py-3">
@@ -784,25 +791,32 @@ export default function NotificationsClient() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium uppercase tracking-[0.06em] text-primary">
                       {notification.type}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                     {notification.channel}
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
                         notification.read
                           ? "bg-tone-sage-bg text-tone-sage-fg"
                           : "bg-tone-honey-bg text-tone-honey-fg"
                       }`}
                     >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          notification.read
+                            ? "bg-tone-sage-fg"
+                            : "bg-tone-honey-fg"
+                        }`}
+                      />
                       {notification.read ? "Read" : "Unread"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                     {new Date(notification.createdAt).toLocaleString()}
                   </td>
                 </tr>

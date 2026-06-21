@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requirePagePermission } from "@/lib/page-guard";
 import { prisma } from "@/lib/db";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { AffiliateConversionsClient } from "./affiliate-conversions-client";
 
 // Affiliate revenue overview (Layer 1). Read-only analytics over AffiliateClick
@@ -92,45 +93,43 @@ export default async function AffiliatePage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Revenue</p>
-          <h1 className="text-2xl font-semibold text-foreground">Affiliate</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Outbound affiliate performance. Configure an offer on each provider&rsquo;s edit page (Affiliate section).
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <a
-            href="/api/affiliate/export?type=clicks"
-            className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            Export clicks
-          </a>
-          <a
-            href="/api/affiliate/export?type=conversions"
-            className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            Export conversions
-          </a>
-        </div>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-5">
+      <AdminPageHeader
+        eyebrow="Revenue"
+        title="Affiliate"
+        subtitle="Outbound affiliate performance. Configure an offer on each provider’s edit page (Affiliate section)."
+        actions={
+          <>
+            <a
+              href="/api/affiliate/export?type=clicks"
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              Export clicks
+            </a>
+            <a
+              href="/api/affiliate/export?type=conversions"
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              Export conversions
+            </a>
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">{s.label}</p>
-            <p className="mt-1 text-3xl font-bold text-foreground">{s.value}</p>
+          <div key={s.label} className="rounded-2xl border border-border bg-card p-5">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{s.label}</p>
+            <p className="mt-1.5 font-display text-3xl font-extrabold leading-none text-foreground">{s.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {revenueStats.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">{s.label}</p>
-            <p className="mt-1 text-2xl font-bold text-foreground">{s.value}</p>
+          <div key={s.label} className="rounded-2xl border border-border bg-card p-5">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{s.label}</p>
+            <p className="mt-1.5 font-display text-2xl font-extrabold leading-none text-foreground">{s.value}</p>
           </div>
         ))}
       </div>
@@ -140,8 +139,10 @@ export default async function AffiliatePage() {
           (password + MFA) gated and audited. */}
       <AffiliateConversionsClient />
 
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 font-semibold text-foreground">Active offers ({offersWithCounts.length})</h2>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="mb-4 font-display text-base font-bold text-foreground">
+          Active offers <span className="font-mono text-sm font-medium text-muted-foreground">({offersWithCounts.length})</span>
+        </h2>
         {offersWithCounts.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No active affiliate offers yet. Open a provider, scroll to the Affiliate section, add an https link and mark it active.
@@ -150,7 +151,7 @@ export default async function AffiliatePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   <th scope="col" className="py-2 pr-4">Provider</th>
                   <th scope="col" className="py-2 pr-4">Category</th>
                   <th scope="col" className="py-2 pr-4">Network</th>
@@ -159,10 +160,10 @@ export default async function AffiliatePage() {
                   <th scope="col" className="py-2 pr-4">Manage</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border/50">
                 {offersWithCounts.map((o) => (
-                  <tr key={o.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4 font-medium text-foreground">
+                  <tr key={o.id} className="transition-colors hover:bg-accent/30">
+                    <td className="py-2.5 pr-4 font-medium text-foreground">
                       {o.affiliateUrl ? (
                         <a href={o.affiliateUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           {o.name}
@@ -171,11 +172,11 @@ export default async function AffiliatePage() {
                         o.name
                       )}
                     </td>
-                    <td className="py-2 pr-4 text-muted-foreground">{o.category}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">{o.affiliateNetwork || "—"}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums text-foreground">{o.recentClicks.toLocaleString()}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums text-foreground">{o.totalClicks.toLocaleString()}</td>
-                    <td className="py-2 pr-4">
+                    <td className="py-2.5 pr-4 text-muted-foreground">{o.category}</td>
+                    <td className="py-2.5 pr-4 text-muted-foreground">{o.affiliateNetwork || "—"}</td>
+                    <td className="py-2.5 pr-4 text-right font-mono tabular-nums text-foreground">{o.recentClicks.toLocaleString()}</td>
+                    <td className="py-2.5 pr-4 text-right font-mono tabular-nums text-foreground">{o.totalClicks.toLocaleString()}</td>
+                    <td className="py-2.5 pr-4">
                       <Link href={`/providers/${o.id}/edit`} className="text-primary hover:underline">
                         Edit
                       </Link>
@@ -188,28 +189,28 @@ export default async function AffiliatePage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 font-semibold text-foreground">Recent clicks</h2>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="mb-4 font-display text-base font-bold text-foreground">Recent clicks</h2>
         {recentClicks.length === 0 ? (
           <p className="text-sm text-muted-foreground">No clicks recorded yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   <th scope="col" className="py-2 pr-4">Provider</th>
                   <th scope="col" className="py-2 pr-4">Source</th>
                   <th scope="col" className="py-2 pr-4">Network</th>
                   <th scope="col" className="py-2 pr-4">Date</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border/50">
                 {recentClicks.map((c) => (
-                  <tr key={c.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4 font-medium text-foreground">{c.provider?.name ?? "—"}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">{c.source}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">{c.network || "—"}</td>
-                    <td className="py-2 pr-4 text-muted-foreground tabular-nums">{formatDate(c.createdAt)}</td>
+                  <tr key={c.id} className="transition-colors hover:bg-accent/30">
+                    <td className="py-2.5 pr-4 font-medium text-foreground">{c.provider?.name ?? "—"}</td>
+                    <td className="py-2.5 pr-4 text-muted-foreground">{c.source}</td>
+                    <td className="py-2.5 pr-4 text-muted-foreground">{c.network || "—"}</td>
+                    <td className="py-2.5 pr-4 font-mono tabular-nums text-muted-foreground">{formatDate(c.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -218,18 +219,18 @@ export default async function AffiliatePage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 font-semibold text-foreground">Recent conversions</h2>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="mb-4 font-display text-base font-bold text-foreground">Recent conversions</h2>
         {recentConversions.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No conversions yet. Conversions arrive via the per-network postback endpoint
-            (<code className="text-xs">/api/affiliate/postback/&lt;network&gt;</code>).
+            (<code className="rounded bg-muted px-1 font-mono text-xs">/api/affiliate/postback/&lt;network&gt;</code>).
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   <th scope="col" className="py-2 pr-4">Provider</th>
                   <th scope="col" className="py-2 pr-4">Network</th>
                   <th scope="col" className="py-2 pr-4">Status</th>
@@ -237,16 +238,21 @@ export default async function AffiliatePage() {
                   <th scope="col" className="py-2 pr-4">Date</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border/50">
                 {recentConversions.map((c) => (
-                  <tr key={c.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4 font-medium text-foreground">{c.provider?.name ?? "—"}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">{c.network}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">{c.status}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums text-foreground">
+                  <tr key={c.id} className="transition-colors hover:bg-accent/30">
+                    <td className="py-2.5 pr-4 font-medium text-foreground">{c.provider?.name ?? "—"}</td>
+                    <td className="py-2.5 pr-4 text-muted-foreground">{c.network}</td>
+                    <td className="py-2.5 pr-4">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+                        {c.status}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-4 text-right font-mono tabular-nums text-foreground">
                       {c.currency} {(c.amountCents / 100).toFixed(2)}
                     </td>
-                    <td className="py-2 pr-4 text-muted-foreground tabular-nums">{formatDate(c.occurredAt ?? c.createdAt)}</td>
+                    <td className="py-2.5 pr-4 font-mono tabular-nums text-muted-foreground">{formatDate(c.occurredAt ?? c.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

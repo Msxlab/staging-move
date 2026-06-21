@@ -53,7 +53,7 @@ type KindFilter = "" | "mover" | "provider";
 const PAGE_SIZE = 50;
 
 const inputCls =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 // Every placement mutation publishes/rewrites/retires paid public ad
 // inventory, so each one is gated behind admin password + MFA step-up.
@@ -131,6 +131,16 @@ const STATUS_PILL_CLASS: Record<PlacementStatus, string> = {
   scheduled: "bg-tone-honey-bg text-tone-honey-fg",
   expired: "bg-muted text-muted-foreground",
   inactive: "bg-muted text-muted-foreground",
+};
+
+// Dot colour for the status pill — mirrors the Move admin convention of a
+// small filled dot ahead of the label (live=sage, scheduled=honey, the rest
+// muted). Presentation only; status itself is computed from the placement.
+const STATUS_DOT_CLASS: Record<PlacementStatus, string> = {
+  live: "bg-tone-sage-fg",
+  scheduled: "bg-tone-honey-fg",
+  expired: "bg-muted-foreground",
+  inactive: "bg-muted-foreground",
 };
 
 export default function SponsoredClient({
@@ -380,7 +390,7 @@ export default function SponsoredClient({
           <button
             type="button"
             onClick={startCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             {t("newPlacement")}
@@ -394,7 +404,7 @@ export default function SponsoredClient({
           off. The status line is omitted when the flag read failed. */}
       <div
         role="note"
-        className="flex items-start gap-3 rounded-xl border border-tone-honey-br bg-tone-honey-bg px-4 py-3 text-sm text-foreground"
+        className="flex items-start gap-3 rounded-2xl border border-tone-honey-br bg-tone-honey-bg px-5 py-4 text-sm text-foreground"
       >
         <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <div className="space-y-1.5">
@@ -432,7 +442,7 @@ export default function SponsoredClient({
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as StatusFilter)}
-              className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
+              className="rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
               aria-label={t("filters.statusLabel")}
             >
               <option value="">{t("filters.allStatuses")}</option>
@@ -444,7 +454,7 @@ export default function SponsoredClient({
             <select
               value={filterKind}
               onChange={(e) => setFilterKind(e.target.value as KindFilter)}
-              className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
+              className="rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
               aria-label={t("filters.kindLabel")}
             >
               <option value="">{t("filters.allKinds")}</option>
@@ -465,7 +475,7 @@ export default function SponsoredClient({
               <button
                 type="button"
                 onClick={startCreate}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 {t("newPlacement")}
@@ -477,7 +487,7 @@ export default function SponsoredClient({
           <div className="hidden overflow-x-auto overscroll-x-contain sm:block">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                   <th scope="col" className="py-2 pr-4">{t("table.target")}</th>
                   <th scope="col" className="py-2 pr-4">{t("table.kind")}</th>
                   <th scope="col" className="py-2 pr-4">{t("table.label")}</th>
@@ -522,9 +532,10 @@ export default function SponsoredClient({
                         <button
                           type="button"
                           onClick={() => toggleActive(placement)}
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${STATUS_PILL_CLASS[status]}`}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${STATUS_PILL_CLASS[status]}`}
                           title={placement.active ? t("table.deactivateHint") : t("table.activateHint")}
                         >
+                          <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT_CLASS[status]}`} />
                           {t(`status.${status}`)}
                         </button>
                       </td>
@@ -564,7 +575,7 @@ export default function SponsoredClient({
             {placements.map((placement) => {
               const status = placementStatus(placement, now);
               return (
-                <div key={placement.id} className="rounded-xl border border-border bg-card p-3">
+                <div key={placement.id} className="rounded-2xl border border-border bg-card p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium text-foreground">
@@ -578,9 +589,10 @@ export default function SponsoredClient({
                     <button
                       type="button"
                       onClick={() => toggleActive(placement)}
-                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${STATUS_PILL_CLASS[status]}`}
+                      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${STATUS_PILL_CLASS[status]}`}
                       title={placement.active ? t("table.deactivateHint") : t("table.activateHint")}
                     >
+                      <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT_CLASS[status]}`} />
                       {t(`status.${status}`)}
                     </button>
                   </div>
@@ -618,14 +630,14 @@ export default function SponsoredClient({
         )}
         {total > PAGE_SIZE ? (
           <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-            <span>{t("table.pageOf", { page, totalPages })}</span>
+            <span className="font-mono">{t("table.pageOf", { page, totalPages })}</span>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 aria-label={t("table.previousPage")}
-                className="rounded-lg border border-border p-1.5 hover:bg-accent disabled:opacity-50"
+                className="rounded-xl border border-border p-1.5 transition-colors hover:bg-accent disabled:opacity-50"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -634,7 +646,7 @@ export default function SponsoredClient({
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 aria-label={t("table.nextPage")}
-                className="rounded-lg border border-border p-1.5 hover:bg-accent disabled:opacity-50"
+                className="rounded-xl border border-border p-1.5 transition-colors hover:bg-accent disabled:opacity-50"
               >
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -660,7 +672,7 @@ export default function SponsoredClient({
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-base font-semibold text-foreground">
+                <h2 className="font-display text-lg font-bold text-foreground">
                   {drawerMode === "edit" ? t("drawer.editTitle") : t("drawer.createTitle")}
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">{t("drawer.subtitle")}</p>
@@ -850,13 +862,13 @@ export default function SponsoredClient({
                 <button
                   type="button"
                   onClick={closeDrawer}
-                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   {t("drawer.cancel")}
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                   <MousePointerClick className="h-4 w-4" aria-hidden="true" />
                   {drawerMode === "edit" ? t("drawer.save") : t("drawer.create")}
