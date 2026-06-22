@@ -61,6 +61,51 @@ Post-deploy smoke checks:
 No env secret values were copied into chat or local notes. The smoke tests only used
 HTTP responses and masked/indirect Dokploy state.
 
+## Sapphire Theme Follow-up - 2026-06-22
+
+Current product/theme decision remains `LocateFlow + Sapphire` for public web,
+web app, admin, and mobile in light/dark. The design zips contain an older Gold
+default and Sapphire/Emerald variants; Gold is historical source material, not
+the selected runtime theme.
+
+Important Dokploy behavior: the staging compose service is still wired to branch
+`codex/staging-audit-2026-06-21`. A direct webhook call or a `refs/heads/main`
+payload returns `Branch Not Match`. To redeploy this staging service manually,
+send a GitHub-style push payload for
+`refs/heads/codex/staging-audit-2026-06-21` after pushing that branch. Do not
+record or expose the webhook token.
+
+Live deploy verification before the follow-up cleanup:
+
+- Web and admin `build-info` both reached commit
+  `5645d9839334fc51f16a7ea4f7a7337cf6cde201`.
+- Web build time: `2026-06-22T02:14:42.243Z`.
+- Admin build time: `2026-06-22T02:14:42.237Z`.
+- Web/admin health and readiness endpoints returned `200`.
+- Public smoke pages returned `200` and `LocateFlow` titles: `/`, `/features`,
+  `/why-free`, `/pricing`, `/blog`, `/help`, `/sign-in`, `/sign-up`, and admin
+  `/login`.
+
+Follow-up code cleanup: the public home page still had residual `tone-honey`
+classes in demo-only marketing components after the first Sapphire pass. Those
+were narrowed to `RecognitionChipStorm` and `MobileMockup`, then changed to
+Sapphire/primary demo accents. Real warning/caution semantics in app/admin
+surfaces remain allowed to use warning tones.
+
+Live verification after the follow-up cleanup:
+
+- Web and admin `build-info` both reached commit
+  `fac3aae390209ab4a9e2435ac68a09c06e990ab7`.
+- Web build time: `2026-06-22T02:22:14.625Z`.
+- Admin build time: `2026-06-22T02:22:14.632Z`.
+- `GET` smoke for web/admin build-info, web health, web ready, admin ready, and
+  admin healthz returned `200`.
+- Cache-busted public smoke pages returned `200` with `LocateFlow` titles:
+  `/`, `/features`, `/why-free`, `/pricing`, `/blog`, `/help`, `/sign-in`,
+  `/sign-up`, and admin `/login`.
+- Smoke HTML scan found no `>Move<`, `Move app`, `Move Admin`, `Move Gold`,
+  `move-gold`, `tone-honey`, `honey`, or `gold` hits on those public pages.
+
 ## Read / Inspected
 
 - Repo rules: `AGENTS.md`.
