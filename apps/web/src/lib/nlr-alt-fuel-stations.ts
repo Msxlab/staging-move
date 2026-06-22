@@ -1,12 +1,14 @@
-// NLR Alternative Fuel Stations EV charging lookup.
+// NREL Alternative Fuel Stations EV charging lookup.
 // =============================================================================
 // Part of the New Home Dossier: given an address's lat/lng, report nearby
-// public, active EV charging stations from the NLR Developer Network
-// Alternative Fuel Stations API.
+// public, active EV charging stations from the NREL (National Renewable Energy
+// Laboratory) Developer Network Alternative Fuel Stations API.
+// NOTE: the upstream host is developer.nrel.gov (NOT nlr.gov); the NLR_* symbol
+// names below are legacy and kept to avoid touching the runtime-config key.
 //
 // DATA SOURCE - free but KEYED:
 //
-//   https://developer.nlr.gov/api/alt-fuel-stations/v1/nearest.json
+//   https://developer.nrel.gov/api/alt-fuel-stations/v1/nearest.json
 //     ?api_key=...&latitude=...&longitude=...&radius=10
 //     &fuel_type=ELEC&access=public&status=E&limit=20
 //
@@ -58,7 +60,7 @@ export interface EvChargingLookupResult {
   caveat: string;
   source: {
     name: "NLR Alternative Fuel Stations";
-    url: "https://developer.nlr.gov/docs/transportation/alt-fuel-stations-v1/nearest/";
+    url: "https://developer.nrel.gov/docs/transportation/alt-fuel-stations-v1/nearest/";
   };
 }
 
@@ -67,7 +69,7 @@ export interface EvChargingLookupInput {
   longitude?: number | null;
 }
 
-const NLR_NEAREST_URL = "https://developer.nlr.gov/api/alt-fuel-stations/v1/nearest.json";
+const NLR_NEAREST_URL = "https://developer.nrel.gov/api/alt-fuel-stations/v1/nearest.json";
 const SEARCH_RADIUS_MILES = 10;
 const REQUEST_TIMEOUT_MS = 3500;
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
@@ -76,7 +78,7 @@ const MAX_RETURNED_STATIONS = 5;
 
 const SOURCE = {
   name: "NLR Alternative Fuel Stations",
-  url: "https://developer.nlr.gov/docs/transportation/alt-fuel-stations-v1/nearest/",
+  url: "https://developer.nrel.gov/docs/transportation/alt-fuel-stations-v1/nearest/",
 } as const;
 
 const CAVEAT =
