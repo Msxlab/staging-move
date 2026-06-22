@@ -450,9 +450,9 @@ export function buildReadinessReport(
   if (productionLike) {
     const trustedProxyHeaders = (readConfig("TRUSTED_PROXY_HEADERS") || "").trim().toLowerCase();
     if (!trustedProxyHeaders || trustedProxyHeaders === "auto" || trustedProxyHeaders === "compat") {
-      warn(
+      fail(
         "TRUSTED_PROXY_HEADERS",
-        "TRUSTED_PROXY_HEADERS is unset/compat in production; set cloudflare, vercel, standard, or none explicitly so rate-limit and audit IPs use the intended edge header.",
+        "TRUSTED_PROXY_HEADERS must be set explicitly in production (cloudflare, vercel, standard, or none). Unset/compat trusts client-supplied cf-connecting-ip/x-real-ip/x-forwarded-for, letting clients spoof their source IP and defeat IP rules, per-IP login lockout, and audit accuracy.",
       );
     } else if (
       ![
@@ -469,9 +469,9 @@ export function buildReadinessReport(
         "on",
       ].includes(trustedProxyHeaders)
     ) {
-      warn(
+      fail(
         "TRUSTED_PROXY_HEADERS",
-        "TRUSTED_PROXY_HEADERS has an unknown value and will fall back to compat header precedence.",
+        "TRUSTED_PROXY_HEADERS has an unknown value (would fall back to compat header precedence). Set one of: cloudflare, vercel, standard, none.",
       );
     }
 
