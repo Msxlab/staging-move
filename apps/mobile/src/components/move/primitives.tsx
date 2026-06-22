@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme, fonts } from "@/lib/theme";
 
 // ──────────────────────────────────────────────────────────────────────
-// Move design primitives — the shared building blocks every reskinned
+// Source-theme primitives - the shared building blocks every reskinned
 // screen composes. Faithful to Move.dc.html: navy surfaces, hairline
 // borders, the Sapphire-accent hero gradient, uppercase section labels,
 // accent-gradient progress bars and tonal status pills. All read the

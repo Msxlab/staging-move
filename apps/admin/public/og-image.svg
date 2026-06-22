@@ -1,12 +1,12 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none" aria-hidden="true">
   <defs>
     <radialGradient id="og-tr" cx="0.15" cy="0.25" r="0.6">
-      <stop offset="0%" stop-color="#5B8DEF" stop-opacity="0.18"></stop>
-      <stop offset="100%" stop-color="#5B8DEF" stop-opacity="0"></stop>
+      <stop offset="0%" stop-color="#2E5FB0" stop-opacity="0.18"></stop>
+      <stop offset="100%" stop-color="#2E5FB0" stop-opacity="0"></stop>
     </radialGradient>
     <radialGradient id="og-br" cx="0.85" cy="0.8" r="0.5">
-      <stop offset="0%" stop-color="#5B8DEF" stop-opacity="0.12"></stop>
-      <stop offset="100%" stop-color="#5B8DEF" stop-opacity="0"></stop>
+      <stop offset="0%" stop-color="#2E5FB0" stop-opacity="0.12"></stop>
+      <stop offset="100%" stop-color="#2E5FB0" stop-opacity="0"></stop>
     </radialGradient>
   </defs>
   <rect width="1200" height="630" fill="#0A0F18"></rect>
@@ -29,7 +29,7 @@
     </linearGradient>
     <linearGradient id="ic-box" x1="26" y1="56" x2="74" y2="92" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#8FC0EE"></stop>
-      <stop offset="100%" stop-color="#3D6FD6"></stop>
+      <stop offset="100%" stop-color="#244C90"></stop>
     </linearGradient>
   </defs>
 
@@ -75,5 +75,5 @@
 
   </svg>
   <text x="110" y="480" font-family="Playfair Display, Didot, Georgia, serif" font-size="96" font-weight="500" fill="#ECF1F8" letter-spacing="0">LocateFlow</text>
-  <text x="110" y="540" font-family="Playfair Display, Didot, Georgia, serif" font-style="italic" font-size="36" font-weight="400" fill="#83AAF5" letter-spacing="0">Home to somewhere new.</text>
+  <text x="110" y="540" font-family="Playfair Display, Didot, Georgia, serif" font-style="italic" font-size="36" font-weight="400" fill="#3D74C8" letter-spacing="0">Home to somewhere new.</text>
 </svg>

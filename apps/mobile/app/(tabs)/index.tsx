@@ -227,7 +227,7 @@ export default function DashboardScreen() {
   // theme: hook-injected styles
 
   const theme = useAppTheme();
-  // Theme toggle for the header (Move design header control). resolvedScheme
+  // Theme toggle for the header source-theme control. resolvedScheme
   // tells us which glyph to show; setPreference flips between light/dark.
   const { resolvedScheme, setPreference } = useThemePreference();
 
@@ -236,7 +236,7 @@ export default function DashboardScreen() {
   const { t, i18n } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   // The signed-in user's first name — drives the Playfair header greeting in
-  // the Move design. Best-effort: null falls back to a generic welcome label.
+  // the source theme. Best-effort: null falls back to a generic welcome label.
   const [firstName, setFirstName] = useState<string | null>(null);
   // Full tracked-services list — powers the client-side savings/insights card.
   // Fetched alongside the dashboard payload (no new endpoint).
@@ -393,7 +393,7 @@ export default function DashboardScreen() {
       setError(null);
       setOffline(false);
       const profileData = res.data.profile || res.data;
-      // Header greeting name (Move design). Best-effort; trims to first token so
+      // Header greeting name (source theme). Best-effort; trims to first token so
       // a full "name" field still renders a tidy first-name greeting.
       {
         const nm = (profileData?.firstName || profileData?.name || "")

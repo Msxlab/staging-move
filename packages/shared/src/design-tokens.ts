@@ -61,13 +61,13 @@ export const roseScale = {
   50: "#EEF5FF",
   100: "#DBE8FF",
   200: "#C8D9FB",
-  300: "#83AAF5",
-  400: "#5B8DEF", // light Sapphire pin
-  500: "#5B8DEF", // light Sapphire primary
-  600: "#3D74C8",
-  700: "#3D6FD6", // pressed
-  800: "#2E5FB0",
-  900: "#244C90",
+  300: "#A9C5F8",
+  400: "#3D74C8", // light Sapphire hover / soft glow
+  500: "#2E5FB0", // light Sapphire primary
+  600: "#2E5FB0",
+  700: "#244C90", // pressed
+  800: "#244C90",
+  900: "#18345F",
 } as const;
 
 /**

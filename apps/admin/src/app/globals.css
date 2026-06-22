@@ -79,9 +79,9 @@
   --rose-light:  #3D74C8;
   --rose-deep:   #2E5FB0;
   --rose-dark:   #18345F;
-  --foil-a:      #83AAF5;
+  --foil-a:      #3D74C8;
   --foil-b:      #2E5FB0;
-  --foil-c:      #3D6FD6;
+  --foil-c:      #244C90;
   --foil:        #2E5FB0;
   --foil-ink:    #2E5FB0;
   --sage:        #0F6B50;
@@ -173,7 +173,7 @@
     --card-foreground: 220 16% 98%;
     --popover: 218 22% 19%;
     --popover-foreground: 220 16% 98%;
-    --primary: 219.73 82.22% 64.71%;
+    --primary: 38.53 51.17% 58.24%;
     --primary-foreground: 222 40% 8%;
     --secondary: 220 10% 82%;
     --secondary-foreground: 222 40% 8%;
@@ -185,7 +185,7 @@
     --destructive-foreground: 222 40% 8%;
     --border: 217 20% 30%;
     --input: 217 20% 30%;
-    --ring: 219.73 82.22% 64.71%;
+    --ring: 38.53 51.17% 58.24%;
   }
 }
 

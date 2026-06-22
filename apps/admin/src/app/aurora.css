@@ -124,7 +124,7 @@ html:not(.dark) .adm-aurora {
 
   /* ── Phase 3 corporate accent + chrome (light: #2E5FB0) ── */
   --au-accent:      #2E5FB0;
-  --au-accent-2:    #2E5FB0;
+  --au-accent-2:    #3D74C8;
   --au-accent-ink:  #FFFFFF;
   --au-accent-soft: rgba(46, 95, 176, 0.10);
   --au-accent-line: rgba(46, 95, 176, 0.30);
@@ -603,9 +603,9 @@ html:not(.dark) .adm-aurora {
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
   --rose-deep:   var(--au-cool-2);
-  --foil-a:      #83AAF5;
+  --foil-a:      #3D74C8;
   --foil-b:      var(--au-violet);
-  --foil-c:      #3D6FD6;
+  --foil-c:      #244C90;
   --foil:        var(--au-violet);
   --foil-ink:    #2E5FB0;
   --sage:        var(--au-mint);

@@ -42,7 +42,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { addressLimitForPlan, isHighestConsumerPlan } from "@/lib/plan-comparison";
 import type { Address } from "@locateflow/shared";
 
-// ── Addresses tab — reskinned to the Move design's ADDRESSES layout ──
+// Addresses tab - reskinned to the source theme's ADDRESSES layout.
 
 type StatusKind = "active" | "moving" | "seasonal" | "past";
 

@@ -352,7 +352,7 @@ export default function OnboardingClient({
   // assemble moment played once when the Step-2 recommendations finish
   // loading: the REAL state-based recommendations the wizard already fetched
   // appear as staggered rows under a progress ring, then the full picker
-  // reveals. It replaces the prototype's "account scan" — Move never
+  // reveals. It replaces the prototype's "account scan" - LocateFlow never
   // scans accounts, inboxes, or email, and the copy says so. Decorative only:
   // prefers-reduced-motion (or an empty result) skips straight to the list.
   const ritualPlayedRef = useRef(false);
