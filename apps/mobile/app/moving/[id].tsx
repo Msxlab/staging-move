@@ -1348,7 +1348,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
     backgroundColor: theme.colors.primary,
   },
-  migBtnPrimaryText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  migBtnPrimaryText: { fontSize: 11, fontWeight: "700", color: theme.colors.onAccent },
   transitionPanel: {
     borderWidth: 1,
     borderColor: theme.colors.border,

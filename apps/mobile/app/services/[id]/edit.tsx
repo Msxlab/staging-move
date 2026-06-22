@@ -26,7 +26,7 @@ import {
   type LucideIcon,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, fonts, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme, categoryColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -41,25 +41,14 @@ import {
 
 const BILLING_CYCLE_VALUES = ["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"] as const;
 
-const catColors: Record<string, string> = {
-  GOVERNMENT: "#E25C5C",
-  UTILITY: "#CBA45E",
-  FINANCIAL: "#54CB7E",
-  HOUSING: "#CBA45E",
-  HEALTHCARE: "#F0A0B8",
-  TRANSPORTATION: "#B0852F",
-  KIDS: "#B0852F",
-  FITNESS: "#CBA45E",
-  SHOPPING: "#F0A0B8",
-  OTHER: "#6E7C92",
-};
-
+// Categorical palette shared via `@/lib/theme` (`categoryColors`) — one source
+// for the same hue map the services list and detail screens use.
 function getServiceCategoryGroup(category: string): string {
   return category?.split("_")[0] || "OTHER";
 }
 
 function getServiceCategoryColor(category: string): string {
-  return catColors[category] || catColors[getServiceCategoryGroup(category)] || catColors.OTHER;
+  return categoryColors[category] || categoryColors[getServiceCategoryGroup(category)] || categoryColors.OTHER;
 }
 
 function getServiceCategoryLabel(category: string): string {

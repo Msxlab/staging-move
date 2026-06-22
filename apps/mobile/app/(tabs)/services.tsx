@@ -28,7 +28,7 @@ import {
   Building2,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme, fonts } from "@/lib/theme";
+import { useAppTheme, type Theme, fonts, categoryColors } from "@/lib/theme";
 import { SectionHeader, MoveProgressBar } from "@/components/move";
 import { api } from "@/lib/api";
 import {
@@ -79,13 +79,8 @@ function readServicesCache(raw: unknown): { services: unknown[]; addresses: unkn
   return services && addresses ? { services, addresses } : null;
 }
 
-const catColors: Record<string, string> = {
-  // Aurora-flavored categorical palette — distinct hues, all readable on dark navy.
-  GOVERNMENT: "#E25C5C", UTILITY: "#CBA45E", FINANCIAL: "#54CB7E",
-  HOUSING: "#CBA45E", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#B0852F",
-  KIDS: "#B0852F", FITNESS: "#CBA45E", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
-};
-
+// Categorical palette shared via `@/lib/theme` (`categoryColors`) — a single
+// source for the same hue map the list, detail and edit screens all use.
 const serviceCategoryValues = new Set<string>(SERVICE_CATEGORIES.map((c) => c.value));
 
 function getServiceCategoryGroup(category: string): string {
@@ -95,7 +90,7 @@ function getServiceCategoryGroup(category: string): string {
 }
 
 function getServiceCategoryColor(category: string): string {
-  return catColors[getServiceCategoryGroup(category)] || catColors[category] || catColors.OTHER;
+  return categoryColors[getServiceCategoryGroup(category)] || categoryColors[category] || categoryColors.OTHER;
 }
 
 function getServiceCategoryLabel(category: string): string {
@@ -950,8 +945,8 @@ export default function ServicesScreen() {
                   onPress={() => router.push("/services/new")}
                   activeOpacity={0.7}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#fff" }}>{t("services.addNext")}</Text>
-                  <ArrowRight size={14} color="#fff" />
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: theme.colors.onAccent }}>{t("services.addNext")}</Text>
+                  <ArrowRight size={14} color={theme.colors.onAccent} />
                 </TouchableOpacity>
               )}
             </View>
