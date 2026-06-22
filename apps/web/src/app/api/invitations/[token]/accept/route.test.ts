@@ -36,6 +36,7 @@ vi.mock("@/lib/workspace-invitations", () => ({
   seatLimitForPlan: vi.fn(() => 6),
 }));
 vi.mock("@/lib/in-app-notifications", () => ({ createInAppNotification: vi.fn(() => Promise.resolve()) }));
+vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => Promise.resolve({ success: true })) }));
 
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
@@ -82,7 +83,7 @@ beforeEach(() => {
   gateMock.mockResolvedValue(null);
   sessionMock.mockResolvedValue({ userId: "u-1" });
   invFind.mockResolvedValue(pendingInvite());
-  userFind.mockResolvedValue({ email: "invitee@example.com" });
+  userFind.mockResolvedValue({ email: "invitee@example.com", emailVerifiedAt: new Date() });
   wsFind.mockResolvedValue({ id: "ws-1", ownerUserId: "owner-1", name: "Home" });
   subFind.mockResolvedValue({});
   memberFind.mockResolvedValue(null);
@@ -121,8 +122,15 @@ describe("POST /api/invitations/[token]/accept", () => {
     expect(memberCreate).not.toHaveBeenCalled();
   });
 
+  it("403s when the matching account has not verified its email", async () => {
+    userFind.mockResolvedValue({ email: "invitee@example.com", emailVerifiedAt: null });
+    const res = await POST(req, params);
+    expect(res.status).toBe(403);
+    expect(memberCreate).not.toHaveBeenCalled();
+  });
+
   it("matches the invited email case-insensitively", async () => {
-    userFind.mockResolvedValue({ email: "INVITEE@example.com" });
+    userFind.mockResolvedValue({ email: "INVITEE@example.com", emailVerifiedAt: new Date() });
     const res = await POST(req, params);
     expect(res.status).toBe(200);
   });
