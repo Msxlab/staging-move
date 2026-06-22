@@ -6,8 +6,9 @@ import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getTranslations, getLocale } from "next-intl/server";
-import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import { CONSUMER_FREE_FLAG, normalizeMovingPlanStatus } from "@locateflow/shared";
 import { canCreateMovingPlan } from "@/lib/plan-limits";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import {
   planLimitScopeForDataScope,
   resolveWorkspaceDataScope,
@@ -31,12 +32,15 @@ export default async function MovingPage() {
   // the visible action on the move-plan path instead of sending users to billing.
   // Fail open on gate errors — the API stays the enforcement point, and a
   // transient failure must never lock paid users out of plan creation.
-  let canStartPlan = true;
-  try {
-    const gate = await canCreateMovingPlan(userId, planLimitScopeForDataScope(scope));
-    canStartPlan = gate.allowed;
-  } catch {
-    canStartPlan = true;
+  const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG, { userId }).catch(() => false);
+  let canStartPlan = consumerFree;
+  if (!consumerFree) {
+    try {
+      const gate = await canCreateMovingPlan(userId, planLimitScopeForDataScope(scope));
+      canStartPlan = gate.allowed;
+    } catch {
+      canStartPlan = true;
+    }
   }
   const newPlanHref = "/moving/new";
   const newPlanLabel = canStartPlan ? t("newPlanTitle") : td("commandCenter_freeCta");

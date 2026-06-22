@@ -12,6 +12,8 @@ What changed in this follow-up:
 - Removed remaining app-gate CTAs from Dossier, AI Briefing, movers, move command center, and service/address limit surfaces. These now route into the product workflow or show access-review copy instead of `/pricing`, upgrade, lock, or plan-card messaging.
 - Updated the mobile Subscription screen so `FREE_ACCESS` shows an included full-access panel, no plan chooser, no upgrade action, no mobile-purchases unavailable footer, and no small mascot icon in the plan card.
 - Regenerated Android launcher/splash resources from the current mobile assets and rebuilt the standalone `debugOptimized` APK.
+- Live web QA on `https://locateflow.com` at deployed commit `7d1f7564` completed registration, sign-in, legal/profile/address/services/moving onboarding, and module navigation with `mobile.qa@locateflow.com`. It found that dashboard, moving, subscription, sidebar, and AI briefing still leaked "Pro", "Unlock", "upgrade", or plan-change language under the full-free pivot.
+- Local follow-up fix now threads `CONSUMER_FREE` through authenticated app shell/sidebar, dashboard, moving page gate copy, subscription free-panel logic, and `/api/onboarding/briefing` so consumer-free users see included/full-access behavior instead of paid-plan teasers.
 
 Evidence saved:
 
@@ -20,6 +22,8 @@ Evidence saved:
 - Failed subscription check before the final fix: `66-subscription-free-panel.png`
 - Passing subscription check after the final fix: `C:\Users\Kutay\Documents\staging-move\tmp-live-qa-2026-06-22\android\70-subscription-final-crown-free-panel.png`
 - UI tree proof for the passing screen: `70-subscription-final-crown-free-panel.xml`
+- Live web authenticated QA result: `C:\Users\Kutay\Documents\staging-move\tmp-live-qa-2026-06-22\web-7d1f7564\auth-onboarding3\qa-result.json`
+- Live web authenticated screenshots: `auth-onboarding3\route-dashboard.png`, `route-addresses.png`, `route-moving.png`, `route-services.png`, `route-settings.png`, `route-subscription.png`
 
 Verification passed after the follow-up:
 
@@ -28,25 +32,27 @@ Verification passed after the follow-up:
 - `pnpm --filter @locateflow/web exec tsc --noEmit`
 - `pnpm --filter @locateflow/admin exec tsc --noEmit`
 - `pnpm --filter @locateflow/web test -- ...` targeted free/theme regression set -> 7 files / 142 tests passed
+- `pnpm --filter @locateflow/web test -- src/components/settings/subscription-management.helpers.test.ts src/app/api/onboarding/briefing/route.test.ts` -> 2 files / 24 tests passed after the live web full-free leak fix
 - `gradlew :app:assembleDebugOptimized --no-daemon --console=plain` -> Android APK build successful
 - `git diff --check` -> only CRLF warnings
 
 Theme note:
 
 - The supplied HTML theme sources do use Gold tokens directly. Examples: `(9)\Move.dc.html`, `(9)\Raccoon.dc.html`, and `(5)\Move Web.dc.html` reference `#CBA45E`, `#DCBC7C`, and `#B0852F`.
-- Current local code still follows the recorded dark-Gold / light-Sapphire split. If the owner decision is now "Sapphire in both light and dark", that should be treated as a deliberate palette override of the supplied source HTML, not as a missing import.
+- Current owner decision: mobile light theme uses Sapphire; mobile dark theme uses Gold. This is not an all-Sapphire override.
 - Remaining visual risk: several source-theme mascot placements remain across mobile auth/home/blog/onboarding and web marketing/blog/empty states. The subscription plan card mascot was removed in this pass because it was visibly confusing in the full-free state. A no-mascot pass should be tracked as a separate explicit visual cleanup if desired.
 
 Browser / Chrome note:
 
 - Existing Chrome did not expose a CDP debug port on `9222`, `9223`, `9224`, or `9333`; no new Chrome window was opened. Local rendered QA used ADB and command-line checks. Live staging browser QA still needs either an existing debug-enabled Chrome session or a Dokploy deploy followed by HTTP/Playwright fallback.
+- The Codex in-app Browser plugin did connect successfully for background checks, but it is not the already-open Mustafa Chrome profile. Live web screenshots were saved with Playwright so they could be persisted to disk.
 
 ## Scope
 
 - Repo: `C:\Users\Kutay\Documents\staging-move`
 - Branch: `codex/staging-audit-2026-06-21`
 - Theme source: `C:\Users\Kutay\Downloads\tema-20260621T192823Z-3-001\tema`
-- Live staging base: `https://staging.locateflow.com`
+- Live staging base currently exercised: `https://locateflow.com`
 - Android target: local Pixel emulator via Android SDK / Android Studio JBR
 
 ## Source Theme Inventory

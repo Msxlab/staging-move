@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   resolveWorkspaceDataScope: vi.fn(),
   generateLlmBriefing: vi.fn(),
   getUserPlan: vi.fn(),
+  isFeatureEnabled: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -37,6 +38,10 @@ vi.mock("@/lib/rate-limit", () => ({
 
 vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: (...args: unknown[]) => mocks.getRuntimeConfigValue(...args),
+}));
+
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: (...args: unknown[]) => mocks.isFeatureEnabled(...args),
 }));
 
 vi.mock("@/lib/workspace-data-scope", () => ({
@@ -142,6 +147,7 @@ describe("/api/onboarding/briefing", () => {
       return Promise.resolve({ success: true });
     });
     mocks.getRuntimeConfigValue.mockResolvedValue("test-api-key");
+    mocks.isFeatureEnabled.mockResolvedValue(false);
     // aiBriefing is Family+Pro under the overhauled matrix (Individual loses AI),
     // so the entitled-path default is FAMILY — the lowest tier with the feature.
     mocks.getUserPlan.mockResolvedValue({ plan: "FAMILY", hasPremium: true, isActive: true });
@@ -207,6 +213,19 @@ describe("/api/onboarding/briefing", () => {
 
     // No upgrade CTA for a feature this deployment cannot serve to anyone.
     expect(body).toEqual({ configured: false });
+  });
+
+  it("consumer-free lets a free plan receive the included briefing", async () => {
+    mocks.getUserPlan.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+    mocks.isFeatureEnabled.mockResolvedValue(true);
+
+    const body = await (await POST(makeRequest())).json();
+
+    expect(body.configured).toBe(true);
+    expect(body.upgradeRequired).toBeUndefined();
+    expect(typeof body.briefing).toBe("string");
+    expect(mocks.generateLlmBriefing).toHaveBeenCalledTimes(1);
+    expect(mocks.userFindUnique).toHaveBeenCalled();
   });
 
   it("every paid tier passes the gate (FAMILY and PRO included)", async () => {

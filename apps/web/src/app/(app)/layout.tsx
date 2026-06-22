@@ -9,6 +9,8 @@ import { loadShowBudgetPreference } from "@/lib/user-preferences";
 import { prisma } from "@/lib/db";
 import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
 import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { CONSUMER_FREE_FLAG } from "@locateflow/shared";
 
 /**
  * Show the Household/Workspace nav entry only when the workspace model is on AND
@@ -88,12 +90,20 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect(gate.redirectTo);
   }
 
-  const showBudget = await loadShowBudgetPreference(gate.userId).catch(() => true);
-  const showWorkspace = await resolveShowWorkspace(gate.userId).catch(() => false);
-  const planTier = await resolvePlanTier(gate.userId);
+  const [showBudget, showWorkspace, planTier, consumerFree] = await Promise.all([
+    loadShowBudgetPreference(gate.userId).catch(() => true),
+    resolveShowWorkspace(gate.userId).catch(() => false),
+    resolvePlanTier(gate.userId),
+    isFeatureEnabled(CONSUMER_FREE_FLAG, { userId: gate.userId }).catch(() => false),
+  ]);
 
   return (
-    <AppShell showBudget={showBudget} showWorkspace={showWorkspace} planTier={planTier}>
+    <AppShell
+      showBudget={showBudget}
+      showWorkspace={showWorkspace}
+      planTier={planTier}
+      consumerFree={consumerFree}
+    >
       {children}
     </AppShell>
   );

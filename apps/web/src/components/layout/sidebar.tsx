@@ -27,6 +27,7 @@ import { LogoMark } from "@/components/marketing/logo";
 interface SidebarProps {
   showBudget?: boolean;
   showWorkspace?: boolean;
+  consumerFree?: boolean;
   variant?: "desktop" | "mobile";
   open?: boolean;
   onClose?: () => void;
@@ -36,6 +37,7 @@ interface SidebarProps {
 export function Sidebar({
   showBudget = true,
   showWorkspace = false,
+  consumerFree = false,
   variant = "desktop",
   open = false,
   onClose,
@@ -196,10 +198,9 @@ export function Sidebar({
 
       {/* Bottom: Pro upsell + collapse toggle */}
       <div className="border-t border-border py-3 px-2 shrink-0">
-        {/* Foil = premium-only moment. Hidden for Pro members via the
-            .plan-pro accent class AppShell sets on the shell wrapper —
-            plan styling always flows through .plan-*, never via props. */}
-        {isCollapsed ? (
+        {/* Foil = premium-only moment. Hidden when consumer-free makes the
+            product included, and for Pro members via the .plan-pro hook. */}
+        {!consumerFree && isCollapsed ? (
           <Link
             href="/pricing"
             onClick={onNavigate}
@@ -209,7 +210,7 @@ export function Sidebar({
             <Sparkles className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">{t("proUpsellTitle")}</span>
           </Link>
-        ) : (
+        ) : !consumerFree ? (
           <Link
             href="/pricing"
             onClick={onNavigate}
@@ -223,7 +224,7 @@ export function Sidebar({
               {t("proUpsellBody")}
             </span>
           </Link>
-        )}
+        ) : null}
 
         {!isMobile ? (
           <button

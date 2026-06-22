@@ -230,10 +230,12 @@ export default function DashboardClient({
   initialPrefs,
   uxAiBriefingExperienceVariant = "control",
   uxTrustCopyVariant = "control",
+  consumerFree = false,
 }: {
   initialPrefs: DashboardWidgetPrefs | null;
   uxAiBriefingExperienceVariant?: UxAiBriefingExperienceVariant;
   uxTrustCopyVariant?: UxTrustCopyVariant;
+  consumerFree?: boolean;
 }) {
   const t = useTranslations("services");
   const td = useTranslations("dashboard");
@@ -430,7 +432,8 @@ export default function DashboardClient({
         const hasPremium = ent
           ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
           : sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date()));
-        setIsPremium(!!hasPremium);
+        const hasFullAccess = consumerFree || Boolean(hasPremium);
+        setIsPremium(hasFullAccess);
         setPremiumPlan((ent?.plan ?? sub.plan) || "");
         setOnboarding({
           completed: profileData.onboardingCompleted === true,
@@ -504,7 +507,7 @@ export default function DashboardClient({
               stateRule,
             };
           } catch { /* non-blocking */ }
-        } else if (!hasPremium) {
+        } else if (!hasFullAccess) {
           const previewContext = readFreeMovePreviewContext();
           if (previewContext) {
             try {
@@ -677,7 +680,8 @@ export default function DashboardClient({
     !!stats.activePlan &&
     stats.activePlan.fromCity !== "Origin" &&
     stats.activePlan.toCity !== "Destination";
-  const premiumBadgeLabel = formatPlanBadgeLabel(premiumPlan) ?? td("premiumBadge");
+  const premiumBadgeLabel = consumerFree ? "Full Access" : formatPlanBadgeLabel(premiumPlan) ?? td("premiumBadge");
+  const featurePlan = consumerFree && (!premiumPlan || premiumPlan === "FREE_TRIAL") ? "PRO" : premiumPlan;
 
   // Central widget render dispatch — every column widget body lives in this
   // one switch. A null body keeps each widget's existing self-hide behavior
@@ -896,7 +900,7 @@ export default function DashboardClient({
             // Full Geoapify basemap is Family/Pro; Free/Individual
             // get the stylized canvas fallback. premiumPlan already flows
             // from the entitlement resolved at load — no extra fetch.
-            realMap={planFeatures(premiumPlan).realMap}
+            realMap={planFeatures(featurePlan).realMap}
           />
         ) : null;
       case "milestones":
@@ -1044,7 +1048,7 @@ export default function DashboardClient({
           />
         );
       case "householdActivation":
-        return <HouseholdActivationCard key={slot} plan={premiumPlan} />;
+        return <HouseholdActivationCard key={slot} plan={featurePlan} />;
       case "commandCenter":
         return (
           <MoveCommandCenter
