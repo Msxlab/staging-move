@@ -1,13 +1,13 @@
 import type { Config } from "tailwindcss";
 
-// Edition VIII - Move Sapphire. The mobile NativeWind palette is sourced from
+// Edition VIII - LocateFlow Sapphire. The mobile NativeWind palette is sourced from
 // packages/shared/src/design-tokens.ts so `bg-primary-500` / `bg-primary`
 // / `bg-surface` resolve to the Sapphire, teal, and green values shipped
 // system-wide.
 //
 // Legacy names (rose, foil, sage, primary, surface) are preserved on
 // purpose: existing `bg-primary-500` / `bg-rose` / `bg-foil` call sites
-// keep rendering, the values just flip to Move Sapphire. New code should
+// keep rendering, the values just flip to LocateFlow Sapphire. New code should
 // prefer the semantic aliases (`bg-rose`/sapphire, `bg-foil`/sapphire,
 // `bg-sage`/green).
 export default {
@@ -19,7 +19,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Move Sapphire mobile palette aligned with packages/shared/src/design-tokens.ts.
+        // LocateFlow Sapphire mobile palette aligned with packages/shared/src/design-tokens.ts.
         // NativeWind className colors are a fixed (dark) palette; runtime
         // light/dark theming is driven by src/lib/theme.ts (useAppTheme).
         // Legacy keys (rose/foil/sage/primary/surface) are kept so existing
@@ -70,7 +70,7 @@ export default {
         info: "#37C2C9",
       },
       fontFamily: {
-        // Move design system: Playfair Display (display/serif) + DM Sans
+        // LocateFlow design system: Playfair Display (display/serif) + DM Sans
         // (sans) + DM Mono (mono) — loaded via expo-font in app/_layout.tsx.
         // Falls back to system if the font hasn't loaded. For specific heading
         // weights use the explicit `fonts.*` constants from src/lib/theme.ts.

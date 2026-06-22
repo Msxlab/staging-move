@@ -13,7 +13,7 @@ import { Star } from "lucide-react";
 const SAMPLE_TESTIMONIALS = [
   {
     quote:
-      "I moved twice in three years and always forgot something. Move kept every provider, renewal, and address change in one place — nothing slipped through this time.",
+      "I moved twice in three years and always forgot something. LocateFlow kept every provider, renewal, and address change in one place — nothing slipped through this time.",
     name: "Sample Name",
     role: "Recent mover",
     initials: "SN",
@@ -66,7 +66,7 @@ export function SocialProof() {
             className="flex flex-col rounded-xl border bg-card p-6 space-y-4 hover:shadow-md transition-all"
           >
             <div
-              className="flex items-center gap-0.5 text-tone-honey-fg"
+              className="flex items-center gap-0.5 text-tone-foil-fg"
               aria-hidden="true"
             >
               {Array.from({ length: 5 }).map((_, i) => (

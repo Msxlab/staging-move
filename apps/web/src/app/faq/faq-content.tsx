@@ -6,9 +6,9 @@ import { faqCopyGroups } from "./faq-data";
 export type Faq = { q: string; a: ReactNode; plain: string };
 
 const linkedAnswers: Record<string, ReactNode> = {
-  "Is Move a provider marketplace?": (
+  "Is LocateFlow a provider marketplace?": (
     <>
-      No. Move is an organizational tool and provider research aid. It does not sell provider services, guarantee
+      No. LocateFlow is an organizational tool and provider research aid. It does not sell provider services, guarantee
       availability, or act as a broker. See the{" "}
       <Link href="/disclaimer" className="underline">
         Disclaimer
@@ -35,9 +35,9 @@ const linkedAnswers: Record<string, ReactNode> = {
       , the checkout offer, legal requirements, and Apple App Store or Google Play rules for store purchases.
     </>
   ),
-  "What data does Move collect?": (
+  "What data does LocateFlow collect?": (
     <>
-      Move may collect account, profile, address, service, moving, budget, support, billing, device, analytics,
+      LocateFlow may collect account, profile, address, service, moving, budget, support, billing, device, analytics,
       push, consent, audit, and security data. See the{" "}
       <Link href="/privacy" className="underline">
         Privacy Policy
@@ -55,9 +55,9 @@ const linkedAnswers: Record<string, ReactNode> = {
       .
     </>
   ),
-  "Is Move GDPR or CCPA certified?": (
+  "Is LocateFlow GDPR or CCPA certified?": (
     <>
-      Move does not claim privacy certification. It provides privacy tools and California privacy workflows where
+      LocateFlow does not claim privacy certification. It provides privacy tools and California privacy workflows where
       applicable. See the{" "}
       <Link href="/ccpa-privacy-notice" className="underline">
         California Privacy Notice
@@ -72,15 +72,15 @@ const linkedAnswers: Record<string, ReactNode> = {
         Contact page
       </Link>{" "}
       or email support at{" "}
-      <a href={mailto(LEGAL_CONTACTS.support, "Move support request")} className="underline">
+      <a href={mailto(LEGAL_CONTACTS.support, "LocateFlow support request")} className="underline">
         {LEGAL_CONTACTS.support}
       </a>
       .
     </>
   ),
-  "How does Move protect account data?": (
+  "How does LocateFlow protect account data?": (
     <>
-      Move uses access controls, TLS, password hashing, rate limits, logging, and security procedures. It does not
+      LocateFlow uses access controls, TLS, password hashing, rate limits, logging, and security procedures. It does not
       claim perfect security or a certification. See the{" "}
       <Link href="/security" className="underline">
         Security overview

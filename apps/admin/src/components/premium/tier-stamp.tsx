@@ -13,7 +13,7 @@ const TIER_META: Record<
 };
 
 /**
- * Compact champagne-and-rose tier badge for admin tables.
+ * Compact Sapphire tier badge for admin tables.
  *
  * Renders for every recognized plan including FREE_TRIAL so every row
  * gets a tier marker — Pro carries a subtle inset foil gradient so the

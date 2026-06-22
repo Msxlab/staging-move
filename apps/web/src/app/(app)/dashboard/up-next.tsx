@@ -2,7 +2,7 @@
 
 /**
  * UP NEXT (web) — the dashboard's one-tap task-clearing strip, ported from the
- * mobile UpNext for parity. It sits beside the Move Command Center and shows the
+ * mobile UpNext for parity. It sits beside the Moving Command Center and shows the
  * 2-3 nearest-due OPEN move-tasks for the active plan, each with an inline
  * checkbox that completes via the SAME lifecycle event the plan screen uses:
  *   PATCH /api/move-tasks { id, event: "COMPLETE" }
@@ -19,7 +19,7 @@
  *   - Self-hides when there is no active plan or no open tasks (and no pending
  *     undo), so it never adds an empty card to the dashboard.
  *
- * Honesty note: completion is LOCAL ONLY — it updates Move records, never
+ * Honesty note: completion is LOCAL ONLY — it updates LocateFlow records, never
  * external provider accounts. This strip is the fast path for users who already
  * know what "complete" means; the plan screen keeps the explanatory confirm.
  */

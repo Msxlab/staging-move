@@ -26,7 +26,7 @@ export async function workspaceFeatureGate(): Promise<NextResponse | null> {
 export function workspacePlanLabel(plan: string | null | undefined): string {
   if (plan === "FAMILY") return "Household";
   if (plan === "PRO") return "Workspace";
-  return "My Move";
+  return "My move";
 }
 
 /** Resolve the plan label for a workspace from its owner's subscription. */

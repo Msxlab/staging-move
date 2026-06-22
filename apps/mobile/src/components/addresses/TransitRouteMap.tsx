@@ -20,7 +20,7 @@ import {
  * GEOAPIFY_API_KEY never ships to the client) via the app's API base URL
  * with the same Bearer token the ApiClient uses. Old home pin is sage, new
  * home pin + geodesic route use the plan accent (theme.colors.primary is
- * already per-plan via applyPlanPalette), and the basemap follows the
+ * already Sapphire via applyPlanPalette), and the basemap follows the
  * resolved app theme (Aurora dark/light style sets server-side).
  *
  * Failure posture: missing coordinates, missing auth token, or ANY image /

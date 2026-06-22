@@ -480,7 +480,7 @@ export default function RootLayout() {
     return () => setSessionCleanupHook(null);
   }, [queryClient]);
 
-  // Move design system. Playfair Display is the display/serif face (the
+  // LocateFlow design system. Playfair Display is the display/serif face (the
   // "Move" wordmark, hero numerals, section titles); DM Sans is the UI face;
   // DM Mono is for numerals/meta. Fraunces + Geist are still loaded during the
   // reskin transition so any not-yet-migrated screen keeps its font. All are

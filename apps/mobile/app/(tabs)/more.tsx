@@ -99,8 +99,8 @@ export default function MoreScreen() {
 
   // Plan pill label — planTier is FAMILY | PRO | INDIVIDUAL | FREE | FREE_TRIAL
   // | null; FREE* and null (not-yet-resolved entitlement) render as Free, matching the
-  // dashboard's resolution default. The pill itself tints via
-  // theme.colors.primary, so Family/Pro plan accents flow automatically.
+  // dashboard's resolution default. The pill itself stays on the canonical
+  // Sapphire primary.
   const planLabel =
     planTier === "FAMILY"
       ? t("more.planFamily", { defaultValue: "Family" })
@@ -134,8 +134,8 @@ export default function MoreScreen() {
   };
 
   // Tonal tiles per row (Move idiom: every menu row gets an icon chip in a
-  // tonal tile). All values come from theme tone objects — plan-accent rows
-  // (Profile) use the primary set so Family/Pro tints flow through.
+  // tonal tile). All values come from theme tone objects; brand/action rows use
+  // the Sapphire primary instead of legacy plan-specific amber accents.
   const tonePrimary: RowTone = {
     bg: theme.colors.primaryFaded,
     border: theme.colors.primary + "33",
@@ -143,7 +143,7 @@ export default function MoreScreen() {
   };
   const toneCool = theme.colors.sky; // Move info
   const toneSage = theme.colors.emerald; // sage / money
-  const toneHoney = theme.colors.amber; // honey / foil
+  const toneAction = tonePrimary;
   const toneSlate = theme.colors.sky; // muted slate
 
   // Regrouped into four task-oriented sections (was a flat 16-row junk drawer).
@@ -158,7 +158,7 @@ export default function MoreScreen() {
         // exists at app/search.tsx so the route is valid.
         { icon: Search, label: t("search.title"), route: "/search" as Href, tone: toneCool },
         { icon: DollarSign, label: t("budget.title"), route: "/budget", tone: toneSage },
-        { icon: Building2, label: t("providers.title"), route: "/providers", tone: toneHoney },
+        { icon: Building2, label: t("providers.title"), route: "/providers", tone: toneAction },
         { icon: Building2, label: t("customProviders.title"), route: "/custom-providers", tone: toneSlate },
         { icon: CalendarClock, label: t("reminders.title", { defaultValue: "Reminders" }), route: "/reminders" as Href, tone: toneCool },
       ],
@@ -167,7 +167,7 @@ export default function MoreScreen() {
       title: t("more.sectionAccount", { defaultValue: "Account" }),
       items: [
         { icon: User, label: t("settings.profile"), route: "/settings/profile", tone: tonePrimary },
-        { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription", tone: toneHoney },
+        { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription", tone: toneAction },
         // Workspace + Export were only reachable via a second, redundant
         // "Settings" screen (the confusing "settings inside settings"). Surface
         // them here directly and drop that duplicate menu entry.
@@ -186,14 +186,14 @@ export default function MoreScreen() {
         { icon: Download, label: t("settings.export"), route: "/settings/export", tone: toneSage },
         // Typed-routes generation is stale for this recently-added screen; the
         // file exists at app/settings/address-changes.tsx so the route is valid.
-        { icon: Activity, label: t("addressChanges.title", "Address changes"), route: "/settings/address-changes" as Href, tone: toneHoney },
+        { icon: Activity, label: t("addressChanges.title", "Address changes"), route: "/settings/address-changes" as Href, tone: toneAction },
       ],
     },
     {
       title: t("more.sectionSupport", { defaultValue: "Support" }),
       items: [
         { icon: HelpCircle, label: t("settings.help"), route: "/help", tone: toneCool },
-        { icon: Ticket, label: t("settings.support"), route: "/help/tickets", tone: toneHoney },
+        { icon: Ticket, label: t("settings.support"), route: "/help/tickets", tone: toneAction },
         // The notifications FEED (distinct from "Notification settings" above).
         { icon: Bell, label: t("settings.notifications"), route: "/notifications", tone: toneSlate },
         { icon: FileText, label: t("blog.title"), route: "/blog", tone: toneSage },
@@ -245,7 +245,7 @@ export default function MoreScreen() {
                 <Text style={styles.planBannerTitle} numberOfLines={1}>
                   {hasPaidPlan
                     ? t("more.planActive", {
-                        defaultValue: "Move {{plan}} active",
+                        defaultValue: "LocateFlow {{plan}} active",
                         plan: planLabel,
                       })
                     : t("more.planManageTitle", { defaultValue: "Your plan" })}
@@ -343,7 +343,7 @@ export default function MoreScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.version}>Move v{Constants.expoConfig?.version ?? "0.0.0"}</Text>
+        <Text style={styles.version}>LocateFlow v{Constants.expoConfig?.version ?? "0.0.0"}</Text>
         {buildLabel ? <Text style={styles.buildMeta}>{buildLabel}</Text> : null}
       </ScrollView>
     </SafeAreaView>

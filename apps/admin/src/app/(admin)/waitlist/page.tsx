@@ -56,7 +56,7 @@ const TARGET_META: Record<
   },
   MOBILE_ANY: { label: "Mobile (any)", icon: Smartphone, color: "text-tone-sky-fg" },
   PLAN_FAMILY: { label: "Legacy plan interest", icon: Users, color: "text-destructive" },
-  PLAN_PRO: { label: "Legacy plan interest", icon: Crown, color: "text-tone-honey-fg" },
+  PLAN_PRO: { label: "Legacy plan interest", icon: Crown, color: "text-tone-foil-fg" },
   API_ACCESS: { label: "Legacy integration interest", icon: Code2, color: "text-tone-foil-fg" },
 };
 

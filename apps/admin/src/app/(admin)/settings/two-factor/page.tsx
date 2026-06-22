@@ -137,7 +137,7 @@ export default function TwoFactorPage() {
 
   function downloadBackupCodes() {
     const content = [
-      "Move Admin — 2FA Backup Codes",
+      "LocateFlow Admin — 2FA Backup Codes",
       "====================================",
       `Generated: ${new Date().toISOString()}`,
       "",

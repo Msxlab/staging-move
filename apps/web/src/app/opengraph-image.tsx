@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Move - Address and moving management";
+export const alt = "LocateFlow - Address and moving management";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -53,7 +53,7 @@ export default function OpengraphImage() {
               color: "#EFF3FA",
             }}
           >
-            Move
+            LocateFlow
           </span>
         </div>
         <div

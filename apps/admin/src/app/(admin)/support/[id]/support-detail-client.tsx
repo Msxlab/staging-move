@@ -288,7 +288,7 @@ export default function AdminTicketDetailClient() {
           <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5">
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Move Support Context</p>
             <p className="text-xs text-muted-foreground">
-              Manual guidance only. Move task completion updates local state and does not update external provider accounts.
+              Manual guidance only. Move task completion updates LocateFlow local state and does not update external provider accounts.
             </p>
             {activeMove ? (
               <div className="mt-3 space-y-3">

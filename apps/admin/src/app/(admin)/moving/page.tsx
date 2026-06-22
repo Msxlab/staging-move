@@ -556,7 +556,7 @@ export default function MovingPage() {
                             Operator transition context
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Guidance is manual support context only. Move does not update provider accounts or execute address changes.
+                            Guidance is manual support context only. LocateFlow does not update provider accounts or execute address changes.
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground">

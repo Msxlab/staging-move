@@ -1,5 +1,46 @@
 # 2026-06-21 Design Zip Theme Integration Memory
 
+## Current authoritative correction (2026-06-22)
+
+This file contains earlier historical notes from the temporary `Move + Gold`
+interpretation. Do **not** use those older bullets as the current product
+decision.
+
+Current runtime decision:
+
+- Product/app brand is `LocateFlow` across web, admin, mobile, metadata,
+  manifests, OpenGraph, service worker/offline copy, and user-facing support/legal
+  surfaces.
+- Theme direction is `Sapphire`/blue in both light and dark mode. The zip bundle
+  includes Gold defaults plus Sapphire/Emerald variants; staging must use
+  Sapphire, not the Gold default.
+- Plan/color hooks remain as compatibility selectors only. Free, Individual,
+  Family, and Pro plan accents all resolve to LocateFlow Sapphire; plan identity
+  should be expressed by copy/badges and feature state, not by recoloring the
+  global brand.
+- Amber/honey remains allowed only for warning/caution/pending semantics. Green
+  remains allowed for success/healthy semantics. Premium/brand/action accents
+  must not drift back to Gold/honey or Family teal.
+- Internal names such as `MoveWidget`, `MoveTask`, `MoveCommandCenter`, and
+  move-domain copy such as "Move date" are technical/domain terms and are not a
+  product rename target unless a separate migration is approved.
+
+2026-06-22 local correction pass:
+
+- Web/admin/mobile/shared plan tokens were normalized so `.plan-free`,
+  `.plan-family`, `.plan-pro`, admin `au-plan-*`, shared `planColors`, premium
+  stickers/medallions, mobile Family badges, notifications, export buttons, and
+  homepage/onboarding premium accents resolve to Sapphire.
+- Stale comments that said Pro/Family plan palettes, Gold defaults, or Move brand
+  were corrected where they could mislead future work.
+- Verification: `git diff --check` passed with CRLF-only warnings; targeted web
+  theme tests passed; mobile subscription visibility tests passed; shared
+  consumer-free/entitlement tests passed; `pnpm verify:typecheck` passed;
+  `pnpm verify:tests` passed; Prisma schema validate passed with a dummy MySQL
+  `DATABASE_URL` because local real `.env` is not present.
+- Still pending after this correction: commit/push, Dokploy redeploy, and
+  cache-busted staging visual QA for web/admin/mobile surfaces.
+
 ## Source bundle
 
 - Design source: `design-src/initial-check-requested/project`

@@ -35,19 +35,18 @@ const TOKEN_KEY = "locateflow.session";
  */
 // planTier lives in AsyncStorage (NOT SecureStore) alongside the other
 // non-secret UI prefs (theme, app-lock). Persisting it lets ThemeProvider
-// derive the correct Family/Pro palette on the FIRST render after a cold
-// launch — before /api/profile resolves — so the dashboard theme + raccoon
-// mascots no longer flash the base Aurora palette.
+// hydrate plan-aware UI on the FIRST render after a cold launch — before
+// /api/profile resolves. ThemeProvider currently keeps color on the canonical
+// Sapphire palette; the cached tier is for labels, limits, and plan-only blocks.
 const PLAN_TIER_KEY = "locateflow.planTier";
 const AUTH_REFRESH_TIMEOUT_MS = 12_000;
 
 /**
- * The only plan values that may drive theming. A persisted value outside this
+ * The only plan values that may drive plan-aware UI. A persisted value outside this
  * set (corruption, a future/renamed tier, a downgraded build) is coerced to
- * `null` so it can never break the palette — `applyPlanPalette` then falls
- * back to the base Aurora theme. "INDIVIDUAL" is valid but renders the base
- * palette (no accent), same as `null`. FREE/FREE_TRIAL drive the candy-coral
- * Free accent (Edition VII: every tier is color-coded, Free included).
+ * `null` so it can never leak stale plan state into the UI. `applyPlanPalette`
+ * is a pass-through, so every known plan still renders the base Sapphire
+ * palette; the tier remains useful for non-color plan labels and gates.
  */
 const KNOWN_PLAN_TIERS = ["FAMILY", "PRO", "INDIVIDUAL", "FREE", "FREE_TRIAL"] as const;
 
@@ -94,9 +93,10 @@ interface AuthState {
   patchUser: (patch: Partial<AuthUser>) => void;
   /**
    * Effective plan tier ("FAMILY" | "PRO" | "INDIVIDUAL" | null), set after the
-   * client resolves the user's entitlement (e.g. on the dashboard). Drives
-   * per-plan theming in ThemeProvider — kept here (not on AuthUser) because it
-   * comes from /api/profile entitlement, not the auth/me user record.
+   * client resolves the user's entitlement (e.g. on the dashboard). Kept here
+   * (not on AuthUser) because it comes from /api/profile entitlement, not the
+   * auth/me user record. ThemeProvider consumes it for compatibility but keeps
+   * the app on Sapphire via the pass-through palette helper.
    */
   planTier: string | null;
   setPlanTier: (plan: string | null) => void;
@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       // Restore the token (SecureStore) and the cached plan tier (AsyncStorage)
       // together so the very first render after launch already has the right
-      // plan palette — no flash of the base Aurora theme before /api/profile.
+      // plan-aware labels/gates before /api/profile resolves.
       const [token, storedPlan] = await Promise.all([
         tokenCache.getToken(TOKEN_KEY),
         AsyncStorage.getItem(PLAN_TIER_KEY).catch(() => null),
@@ -130,8 +130,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async clearSession() {
     // CRITICAL: drop the persisted plan tier too. Otherwise a previous user's
-    // Family/Pro palette would be restored on the next launch and leak into a
-    // new (e.g. Individual) session before /api/profile corrects it.
+    // plan metadata would be restored on the next launch and leak into a new
+    // session before /api/profile corrects it.
     await Promise.all([
       tokenCache.clearToken(TOKEN_KEY),
       AsyncStorage.removeItem(PLAN_TIER_KEY).catch(() => {}),
@@ -153,9 +153,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setPlanTier(plan) {
-    // Validate against the known set so a bad value can never reach theming,
-    // then persist (fire-and-forget) so the correct palette survives the next
-    // cold launch. The in-memory update is synchronous so the UI reacts now.
+    // Validate against the known set so a bad value can never reach plan-aware
+    // UI, then persist (fire-and-forget) so the metadata survives the next cold
+    // launch. The in-memory update is synchronous so the UI reacts now.
     const normalized = normalizePlanTier(plan);
     if (get().planTier !== normalized) {
       set({ planTier: normalized });

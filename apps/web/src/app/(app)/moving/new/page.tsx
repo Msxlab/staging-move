@@ -280,7 +280,7 @@ export default function NewMovingPlanPage() {
             <Truck className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase text-primary">Move command</p>
+            <p className="text-xs font-semibold uppercase text-primary">Moving command</p>
             <h1 className="text-2xl font-bold text-foreground">{t("newPlanTitle")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{originPreview} to {destinationPreview}</p>
           </div>

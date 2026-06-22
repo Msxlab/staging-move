@@ -13,7 +13,7 @@ describe("auth page regressions", () => {
     expect(signUp).not.toContain("LegalConsentPanel");
     expect(signUp).not.toContain("legalAcknowledgementsTitle");
     expect(signUp).not.toContain("Required acknowledgements");
-    expect(signUp).not.toContain("Accept these before creating your Move account.");
+    expect(signUp).not.toContain("Accept these before creating your LocateFlow account.");
     expect(signUp).toContain("signUpLegalReviewNotice");
     expect(signUp).toContain('href="/terms"');
     expect(signUp).toContain('href="/disclaimer"');

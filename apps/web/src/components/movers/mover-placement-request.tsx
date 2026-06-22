@@ -13,7 +13,7 @@ const DURATIONS = [
 
 /**
  * A mover requests a sponsored placement (state + duration). The request is
- * emailed to the Move team, who set it up via the admin tool — this is
+ * emailed to the LocateFlow team, who set it up via the admin tool — this is
  * the safe v2 path; a fully self-serve Stripe checkout is a planned follow-up.
  */
 export function MoverPlacementRequest({ defaultState }: { defaultState: string }) {

@@ -27,7 +27,7 @@ describe("point-of-action trust confirmation", () => {
 
         expect(shouldShowMoveTaskTrustConfirmation(input)).toBe(true);
         expect(shouldShowMoveTaskTrustLegalLine(input)).toBe(true);
-        expect(markup).toContain("Move only");
+        expect(markup).toContain("LocateFlow only");
         expect(markup).toContain("your provider account is unchanged");
         expect(markup).toContain(PROVIDER_ACCOUNT_UNCHANGED_COPY);
       }
@@ -81,7 +81,7 @@ describe("point-of-action trust confirmation", () => {
         localEffect: { localOnly: true },
         variant: "control",
       }),
-    ).toBe("Move only");
+    ).toBe("LocateFlow only");
   });
 
   it("does not add blocked trust phrases to rendered copy", () => {
@@ -101,7 +101,7 @@ describe("point-of-action trust confirmation", () => {
       landing: Record<string, string>;
     };
 
-    expect(en.landing.connector_subtitle).toMatch(/^Move guides you through/);
+    expect(en.landing.connector_subtitle).toMatch(/^LocateFlow guides you through/);
     expect(en.landing.connector_subtitle).toContain("supported authorized connector");
     expect(en.landing.connector_disclaimer).toContain("supported partners you connect and authorize");
   });

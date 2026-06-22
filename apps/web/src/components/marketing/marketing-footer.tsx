@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { LanguageSelector } from "@/components/language-selector";
 import { LogoMark } from "@/components/marketing/logo";
@@ -20,7 +20,7 @@ export async function MarketingFooter() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <LogoMark size={24} />
-              <span className="font-display text-lg font-bold">Move</span>
+              <span className="font-display text-lg font-bold">LocateFlow</span>
             </div>
             <p className="text-sm text-muted-foreground">{tCommon("tagline")}</p>
           </div>
@@ -66,7 +66,7 @@ export async function MarketingFooter() {
         </div>
         <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-6 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Move. {tCommon("privacy")}.
+            &copy; {new Date().getFullYear()} LocateFlow. {tCommon("privacy")}.
           </p>
           <div className="flex items-center gap-2">
             <LanguageSelector variant="icon" />

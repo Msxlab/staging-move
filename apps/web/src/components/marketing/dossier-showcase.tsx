@@ -39,8 +39,8 @@ import {
  *    product, sourced-data categories only — no invented scores;
  *  - the source line names the REAL upstream sources (FEMA · EPA · NCES ·
  *    US Census Bureau);
- *  - foil/honey accents are allowed here because this section pitches a
- *    premium (Pro) feature — the one sanctioned use of foil.
+ *  - Sapphire foil accents are allowed here because this section pitches a
+ *    premium (Pro) feature without drifting back to legacy plan palettes.
  *
  * Motion: everything animated is inside DossierAmbient / useDossierCountUp,
  * which are transform/opacity only, pause offscreen, and fully disable under
@@ -148,7 +148,7 @@ export function DossierShowcase() {
             <span className="foil-text italic">before</span> it&apos;s yours
           </h2>
           <p className="mt-6 max-w-[48ch] text-base leading-relaxed text-muted-foreground md:text-lg">
-            Add your next address and Move assembles a dossier from public federal
+            Add your next address and LocateFlow assembles a dossier from public federal
             records — flood zone, school district, natural hazards, radon, air quality, and
             area medians. No invented score: sourced facts, each with its caveat.
           </p>
@@ -182,7 +182,7 @@ export function DossierShowcase() {
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="inline-flex items-center rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-tone-honey-fg">
+              <span className="inline-flex items-center rounded-full border border-tone-foil-br bg-tone-foil-bg px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-tone-foil-fg">
                 Sample data
               </span>
               <span className="hidden sm:inline font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
@@ -251,7 +251,7 @@ export function DossierShowcase() {
               </div>
             </DemoRow>
 
-            {/* Radon — zone 2 => moderate honey bubbles */}
+            {/* Radon — zone 2 => moderate Sapphire bubbles */}
             <DemoRow
               ambient={ambientForSection({ kind: "radon", zone: SAMPLE.radon.zone })}
               icon={FlaskConical}
@@ -287,8 +287,8 @@ export function DossierShowcase() {
                 })}
               />
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-tone-honey-bg border border-tone-honey-br flex items-center justify-center shrink-0">
-                  <Home className="h-4 w-4 text-tone-honey-fg" />
+                <div className="h-9 w-9 rounded-lg bg-tone-foil-bg border border-tone-foil-br flex items-center justify-center shrink-0">
+                  <Home className="h-4 w-4 text-tone-foil-fg" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Neighborhood</p>
@@ -296,7 +296,7 @@ export function DossierShowcase() {
                     Area medians for the surrounding census tract
                   </p>
                 </div>
-                <span className="inline-flex items-center gap-1 rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-0.5 text-[10px] font-semibold text-tone-honey-fg shrink-0">
+                <span className="inline-flex items-center gap-1 rounded-full border border-tone-foil-br bg-tone-foil-bg px-2 py-0.5 text-[10px] font-semibold text-tone-foil-fg shrink-0">
                   <Sparkles className="h-3 w-3" aria-hidden="true" />
                   Pro
                 </span>

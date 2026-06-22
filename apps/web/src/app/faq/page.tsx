@@ -11,7 +11,7 @@ import { faqGroups } from "./faq-content";
 export const metadata = createPublicPageMetadata({
   title: "Frequently Asked Questions",
   description:
-    "Billing, trials, refunds, privacy, cookies, provider recommendations, mobile subscriptions, and security answers for Move.",
+    "Billing, trials, refunds, privacy, cookies, provider recommendations, mobile subscriptions, and security answers for LocateFlow.",
   path: "/faq",
 });
 

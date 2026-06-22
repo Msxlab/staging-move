@@ -24,7 +24,7 @@ import {
 
 export const metadata = createPublicPageMetadata({
   title: "Contact",
-  description: "Legal, privacy, billing, security, and support contact paths for Move.",
+  description: "Legal, privacy, billing, security, and support contact paths for LocateFlow.",
   path: "/contact",
 });
 
@@ -34,42 +34,42 @@ const contactPaths = [
     title: "General support",
     description: "Product questions, account access, onboarding, and non-urgent support.",
     email: LEGAL_CONTACTS.support,
-    subject: "Move support request",
+    subject: "LocateFlow support request",
   },
   {
     icon: CreditCard,
     title: "Billing support",
     description: "Subscription, checkout, cancellation, renewal, invoice, or refund questions.",
     email: LEGAL_CONTACTS.billing,
-    subject: "Move billing request",
+    subject: "LocateFlow billing request",
   },
   {
     icon: ShieldCheck,
     title: "Privacy requests",
     description: "Access, correction, export, deletion, California privacy, or data rights requests.",
     email: LEGAL_CONTACTS.privacy,
-    subject: "Move privacy request",
+    subject: "LocateFlow privacy request",
   },
   {
     icon: Scale,
     title: "Legal notices",
     description: "Formal legal notices, terms questions, or policy questions.",
     email: LEGAL_CONTACTS.legal,
-    subject: "Move legal notice",
+    subject: "LocateFlow legal notice",
   },
   {
     icon: ShieldAlert,
     title: "Security disclosure",
     description: "Vulnerability reports, responsible disclosure, or account security concerns.",
     email: LEGAL_CONTACTS.security,
-    subject: "Move security disclosure",
+    subject: "LocateFlow security disclosure",
   },
   {
     icon: FileSignature,
     title: "DPA and subprocessors",
     description: "Data Processing Addendum, subprocessor, or business-customer privacy inquiries.",
     email: LEGAL_CONTACTS.dpa,
-    subject: "Move DPA inquiry",
+    subject: "LocateFlow DPA inquiry",
   },
 ] as const;
 
@@ -88,7 +88,7 @@ export default function ContactPage() {
   return (
     <PublicPageShell
       eyebrow="Support"
-      title="Contact Move"
+      title="Contact LocateFlow"
       description="Use the contact path that matches your request. Do not send passwords, payment card numbers, private keys, or other sensitive secrets by email."
     >
       <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>

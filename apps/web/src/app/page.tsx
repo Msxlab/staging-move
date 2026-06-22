@@ -46,7 +46,7 @@ import { MobileMockup } from "@/components/marketing/mobile-mockup";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { LatestBlogPosts } from "@/components/marketing/latest-blog-posts";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
-import { HeroMoveAnimation } from "@/components/marketing/hero-move-animation";
+import { HeroPhoneShowcase } from "@/components/marketing/hero-phone-showcase";
 import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { RecognitionChipStorm } from "@/components/marketing/recognition-chip-storm";
 import { HardStats } from "@/components/marketing/hard-stats";
@@ -125,20 +125,20 @@ export default async function LandingPage() {
     { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
     // Product / privacy entries — expanded for SEO and to answer the
     // questions the marketing review flagged. The provider-account answer
-    // is deliberately careful: per the legal posture, Move does NOT
+    // is deliberately careful: per the legal posture, LocateFlow does NOT
     // auto-update accounts. Keep this non-committal and flag-gated in spirit
     // even if connectors later ship behind FEATURE_API_CONNECTORS.
     {
-      q: "Does Move update my provider accounts?",
-      a: "No. Move does not log into or change your accounts with banks, utilities, government agencies, or any other provider on your behalf. What it does is help you track which services, subscriptions, and renewals are tied to each address, and guide you through the changes you need to make — with checklists, reminders, and links — so you can update each provider yourself through their official channel.",
+      q: "Does LocateFlow update my provider accounts?",
+      a: "No. LocateFlow does not log into or change your accounts with banks, utilities, government agencies, or any other provider on your behalf. What it does is help you track which services, subscriptions, and renewals are tied to each address, and guide you through the changes you need to make — with checklists, reminders, and links — so you can update each provider yourself through their official channel.",
     },
     {
-      q: "What exactly does Move do?",
-      a: "Move is an organizer for the chaos of moving and address changes. You keep your addresses, service providers, subscriptions, documents, and moving tasks in one place, and Move reminds you what still needs attention. It is an organizational and research aid — it does not act as a broker, agency, or provider, and it does not replace any of them.",
+      q: "What exactly does LocateFlow do?",
+      a: "LocateFlow is an organizer for the chaos of moving and address changes. You keep your addresses, service providers, subscriptions, documents, and moving tasks in one place, and LocateFlow reminds you what still needs attention. It is an organizational and research aid — it does not act as a broker, agency, or provider, and it does not replace any of them.",
     },
     {
-      q: "Will Move remind me before a service renews?",
-      a: "Yes. You can record renewal and key dates for the services tied to your addresses, and Move sends reminders ahead of time so a subscription doesn't quietly renew against an old address or lapse when you need it. You decide what to act on — Move surfaces the timing, you make the change.",
+      q: "Will LocateFlow remind me before a service renews?",
+      a: "Yes. You can record renewal and key dates for the services tied to your addresses, and LocateFlow sends reminders ahead of time so a subscription doesn't quietly renew against an old address or lapse when you need it. You decide what to act on — LocateFlow surfaces the timing, you make the change.",
     },
     {
       q: "Who can see my address and provider data?",
@@ -206,7 +206,7 @@ export default async function LandingPage() {
         />
         <div
           aria-hidden="true"
-          className="aurora-blob-2 pointer-events-none absolute -bottom-60 -left-40 h-[500px] w-[500px] rounded-full bg-tone-honey-bg blur-3xl"
+          className="aurora-blob-2 pointer-events-none absolute -bottom-60 -left-40 h-[500px] w-[500px] rounded-full bg-tone-foil-bg blur-3xl"
         />
         <div className="container relative grid items-center gap-14 py-16 md:grid-cols-[1.15fr_1fr] md:py-24">
           <div className="space-y-7">
@@ -266,7 +266,7 @@ export default async function LandingPage() {
               accessible meaning. Reduced-motion renders the static end state. The
               scene scales down on small screens via its aspect-ratio box. */}
           <div className="relative">
-            <HeroMoveAnimation />
+            <HeroPhoneShowcase />
           </div>
         </div>
 
@@ -306,8 +306,8 @@ export default async function LandingPage() {
       {/* Risk grid — what goes to your old address (existing) */}
       <section className="container py-20 border-t">
         <div className="text-center mb-14 max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-tone-honey-br bg-tone-honey-bg px-3 py-1 text-xs text-tone-honey-fg dark:text-tone-honey-fg">
-            <span className="h-1.5 w-1.5 rounded-full bg-tone-honey-fg" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-tone-foil-br bg-tone-foil-bg px-3 py-1 text-xs text-tone-foil-fg">
+            <span className="h-1.5 w-1.5 rounded-full bg-tone-foil-fg" />
             {t("risk_eyebrow")}
           </div>
           <h2 className="display-tight font-display text-3xl md:text-4xl font-bold">{t("risk_title")}</h2>
@@ -323,9 +323,9 @@ export default async function LandingPage() {
           ].map((item) => (
             <div
               key={item.titleKey}
-              className="rounded-2xl border bg-card p-5 space-y-3 hover:border-tone-honey-br hover:shadow-md transition-all"
+              className="rounded-2xl border bg-card p-5 space-y-3 hover:border-tone-foil-br hover:shadow-md transition-all"
             >
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-tone-honey-bg text-tone-honey-fg dark:text-tone-honey-fg">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-tone-foil-bg text-tone-foil-fg">
                 <item.icon className="h-5 w-5" />
               </div>
               <h3 className="text-sm font-semibold">{t(item.titleKey as any)}</h3>
@@ -556,7 +556,7 @@ export default async function LandingPage() {
         <div className="grid md:grid-cols-2 gap-12 items-center max-w-5xl mx-auto">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-tone-honey-fg motion-safe:animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-primary motion-safe:animate-pulse" />
               {t("mobile_eyebrow")}
             </div>
             <h2 className="display-tight font-display text-3xl md:text-4xl font-bold tracking-tight">{t("mobile_title")}</h2>

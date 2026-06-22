@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Push notification registration.
  *
  * Called after a successful sign-in/sign-up. Requests permission, fetches the
@@ -81,7 +81,7 @@ async function ensureAndroidNotificationChannels() {
       importance: Notifications.AndroidImportance.DEFAULT,
     }),
     Notifications.setNotificationChannelAsync("move-alerts", {
-      name: "Move alerts",
+      name: "LocateFlow alerts",
       importance: Notifications.AndroidImportance.HIGH,
     }),
     Notifications.setNotificationChannelAsync("marketing", {

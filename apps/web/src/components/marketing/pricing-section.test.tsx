@@ -1,4 +1,4 @@
-import { renderToStaticMarkup } from "react-dom/server";
+﻿import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -213,7 +213,7 @@ describe("PricingSection", () => {
     );
 
     // Free positioning + active card.
-    expect(html).toContain("Move is free for your whole move");
+    expect(html).toContain("LocateFlow is free for your whole move");
     expect(html).toContain("Everything included");
     expect(html).toContain("$0");
     expect(html).toContain("Get started free");

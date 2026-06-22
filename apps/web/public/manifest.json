@@ -1,6 +1,6 @@
-{
-  "name": "Move - Relocation Intelligence",
-  "short_name": "Move",
+﻿{
+  "name": "LocateFlow - Relocation Intelligence",
+  "short_name": "LocateFlow",
   "description": "Track every utility, address, deadline, and home dossier before you arrive.",
   "start_url": "/dashboard",
   "display": "standalone",

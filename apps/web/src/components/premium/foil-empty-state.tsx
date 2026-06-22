@@ -21,7 +21,7 @@ interface FoilEmptyStateProps {
 }
 
 /**
- * Move Sapphire/honey foil empty state. Used when a list/grid has no items yet —
+ * Move Sapphire foil empty state. Used when a list/grid has no items yet —
  * pairs a tonal foil illustration with one short sentence and one CTA.
  *
  * The "foil" effect comes from a soft radial glow behind a thin double ring;

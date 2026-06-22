@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 /* =========================================================================
-   Move Admin — Edition VIII · Move Sapphire
-   Mirrors apps/web/src/styles/globals.css (Move Sapphire / honey / green).
+   LocateFlow Admin — Edition VIII · LocateFlow Sapphire
+   Mirrors apps/web/src/styles/globals.css (LocateFlow Sapphire / warning amber / green).
    Source of truth for numeric values: packages/shared/src/design-tokens.ts.
    ========================================================================= */
 :root,
@@ -345,7 +345,7 @@
 }
 
 /* =========================================================================
-   Foil text — single inline span gets the Move Sapphire gradient.
+   Foil text — single inline span gets the LocateFlow Sapphire gradient.
    Used in headlines and accent words.
    ========================================================================= */
 .foil-text {

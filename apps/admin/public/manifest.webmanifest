@@ -1,7 +1,7 @@
-{
-  "name": "Move Operations",
-  "short_name": "Move Ops",
-  "description": "Secure Move operations console.",
+﻿{
+  "name": "LocateFlow Operations",
+  "short_name": "LocateFlow Ops",
+  "description": "Secure LocateFlow operations console.",
   "id": "/?source=admin-pwa",
   "start_url": "/?source=admin-pwa",
   "scope": "/",

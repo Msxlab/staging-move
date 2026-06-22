@@ -96,8 +96,8 @@ export default function InvitationScreen() {
   const accept = async () => {
     setAccepting(true);
     // Route through the shared helper so this deep-link path ALSO refreshes the
-    // plan entitlement (planTier) on success - that's what makes the new
-    // Family/Pro theme + mascots apply immediately after joining.
+    // plan entitlement (planTier) on success - that's what makes plan-aware
+    // labels/gates apply immediately after joining.
     const res = await acceptInvite(tokenStr);
     setAccepting(false);
     if (!res.ok) {

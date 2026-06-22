@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 78" fill="none" role="img" aria-label="Move Operations">
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 78" fill="none" role="img" aria-label="LocateFlow Operations">
   <svg x="8" y="10" width="56" height="56" viewBox="0 0 64 64" fill="none">
     <rect width="64" height="64" rx="15" fill="#07101F"/>
     <g transform="translate(4 4) scale(0.56)">
@@ -20,6 +20,6 @@
       <ellipse cx="50" cy="76" rx="17" ry="10" fill="#C8D0DC" opacity="0.3"/>
     </g>
   </svg>
-  <text x="78" y="42" font-family="Playfair Display, Didot, Georgia, serif" font-size="32" font-weight="900" fill="#EFF3FA">Move</text>
+  <text x="78" y="42" font-family="Playfair Display, Didot, Georgia, serif" font-size="30" font-weight="900" fill="#EFF3FA">LocateFlow</text>
   <text x="80" y="58" font-family="DM Sans, Inter, system-ui, sans-serif" font-size="9" font-weight="800" letter-spacing="2.1" fill="#5B8DEF">OPERATIONS</text>
 </svg>

@@ -71,7 +71,7 @@ export function resolveActiveRouteCoords(
 
 /**
  * Converts a space-separated HSL token triplet (the shape of `--primary`,
- * e.g. "347 100% 81%") to an RRGGBB hex string (no #) for the proxy's
+ * e.g. "219.73 82.22% 64.71%") to an RRGGBB hex string (no #) for the proxy's
  * `accent` param. Null on anything unparseable.
  */
 export function hslTripletToHex(triplet: string): string | null {

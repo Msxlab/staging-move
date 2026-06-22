@@ -576,7 +576,7 @@ export default function PrivacySettingsScreen() {
                 </Text>
                 <Text style={styles.actionDesc}>
                   {t("settings.termsOfUse_description", {
-                    defaultValue: "Open Move's terms of use.",
+                    defaultValue: "Open LocateFlow's terms of use.",
                   })}
                 </Text>
               </View>
@@ -593,7 +593,7 @@ export default function PrivacySettingsScreen() {
                 </Text>
                 <Text style={styles.actionDesc}>
                   {t("settings.privacyPolicy_description", {
-                    defaultValue: "Open Move's privacy policy.",
+                    defaultValue: "Open LocateFlow's privacy policy.",
                   })}
                 </Text>
               </View>

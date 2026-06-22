@@ -7,7 +7,7 @@ import { createPublicPageMetadata } from "@/lib/seo";
 export const metadata = createPublicPageMetadata({
   title: "Why Free",
   description:
-    "Move can be free for consumers because optional provider, partner, and future concierge or business offers support the product without forcing a subscription.",
+    "LocateFlow can be free for consumers because optional provider, partner, and future concierge or business offers support the product without forcing a subscription.",
   path: "/why-free",
 });
 
@@ -20,12 +20,12 @@ const principles = [
   {
     icon: Handshake,
     title: "Optional partner economics",
-    body: "If a user chooses an eligible provider or future partner offer, Move may earn a referral. The user can still complete the move without taking an offer.",
+    body: "If a user chooses an eligible provider or future partner offer, LocateFlow may earn a referral. The user can still complete the move without taking an offer.",
   },
   {
     icon: ShieldCheck,
     title: "No hidden account action",
-    body: "Move does not secretly update accounts, sell a completed action, or pretend to be a provider. The user confirms every real account change.",
+    body: "LocateFlow does not secretly update accounts, sell a completed action, or pretend to be a provider. The user confirms every real account change.",
   },
 ] as const;
 

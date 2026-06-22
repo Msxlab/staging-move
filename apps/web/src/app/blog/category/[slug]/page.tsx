@@ -75,13 +75,13 @@ export async function generateMetadata({
     openGraph: {
       type: "website",
       url: canonical,
-      siteName: "Move",
-      title: `${category.name} — Move Blog`,
+      siteName: "LocateFlow",
+      title: `${category.name} — LocateFlow Blog`,
       description,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${category.name} — Move Blog`,
+      title: `${category.name} — LocateFlow Blog`,
       description,
     },
   };
@@ -133,7 +133,7 @@ export default async function BlogCategoryPage({
   const inLanguage = locale === "es" ? "es-US" : "en-US";
   const ctx = {
     siteUrl: SITE_URL,
-    siteName: "Move",
+    siteName: "LocateFlow",
     logoUrl: `${SITE_URL}/logo.svg`,
   };
   const description =
@@ -146,7 +146,7 @@ export default async function BlogCategoryPage({
         id="ld-collection"
         data={collectionPageSchema(ctx, {
           url: canonical,
-          name: `${category.name} — Move Blog`,
+          name: `${category.name} — LocateFlow Blog`,
           description,
           inLanguage,
         })}

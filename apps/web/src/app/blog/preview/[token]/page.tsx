@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "Preview · Move",
+  title: "Preview · LocateFlow",
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 };
 
@@ -45,7 +45,7 @@ export default async function PreviewPage({
   });
   if (!post) notFound();
 
-  const authorName = `${post.author.firstName ?? ""} ${post.author.lastName ?? ""}`.trim() || "Move";
+  const authorName = `${post.author.firstName ?? ""} ${post.author.lastName ?? ""}`.trim() || "LocateFlow";
   let cover: string | null = null;
   if (post.ogImageKey) {
     try {

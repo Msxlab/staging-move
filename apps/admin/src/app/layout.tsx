@@ -8,7 +8,7 @@ import { AdminNavigationFallback } from "@/components/admin-navigation-fallback"
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-// Move design system — DM Sans drives admin chrome, Playfair Display for
+// LocateFlow design system — DM Sans drives admin chrome, Playfair Display for
 // headings, DM Mono for numerals/meta. Repointed onto the existing
 // --font-sans / --font-mono / --font-display CSS vars so every admin page
 // flips fonts from this one file.
@@ -38,12 +38,12 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Move Admin",
-  description: "Move Administration Panel",
+  title: "LocateFlow Admin",
+  description: "LocateFlow administration panel",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "Move Admin",
+    title: "LocateFlow Admin",
     statusBarStyle: "black-translucent",
   },
   robots: {
@@ -87,7 +87,7 @@ export default async function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="Move Admin" />
+        <meta name="apple-mobile-web-app-title" content="LocateFlow Admin" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="format-detection" content="telephone=no" />
       </head>

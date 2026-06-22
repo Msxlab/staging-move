@@ -50,7 +50,7 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
         <defs>
           <linearGradient id={`tm-f-${id}`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#DDE7F5" />
-            <stop offset="50%" stopColor="#4FD1B5" />
+            <stop offset="50%" stopColor="#83AAF5" />
             <stop offset="100%" stopColor="#3D6FD6" />
           </linearGradient>
         </defs>
@@ -58,14 +58,14 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
         <polygon
           points="40,12 62,24 62,56 40,68 18,56 18,24"
           fill="#0E1521"
-          stroke="rgba(79,209,181,0.4)"
+          stroke="rgba(131,170,245,0.4)"
           strokeWidth="0.5"
         />
         <text
           x="40"
           y="50"
           textAnchor="middle"
-          fill="#4FD1B5"
+          fill="#83AAF5"
           fontFamily="var(--font-display), Georgia, serif"
           fontSize="22"
           fontStyle="italic"

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { CalendarClock, CreditCard, ReceiptText, Store } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_CONTACTS, STORE_PURCHASE_DISTINCTION, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
@@ -6,7 +6,7 @@ import { createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
   title: "Billing Policy",
-  description: "Move subscription billing, trials, renewals, cancellation, failed payments, taxes, and store-purchase terms.",
+  description: "LocateFlow subscription billing, trials, renewals, cancellation, failed payments, taxes, and store-purchase terms.",
   path: "/billing-policy",
 });
 
@@ -38,7 +38,7 @@ export default function BillingPolicyPage() {
     <PublicPageShell
       eyebrow="Legal"
       title="Billing Policy"
-      description="How Move billing, trials, subscriptions, auto-renewal, cancellation, failed payments, taxes, and store purchases work."
+      description="How LocateFlow billing, trials, subscriptions, auto-renewal, cancellation, failed payments, taxes, and store purchases work."
     >
       <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
 
@@ -68,7 +68,7 @@ export default function BillingPolicyPage() {
 
       <PublicSection title="Web subscriptions through Stripe">
         <p>
-          Web subscriptions are processed by Stripe. Move does not store full payment card numbers. Stripe may collect billing details, tax details, and payment information under Stripe's own terms and privacy policy.
+          Web subscriptions are processed by Stripe. LocateFlow does not store full payment card numbers. Stripe may collect billing details, tax details, and payment information under Stripe's own terms and privacy policy.
         </p>
         <p>
           Individual Annual subscriptions renew yearly unless canceled before renewal. Individual Monthly subscriptions, when offered, start when purchased and renew monthly unless canceled before renewal.
@@ -78,7 +78,7 @@ export default function BillingPolicyPage() {
       <PublicSection title="App Store and Google Play subscriptions">
         <p>{STORE_PURCHASE_DISTINCTION}</p>
         <p>
-          Store-managed subscriptions should be canceled or managed through the applicable store account settings. Move may show subscription status in the app, but Apple or Google may control cancellation timing, billing history, receipts, and refund handling for purchases made through their stores.
+          Store-managed subscriptions should be canceled or managed through the applicable store account settings. LocateFlow may show subscription status in the app, but Apple or Google may control cancellation timing, billing history, receipts, and refund handling for purchases made through their stores.
         </p>
       </PublicSection>
 
@@ -93,7 +93,7 @@ export default function BillingPolicyPage() {
 
       <PublicSection title="Failed payments, taxes, and plan changes">
         <p>
-          If a payment fails, Move or its payment processor may retry the charge, send account notices, limit paid features, or suspend paid access after a grace period. Taxes, exchange-rate effects, and payment processor fees may depend on your location and payment method.
+          If a payment fails, LocateFlow or its payment processor may retry the charge, send account notices, limit paid features, or suspend paid access after a grace period. Taxes, exchange-rate effects, and payment processor fees may depend on your location and payment method.
         </p>
         <p>
           Plan changes, promotions, coupons, campaign codes, and beta offers may change the price, trial period, renewal date, or billing interval shown at checkout. The final checkout or store confirmation controls the purchase.
@@ -102,7 +102,7 @@ export default function BillingPolicyPage() {
 
       <PublicSection title="Billing questions">
         <p>
-          For billing support, email <a href={mailto(LEGAL_CONTACTS.billing, "Move billing request")} className="text-primary underline">{LEGAL_CONTACTS.billing}</a>. See the <Link href="/refund" className="text-primary underline">Refund Policy</Link> for refund request windows and exclusions.
+          For billing support, email <a href={mailto(LEGAL_CONTACTS.billing, "LocateFlow billing request")} className="text-primary underline">{LEGAL_CONTACTS.billing}</a>. See the <Link href="/refund" className="text-primary underline">Refund Policy</Link> for refund request windows and exclusions.
         </p>
       </PublicSection>
     </PublicPageShell>

@@ -15,7 +15,7 @@ type AppShellProps = {
   children: ReactNode;
   showBudget?: boolean;
   showWorkspace?: boolean;
-  /** Effective plan tier — applies the per-plan accent theme on the shell. */
+  /** Effective plan tier — kept as a class hook; colors remain Sapphire. */
   planTier?: string | null;
 };
 
@@ -56,8 +56,8 @@ export function AppShell({ children, showBudget = true, showWorkspace = false, p
   const tCommon = useTranslations("common");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const embedMode = useEmbedMode();
-  // Per-plan accent class consumed by globals.css (.plan-free / .plan-family /
-  // .plan-pro). Individual stays classless = base Move Sapphire.
+  // Plan class hook consumed by globals.css. The classes are now Sapphire
+  // pass-throughs; Individual stays classless for the same base theme.
   const planClass =
     planTier === "PRO" ? "plan-pro"
     : planTier === "FAMILY" ? "plan-family"

@@ -36,7 +36,7 @@ const ADMIN_URL = "https://admin.locateflow.com/login";
 function healthyFetchImpl(url: string): Promise<Response> {
   if (url === HOME_URL) {
     return Promise.resolve(
-      new Response("<html><title>Move | Moving Checklist</title></html>", { status: 200 }),
+      new Response("<html><title>LocateFlow | Moving Checklist</title></html>", { status: 200 }),
     );
   }
   if (url === HEALTH_URL) {
@@ -254,7 +254,7 @@ describe("uptime-check cron", () => {
 
 describe("evaluateProbeResponse (pure verdict)", () => {
   it("passes a 200 with the marker present", () => {
-    expect(evaluateProbeResponse({ marker: "Move" }, 200, "<title>Move</title>")).toEqual({
+    expect(evaluateProbeResponse({ marker: "LocateFlow" }, 200, "<title>LocateFlow</title>")).toEqual({
       ok: true,
       reason: null,
     });
@@ -265,7 +265,7 @@ describe("evaluateProbeResponse (pure verdict)", () => {
   });
 
   it("fails a 200 missing the marker", () => {
-    expect(evaluateProbeResponse({ marker: "Move" }, 200, "<h1>503</h1>")).toEqual({
+    expect(evaluateProbeResponse({ marker: "LocateFlow" }, 200, "<h1>503</h1>")).toEqual({
       ok: false,
       reason: "marker_missing",
     });
@@ -306,7 +306,7 @@ describe("buildTargets", () => {
     process.env.APP_ENV = "production";
     const targets = buildTargets();
     expect(targets.map((t) => t.url)).toEqual([HOME_URL, HEALTH_URL, ADMIN_URL]);
-    expect(targets[0].marker).toBe("Move");
+    expect(targets[0].marker).toBe("LocateFlow");
     expect(targets[1].marker).toBeUndefined();
   });
 

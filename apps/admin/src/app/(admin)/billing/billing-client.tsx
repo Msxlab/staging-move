@@ -80,7 +80,7 @@ export default function BillingClient() {
     { label: "Trials Expiring", value: data.trialExpiring.length.toString(), icon: Clock, color: "text-tone-honey-fg", bg: "bg-tone-honey-bg", sub: "Within 7 days" },
   ];
 
-  const planColors: Record<string, string> = { FREE_TRIAL: "bg-tone-slate-fg", INDIVIDUAL: "bg-tone-sky-fg", FAMILY: "bg-tone-orange-fg", STARTER: "bg-tone-sky-fg", PRO: "bg-tone-foil-fg", PREMIUM: "bg-tone-orange-fg", ENTERPRISE: "bg-destructive" };
+  const planColors: Record<string, string> = { FREE_TRIAL: "bg-tone-foil-fg", INDIVIDUAL: "bg-tone-foil-fg", FAMILY: "bg-tone-foil-fg", STARTER: "bg-tone-foil-fg", PRO: "bg-tone-foil-fg", PREMIUM: "bg-tone-foil-fg", ENTERPRISE: "bg-destructive" };
   const totalActive = data.activeSubscriptions || 1;
   const totalByProvider = Object.values(data.providerDistribution).reduce((sum, value) => sum + value, 0) || 1;
   const totalByPlatform = Object.values(data.platformDistribution).reduce((sum, value) => sum + value, 0) || 1;

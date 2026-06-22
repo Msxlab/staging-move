@@ -4,7 +4,7 @@
  * Single source of truth for colors, typography, spacing, radii, and
  * shadows across web, admin, and mobile.
  *
- * Edition VIII · Move Sapphire. The values below follow the GitHub design
+ * Edition VIII · LocateFlow Sapphire. The values below follow the GitHub design
  * handoff defaults: deep navy surfaces, Sapphire as the primary accent, plus
  * green / teal / amber / red semantic support colors. Legacy export names
  * (`brand.orange`, `tones.orange`,
@@ -23,7 +23,7 @@
  */
 
 // ────────────────────────────────────────────────────────────────────
-// Brand palette — Move Sapphire (Edition VIII)
+// Brand palette — LocateFlow Sapphire (Edition VIII)
 // Sapphire primary, teal info, green success.
 // ────────────────────────────────────────────────────────────────────
 
@@ -52,7 +52,7 @@ export const brandColors = {
 } as const;
 
 /**
- * Sapphire scale - Move Sapphire primary. The legacy `orangeScale` / `roseScale`
+ * Sapphire scale - LocateFlow Sapphire primary. The legacy `orangeScale` / `roseScale`
  * exports point at *this* scale so `bg-orange-500`, `text-orange-400`,
  * `tokens.orange[500]`, etc. flip palette without touching component
  * code. The 500 step is the brand pin color.
@@ -110,7 +110,7 @@ export const surfaceLight = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Foreground / text - Move ink ramp
+// Foreground / text - LocateFlow ink ramp
 // ────────────────────────────────────────────────────────────────────
 
 export const textDark = {
@@ -174,16 +174,16 @@ export const semanticColorsLight = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Plan accent colors — one source of truth for web `.plan-*` CSS, the mobile
-// `planAccents` palette, and admin tier chips. Individual is the base Sapphire
-// primary — listed for completeness. No purple, ever.
+// Plan accent colors — kept as compatibility hooks for plan-aware UI. Every
+// plan resolves to the canonical LocateFlow Sapphire accent; plan identity lives
+// in copy/badges instead of recoloring the brand.
 // ────────────────────────────────────────────────────────────────────
 
 export const planColors = {
-  free: { dark: "#FF9DB2", light: "#A8324F" }, // candy coral — "Start here"
-  individual: { dark: "#5B8DEF", light: "#2E5FB0" }, // base Sapphire primary
-  family: { dark: "#4FD1B5", light: "#0F6B50" }, // teal/mint
-  pro: { dark: "#5B8DEF", light: "#2E5FB0" }, // premium Sapphire
+  free: { dark: "#5B8DEF", light: "#2E5FB0" },
+  individual: { dark: "#5B8DEF", light: "#2E5FB0" },
+  family: { dark: "#5B8DEF", light: "#2E5FB0" },
+  pro: { dark: "#5B8DEF", light: "#2E5FB0" },
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@ const _tonesDarkCanonical = {
     border: "rgba(224, 168, 90, 0.24)",
     text: "#E0A85A",
   },
-  // umber — champagne shadow tone (matches bundle --tone-umber-fg).
+  // umber — Sapphire shadow tone (matches bundle --tone-umber-fg).
   umber: {
     bg: "rgba(61, 111, 214, 0.12)",
     border: "rgba(61, 111, 214, 0.24)",
@@ -329,7 +329,7 @@ export const gradients = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Radii — Move UI scale (6 / 10 / 14 / 20 / 28).
+// Radii — LocateFlow UI scale (6 / 10 / 14 / 20 / 28).
 // Mobile/web naming kept (`sm/md/lg/xl/2xl`) so call sites don't need
 // updating; the actual pixel values shifted to the new scale.
 // ────────────────────────────────────────────────────────────────────

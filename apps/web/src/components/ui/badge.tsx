@@ -21,13 +21,13 @@ const badgeVariants = cva(
         sage: "border-tone-sage-br bg-tone-sage-bg text-tone-sage-fg",
         honey: "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg",
         danger: "border-danger bg-danger-light text-danger",
-        // Plan badges — Individual (cool) · Family (teal) · Pro (honey).
-        // proSolid is the champagne foil fill reserved for upgrade moments.
+        // Plan badges: Individual and Pro resolve to Sapphire; Family keeps
+        // its workspace teal. proSolid is the Sapphire foil fill for upgrade moments.
         individual: "border-tone-rose-br bg-tone-rose-bg text-tone-rose-fg",
         family:
           "border-[color:var(--tone-family-br)] bg-[color:var(--tone-family-bg)] text-[color:var(--tone-family-fg)]",
-        pro: "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg",
-        proSolid: "border-transparent bg-foil font-bold text-[#2A1E06]",
+        pro: "border-tone-foil-br bg-tone-foil-bg text-tone-foil-fg",
+        proSolid: "border-transparent bg-foil font-bold text-[#0A0F18]",
       },
     },
     defaultVariants: {

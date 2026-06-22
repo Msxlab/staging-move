@@ -5,9 +5,9 @@ import { createPublicPageMetadata } from "@/lib/seo";
 import { LEGAL_CONTACTS, mailto } from "@/lib/legal-info";
 
 export const metadata = createPublicPageMetadata({
-  title: "Delete your Move account",
+  title: "Delete your LocateFlow account",
   description:
-    "Request permanent deletion of your Move account and personal data. Works for email/password, Google, and Apple sign-in accounts.",
+    "Request permanent deletion of your LocateFlow account and personal data. Works for email/password, Google, and Apple sign-in accounts.",
   path: "/account/delete",
 });
 
@@ -15,12 +15,12 @@ export default function AccountDeletionPage() {
   return (
     <PublicPageShell
       eyebrow="Account"
-      title="Delete your Move account"
-      description="You can permanently delete your Move account and the personal data we hold for you. This page describes the in-app deletion path and the email-based request path for users who cannot access the app."
+      title="Delete your LocateFlow account"
+      description="You can permanently delete your LocateFlow account and the personal data we hold for you. This page describes the in-app deletion path and the email-based request path for users who cannot access the app."
     >
       <PublicSection title="Fastest path: delete from inside the app">
         <ol className="list-decimal space-y-2 pl-6">
-          <li>Open the Move mobile app or sign in to <Link href="/dashboard" className="underline">locateflow.com</Link> on the web.</li>
+          <li>Open the LocateFlow mobile app or sign in to <Link href="/dashboard" className="underline">locateflow.com</Link> on the web.</li>
           <li>Open <strong>Settings → Privacy → Delete account</strong>.</li>
           <li>Type the confirmation phrase (<code>DELETE</code> in English, <code>ELIMINAR</code> in Spanish).</li>
           <li>
@@ -42,8 +42,8 @@ export default function AccountDeletionPage() {
       <PublicSection title="Cannot sign in? Request deletion by email">
         <p>
           If you have lost access to your account and cannot sign in to delete it yourself, send an email
-          to <a href={mailto(LEGAL_CONTACTS.privacy, "Move account deletion request")} className="underline">{LEGAL_CONTACTS.privacy}</a> from
-          the email address registered with Move.
+          to <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow account deletion request")} className="underline">{LEGAL_CONTACTS.privacy}</a> from
+          the email address registered with LocateFlow.
         </p>
         <p>Please include:</p>
         <ul className="list-disc space-y-1 pl-6">
@@ -74,7 +74,7 @@ export default function AccountDeletionPage() {
         <p>The following data may be retained only as required by law, fraud-prevention practice, or financial compliance, even after deletion:</p>
         <ul className="list-disc space-y-1 pl-6">
           <li>Billing, invoice, and receipt records required by tax and accounting law.</li>
-          <li>Subscription metadata held by Apple App Store or Google Play that Move cannot delete directly. Use Apple ID and Google Play account tools to cancel and remove these.</li>
+          <li>Subscription metadata held by Apple App Store or Google Play that LocateFlow cannot delete directly. Use Apple ID and Google Play account tools to cancel and remove these.</li>
           <li>Audit logs and security event records required to investigate abuse or comply with legal process.</li>
           <li>Backups, which roll off on a normal schedule (typically within 30 days).</li>
           <li>Aggregated or fully de-identified usage statistics that cannot be linked back to you.</li>
@@ -95,7 +95,7 @@ export default function AccountDeletionPage() {
           <div className="flex items-start gap-3">
             <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
             <p>
-              Deleting your Move account does <strong>not</strong> automatically cancel a subscription billed by Apple or Google Play. Cancel the subscription in your Apple ID / Google Play subscriptions page first; otherwise renewal charges may continue until the store cancels billing. Stripe-billed web subscriptions are cancelled as part of Move account deletion.
+              Deleting your LocateFlow account does <strong>not</strong> automatically cancel a subscription billed by Apple or Google Play. Cancel the subscription in your Apple ID / Google Play subscriptions page first; otherwise renewal charges may continue until the store cancels billing. Stripe-billed web subscriptions are cancelled as part of LocateFlow account deletion.
             </p>
           </div>
         </div>
@@ -107,11 +107,11 @@ export default function AccountDeletionPage() {
         </p>
         <p>
           For deletion or privacy questions:{" "}
-          <a href={mailto(LEGAL_CONTACTS.privacy, "Move privacy request")} className="underline">
+          <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow privacy request")} className="underline">
             {LEGAL_CONTACTS.privacy}
           </a>.
           For general support:{" "}
-          <a href={mailto(LEGAL_CONTACTS.support, "Move support")} className="underline">
+          <a href={mailto(LEGAL_CONTACTS.support, "LocateFlow support")} className="underline">
             {LEGAL_CONTACTS.support}
           </a>.
         </p>
@@ -132,7 +132,7 @@ export default function AccountDeletionPage() {
 
       <div className="mt-2 text-sm text-muted-foreground">
         <Mail className="mr-2 inline h-4 w-4 align-text-bottom" aria-hidden />
-        Trouble with deletion? Email <a href={mailto(LEGAL_CONTACTS.support, "Move account deletion help")} className="underline">{LEGAL_CONTACTS.support}</a>.
+        Trouble with deletion? Email <a href={mailto(LEGAL_CONTACTS.support, "LocateFlow account deletion help")} className="underline">{LEGAL_CONTACTS.support}</a>.
       </div>
     </PublicPageShell>
   );

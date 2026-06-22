@@ -5,14 +5,14 @@ export const faqCopyGroups: Array<{ title: string; items: FaqCopy[] }> = [
     title: "Product scope",
     items: [
       {
-        q: "What does Move do?",
+        q: "What does LocateFlow do?",
         plain:
-          "Move helps organize addresses, service-provider records, moving tasks, reminders, documents, budgets, exports, and support workflows. It does not replace providers or agencies.",
+          "LocateFlow helps organize addresses, service-provider records, moving tasks, reminders, documents, budgets, exports, and support workflows. It does not replace providers or agencies.",
       },
       {
-        q: "Is Move a provider marketplace?",
+        q: "Is LocateFlow a provider marketplace?",
         plain:
-          "No. Move is an organizational tool and provider research aid. It does not sell provider services, guarantee availability, or act as a broker.",
+          "No. LocateFlow is an organizational tool and provider research aid. It does not sell provider services, guarantee availability, or act as a broker.",
       },
       {
         q: "Are providers guaranteed or endorsed?",
@@ -20,9 +20,9 @@ export const faqCopyGroups: Array<{ title: string; items: FaqCopy[] }> = [
           "No. Provider listings, recommendations, ratings, and public-source information may be incomplete, outdated, or unavailable. Users must verify details independently.",
       },
       {
-        q: "Does Move provide legal, financial, insurance, tax, real estate, or moving advice?",
+        q: "Does LocateFlow provide legal, financial, insurance, tax, real estate, or moving advice?",
         plain:
-          "No. Move provides informational organization tools and suggestions only. Users should consult authoritative sources or licensed professionals.",
+          "No. LocateFlow provides informational organization tools and suggestions only. Users should consult authoritative sources or licensed professionals.",
       },
       {
         q: "What is included in the free plan?",
@@ -65,9 +65,9 @@ export const faqCopyGroups: Array<{ title: string; items: FaqCopy[] }> = [
     title: "Data, privacy, and cookies",
     items: [
       {
-        q: "What data does Move collect?",
+        q: "What data does LocateFlow collect?",
         plain:
-          "Move may collect account, profile, address, service, moving, budget, support, billing, device, analytics, push, consent, audit, and security data.",
+          "LocateFlow may collect account, profile, address, service, moving, budget, support, billing, device, analytics, push, consent, audit, and security data.",
       },
       {
         q: "Can I export or delete my data?",
@@ -85,9 +85,9 @@ export const faqCopyGroups: Array<{ title: string; items: FaqCopy[] }> = [
           "Push notifications depend on app, device, and notification preferences. Push tokens may be stored to deliver notifications when enabled.",
       },
       {
-        q: "Is Move GDPR or CCPA certified?",
+        q: "Is LocateFlow GDPR or CCPA certified?",
         plain:
-          "No certification is claimed. Move provides privacy tools and California privacy rights workflows where applicable, but legal compliance positioning requires counsel review.",
+          "No certification is claimed. LocateFlow provides privacy tools and California privacy rights workflows where applicable, but legal compliance positioning requires counsel review.",
       },
     ],
   },
@@ -100,9 +100,9 @@ export const faqCopyGroups: Array<{ title: string; items: FaqCopy[] }> = [
           "Use the Contact page for support, billing, privacy, legal notices, security reports, and DPA inquiries.",
       },
       {
-        q: "How does Move protect account data?",
+        q: "How does LocateFlow protect account data?",
         plain:
-          "Move uses access controls, TLS, password hashing, rate limits, logging, and security procedures. It does not claim perfect security or a certification.",
+          "LocateFlow uses access controls, TLS, password hashing, rate limits, logging, and security procedures. It does not claim perfect security or a certification.",
       },
     ],
   },

@@ -609,7 +609,7 @@ export function getProviderTrustSummary(
     manualTracking: true,
     manualTrackingLabel: "Manual tracking only",
     manualTrackingDescription:
-      "Adding this provider creates a service record for your checklist. Move does not update your address with the provider.",
+      "Adding this provider creates a service record for your checklist. LocateFlow does not update your address with the provider.",
     verificationLabel: "Unverified directory data",
     verificationDescription:
       "Provider details should be confirmed with the official provider before you act.",

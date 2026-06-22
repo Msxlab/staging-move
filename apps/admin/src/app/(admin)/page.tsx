@@ -506,7 +506,7 @@ export default async function DashboardPage() {
       <AdminPageHeader
         eyebrow="Overview"
         title="<em>Today's</em> snapshot"
-        subtitle="System health, revenue, and the people moving through Move."
+        subtitle="System health, revenue, and the people moving through LocateFlow."
         actions={
           <>
             <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
@@ -698,7 +698,7 @@ export default async function DashboardPage() {
             {stats.recentUsers.map((user: any) => {
               const planRaw = String(user.subscription?.plan || "").toUpperCase();
               const plan = planRaw.includes("FAMILY")
-                ? { label: "Family", color: "#4FD1B5" }
+                ? { label: "Family", color: "#83AAF5" }
                 : planRaw.includes("PRO")
                   ? { label: "Pro", color: "#5B8DEF" }
                   : planRaw.includes("INDIVIDUAL")

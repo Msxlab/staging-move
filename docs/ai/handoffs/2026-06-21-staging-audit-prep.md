@@ -288,6 +288,72 @@ HTTP responses and masked/indirect Dokploy state.
 - `docker compose -f docker-compose.dokploy-dbprep.yml config` and `docker compose -f docker-compose.dokploy-dbcopy.yml config` were checked with staging identifiers and produced distinct `locateflow-staging-*` containers plus `locateflow-staging_mysql_data`.
 - `docker compose -f docker-compose.prod.yml config` was checked with dummy env and showed migrate runs only `prisma migrate deploy`; inactive `seed-admin` no longer makes base config require seed env.
 
+## 2026-06-21 Design Zip / LocateFlow Sapphire Integration Pass
+
+- Design source inventory was rechecked from `design-src/handoffs/Initial check requested-handoff (7).zip` extracted under `design-src/initial-check-requested/project`.
+- Source files present: public web shell/home (`Web.dc.html`, `Move Web.dc.html`), public pages (`Web Features.dc.html`, `Web Why-Free.dc.html`, `Web Blog.dc.html`, `Web Login.dc.html`, `Web Onboarding.dc.html`), mobile/app screens (`Move.dc.html`, `Index.dc.html`, `Onboarding.dc.html`, `Auth.dc.html`, `Providers.dc.html`, `CustomProviders.dc.html`, `Search.dc.html`, `Reminders.dc.html`, `Help.dc.html`, `Invitations.dc.html`, `DossierScene.dc.html`), admin (`Admin.dc.html`), and shared mascot/source art (`Raccoon.dc.html`).
+- Source design files still carry the old `Move` label and default Gold theme variants. The product decision for staging is explicit: runtime brand is `LocateFlow`, and the selected visual direction is Sapphire/blue for both light and dark modes.
+- Homepage integration updated `apps/web/src/app/page.tsx` to use a new `HeroPhoneShowcase` component based on the zip's animated phone/route concept, adapted to LocateFlow copy and Sapphire tokens.
+- Public web brand cleanup now covers homepage, pricing, about, FAQ/help, blog metadata/OpenGraph, legal/policy pages, provider coverage, moving guide CTAs, partner/mover portals, app install prompt, manifests, SVG logos, service-worker/offline copy, and AI-discovery/legal summaries.
+- Mobile brand cleanup now covers Expo app name, app lock, onboarding, notifications, subscription/settings, help/version footer, widget copy, push channel name, and mobile SVG app icons. Internal code identifiers such as `MoveWidget`, `MoveTask`, and move-domain model names remain unchanged.
+- Admin brand cleanup now covers metadata/manifests, sidebar/wordmark, admin logo SVGs, offline/service-worker copy, and visible support/settings/admin-shell labels while preserving move-domain labels such as move date, move tasks, and moving plans.
+- Binary icon corruption risk from a PowerShell text rewrite was detected and corrected by restoring PNG/ICO assets from the last good commit; only text/SVG/manifest branding changes remain in this pass.
+- Static brand-risk scan after cleanup reports no user-facing old-product-name hits for the audited public/app/legal/help/marketing patterns; remaining `Move` hits are code identifiers, comments, move-domain terms, tests for generic marker behavior, or external/legal phrases such as FMCSA "Protect Your Move".
+- `git diff --check` passes after the design/branding edits, with only expected CRLF warnings.
+- Runtime proof still needed after deploy: Chrome screenshot pass for homepage hero, features/why-free/blog/login/onboarding/help/legal pages, admin login/dashboard, mobile preview/emulator surfaces, OpenGraph image route, and light/dark Sapphire parity.
+
+### Post-deploy follow-up
+
+- Dokploy webhook deploy was triggered from the existing Chrome/Dokploy session without opening a new Chrome window. The webhook requires a GitHub-style `push` payload with the branch ref; a blank call returns `Branch Not Match`.
+- Staging web/admin build-info confirmed deployed commit `0f634f2980f55e0bc710ca079a18423f4ba322c8` on `codex/staging-audit-2026-06-21`. Web `/api/health` and `/api/ready` returned healthy/ready; admin `/api/build-info` matched the same commit.
+- Existing Chrome initially showed a stale `/sign-up` shell with old branding. A cache-busted navigation to `/sign-up?lfqa=0f634f29` confirmed the deployed auth shell renders `LocateFlow`; the stale view was tab/cache state, not current source.
+- Live homepage cache-busted screenshot confirmed the LocateFlow Sapphire homepage and animated phone hero are serving on staging.
+- Follow-up source cleanup removed remaining user-facing old-product-name references from JSON-LD, OpenGraph, how-it-works, DPA/refund, blog preview fallback, partner consent, settings/subscription/cancel survey/appearance copy, help Spanish copy, and shared provider action descriptions. Domain labels such as `Move date`, `Move-in`, `Move tasks`, and moving-plan terminology remain intentional.
+- Verification for the follow-up cleanup: `git diff --check`, `pnpm --filter @locateflow/web test -- src/components/seo/json-ld.test.ts`, `pnpm verify:typecheck`, and `pnpm verify:tests` passed locally. Local runtime is Node `v24.12.0`, so pnpm printed the expected repo-engine warning for Node `22.x`; a Docker Node 22 retry was blocked by host Windows `node_modules` lacking Rollup's Linux optional native package.
+
+## 2026-06-22 Sapphire Theme Drift Correction Pass
+
+- The latest design zips were rechecked: the prototype files still contain Gold
+  as a default and `Move` labels, but Sapphire variants are present. Current
+  product decision remains `LocateFlow + Sapphire` for staging.
+- Found residual premium/plan theme drift after the earlier branding deploy:
+  admin Pro plan cards, web plan class globals, admin plan distribution colors,
+  shared `planColors`, premium sticker/medallion SVG highlights, mobile Family
+  badge, web export PDF buttons, subscription/account notification chips,
+  homepage risk/mobile CTA accents, and onboarding progress were still capable
+  of rendering Gold/honey/Family teal in non-warning contexts.
+- Fixed those to Sapphire pass-throughs. Plan classes/selectors are retained for
+  compatibility (`plan-free`, `plan-family`, `plan-pro`, admin `au-plan-*`), but
+  all now resolve to LocateFlow Sapphire in light/dark. Amber/honey is reserved
+  for warning/caution/pending states only; green remains semantic success/healthy.
+- Mobile theme logic was cross-checked: `applyPlanPalette` is intentionally a
+  pass-through, so Free/Individual/Family/Pro do not recolor the app. Stale
+  comments in auth/session, subscription, invite, dashboard, and theme files were
+  updated to avoid future reintroduction of plan-specific palettes.
+- Free-pivot logic was reread: consumer read paths still apply
+  `CONSUMER_FREE` through `resolveConsumerEntitlement` /
+  `buildUnifiedEntitlementSnapshot`, while admin/billing truth remains raw. The
+  targeted free-pivot and mobile visibility tests passed.
+- Brand check: manifests, web/admin metadata, OpenGraph, mobile app name, and
+  visible product labels remain `LocateFlow`. Internal/domain identifiers such as
+  `MoveWidget`, `MoveTask`, `MoveCommandCenter`, "Move date", and moving-plan
+  labels remain intentional.
+- Verification completed locally on host Node `v24.12.0` (repo wants Node
+  `22.x`, so pnpm prints engine warnings): `git diff --check` passed with CRLF
+  warnings only; targeted web theme tests passed (45 tests); mobile targeted
+  tests passed (21 tests); shared entitlement tests passed (33 tests); targeted
+  web free-pivot tests passed (100 tests); full `pnpm verify:typecheck` passed;
+  full `pnpm verify:tests` passed (web 2760, admin 779, mobile 325, shared 388,
+  connectors 105 tests); Prisma validate passed using a dummy syntactic MySQL
+  `DATABASE_URL` because no real local `.env` file is present.
+- Security/diff note: no dependency files changed and a diff-level secret/auth
+  keyword scan found no secret values or auth behavior changes. `pnpm audit
+  --audit-level high` timed out after roughly 124 seconds, so it is not counted
+  as completed evidence.
+- Pending after this pass: commit/push this correction, trigger Dokploy redeploy,
+  then confirm staging `/api/build-info` and cache-busted web/admin pages render
+  the pushed commit and Sapphire theme.
+
 ## Minimum Env Categories Needed For Real Tests
 
 Do not paste values into chat. Set locally.

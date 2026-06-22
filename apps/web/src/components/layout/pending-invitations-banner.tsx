@@ -90,7 +90,7 @@ export function PendingInvitationsBanner() {
         toast.success(t("accepted", { workspace: inv.workspaceName || t("aWorkspace") }));
         // Re-run the server layout: it re-reads the lf_workspace_id cookie the
         // endpoint set and recomputes the effective plan, re-applying the
-        // per-plan accent theme and the Household/Workspace nav entry.
+        // plan-aware UI and the Household/Workspace nav entry.
         router.refresh();
       } catch {
         toast.error(t("acceptError"));

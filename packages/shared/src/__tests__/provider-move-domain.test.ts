@@ -111,7 +111,7 @@ describe("provider move domain helpers", () => {
       "No automatic account update",
     );
     expect(getTaskCompletionDisclaimer()).toContain(
-      "updates Move only",
+      "updates LocateFlow only",
     );
   });
 

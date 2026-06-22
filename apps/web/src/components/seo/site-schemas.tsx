@@ -15,7 +15,7 @@ const LOGO_PATH = "/logo.svg";
 export function SiteSchemas(): ReactElement {
   const ctx = {
     siteUrl: SITE_URL,
-    siteName: "Move",
+    siteName: "LocateFlow",
     logoUrl: `${SITE_URL}${LOGO_PATH}`,
   };
   return (

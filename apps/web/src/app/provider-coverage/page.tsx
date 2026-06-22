@@ -7,22 +7,22 @@ import { absoluteUrl, createPublicPageMetadata, SITE_URL } from "@/lib/seo";
 export const metadata = createPublicPageMetadata({
   title: "Provider Coverage",
   description:
-    "How Move treats provider listings, coverage suggestions, availability limits, and user verification responsibilities.",
+    "How LocateFlow treats provider listings, coverage suggestions, availability limits, and user verification responsibilities.",
   path: "/provider-coverage",
 });
 
 const limits = [
   "Provider availability can vary by address, ZIP code, building, account type, service tier, and local infrastructure.",
-  "A provider appearing in Move is not a guarantee that it serves a specific address. Internet and electric suggestions are cross-checked against the public FCC National Broadband Map and utility service-territory data at the area level — coverage reported by providers to the FCC, not a service guarantee.",
+  "A provider appearing in LocateFlow is not a guarantee that it serves a specific address. Internet and electric suggestions are cross-checked against the public FCC National Broadband Map and utility service-territory data at the area level — coverage reported by providers to the FCC, not a service guarantee.",
   "Provider names, websites, categories, and availability context may be incomplete, outdated, or unavailable.",
   "Users should verify price, licensing, insurance, plan details, cancellation rules, and availability directly with the provider.",
 ] as const;
 
 const coverageFaqs = [
   {
-    question: "How does Move determine provider coverage?",
+    question: "How does LocateFlow determine provider coverage?",
     answer:
-      "Move uses provider records, user-entered service details, and available coverage context to help users decide what to check next. The result is guidance for organizing follow-up, not a confirmed service order.",
+      "LocateFlow uses provider records, user-entered service details, and available coverage context to help users decide what to check next. The result is guidance for organizing follow-up, not a confirmed service order.",
   },
   {
     question: "Are provider listings guaranteed?",
@@ -30,9 +30,9 @@ const coverageFaqs = [
       "No. A provider listing is not a guarantee that the provider serves a specific address, offers a specific plan, or can support a specific account type.",
   },
   {
-    question: "Does Move verify exact address-level availability?",
+    question: "Does LocateFlow verify exact address-level availability?",
     answer:
-      "Not at the exact-address level. For internet and electric service, Move cross-checks availability against the public FCC National Broadband Map and utility service-territory data at the area level. That coverage is reported by providers to the FCC, and exact address-level availability can still change by building, unit, infrastructure, plan, timing, and provider rules — it is not a guarantee, so confirm with the provider before relying on it.",
+      "Not at the exact-address level. For internet and electric service, LocateFlow cross-checks availability against the public FCC National Broadband Map and utility service-territory data at the area level. That coverage is reported by providers to the FCC, and exact address-level availability can still change by building, unit, infrastructure, plan, timing, and provider rules — it is not a guarantee, so confirm with the provider before relying on it.",
   },
   {
     question: "What does provider confidence mean?",
@@ -50,7 +50,7 @@ export default function ProviderCoveragePage() {
   const pageUrl = absoluteUrl("/provider-coverage");
   const siteContext = {
     siteUrl: SITE_URL,
-    siteName: "Move",
+    siteName: "LocateFlow",
     logoUrl: `${SITE_URL}/logo.svg`,
   };
 
@@ -62,7 +62,7 @@ export default function ProviderCoveragePage() {
           url: pageUrl,
           name: "Provider Coverage",
           description:
-            "How Move treats provider listings, coverage suggestions, availability limits, and user verification responsibilities.",
+            "How LocateFlow treats provider listings, coverage suggestions, availability limits, and user verification responsibilities.",
         })}
       />
       <JsonLd
@@ -76,16 +76,16 @@ export default function ProviderCoveragePage() {
       <PublicPageShell
         eyebrow="Provider coverage"
         title="Provider suggestions are a starting point, not a guarantee."
-        description="Move can help organize provider records and moving tasks, but it does not guarantee that a provider is available, endorsed, licensed, insured, or appropriate for a specific address."
+        description="LocateFlow can help organize provider records and moving tasks, but it does not guarantee that a provider is available, endorsed, licensed, insured, or appropriate for a specific address."
       >
         <PublicSection title="How provider information is used">
           <p className="text-foreground/90">
-            Move helps users keep a personal record of the providers connected
+            LocateFlow helps users keep a personal record of the providers connected
             to their addresses. When provider suggestions or public-source details are
             shown, they are meant to help users remember what to check next.
           </p>
           <p className="text-foreground/90">
-            Move does not act as a broker, reseller, mover, utility company, or
+            LocateFlow does not act as a broker, reseller, mover, utility company, or
             provider marketplace. It does not complete provider account updates on a
             user&apos;s behalf.
           </p>
@@ -116,7 +116,7 @@ export default function ProviderCoveragePage() {
           </p>
           <p className="text-foreground/90">
             For government or regulated tasks, use official government websites or
-            qualified professionals. Move does not claim official government
+            qualified professionals. LocateFlow does not claim official government
             partnership or authority.
           </p>
         </PublicSection>
