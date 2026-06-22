@@ -358,9 +358,10 @@ export async function processAccountDeletionRequest(requestId: string) {
       }
       // No-FK residue tables keyed by userId/email — the User cascade has no
       // relation to these, so without an explicit purge a GDPR Art. 17 erasure
-      // leaves the user's PLAINTEXT email in WaitlistSignup and their queued
-      // notification bodies in NotificationQueue. The admin hard-delete path
-      // already purges these; mirror it here so self-service erasure is complete.
+      // leaves the user's PLAINTEXT email in WaitlistSignup, their queued
+      // notification bodies in NotificationQueue, and their PLAINTEXT recipient
+      // email in EmailLog (keyed by `to`). The admin hard-delete path already
+      // purges all three; mirror it here so self-service erasure is complete.
       const deletedUserEmail = user.email || requestData.email || null;
       await rawPrisma.waitlistSignup.deleteMany({
         where: deletedUserEmail
@@ -368,6 +369,9 @@ export async function processAccountDeletionRequest(requestId: string) {
           : { userId: request.userId },
       });
       await rawPrisma.notificationQueue.deleteMany({ where: { userId: request.userId } });
+      if (deletedUserEmail) {
+        await rawPrisma.emailLog.deleteMany({ where: { to: deletedUserEmail } });
+      }
       await rawPrisma.user.delete({ where: { id: request.userId } });
       userDeleted = true;
     } catch (error) {
