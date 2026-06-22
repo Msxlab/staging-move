@@ -7,18 +7,19 @@ function read(path: string) {
 }
 
 describe("admin Aurora theme token integration", () => {
-  it("keeps legacy primary aliases sapphire while semantic rose stays risk red", () => {
+  it("keeps legacy primary aliases gold in dark and sapphire in light while semantic rose stays risk red", () => {
     const globals = read("src/app/globals.css");
     const aurora = read("src/app/aurora.css");
 
-    expect(globals).toContain("--rose:        #5B8DEF;");
-    expect(globals).toContain("--brand-orange:       #5B8DEF;");
-    expect(globals).toContain("--foil:        #5B8DEF;");
+    expect(globals).toContain("--rose:        #CBA45E;");
+    expect(globals).toContain("--brand-orange:       #CBA45E;");
+    expect(globals).toContain("--foil:        #CBA45E;");
+    expect(globals).toContain("--rose:        #2E5FB0;");
     expect(globals).toContain("--brand-amber:        #E0A85A;");
     expect(globals).toContain("--tone-rose-fg: #E25C5C;");
-    expect(globals).toContain("--tone-orange-fg: #5B8DEF;");
+    expect(globals).toContain("--tone-orange-fg: #CBA45E;");
     expect(globals).toContain("--tone-sky-fg: #37C2C9;");
-    expect(globals).toContain("--border-focus: rgba(91, 141, 239, 0.55);");
+    expect(globals).toContain("--border-focus: rgba(203, 164, 94, 0.55);");
 
     expect(aurora).toContain("--rose:        var(--au-cool);");
     expect(aurora).toContain("--brand-orange:       var(--au-cool);");
@@ -27,6 +28,8 @@ describe("admin Aurora theme token integration", () => {
     expect(aurora).toContain("--tone-rose-fg:    var(--au-coral);");
     expect(aurora).toContain("--tone-orange-fg:  var(--au-cool);");
     expect(aurora).toContain("--tone-sky-fg:     #37C2C9;");
+    expect(aurora).toContain("--au-cool:      #CBA45E;");
+    expect(aurora).toContain("--au-cool:      #2E5FB0;");
     expect(aurora).not.toContain("--rose:        var(--au-violet);");
     expect(aurora).not.toContain("--brand-orange:       var(--au-violet);");
   });

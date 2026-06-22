@@ -1004,14 +1004,14 @@ export default function DashboardScreen() {
     },
   ];
 
-  // Plan-aware header badge: Family = crystal green, Pro = premium Sapphire, else generic Premium.
+  // Plan-aware header badge: use the active runtime accent so dark is Gold and light is Sapphire.
   const planBadge = (() => {
     const p = (planTier ?? "").toUpperCase();
     if (p === "FAMILY")
-      return { label: t("dashboard.familyBadge", "Family"), fg: "#83AAF5", bg: "rgba(91,141,239,0.12)", border: "rgba(91,141,239,0.32)", Icon: Users };
+      return { label: t("dashboard.familyBadge", "Family"), fg: theme.colors.primaryLight, bg: theme.colors.primaryFaded, border: theme.colors.accentBorder, Icon: Users };
     if (p === "PRO")
-      return { label: t("dashboard.proBadge", "Pro"), fg: "#5B8DEF", bg: "rgba(91, 141, 239,0.12)", border: "rgba(91, 141, 239,0.34)", Icon: Sparkles };
-    return { label: t("dashboard.premiumBadge"), fg: "#5B8DEF", bg: "rgba(91, 141, 239,0.12)", border: "rgba(91, 141, 239,0.3)", Icon: Sparkles };
+      return { label: t("dashboard.proBadge", "Pro"), fg: theme.colors.primary, bg: theme.colors.primaryFaded, border: theme.colors.accentBorder, Icon: Sparkles };
+    return { label: t("dashboard.premiumBadge"), fg: theme.colors.primary, bg: theme.colors.primaryFaded, border: theme.colors.accentBorder, Icon: Sparkles };
   })();
   const PlanBadgeIcon = planBadge.Icon;
   const workspaceRoleLabel = workspace

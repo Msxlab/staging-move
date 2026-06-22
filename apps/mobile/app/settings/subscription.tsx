@@ -258,12 +258,12 @@ function formatDateLabel(value?: string | null) {
 
 /**
  * Compare-accordion check mark accent. `applyPlanPalette` is intentionally a
- * pass-through now, so every plan resolves to the canonical Sapphire primary in
- * light/dark while older call sites keep their helper shape.
+ * pass-through now, so every plan resolves to the canonical brand primary while
+ * older call sites keep their helper shape.
  */
 function planAccentColor(scheme: "light" | "dark", planKey: string): string {
   const base = scheme === "light" ? baseLightTheme : baseDarkTheme;
-  // Every plan resolves to base Move Sapphire primary; helper kept for compatibility.
+  // Every plan resolves to the base brand primary; helper kept for compatibility.
   return applyPlanPalette(base, scheme, planKey).colors.primary;
 }
 

@@ -20,13 +20,13 @@ export const OWNERSHIP_TYPES = [
 
 export const SERVICE_CATEGORIES = [
   { value: "GOVERNMENT", label: "Government", color: "#E25C5C" },
-  { value: "UTILITY", label: "Utilities", color: "#5B8DEF" },
+  { value: "UTILITY", label: "Utilities", color: "#CBA45E" },
   { value: "FINANCIAL", label: "Financial", color: "#54CB7E" },
-  { value: "HOUSING", label: "Housing", color: "#5B8DEF" },
+  { value: "HOUSING", label: "Housing", color: "#CBA45E" },
   { value: "HEALTHCARE", label: "Healthcare", color: "#F0A0B8" },
-  { value: "TRANSPORTATION", label: "Transportation", color: "#3D6FD6" },
-  { value: "KIDS", label: "Kids & Education", color: "#3D6FD6" },
-  { value: "FITNESS", label: "Fitness", color: "#5B8DEF" },
+  { value: "TRANSPORTATION", label: "Transportation", color: "#B0852F" },
+  { value: "KIDS", label: "Kids & Education", color: "#B0852F" },
+  { value: "FITNESS", label: "Fitness", color: "#CBA45E" },
   { value: "SHOPPING", label: "Shopping", color: "#F0A0B8" },
   { value: "OTHER", label: "Other", color: "#6E7C92" },
 ] as const;
@@ -59,7 +59,7 @@ export function isCanceledMovingPlanStatus(status: string | null | undefined): b
 
 export const MOVING_STATUSES = [
   { value: "PLANNING", label: "Planning", color: "#6E7C92" },
-  { value: "IN_PROGRESS", label: "In Progress", color: "#5B8DEF" },
+  { value: "IN_PROGRESS", label: "In Progress", color: "#CBA45E" },
   { value: "COMPLETED", label: "Completed", color: "#54CB7E" },
   { value: "CANCELED", label: "Canceled", color: "#E25C5C" },
 ] as const;
@@ -150,10 +150,10 @@ export const IMMIGRATION_STATUSES = [
 
 export const RELOCATION_PHASES = [
   { phase: 0, label: "Before the Move", shortLabel: "Pre-Move", daysOffset: -14, icon: "📦", color: "#6E7C92" },
-  { phase: 1, label: "Move Week", shortLabel: "Move Week", daysOffset: 0, icon: "🚚", color: "#5B8DEF" },
+  { phase: 1, label: "Move Week", shortLabel: "Move Week", daysOffset: 0, icon: "🚚", color: "#CBA45E" },
   { phase: 2, label: "First 10 Days", shortLabel: "Days 1-10", daysOffset: 10, icon: "⚡", color: "#E25C5C" },
-  { phase: 3, label: "First 30 Days", shortLabel: "Days 11-30", daysOffset: 30, icon: "📋", color: "#5B8DEF" },
-  { phase: 4, label: "First 60 Days", shortLabel: "Days 31-60", daysOffset: 60, icon: "🔧", color: "#3D6FD6" },
+  { phase: 3, label: "First 30 Days", shortLabel: "Days 11-30", daysOffset: 30, icon: "📋", color: "#CBA45E" },
+  { phase: 4, label: "First 60 Days", shortLabel: "Days 31-60", daysOffset: 60, icon: "🔧", color: "#B0852F" },
   { phase: 5, label: "Settling In", shortLabel: "60+ Days", daysOffset: 90, icon: "🏠", color: "#54CB7E" },
 ] as const;
 
@@ -718,10 +718,10 @@ export const STATE_DMV_DEADLINES: Record<string, { licenseDays: number; registra
 // ==================== THEME COLORS ====================
 
 export const COLORS = {
-  primary: "#5B8DEF",
-  primaryLight: "#83AAF5",
-  primaryDark: "#3D6FD6",
-  accent: "#5B8DEF",
+  primary: "#CBA45E",
+  primaryLight: "#DCBC7C",
+  primaryDark: "#B0852F",
+  accent: "#CBA45E",
   success: "#54CB7E",
   warning: "#E0A85A",
   error: "#E25C5C",
@@ -730,7 +730,7 @@ export const COLORS = {
   surfaceElevated: "#18233A",
   surfaceCard: "rgba(255, 255, 255, 0.05)",
   border: "rgba(255, 255, 255, 0.1)",
-  borderFocus: "rgba(91, 141, 239, 0.55)",
+  borderFocus: "rgba(203, 164, 94, 0.55)",
   textPrimary: "#EFF3FA",
   textSecondary: "rgba(239, 243, 250, 0.66)",
   textTertiary: "rgba(239, 243, 250, 0.43)",

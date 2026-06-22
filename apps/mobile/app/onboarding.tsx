@@ -1474,7 +1474,7 @@ export default function OnboardingScreen() {
               </View>
             </>
           )}
-          {/* Move Sapphire gradient progress (design's MoveProgressBar). pulseTick
+          {/* Brand gradient progress (design's MoveProgressBar). pulseTick
               still drives celebrateStepComplete's success haptic + the one-shot
               confirmation shimmer (a brief brighten on the gradient bar);
               reduce-motion settles it instantly. */}

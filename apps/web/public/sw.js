@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = "locateflow-v7-auth-stabilization-disabled";
+const CACHE_NAME = "locateflow-v7-auth-stabilization-disabled";
 const STATIC_CACHE = "locateflow-static-v7-auth-stabilization-disabled";
 const DISABLE_SERVICE_WORKER = true;
 const SERVICE_WORKER_SHUTOFF_REASON = "emergency-auth-state-machine-stabilization";

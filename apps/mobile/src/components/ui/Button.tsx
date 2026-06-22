@@ -249,8 +249,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   secondary: {
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    // Move Sapphire 30% — matches `theme.colors.primary` (#5B8DEF).
-    borderColor: "rgba(91, 141, 239, 0.30)",
+    borderColor: theme.colors.accentBorder,
   },
   ghost: {
     backgroundColor: "transparent",

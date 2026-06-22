@@ -181,7 +181,7 @@ function renderSupportEmail(opts: {
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;background:#f1f5f9;border-radius:8px;margin:4px 0 20px;">
         <tr><td style="padding:12px 16px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;">${detailRows}</table></td></tr>
       </table>
-      <a href="${esc(opts.ctaHref)}" style="display:inline-block;background:#5B8DEF;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-size:14px;font-weight:700;">${esc(opts.ctaLabel)}</a>
+      <a href="${esc(opts.ctaHref)}" style="display:inline-block;background:#CBA45E;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-size:14px;font-weight:700;">${esc(opts.ctaLabel)}</a>
     </div>
     <p style="margin:14px 4px 0;color:#94a3b8;font-size:12px;">LocateFlow Support</p>
   </div>

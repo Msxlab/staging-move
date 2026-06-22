@@ -4,8 +4,9 @@
  * Single source of truth for colors, typography, spacing, radii, and
  * shadows across web, admin, and mobile.
  *
- * Edition VIII · LocateFlow Sapphire. The values below follow the GitHub design
- * handoff defaults: deep navy surfaces, Sapphire as the primary accent, plus
+ * Edition VIII · LocateFlow Gold/Sapphire. The values below follow the design
+ * handoff defaults: deep navy surfaces with Gold as the dark primary accent,
+ * Sapphire as the light primary accent, plus
  * green / teal / amber / red semantic support colors. Legacy export names
  * (`brand.orange`, `tones.orange`,
  * `roseScale`, `foilScale`, etc.) are preserved on purpose so the
@@ -23,28 +24,28 @@
  */
 
 // ────────────────────────────────────────────────────────────────────
-// Brand palette — LocateFlow Sapphire (Edition VIII)
-// Sapphire primary, teal info, green success.
+// Brand palette — LocateFlow Gold/Sapphire (Edition VIII)
+// Dark mode uses Gold, light mode uses Sapphire, with teal info and green success.
 // ────────────────────────────────────────────────────────────────────
 
 export const brandColors = {
   // Legacy names — kept so `brand.orange` references in code keep working.
-  // Values now resolve to the GitHub design handoff's Sapphire primary so the
-  // visual surface flips automatically.
-  orange: "#5B8DEF", // primary — Sapphire
-  orangeLight: "#83AAF5", // hover / soft glow
-  orangeDark: "#3D6FD6", // pressed — Sapphire dark
+  // Values now resolve to the design handoff's dark Gold primary so existing
+  // legacy references flip without a codemod.
+  orange: "#CBA45E", // primary — Gold
+  orangeLight: "#DCBC7C", // hover / soft glow
+  orangeDark: "#B0852F", // pressed — Gold dark
   amber: "#E0A85A", // secondary / warning
 
   // Canonical design names.
-  rose: "#5B8DEF", // primary Sapphire
-  roseLight: "#83AAF5",
-  roseDeep: "#3D6FD6",
-  roseDark: "#2E5FB0",
-  foil: "#5B8DEF", // Pro / premium Sapphire
-  foilHighlight: "#83AAF5", // gradient stop a
-  foilShadow: "#3D6FD6", // gradient stop c
-  foilInk: "#244C90", // readable sapphire ink on paper
+  rose: "#CBA45E", // primary Gold in dark mode
+  roseLight: "#DCBC7C",
+  roseDeep: "#B0852F",
+  roseDark: "#86631A",
+  foil: "#CBA45E", // premium Gold
+  foilHighlight: "#DCBC7C", // gradient stop a
+  foilShadow: "#B0852F", // gradient stop c
+  foilInk: "#86631A", // readable gold ink on paper
   sage: "#54CB7E", // success green
   sageSoft: "#8BE3A8",
   nude: "#E0A85A", // amber alias
@@ -52,18 +53,17 @@ export const brandColors = {
 } as const;
 
 /**
- * Sapphire scale - LocateFlow Sapphire primary. The legacy `orangeScale` / `roseScale`
- * exports point at *this* scale so `bg-orange-500`, `text-orange-400`,
- * `tokens.orange[500]`, etc. flip palette without touching component
- * code. The 500 step is the brand pin color.
+ * Sapphire scale - LocateFlow light-mode primary. The legacy `orangeScale` /
+ * `roseScale` exports point at *this* scale so fixed utility palettes keep a
+ * readable blue paper accent while runtime theme consumers use Gold in dark.
  */
 export const roseScale = {
   50: "#EEF5FF",
   100: "#DBE8FF",
   200: "#C8D9FB",
   300: "#83AAF5",
-  400: "#5B8DEF", // brand pin
-  500: "#5B8DEF", // primary
+  400: "#5B8DEF", // light Sapphire pin
+  500: "#5B8DEF", // light Sapphire primary
   600: "#3D74C8",
   700: "#3D6FD6", // pressed
   800: "#2E5FB0",
@@ -71,14 +71,14 @@ export const roseScale = {
 } as const;
 
 /**
- * Foil/sapphire scale — premium Sapphire highlight → body → shadow so legacy
+ * Foil/gold scale — premium Gold highlight → body → shadow so legacy
  * `foilScale.highlight` callers keep rendering in the handoff palette.
  */
 export const foilScale = {
-  highlight: "#83AAF5", // sapphire highlight
-  body: "#5B8DEF", // flat sapphire
-  shadow: "#3D6FD6", // sapphire shadow
-  ink: "#244C90", // sapphire ink on paper
+  highlight: "#DCBC7C", // gold highlight
+  body: "#CBA45E", // flat gold
+  shadow: "#B0852F", // gold shadow
+  ink: "#86631A", // gold ink on paper
 } as const;
 
 /**
@@ -128,15 +128,15 @@ export const textLight = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Borders — alpha, never opaque. Focus is always a Sapphire ring.
+// Borders — alpha, never opaque. Focus follows the current dark/light accent.
 // ────────────────────────────────────────────────────────────────────
 
 export const borderDark = {
   default: "rgba(255, 255, 255, 0.05)", // au-edge-2
   strong: "rgba(255, 255, 255, 0.10)", // au-edge
-  foil: "rgba(91, 141, 239, 0.24)", // sapphire hairline
-  rose: "rgba(91, 141, 239, 0.30)", // sapphire ring
-  focus: "rgba(91, 141, 239, 0.55)", // 2px outline on focus-visible
+  foil: "rgba(203, 164, 94, 0.24)", // gold hairline
+  rose: "rgba(203, 164, 94, 0.30)", // gold ring
+  focus: "rgba(203, 164, 94, 0.55)", // 2px outline on focus-visible
 } as const;
 
 export const borderLight = {
@@ -175,15 +175,15 @@ export const semanticColorsLight = {
 
 // ────────────────────────────────────────────────────────────────────
 // Plan accent colors — kept as compatibility hooks for plan-aware UI. Every
-// plan resolves to the canonical LocateFlow Sapphire accent; plan identity lives
+// plan resolves to the canonical LocateFlow accent; plan identity lives
 // in copy/badges instead of recoloring the brand.
 // ────────────────────────────────────────────────────────────────────
 
 export const planColors = {
-  free: { dark: "#5B8DEF", light: "#2E5FB0" },
-  individual: { dark: "#5B8DEF", light: "#2E5FB0" },
-  family: { dark: "#5B8DEF", light: "#2E5FB0" },
-  pro: { dark: "#5B8DEF", light: "#2E5FB0" },
+  free: { dark: "#CBA45E", light: "#2E5FB0" },
+  individual: { dark: "#CBA45E", light: "#2E5FB0" },
+  family: { dark: "#CBA45E", light: "#2E5FB0" },
+  pro: { dark: "#CBA45E", light: "#2E5FB0" },
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
@@ -200,9 +200,9 @@ const _tonesDarkCanonical = {
     text: "#E25C5C",
   },
   foil: {
-    bg: "rgba(91, 141, 239, 0.09)",
-    border: "rgba(91, 141, 239, 0.22)",
-    text: "#5B8DEF",
+    bg: "rgba(203, 164, 94, 0.09)",
+    border: "rgba(203, 164, 94, 0.22)",
+    text: "#CBA45E",
   },
   sage: {
     bg: "rgba(84, 203, 126, 0.14)",
@@ -214,11 +214,11 @@ const _tonesDarkCanonical = {
     border: "rgba(224, 168, 90, 0.24)",
     text: "#E0A85A",
   },
-  // umber — Sapphire shadow tone (matches bundle --tone-umber-fg).
+  // umber — Gold shadow tone (matches bundle --tone-umber-fg).
   umber: {
-    bg: "rgba(61, 111, 214, 0.12)",
-    border: "rgba(61, 111, 214, 0.24)",
-    text: "#3D6FD6",
+    bg: "rgba(176, 133, 47, 0.12)",
+    border: "rgba(176, 133, 47, 0.24)",
+    text: "#B0852F",
   },
   slate: {
     bg: "rgba(168, 181, 201, 0.10)",
@@ -316,16 +316,16 @@ export const glassLight = {
 // ────────────────────────────────────────────────────────────────────
 
 export const gradients = {
-  /** Foil — sapphire highlight → sapphire body → sapphire shadow at 135°. Brand moment. */
-  foil: ["#83AAF5", "#5B8DEF", "#3D6FD6"] as const,
-  /** Rose legacy slot — Sapphire highlight → Sapphire shadow. */
-  rose: ["#83AAF5", "#3D6FD6"] as const,
-  /** Premium — full Sapphire sweep for upgrade CTAs / "Order moving pack". */
-  premium: ["#83AAF5", "#5B8DEF", "#3D6FD6"] as const,
-  // Legacy names — flipped to Sapphire so old gradient sites read the handoff default.
-  primary: ["#83AAF5", "#5B8DEF"] as const,
-  warm: ["#3D6FD6", "#5B8DEF"] as const,
-  glow: ["rgba(91, 141, 239, 0.40)", "rgba(55, 194, 201, 0.10)"] as const,
+  /** Foil — gold highlight → gold body → gold shadow at 135°. Brand moment. */
+  foil: ["#DCBC7C", "#CBA45E", "#B0852F"] as const,
+  /** Rose legacy slot — Gold highlight → Gold shadow. */
+  rose: ["#DCBC7C", "#B0852F"] as const,
+  /** Premium — full Gold sweep for upgrade CTAs / "Order moving pack". */
+  premium: ["#DCBC7C", "#CBA45E", "#B0852F"] as const,
+  // Legacy names — flipped to Gold so old gradient sites read the dark handoff default.
+  primary: ["#DCBC7C", "#CBA45E"] as const,
+  warm: ["#B0852F", "#CBA45E"] as const,
+  glow: ["rgba(203, 164, 94, 0.40)", "rgba(55, 194, 201, 0.10)"] as const,
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
@@ -395,17 +395,17 @@ export const shadowsMobile = {
     shadowRadius: 50,
     elevation: 8,
   },
-  /** Sapphire glow — reserved for the active state of the primary CTA. */
+  /** Gold glow — reserved for the active state of the primary CTA. */
   glow: {
-    shadowColor: "#5B8DEF",
+    shadowColor: "#CBA45E",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.28,
     shadowRadius: 20,
     elevation: 6,
   },
-  /** Sapphire glow — premium / upgrade moments only. */
+  /** Gold glow — premium / upgrade moments only. */
   foil: {
-    shadowColor: "#5B8DEF",
+    shadowColor: "#CBA45E",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 30,
@@ -419,8 +419,8 @@ export const shadowsWeb = {
   md: "0 6px 18px rgba(0, 0, 0, 0.40)",
   lg: "0 20px 50px rgba(0, 0, 0, 0.55)",
   xl: "0 40px 80px rgba(0, 0, 0, 0.60)",
-  glow: "0 0 20px rgba(91, 141, 239, 0.28)", // Sapphire
-  foil: "0 0 30px rgba(91, 141, 239, 0.20)", // premium Sapphire
+  glow: "0 0 20px rgba(203, 164, 94, 0.28)", // Gold
+  foil: "0 0 30px rgba(203, 164, 94, 0.20)", // premium Gold
 } as const;
 
 // ────────────────────────────────────────────────────────────────────

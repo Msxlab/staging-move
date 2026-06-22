@@ -42,7 +42,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarBackground: () => <TabBarBackground />,
-        // Active tint = Move Sapphire primary from the design handoff.
+        // Active tint follows the current light/dark brand accent.
         tabBarActiveTintColor: theme.colors.primary,
         // Inactive tint = Move faint ink (colors.faint).
         tabBarInactiveTintColor: theme.colors.faint,

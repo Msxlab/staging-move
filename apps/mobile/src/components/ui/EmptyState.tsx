@@ -87,7 +87,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(91, 141, 239, 0.2)",
+    borderColor: theme.colors.accentBorder,
   },
   mascotWrapper: {
     alignItems: "center",

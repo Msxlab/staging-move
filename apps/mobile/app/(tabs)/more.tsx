@@ -100,7 +100,7 @@ export default function MoreScreen() {
   // Plan pill label — planTier is FAMILY | PRO | INDIVIDUAL | FREE | FREE_TRIAL
   // | null; FREE* and null (not-yet-resolved entitlement) render as Free, matching the
   // dashboard's resolution default. The pill itself stays on the canonical
-  // Sapphire primary.
+  // brand primary.
   const planLabel =
     planTier === "FAMILY"
       ? t("more.planFamily", { defaultValue: "Family" })
@@ -135,7 +135,7 @@ export default function MoreScreen() {
 
   // Tonal tiles per row (Move idiom: every menu row gets an icon chip in a
   // tonal tile). All values come from theme tone objects; brand/action rows use
-  // the Sapphire primary instead of legacy plan-specific amber accents.
+  // the brand primary instead of legacy plan-specific amber accents.
   const tonePrimary: RowTone = {
     bg: theme.colors.primaryFaded,
     border: theme.colors.primary + "33",

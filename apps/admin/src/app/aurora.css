@@ -1,9 +1,9 @@
 /* =========================================================================
    LocateFlow Admin · AURORA — Phase 3 corporate retune.
    Primary theme: SLATE light enterprise — paper base, flat solid cards,
-   1px hairlines, feather shadows, corporate-blue accent #2E5FB0.
-   Secondary: the existing dark navy, accent shifted to a cool muted
-   #5B8DEF, glass toned down (~half blur/alpha). Honey is demoted to
+   1px hairlines, feather shadows, Sapphire accent #2E5FB0.
+   Secondary: the existing dark navy, accent shifted to the source Gold
+   #CBA45E, glass toned down (~half blur/alpha). Honey is demoted to
    WARN/caution only.
    Scoped to `.adm-aurora`. Theme follows next-themes' `.dark` class on <html>.
    Ported from the design handoffs at aurora/aurora.css + admin-pro.css.
@@ -29,13 +29,13 @@
   --au-rule:      rgba(255, 255, 255, 0.10);
   --au-rule-2:    rgba(255, 255, 255, 0.16);
 
-  --au-cool:      #5B8DEF;
-  --au-cool-2:    #3D6FD6;
-  --au-cool-soft: rgba(91, 141, 239, 0.20);
-  --au-violet:    #5B8DEF;
-  --au-violet-soft: rgba(91, 141, 239, 0.20);
-  --au-family:    #5B8DEF;
-  --au-family-soft: rgba(91, 141, 239, 0.14);
+  --au-cool:      #CBA45E;
+  --au-cool-2:    #B0852F;
+  --au-cool-soft: rgba(203, 164, 94, 0.20);
+  --au-violet:    #CBA45E;
+  --au-violet-soft: rgba(203, 164, 94, 0.20);
+  --au-family:    #CBA45E;
+  --au-family-soft: rgba(203, 164, 94, 0.14);
   --au-mint:      #8BE3A8;
   --au-mint-soft: rgba(84, 203, 126, 0.20);
   --au-amber:     #E0A85A;
@@ -44,17 +44,17 @@
   --au-coral-soft:rgba(226, 92, 92, 0.22);
   --au-rose:      #F0A0B8;
 
-  --au-aurora-1:  rgba(91, 141, 239, 0.18);
-  --au-aurora-2:  rgba(91, 141, 239, 0.12);
+  --au-aurora-1:  rgba(203, 164, 94, 0.18);
+  --au-aurora-2:  rgba(203, 164, 94, 0.12);
   --au-aurora-3:  rgba(84, 203, 126, 0.10);
   --au-aurora-4:  rgba(240, 160, 184, 0.08);
 
-  /* ── Phase 3 corporate accent + chrome (dark: cool muted blue) ── */
-  --au-accent:      #5B8DEF;
-  --au-accent-2:    #83AAF5;
+  /* ── Phase 3 accent + chrome (dark: Gold) ── */
+  --au-accent:      #CBA45E;
+  --au-accent-2:    #DCBC7C;
   --au-accent-ink:  #0A1626;
-  --au-accent-soft: rgba(91, 141, 239, 0.13);
-  --au-accent-line: rgba(91, 141, 239, 0.28);
+  --au-accent-soft: rgba(203, 164, 94, 0.13);
+  --au-accent-line: rgba(203, 164, 94, 0.28);
 
   --au-surface:     #1C2535;                   /* solid chrome slab (rail/topbar/drawer/cards) */
   --au-field:       #232D40;                   /* solid control fill */
@@ -336,7 +336,7 @@ html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
 }
 .adm-aurora .au-display em {
   font-style: italic;
-  background-image: linear-gradient(180deg, #83AAF5 0%, #5B8DEF 60%, #3D6FD6 100%);
+  background-image: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #B0852F 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -377,7 +377,7 @@ html:not(.dark) .adm-aurora .au-pill.neutral { background: rgba(20,32,47,0.05); 
 }
 .adm-aurora .au-btn:hover  { background: var(--au-pane-3); border-color: var(--au-rule-2); }
 .adm-aurora .au-btn:active { transform: translateY(1px); }
-/* Primary action — flat solid LocateFlow Sapphire in both themes. */
+/* Primary action — flat solid LocateFlow accent in both themes. */
 .adm-aurora .au-btn.primary {
   background: var(--au-accent);
   border-color: transparent;
@@ -491,12 +491,12 @@ html:not(.dark) .adm-aurora .admin-panel {
   border-bottom: 1px solid var(--au-rule);
 }
 .adm-aurora .admin-panel-flagship {
-  border-color: rgba(91, 141, 239, 0.22);
+  border-color: var(--line-foil);
 }
 .adm-aurora .admin-panel-flagship::before {
   background: radial-gradient(
     600px 140px at 50% 0%,
-    rgba(91, 141, 239, 0.10),
+    rgba(203, 164, 94, 0.10),
     transparent 60%
   );
 }
@@ -520,8 +520,8 @@ html:not(.dark) .adm-aurora .admin-panel {
   --card-foreground:      214 40% 98%;
   --popover:              218 22% 19%;
   --popover-foreground:   214 40% 98%;
-  /* Primary = LocateFlow Sapphire #5B8DEF (honey is warn/caution only). */
-  --primary:              219.73 82.22% 64.71%;
+  /* Primary = LocateFlow Gold #CBA45E (honey is warn/caution only). */
+  --primary:              38.53 51.17% 58.24%;
   --primary-foreground:   215 45% 8%;
   --secondary:            215 24% 82%;
   --secondary-foreground: 218 43% 6%;
@@ -533,19 +533,19 @@ html:not(.dark) .adm-aurora .admin-panel {
   --destructive-foreground: 218 43% 6%;
   --border:               217 20% 30%;
   --input:                217 20% 30%;
-  --ring:                 219.73 82.22% 64.71%;
+  --ring:                 38.53 51.17% 58.24%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect — anything still calling --rose gets the LocateFlow Sapphire
-     primary; --foil-* also resolves to the Sapphire accent. */
+  /* Brand-token redirect — anything still calling --rose gets the LocateFlow Gold
+     primary; --foil-* also resolves to the Gold accent. */
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
   --rose-deep:   var(--au-cool-2);
-  --foil-a:      #83AAF5;
+  --foil-a:      #DCBC7C;
   --foil-b:      var(--au-violet);
-  --foil-c:      #3D6FD6;
+  --foil-c:      #B0852F;
   --foil:        var(--au-violet);
-  --foil-ink:    #2E5FB0;
+  --foil-ink:    #86631A;
   --sage:        var(--au-mint);
   --brand-orange:       var(--au-cool);
   --brand-orange-light: var(--au-cool);
@@ -556,12 +556,12 @@ html:not(.dark) .adm-aurora .admin-panel {
      etc. now reads Aurora colors. Mappings preserve semantic intent
      (rose=warning/attention, sage=positive, honey=caution, slate=neutral). */
   --tone-rose-bg:    rgba(226, 92, 92, 0.16); --tone-rose-br:    rgba(226, 92, 92, 0.32); --tone-rose-fg:    var(--au-coral);
-  --tone-foil-bg:    rgba(91, 141, 239, 0.20); --tone-foil-br:    rgba(91, 141, 239, 0.36); --tone-foil-fg:    var(--au-violet);
+  --tone-foil-bg:    rgba(203, 164, 94, 0.20); --tone-foil-br:    rgba(203, 164, 94, 0.36); --tone-foil-fg:    var(--au-violet);
   --tone-sage-bg:    rgba(84, 203, 126, 0.20); --tone-sage-br:    rgba(84, 203, 126, 0.36); --tone-sage-fg:    var(--au-mint);
   --tone-honey-bg:   rgba(224, 168, 90, 0.16); --tone-honey-br:   rgba(224, 168, 90, 0.32); --tone-honey-fg:   var(--au-amber);
-  --tone-umber-bg:   rgba(61, 111, 214, 0.20); --tone-umber-br:   rgba(61, 111, 214, 0.36); --tone-umber-fg:   #3D6FD6;
+  --tone-umber-bg:   rgba(176, 133, 47, 0.20); --tone-umber-br:   rgba(176, 133, 47, 0.36); --tone-umber-fg:   #B0852F;
   --tone-slate-bg:   rgba(168, 181, 201, 0.20); --tone-slate-br:   rgba(168, 181, 201, 0.36); --tone-slate-fg:   var(--au-ink-2);
-  --tone-orange-bg:  rgba(91, 141, 239, 0.20); --tone-orange-br:  rgba(91, 141, 239, 0.36); --tone-orange-fg:  var(--au-cool);
+  --tone-orange-bg:  rgba(203, 164, 94, 0.20); --tone-orange-br:  rgba(203, 164, 94, 0.36); --tone-orange-fg:  var(--au-cool);
   --tone-emerald-bg: rgba(84, 203, 126, 0.20); --tone-emerald-br: rgba(84, 203, 126, 0.36); --tone-emerald-fg: var(--au-mint);
   --tone-amber-bg:   rgba(224, 168, 90, 0.16); --tone-amber-br:   rgba(224, 168, 90, 0.32); --tone-amber-fg:   var(--au-amber);
   --tone-sky-bg:     rgba(55, 194, 201, 0.14); --tone-sky-br:     rgba(55, 194, 201, 0.28); --tone-sky-fg:     #37C2C9;
@@ -569,12 +569,12 @@ html:not(.dark) .adm-aurora .admin-panel {
 
   --line:      var(--au-rule);
   --line-2:    var(--au-rule-2);
-  --line-foil: rgba(91, 141, 239, 0.22);
+  --line-foil: rgba(203, 164, 94, 0.22);
   /* Focus + glow follow the corporate accent. */
-  --border-focus: rgba(91, 141, 239, 0.55);
-  --shadow-glow: 0 0 16px rgba(91, 141, 239, 0.25);
-  --shadow-rose: 0 0 16px rgba(91, 141, 239, 0.25);
-  --shadow-foil: 0 0 30px rgba(91, 141, 239, 0.20);
+  --border-focus: rgba(203, 164, 94, 0.55);
+  --shadow-glow: 0 0 16px rgba(203, 164, 94, 0.25);
+  --shadow-rose: 0 0 16px rgba(203, 164, 94, 0.25);
+  --shadow-foil: 0 0 30px rgba(203, 164, 94, 0.20);
 }
 
 /* --- Light theme overrides — slate enterprise ----------------------- */
@@ -599,7 +599,7 @@ html:not(.dark) .adm-aurora {
   --input:                217 25% 90%;
   --ring:                 217.38 58.56% 43.53%;
 
-  /* Brand-token redirect (light) — mirror the dark scope: LocateFlow Sapphire primary. */
+  /* Brand-token redirect (light) — Sapphire paper accent mirrors the dark Gold scope. */
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
   --rose-deep:   var(--au-cool-2);
@@ -656,14 +656,14 @@ html:not(.dark) .adm-aurora aside.bg-card {
   border-right: 1px solid var(--au-rule);
 }
 
-/* Foil text → LocateFlow Sapphire gradient. Affects sidebar wordmark + any inline
+/* Foil text → LocateFlow Gold/Sapphire gradient. Affects sidebar wordmark + any inline
    `<em>` titles via `.foil-text`, plus h1/h2/h3 `<em>` segments. */
 .adm-aurora .foil-text,
 .adm-aurora h1 em,
 .adm-aurora h2 em,
 .adm-aurora h3 em {
   font-style: italic;
-  background: linear-gradient(180deg, #83AAF5 0%, var(--au-violet) 60%, #3D6FD6 100%);
+  background: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #B0852F 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -727,7 +727,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
 }
 .adm-aurora .health-pill.tone-honey {
   background: var(--au-amber-soft);
-  border-color: rgba(91, 141, 239, 0.28);
+  border-color: var(--au-warn-line);
   color: var(--au-amber);
 }
 .adm-aurora .health-pill.tone-honey .health-dot { background: var(--au-amber); }
@@ -743,33 +743,33 @@ html:not(.dark) .adm-aurora .kpi-foil {
 /* Tier stamps in tables. */
 .adm-aurora .tier-stamp.tier-individual {
   background: var(--au-cool-soft);
-  border-color: rgba(91, 141, 239, 0.32);
+  border-color: var(--au-accent-line);
   color: var(--au-cool);
 }
 .adm-aurora .tier-stamp.tier-family {
   background: var(--au-family-soft);
-  border-color: rgba(91, 141, 239, 0.32);
+  border-color: var(--au-accent-line);
   color: var(--au-family);
 }
 .adm-aurora .tier-stamp.tier-pro {
-  background: linear-gradient(135deg, rgba(221, 233, 255, 0.18), rgba(91, 141, 239, 0.22));
-  border-color: rgba(91, 141, 239, 0.40);
+  background: linear-gradient(135deg, rgba(255, 239, 204, 0.18), rgba(203, 164, 94, 0.22));
+  border-color: var(--au-accent-line);
   color: var(--au-ink);
-  box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.14) inset;
+  box-shadow: 0 0 0 1px rgba(203, 164, 94, 0.14) inset;
 }
 .adm-aurora .tier-stamp.tier-trial {
   background: var(--au-amber-soft);
-  border-color: rgba(91, 141, 239, 0.32);
+  border-color: var(--au-warn-line);
   color: var(--au-amber);
 }
 
-/* Tier distribution bar — cool (Individual) / teal (Family) / Sapphire (Pro). */
+/* Tier distribution bar — Gold (Individual) / teal (Family) / Gold (Pro). */
 .adm-aurora .tier-bar { background: var(--au-track); }
 .adm-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
 .adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), var(--au-cool)); }
 .adm-aurora .tier-bar-seg-pro {
-  background: linear-gradient(90deg, #83AAF5 0%, var(--au-violet) 60%, #3D6FD6 100%);
-  box-shadow: 0 0 8px rgba(91, 141, 239, 0.4);
+  background: linear-gradient(90deg, #DCBC7C 0%, var(--au-violet) 60%, #B0852F 100%);
+  box-shadow: 0 0 8px rgba(203, 164, 94, 0.4);
 }
 
 /* Inputs / search fields — anything using `bg-background` + `border-input`
@@ -783,7 +783,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
 }
 
 /* Tables inside admin-panel — zebra rows + clearer header + roomier cells.
-   Zebra gives quiet row separation at rest; hover keeps the LocateFlow Sapphire tint
+   Zebra gives quiet row separation at rest; hover keeps the LocateFlow accent tint
    on top. Header reads one tier brighter (ink-2) so columns scan cleanly. */
 .adm-aurora .admin-panel table tbody tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.025);
@@ -829,21 +829,21 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
-/* Foil-text inside the sidebar wordmark — keep the Sapphire gradient
+/* Foil-text inside the sidebar wordmark — keep the accent gradient
    regardless of theme so the brand mark stays on theme. */
 .adm-aurora aside .foil-text {
-  background: linear-gradient(135deg, #83AAF5 0%, var(--au-violet) 60%, #3D6FD6 100%);
+  background: linear-gradient(135deg, #F6E5BE 0%, var(--au-violet) 60%, #B0852F 100%);
   -webkit-background-clip: text;
           background-clip: text;
 }
 
 /* Sidebar nav active state — already uses bg-primary/10, which now reads
-   LocateFlow Sapphire. Add a subtle inner border ring like the prototype. */
+   LocateFlow accent. Add a subtle inner border ring like the prototype. */
 .adm-aurora aside a.bg-primary\/10 {
   border: 1px solid var(--au-accent-line);
 }
 
-/* The shared sidebar logo SVG carries its Sapphire gradient inline
+/* The shared sidebar logo SVG carries its own gradient inline
    in the SVG `<defs>` so the brand mark matches the app chrome.
    Everything else cascades through the variable overrides above. */
 
@@ -853,9 +853,9 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
    Each card gets ONE accent custom property (--plan-accent) resolved
    from the --au-* system, so the markup never carries raw hex:
      Free       → coral   (the $0 identity chip)
-     Individual → LocateFlow Sapphire
+     Individual → LocateFlow accent
      Family     → teal, featured/POPULAR border
-     Pro        → LocateFlow Sapphire
+     Pro        → LocateFlow accent
    Card chrome stays slate-enterprise: flat solid surface, 1px hairline,
    feather shadow. Tints derive from the accent via color-mix so theme
    switches (light slate / dark) re-resolve automatically.
@@ -938,17 +938,17 @@ html:not(.dark) .adm-aurora .au-plancard {
    F3-C · Corporate topbar (.adp-topbar)
    -------------------------------------------------------------------------
    Ported from the design system's `.adp-top` (admin-pro.css). Slate light
-   enterprise: flat near-solid surface, 1px hairline, corporate-blue accent
-   (#2E5FB0 light / #5B8DEF dark — honey stays demoted to warn and is not
+   enterprise: flat near-solid surface, 1px hairline, accent
+   (#2E5FB0 light / #CBA45E dark — honey stays demoted to warn and is not
    used here). All colors flow through --au-* vars; the topbar-only vars
    below extend the token sheet rather than hex-littering the component.
    ========================================================================= */
 .adm-aurora {
   --au-top-bg:      rgba(18, 25, 38, 0.88);
   --au-top-field:   rgba(255, 255, 255, 0.06);
-  --au-acc:         #5B8DEF;
-  --au-acc-soft:    rgba(91, 141, 239, 0.13);
-  --au-acc-line:    rgba(91, 141, 239, 0.26);
+  --au-acc:         #CBA45E;
+  --au-acc-soft:    rgba(203, 164, 94, 0.13);
+  --au-acc-line:    rgba(203, 164, 94, 0.26);
 }
 html:not(.dark) .adm-aurora {
   --au-top-bg:      rgba(255, 255, 255, 0.92);
@@ -973,8 +973,8 @@ html:not(.dark) .adm-aurora {
   min-height: calc(100vh - 60px);
   padding: 28px 32px 40px;
   background:
-    linear-gradient(135deg, rgba(91, 141, 239, 0.055), transparent 34%),
-    linear-gradient(220deg, transparent 6%, rgba(91, 141, 239, 0.045) 48%, transparent 84%),
+    linear-gradient(135deg, rgba(203, 164, 94, 0.055), transparent 34%),
+    linear-gradient(220deg, transparent 6%, rgba(203, 164, 94, 0.045) 48%, transparent 84%),
     repeating-linear-gradient(90deg, color-mix(in srgb, var(--au-ink) 4%, transparent) 0 1px, transparent 1px 78px),
     repeating-linear-gradient(0deg, color-mix(in srgb, var(--au-ink) 3%, transparent) 0 1px, transparent 1px 78px);
 }
@@ -1482,8 +1482,8 @@ html:not(.dark) .adm-aurora {
    segmented range control, the x-axis label strip, and the audit feed.
    Ported from the design system's .adp-chartwrap/.adp-seg/.adp-feed
    (admin-pro.css). Everything binds to the --au-* token system — accent is
-   LocateFlow Sapphire (#2E5FB0 light / #5B8DEF dark); honey appears only via
-   the warn tone on audit dots.
+   LocateFlow brand accent (#2E5FB0 light / #CBA45E dark); honey appears only
+   via the warn tone on audit dots.
    ========================================================================= */
 
 /* Segmented range control (7D / 30D / QTR) */
