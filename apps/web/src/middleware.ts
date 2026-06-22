@@ -55,6 +55,9 @@ const PUBLIC_PATHS = [
   "/invitations", // workspace invite landing (flag-gated API returns 404 when off)
   "/movers/apply", // public mover self-service application (route-level feature gate)
   "/movers/portal", // passwordless mover portal, gated by mover_portal cookie in page code
+  "/partners/apply", // public partner self-service application (PARTNER_REGISTRATION_FLAG gate in page)
+  "/partners/portal", // passwordless partner portal, gated by partner-portal session in page (covers /partners/portal/enter)
+  "/unsubscribe", // one-click unsubscribe landing; HMAC-token authed, mirrors the already-public /api/unsubscribe
   "/opengraph-image",
 ];
 
