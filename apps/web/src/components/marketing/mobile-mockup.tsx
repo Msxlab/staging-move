@@ -1,19 +1,18 @@
-import { Bell, Wifi, Battery, MapPin, Zap, Droplet, Tv, Shield, Plus, Search, Home, Wallet, ChevronRight } from "lucide-react";
+import { Battery, Bell, ChevronRight, Droplet, Home, MapPin, Plus, Search, Shield, Tv, Wallet, Wifi, Zap } from "lucide-react";
 
 const mockServices = [
-  { icon: Zap, name: "ConEd Electric", provider: "Con Edison", due: "in 4 days", tone: "honey" },
+  { icon: Zap, name: "ConEd Electric", provider: "Con Edison", due: "in 4 days", tone: "foil" },
   { icon: Wifi, name: "Spectrum Internet", provider: "Charter Spectrum", due: "in 12 days", tone: "slate" },
   { icon: Tv, name: "Netflix", provider: "Netflix Inc.", due: "Renews Mar 18", tone: "rose" },
   { icon: Droplet, name: "NYC Water", provider: "DEP", due: "Quarterly", tone: "sage" },
-  { icon: Shield, name: "Lemonade Renters", provider: "Lemonade", due: "Annual · Aug", tone: "foil" },
+  { icon: Shield, name: "Lemonade Renters", provider: "Lemonade", due: "Annual - Aug", tone: "foil" },
 ] as const;
 
-const toneClasses: Record<string, string> = {
-  honey: "bg-warning/15 text-warning",
+const toneClasses: Record<(typeof mockServices)[number]["tone"], string> = {
+  foil: "bg-primary/15 text-primary",
   slate: "bg-info/15 text-info",
   rose: "bg-primary/15 text-primary",
   sage: "bg-success/15 text-success",
-  foil: "bg-secondary/40 text-secondary-foreground",
 };
 
 export function MobileMockup() {
@@ -29,7 +28,7 @@ export function MobileMockup() {
       <div className="relative rounded-[44px] border border-border/80 bg-background p-2 shadow-2xl">
         <div className="overflow-hidden rounded-[36px] border border-border/60 bg-card">
           {/* Status bar */}
-          <div className="flex items-center justify-between bg-card px-6 pt-3 pb-2 text-[10px] font-medium text-foreground/80">
+          <div className="flex items-center justify-between bg-card px-6 pb-2 pt-3 text-[10px] font-medium text-foreground/80">
             <span>9:41</span>
             <div className="absolute left-1/2 top-2 h-5 w-24 -translate-x-1/2 rounded-full bg-background" />
             <div className="flex items-center gap-1.5">
@@ -39,13 +38,13 @@ export function MobileMockup() {
           </div>
 
           {/* App header */}
-          <div className="px-5 pt-4 pb-3">
+          <div className="px-5 pb-3 pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">My address</p>
                 <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                   <MapPin className="h-3.5 w-3.5 text-primary" />
-                  221B Baker St · Apt 4
+                  221B Baker St - Apt 4
                 </p>
               </div>
               <button
@@ -59,7 +58,7 @@ export function MobileMockup() {
 
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
               <Search className="h-3.5 w-3.5" />
-              <span>Search services…</span>
+              <span>Search services...</span>
             </div>
           </div>
 
@@ -69,8 +68,8 @@ export function MobileMockup() {
               <p className="text-base font-bold text-foreground">12</p>
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Services</p>
             </div>
-            <div className="border-l border-r border-border/60">
-              <p className="text-base font-bold text-warning">3</p>
+            <div className="border-x border-border/60">
+              <p className="text-base font-bold text-primary">3</p>
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Due soon</p>
             </div>
             <div>

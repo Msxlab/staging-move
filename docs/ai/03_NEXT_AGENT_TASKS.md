@@ -8,9 +8,11 @@ Use [[handoffs/2026-06-21-staging-audit-prep]] as the active staging memory.
 The current product/theme decision is `LocateFlow + Sapphire` everywhere in
 light/dark. Older design-zip memory that says `Move + Gold` is historical only.
 The latest local pass normalized web/admin/mobile/shared plan/premium accents to
-Sapphire, kept amber for warning semantics, and passed full typecheck/tests.
-Remaining staging work: commit/push, Dokploy redeploy, cache-busted visual QA,
-and authenticated Chrome/admin checks.
+Sapphire, kept amber for real warning semantics, and passed full typecheck/tests.
+Follow-up smoke found demo-only home page `tone-honey` residue in
+`RecognitionChipStorm` and `MobileMockup`; those demo accents were moved to
+Sapphire/primary. Remaining staging work: redeploy the branch, repeat
+cache-busted smoke/visual QA, and run authenticated Chrome/admin checks.
 
 Use this note as the Obsidian task queue for the next Codex, Claude Product Explorer, or Claude Product Judge pass.
 

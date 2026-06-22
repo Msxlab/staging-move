@@ -13,14 +13,13 @@
  * like `/12` that some Tailwind builds dropped, leaving most chips
  * invisible against a dark canvas):
  *   - rose  = bleeding money / past due
- *   - honey = silently auto-renewing / unused
  *   - slate = a clock running down (forwarding)
- *   - foil  = inert / quietly active
+ *   - foil  = Sapphire neutral for auto-renewing / unused / quietly active
  */
 export async function RecognitionChipStorm() {
   const t = await getTranslations("landing");
 
-  type Tone = "rose" | "honey" | "slate" | "foil";
+  type Tone = "rose" | "slate" | "foil";
   interface Chip {
     brand: string;
     statusKey: string;
@@ -35,18 +34,18 @@ export async function RecognitionChipStorm() {
   // all three rows so the eye finds at least one wound per band.
   const rowOne: Chip[] = [
     { brand: "PG&E · $142.18", statusKey: "chip_status_past_due", tone: "rose", tilt: -2 },
-    { brand: "Verizon", statusKey: "chip_status_auto_renewing", tone: "honey", tilt: 1 },
+    { brand: "Verizon", statusKey: "chip_status_auto_renewing", tone: "foil", tilt: 1 },
     { brand: "Comcast", statusKey: "chip_status_old_address", tone: "rose", tilt: -1 },
     { brand: "USPS", statusKey: "chip_status_forwarding", tone: "slate", tilt: 2 },
   ];
   const rowTwo: Chip[] = [
-    { brand: "Netflix · $19.99", statusKey: "chip_status_charged", tone: "honey", tilt: -1 },
+    { brand: "Netflix · $19.99", statusKey: "chip_status_charged", tone: "foil", tilt: -1 },
     { brand: "AT&T", statusKey: "chip_status_disconnect_failed", tone: "rose", tilt: 2 },
     { brand: "Geico", statusKey: "chip_status_inert", tone: "foil", tilt: -2 },
   ];
   const rowThree: Chip[] = [
-    { brand: "ClassPass", statusKey: "chip_status_unused", tone: "honey", tilt: 1 },
-    { brand: "Anytime Fitness", statusKey: "chip_status_unused", tone: "honey", tilt: -2 },
+    { brand: "ClassPass", statusKey: "chip_status_unused", tone: "foil", tilt: 1 },
+    { brand: "Anytime Fitness", statusKey: "chip_status_unused", tone: "foil", tilt: -2 },
     { brand: "HOA", statusKey: "chip_status_inert", tone: "foil", tilt: 1 },
     { brand: "City Water", statusKey: "chip_status_inert", tone: "foil", tilt: -1 },
   ];
@@ -58,7 +57,6 @@ export async function RecognitionChipStorm() {
   // alpha quietly dropped on some builds and left chips ghostlike.
   const toneClasses: Record<Tone, string> = {
     rose: "bg-tone-rose-bg border-tone-rose-br text-tone-rose-fg",
-    honey: "bg-tone-honey-bg border-tone-honey-br text-tone-honey-fg",
     slate: "bg-tone-slate-bg border-tone-slate-br text-tone-slate-fg",
     foil: "bg-tone-foil-bg border-tone-foil-br text-tone-foil-fg",
   };
