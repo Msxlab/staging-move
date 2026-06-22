@@ -92,6 +92,20 @@ were narrowed to `RecognitionChipStorm` and `MobileMockup`, then changed to
 Sapphire/primary demo accents. Real warning/caution semantics in app/admin
 surfaces remain allowed to use warning tones.
 
+Live verification after the follow-up cleanup:
+
+- Web and admin `build-info` both reached commit
+  `fac3aae390209ab4a9e2435ac68a09c06e990ab7`.
+- Web build time: `2026-06-22T02:22:14.625Z`.
+- Admin build time: `2026-06-22T02:22:14.632Z`.
+- `GET` smoke for web/admin build-info, web health, web ready, admin ready, and
+  admin healthz returned `200`.
+- Cache-busted public smoke pages returned `200` with `LocateFlow` titles:
+  `/`, `/features`, `/why-free`, `/pricing`, `/blog`, `/help`, `/sign-in`,
+  `/sign-up`, and admin `/login`.
+- Smoke HTML scan found no `>Move<`, `Move app`, `Move Admin`, `Move Gold`,
+  `move-gold`, `tone-honey`, `honey`, or `gold` hits on those public pages.
+
 ## Read / Inspected
 
 - Repo rules: `AGENTS.md`.
