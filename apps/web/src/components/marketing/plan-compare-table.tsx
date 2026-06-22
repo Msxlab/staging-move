@@ -240,7 +240,7 @@ export function PlanCompareTable() {
                     key={plan}
                     scope="col"
                     /* .plan-* scopes --primary to the plan accent, so text-primary
-                       and bg-primary/5 below pick up pink/teal/honey per column. */
+                       and bg-primary/5 below pick up the plan accent per column. */
                     className={`${header.accentClass} bg-primary/5 px-4 py-4 text-center align-top`}
                   >
                     <span className="block text-sm font-semibold text-primary">{t(header.nameKey)}</span>

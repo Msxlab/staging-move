@@ -102,9 +102,9 @@ export function ObProShowcase({
 }: ObProShowcaseProps) {
   return (
     <div
-      className={`ob-pro-showcase relative overflow-hidden rounded-2xl border border-tone-honey-br bg-gradient-to-br from-tone-honey-bg via-foreground/[0.03] to-transparent p-5 ${className}`}
+      className={`ob-pro-showcase relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-5 ${className}`}
     >
-      <div className="flex items-center gap-2 text-tone-honey-fg">
+      <div className="flex items-center gap-2 text-primary">
         <Sparkles className="h-4 w-4" aria-hidden="true" />
         <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em]">
           {eyebrow}
@@ -126,7 +126,7 @@ export function ObProShowcase({
             >
               <span
                 aria-hidden="true"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-tone-honey-bg text-tone-honey-fg"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
               >
                 <Icon className="h-3.5 w-3.5" />
               </span>

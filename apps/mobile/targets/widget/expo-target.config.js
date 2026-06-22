@@ -20,7 +20,7 @@
 module.exports = {
   type: "widget",
   name: "MoveWidget",
-  displayName: "LocateFlow Move",
+  displayName: "LocateFlow",
   // SwiftUI + WidgetKit are required for any WidgetKit extension.
   frameworks: ["SwiftUI", "WidgetKit"],
   // Mirror the main app's App Group so the extension can read the shared

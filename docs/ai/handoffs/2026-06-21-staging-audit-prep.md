@@ -418,6 +418,44 @@ Live verification after the follow-up cleanup:
   then confirm staging `/api/build-info` and cache-busted web/admin pages render
   the pushed commit and Sapphire theme.
 
+## 2026-06-22 Design Zip Integration Follow-up
+
+- Rechecked `design-src/initial-check-requested/project` against current
+  web/admin/mobile code. The source bundle includes the public shell/home,
+  public feature/free/blog/login/onboarding pages, mobile app modules
+  (Search, Providers, CustomProviders, Reminders, Help, Invitations,
+  Onboarding/Auth/DossierScene), and admin prototype. The prototype default is
+  still Gold/Move, but it also carries Sapphire/Emerald variants. Runtime target
+  remains `LocateFlow + Sapphire`.
+- Mobile integration check: the prototype note about unlinked standalone mobile
+  modules is no longer true in current code. The More tab links to real routes
+  for Search, Providers, Custom Providers, Reminders, Help/Tickets,
+  Notifications, Blog, settings/workspace/export/privacy, and related flows.
+  Those screens use `useAppTheme()`/shared tokens and preserve honey/amber only
+  for warning/manual-tracking/pending semantics.
+- Public header bug found and fixed: desktop nav is `lg:flex`, while the
+  hamburger was `md:hidden`, leaving tablet widths without public page links.
+  `MarketingMobileNav` is now `lg:hidden`, so Features / Why free / Pricing /
+  Help / Blog / FAQ remain reachable below the desktop breakpoint.
+- User-facing old brand fallback found and fixed: mobile blog detail used
+  `"Move"` when no author was present; it now falls back to `LocateFlow`.
+  iOS widget display names in the Expo target config and WidgetKit
+  configuration now show `LocateFlow` instead of `LocateFlow Move`.
+- Web onboarding theme drift found and fixed: Pro showcase and recommendation
+  sparkle accents used honey/amber despite being non-warning brand moments.
+  Those now use Sapphire primary. The "Listed providers, manual tracking only"
+  warning remains honey by design.
+- Verification on host Node `v24.12.0` (repo wants Node `22.x`, so pnpm engine
+  warnings are expected): `git diff --check` passed with CRLF warnings only;
+  `pnpm --filter @locateflow/web lint` passed; `pnpm --filter @locateflow/mobile
+  lint` passed; targeted web tests passed (42 tests); full mobile Vitest passed
+  (34 files / 325 tests).
+- Still pending for honest completion: push/deploy this commit, verify staging
+  build-info and cache-busted public/auth/onboarding pages, verify existing
+  Chrome/Dokploy state without opening a new Chrome window, and run native
+  widget/mobile visual QA in a real simulator/device build because Swift
+  WidgetKit cannot be compiled/rendered in this Windows repo session.
+
 ## Minimum Env Categories Needed For Real Tests
 
 Do not paste values into chat. Set locally.

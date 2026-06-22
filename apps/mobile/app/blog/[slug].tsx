@@ -197,7 +197,7 @@ export default function BlogDetailScreen() {
               <Text style={styles.heroStatLabel}>min read</Text>
             </View>
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue} numberOfLines={1}>{post.author?.name || "Move"}</Text>
+              <Text style={styles.heroStatValue} numberOfLines={1}>{post.author?.name || "LocateFlow"}</Text>
               <Text style={styles.heroStatLabel}>author</Text>
             </View>
             <View style={styles.heroStat}>

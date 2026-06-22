@@ -168,7 +168,7 @@ struct MoveWidget: Widget {
         StaticConfiguration(kind: kind, provider: MoveProvider()) { entry in
             MoveWidgetView(entry: entry)
         }
-        .configurationDisplayName("LocateFlow Move")
+        .configurationDisplayName("LocateFlow")
         .description("Your move countdown, next task, and readiness at a glance.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
