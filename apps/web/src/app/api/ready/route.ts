@@ -9,10 +9,10 @@
  * readiness probes, DigitalOcean health checks, Cloudflare load
  * balancer) refuse to send traffic until the deployment is fixed.
  *
- * The body never includes secret values — only the names of the keys
- * that fail the check, plus a short human message. Safe to expose
- * publicly; an attacker who learns "USER_JWT_SECRET is missing" learns
- * nothing they couldn't already infer from a 500 on /api/auth/login.
+ * The body never includes secret values OR the failing key names — only
+ * boolean/count signals (requiredOk, missingRequiredCount, warningCount) plus a
+ * database status. Safe to expose publicly: an orchestrator learns whether the
+ * deploy is ready without any recon-useful config detail.
  */
 
 import { type NextRequest, NextResponse } from "next/server";

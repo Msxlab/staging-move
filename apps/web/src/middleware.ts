@@ -91,7 +91,6 @@ const PUBLIC_API_EXACT = [
   "/api/auth/login",
   "/api/auth/logout",
   "/api/auth/register",
-  "/api/build-info",
   "/api/auth/me",
   "/api/auth/verify-email",
   "/api/auth/forgot-password",
