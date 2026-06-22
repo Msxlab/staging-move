@@ -418,6 +418,65 @@ Live verification after the follow-up cleanup:
   then confirm staging `/api/build-info` and cache-busted web/admin pages render
   the pushed commit and Sapphire theme.
 
+## 2026-06-22 Design Zip Integration Follow-up
+
+- Rechecked `design-src/initial-check-requested/project` against current
+  web/admin/mobile code. The source bundle includes the public shell/home,
+  public feature/free/blog/login/onboarding pages, mobile app modules
+  (Search, Providers, CustomProviders, Reminders, Help, Invitations,
+  Onboarding/Auth/DossierScene), and admin prototype. The prototype default is
+  still Gold/Move, but it also carries Sapphire/Emerald variants. Runtime target
+  remains `LocateFlow + Sapphire`.
+- Mobile integration check: the prototype note about unlinked standalone mobile
+  modules is no longer true in current code. The More tab links to real routes
+  for Search, Providers, Custom Providers, Reminders, Help/Tickets,
+  Notifications, Blog, settings/workspace/export/privacy, and related flows.
+  Those screens use `useAppTheme()`/shared tokens and preserve honey/amber only
+  for warning/manual-tracking/pending semantics.
+- Public header bug found and fixed: desktop nav is `lg:flex`, while the
+  hamburger was `md:hidden`, leaving tablet widths without public page links.
+  `MarketingMobileNav` is now `lg:hidden`, so Features / Why free / Pricing /
+  Help / Blog / FAQ remain reachable below the desktop breakpoint.
+- User-facing old brand fallback found and fixed: mobile blog detail used
+  `"Move"` when no author was present; it now falls back to `LocateFlow`.
+  iOS widget display names in the Expo target config and WidgetKit
+  configuration now show `LocateFlow` instead of `LocateFlow Move`.
+- Web onboarding theme drift found and fixed: Pro showcase and recommendation
+  sparkle accents used honey/amber despite being non-warning brand moments.
+  Those now use Sapphire primary. The "Listed providers, manual tracking only"
+  warning remains honey by design.
+- Verification on host Node `v24.12.0` (repo wants Node `22.x`, so pnpm engine
+  warnings are expected): `git diff --check` passed with CRLF warnings only;
+  `pnpm --filter @locateflow/web lint` passed; `pnpm --filter @locateflow/mobile
+  lint` passed; targeted web tests passed (42 tests); full mobile Vitest passed
+  (34 files / 325 tests).
+- Post-push Dokploy verification: commit
+  `7e3cecbb0f9ed8718665ab546f28a51f55516649` reached both staging web and
+  admin. `GET /api/build-info` returned `commitSha=7e3cecbb...`,
+  `sourceBranch=codex/staging-audit-2026-06-21`, web build time
+  `2026-06-22T02:51:25.192Z`, and admin build time
+  `2026-06-22T02:51:25.198Z`.
+- Cache-busted smoke returned `200` for `/`, `/features`, `/why-free`,
+  `/pricing`, `/blog`, `/help`, `/sign-in`, `/sign-up`, `/onboarding`, and
+  admin `/login`. The HTML scan found no `>Move<`, `Move app`, `Move Admin`,
+  `Move Gold`, `LocateFlow Move`, `move-gold`, `tone-honey`, standalone
+  `honey`, or standalone `gold` hits in those pages.
+- Existing Chrome/Dokploy verification: no new Chrome window was opened. The
+  already-open Mustafa Chrome session showed the Dokploy Staging Move
+  deployment entry for `Fix LocateFlow Sapphire integration drift`; the old
+  "Move Admin" browser tab title was stale tab text only, while the loaded admin
+  document/title rendered `LocateFlow Admin`.
+- Live visual QA in the existing Chrome session: homepage renders LocateFlow
+  Sapphire with the animated phone hero and top links for Features / Why free /
+  Pricing / Help / Blog / FAQ plus auth actions. `/sign-up`, the unauthenticated
+  `/onboarding` redirect shell, and admin `/login` render LocateFlow/Sapphire
+  surfaces without visible old-product-name or Gold drift.
+- Still pending for honest completion: native widget/mobile visual QA in a real
+  simulator/device build because Swift WidgetKit cannot be compiled/rendered in
+  this Windows repo session; authenticated app/admin flows still need operator
+  credentials/2FA at action time; full delegated Codex Security Deep Security
+  Scan remains separate from this parent-agent static/runtime pass.
+
 ## Minimum Env Categories Needed For Real Tests
 
 Do not paste values into chat. Set locally.

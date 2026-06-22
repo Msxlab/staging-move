@@ -1309,7 +1309,7 @@ export default function OnboardingClient({
         {/* Top personalized critical steps */}
         <GlassCard className="p-6">
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="h-4 w-4 text-tone-honey-fg" />
+            <Sparkles className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold text-foreground">Your top critical steps</h3>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
@@ -2017,7 +2017,7 @@ export default function OnboardingClient({
           {!loadingProviders && !providerSearch && !activeCategory && recommended.length > 0 && (
             <GlassCard className="p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-tone-honey-fg" />
+                <Sparkles className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">Recommended Listed Providers</h3>
                 <span className="text-[10px] text-foreground/45 ml-auto">Manual tracking</span>
               </div>

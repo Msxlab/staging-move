@@ -11,9 +11,9 @@ interface NavLink {
 }
 
 /**
- * Mobile marketing nav. The desktop <nav> in MarketingHeader is `hidden md:flex`,
- * so below md the in-page links (Features / Pricing / How it works / Blog / FAQ)
- * have no entry point. This is the md:hidden hamburger that opens an accessible
+ * Mobile marketing nav. The desktop <nav> in MarketingHeader is `hidden lg:flex`,
+ * so below lg the in-page links (Features / Why free / Pricing / Help / Blog / FAQ)
+ * have no entry point. This is the lg:hidden hamburger that opens an accessible
  * panel under the header listing those links (+ the auth CTAs when logged out).
  *
  * A11y: the trigger is a real <button> with aria-expanded + aria-controls and a
@@ -73,7 +73,7 @@ export function MarketingMobileNav({
   }, [open]);
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <button
         ref={triggerRef}
         type="button"
