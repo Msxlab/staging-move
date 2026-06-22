@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
-import { Car, ChevronDown, ChevronUp, ExternalLink, Lock, ArrowRight } from "lucide-react-native";
-import { useRouter } from "expo-router";
+import { Car, ChevronDown, ChevronUp, ExternalLink, Sparkles, ArrowRight } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -47,7 +46,6 @@ export function VehicleCheckCard({ destinationState }: VehicleCheckCardProps) {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
-  const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [vin, setVin] = useState("");
@@ -178,14 +176,14 @@ export function VehicleCheckCard({ destinationState }: VehicleCheckCardProps) {
                 style={styles.unlockBtn}
                 onPress={() => {
                   hapticLight();
-                  router.push("/settings/subscription");
+                  void openWebUrl(NHTSA_RECALLS_URL);
                 }}
                 activeOpacity={0.8}
                 accessibilityRole="button"
-                accessibilityLabel={t("teaser.unlockCta")}
+                accessibilityLabel={t("moving.vehicleCheckCta")}
               >
-                <Lock size={13} color="#fff" />
-                <Text style={styles.unlockBtnText}>{t("teaser.unlockCta")}</Text>
+                <Sparkles size={13} color="#fff" />
+                <Text style={styles.unlockBtnText}>{t("moving.vehicleCheckCta")}</Text>
                 <ArrowRight size={13} color="#fff" />
               </TouchableOpacity>
             </View>

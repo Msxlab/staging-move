@@ -143,7 +143,7 @@ function defaultTitle(mood: ServiceMood, count: number): string {
 function defaultSubtitle(mood: ServiceMood): string {
   switch (mood.pose) {
     case "sad":
-      return "Add your first utility, bank, or subscription and the raccoon perks up.";
+      return "Add your first utility, bank, or subscription and your dashboard comes alive.";
     case "happy":
       return "Nice momentum — keep adding what's tied to your home.";
     default:

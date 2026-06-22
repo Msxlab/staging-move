@@ -4,20 +4,24 @@ Updated: 2026-06-22
 
 ## Current Staging Thread Note
 
-Use [[handoffs/2026-06-21-staging-audit-prep]] as the active staging memory.
-The current product/theme decision is `LocateFlow + Sapphire` everywhere in
-light/dark. Older design-zip memory that says `Move + Gold` is historical only.
-The latest local pass normalized web/admin/mobile/shared plan/premium accents to
-Sapphire, kept amber for real warning semantics, and passed full typecheck/tests.
-Follow-up smoke found demo-only home page `tone-honey` residue in
-`RecognitionChipStorm` and `MobileMockup`; those demo accents were moved to
-Sapphire/primary and deployed to staging. The public header now exposes
-Features, Why free, Pricing, Help, Blog, and FAQ, while sign-in/sign-up stay as
-auth actions; live header HTML confirms all six links. Cache-busted public smoke
-now returns `200` for web/admin health/readiness and public pages from home
-through blog, with no `Move`/Gold/`tone-honey` hits in the checked HTML.
-Remaining staging work: authenticated Chrome/admin checks and real mobile
-device/emulator QA.
+Use [[handoffs/2026-06-22-theme-source-integration-pass]] as the active staging
+memory, with [[handoffs/2026-06-21-staging-audit-prep]] as the security/runtime
+baseline.
+
+The current product/theme decision is `LocateFlow`: dark mode follows the new
+theme bundle's Gold (`#CBA45E`, `#DCBC7C`, `#B0852F`), while light mode follows
+Sapphire/blue (`#2E5FB0`, `#3D74C8`, `#244C90`). Older memory that says
+all-Sapphire across both modes is stale. `Move` is a domain noun only, not the product
+wordmark.
+
+The latest pass ports the homepage hero/mobile-phone direction from the new HTML
+theme sources, remaps web/admin/mobile/shared premium and plan accents to the
+dark-Gold/light-Sapphire split, and keeps warning amber only for warning
+semantics. Local typecheck/tests/build passed, commit `8fb63c5b` was deployed to
+Dokploy staging, and Chrome confirmed the homepage dark Gold + light Sapphire
+views. Remaining staging work: authenticated web dashboard QA, authenticated
+admin dashboard QA after the user handles credentials/password manager, and real
+mobile/emulator runtime visual QA.
 
 Use this note as the Obsidian task queue for the next Codex, Claude Product Explorer, or Claude Product Judge pass.
 

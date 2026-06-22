@@ -66,7 +66,7 @@ const config: Config = {
           DEFAULT: "var(--info)",
           light: "var(--info-soft)",
         },
-        // Brand namespace — Edition VIII · Move Sapphire.
+        // Brand namespace - Edition VIII LocateFlow Gold/Sapphire.
         // Legacy `brand-orange` / `brand-amber` aliases remain so existing
         // call sites keep rendering; values now resolve to rose / foil.
         brand: {
@@ -161,7 +161,7 @@ const config: Config = {
         "2xl": "28px",
       },
       fontFamily: {
-        // Move design system: DM Sans for UI, Playfair Display for display,
+        // LocateFlow design system: DM Sans for UI, Playfair Display for display,
         // DM Mono for numerals/meta. CSS vars are populated in app/layout.tsx.
         sans: ["var(--font-sans)", '"DM Sans"', "Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
         display: ["var(--font-display)", '"Playfair Display"', "Didot", "Georgia", "serif"],
@@ -169,7 +169,7 @@ const config: Config = {
         mono: ["var(--font-mono)", '"DM Mono"', "Geist Mono", "JetBrains Mono", "Consolas", "Courier New", "monospace"],
       },
       fontSize: {
-        // Canonical type scale — Move handoff scale.
+        // Canonical type scale - source handoff scale.
         "brand-xs": ["11px", { lineHeight: "16px" }],
         "brand-sm": ["12px", { lineHeight: "18px" }],
         "brand-base": ["14px", { lineHeight: "20px" }],

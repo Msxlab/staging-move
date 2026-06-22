@@ -133,7 +133,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.md,
       backgroundColor: theme.colors.primaryFaded,
       borderWidth: 1,
-      borderColor: "rgba(91, 141, 239,0.25)",
+      borderColor: theme.colors.accentBorder,
     },
     chipText: {
       flex: 1,
@@ -151,7 +151,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.lg,
       backgroundColor: theme.colors.primaryFaded,
       borderWidth: 1,
-      borderColor: "rgba(91, 141, 239,0.25)",
+      borderColor: theme.colors.accentBorder,
     },
     bannerText: {
       flex: 1,

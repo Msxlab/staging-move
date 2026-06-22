@@ -73,7 +73,7 @@ export default function NewAddressPage() {
 
   const [error, setError] = useState<string | null>(null);
   // Plan-gate failures render the same polished upsell modal the services
-  // flow uses (friendly copy + Upgrade CTA) instead of a raw red error box.
+    // flow uses friendly access-review copy instead of a raw red error box.
   const [addressLimit, setAddressLimit] = useState<ServiceLimitDetails | null>(null);
   const [uspsSuggestion, setUspsSuggestion] = useState<{
     street1: string; street2: string | null; city: string; state: string; zip: string; zipPlus4: string | null;

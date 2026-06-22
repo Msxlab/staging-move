@@ -6,12 +6,12 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   CloudSun,
   Compass,
+  Check,
   Download,
   Droplets,
   FlaskConical,
   GraduationCap,
   Home,
-  Lock,
   MapPin,
   Mountain,
   Sparkles,
@@ -1041,12 +1041,12 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                 </p>
               </div>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-tone-honey-bg border border-tone-honey-br text-tone-honey-fg shrink-0">
-                <Lock className="h-3 w-3" aria-hidden="true" />
+                <Check className="h-3 w-3" aria-hidden="true" />
                 {td("dossier_neighborhood_proPill")}
               </span>
             </div>
             <Link
-              href="/pricing"
+              href="/addresses"
               className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-tone-orange-fg hover:opacity-90 transition"
             >
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1164,7 +1164,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
           <div className="p-3 rounded-xl border border-tone-orange-br bg-tone-orange-bg/35">
             <div className="flex items-start gap-3">
               <div className="h-9 w-9 rounded-lg bg-background/40 border border-tone-orange-br flex items-center justify-center shrink-0">
-                <Lock className="h-4 w-4 text-tone-orange-fg" />
+                <Sparkles className="h-4 w-4 text-tone-orange-fg" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-foreground">{td("dossier_preview_unlock_title")}</p>
@@ -1172,7 +1172,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                   {td("dossier_preview_unlock_body")}
                 </p>
                 <Link
-                  href="/pricing"
+                  href="/addresses"
                   className="mt-1 -mx-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 py-2.5 text-xs font-semibold text-tone-orange-fg hover:opacity-90 transition"
                 >
                   <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1197,11 +1197,10 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 // ── Plan-gate teaser (exported for tests — render-pure, no fetching) ─────────
 
 /**
- * Value-first upgrade teaser for FREE/FREE_TRIAL (GATE-API entitled:false).
- * Same card chrome as the real dossier, with the nine insight rows shown as
- * honest locked line-items (lock glyphs, no fabricated data) and an "Unlock
- * with Individual" CTA to /pricing. Visual language mirrors the existing
- * MOVING_PLAN upgrade teaser (move-command-center free hero).
+ * Value-first included-feature teaser for stale GATE-API entitled:false
+ * payloads. Same card chrome as the real dossier, with curated rows shown as
+ * available insight line-items (check glyphs, no fabricated data) and a CTA
+ * back into the address/dossier flow.
  */
 const TEASER_ROWS = [
   {
@@ -1306,13 +1305,13 @@ export function HomeDossierTeaser({ place }: { place?: string }) {
               <p className="text-sm font-semibold text-foreground truncate">{td(titleKey)}</p>
               <p className="text-xs text-muted-foreground truncate">{td(subKey)}</p>
             </div>
-            <Lock className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
+            <Check className="h-4 w-4 text-tone-orange-fg shrink-0" aria-hidden="true" />
           </div>
         ))}
 
         <div className="pt-1">
           <Link
-            href="/pricing"
+            href="/addresses"
             className="inline-flex items-center gap-2 px-4 py-3 min-h-11 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
           >
             <Sparkles className="h-4 w-4" /> {td("dossier_teaser_cta")}

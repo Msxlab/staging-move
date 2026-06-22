@@ -659,9 +659,8 @@ export default function SubscriptionManagementPage({
         <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6">
           <h3 className="text-sm font-semibold text-foreground">Coming soon</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Concierge (done-for-you moving help) and Business (tools for movers &amp; partners) are on the way. See
-            what&apos;s coming on the{" "}
-            <Link href="/pricing" className="underline hover:text-foreground">pricing page</Link>.
+            Concierge (done-for-you moving help) and Business (tools for movers &amp; partners) are on the way.
+            They will appear here when they are ready.
           </p>
         </div>
       </div>

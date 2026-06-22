@@ -54,11 +54,11 @@ export default async function BlogPostOgImage({
               width: 64,
               height: 64,
               borderRadius: 16,
-              background: "linear-gradient(135deg, #83AAF5 0%, #3D6FD6 100%)",
+              background: "linear-gradient(135deg, #DCBC7C 0%, #B0852F 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 40px rgba(91, 141, 239, 0.40)",
+              boxShadow: "0 0 40px rgba(203, 164, 94, 0.40)",
             }}
           >
             <span style={{ fontSize: 36, fontWeight: 800, color: "#EFF3FA" }}>L</span>
@@ -77,7 +77,7 @@ export default async function BlogPostOgImage({
               fontWeight: 700,
               letterSpacing: 4,
               textTransform: "uppercase",
-              color: "#83AAF5",
+              color: "#DCBC7C",
             }}
           >
             {category}
@@ -103,13 +103,13 @@ export default async function BlogPostOgImage({
             gap: 12,
             padding: "12px 20px",
             borderRadius: 999,
-            background: "rgba(91, 141, 239, 0.10)",
-            border: "1px solid rgba(91, 141, 239, 0.30)",
+            background: "rgba(203, 164, 94, 0.10)",
+            border: "1px solid rgba(203, 164, 94, 0.30)",
             alignSelf: "flex-start",
           }}
         >
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#5B8DEF" }} />
-          <span style={{ fontSize: 20, color: "#83AAF5", fontWeight: 600 }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#CBA45E" }} />
+          <span style={{ fontSize: 20, color: "#DCBC7C", fontWeight: 600 }}>
             locateflow.com/blog
           </span>
         </div>

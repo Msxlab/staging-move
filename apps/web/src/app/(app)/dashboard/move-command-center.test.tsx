@@ -19,7 +19,6 @@ vi.mock("lucide-react", () => {
     Sparkles: Icon,
     Truck: Icon,
     PackageCheck: Icon,
-    Lock: Icon,
     CheckCircle2: Icon,
   };
 });
@@ -36,16 +35,16 @@ function t(key: string, vars: Record<string, string | number> = {}) {
     commandCenter_freePreviewReadOnly: "Read-only",
     commandCenter_freePreviewTitle: "Your {count}-step {route} preview is ready",
     commandCenter_freePreviewBody:
-      "Free keeps this preview read-only. Individual unlocks the full move plan, task tracking, provider transition workspace, and reminders.",
-    commandCenter_freePreviewCta: "Unlock full move plan",
-    commandCenter_freePreviewMore: "+{count} more steps unlock in your full plan.",
+      "This preview can become your full move plan with task tracking, provider transition workspace, and reminders.",
+    commandCenter_freePreviewCta: "Start full move plan",
+    commandCenter_freePreviewMore: "+{count} more steps are ready in your full plan.",
     commandCenter_freePreviewRouteFallback: "move",
   };
   return (messages[key] ?? key).replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ""));
 }
 
 describe("MoveCommandCenter free preview", () => {
-  it("renders a read-only personalized checklist preview with an upgrade CTA", () => {
+  it("renders a read-only personalized checklist preview with a move-plan CTA", () => {
     const markup = renderToStaticMarkup(
       <MoveCommandCenter
         activePlan={null}
@@ -84,8 +83,8 @@ describe("MoveCommandCenter free preview", () => {
     expect(markup).toContain("TX");
     expect(markup).toContain("Transfer electric service");
     expect(markup).toContain("Update renter insurance");
-    expect(markup).toContain("Unlock full move plan");
-    expect(markup).toContain('href="/settings/subscription?returnTo=%2Fdashboard"');
-    expect(markup).not.toContain('href="/moving/new"');
+    expect(markup).toContain("Start full move plan");
+    expect(markup).toContain('href="/moving/new"');
+    expect(markup).not.toContain("settings/subscription");
   });
 });

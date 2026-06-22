@@ -99,8 +99,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   glow: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
-    // Move Sapphire ring (Edition VIII) — matches `--line-foil` on web.
-    borderColor: "rgba(91, 141, 239, 0.30)",
+    borderColor: theme.colors.accentBorder,
     ...theme.shadow.glow,
   },
   glass: {

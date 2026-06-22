@@ -37,8 +37,8 @@ const COMPARE_PLANS: readonly BillingPlan[] = ["FREE_TRIAL", "INDIVIDUAL", "FAMI
 
 /**
  * Column header accent class hooks. The classes stay in place for layout/test
- * contracts, but globals.css resolves them all to the canonical Sapphire accent.
- * Individual carries NO class - absent class = base LocateFlow Sapphire.
+ * contracts, but globals.css resolves them all to the canonical brand accent.
+ * Individual carries NO class - absent class = base LocateFlow accent.
  */
 const PLAN_HEADER: Record<BillingPlan, { nameKey: string; accentClass: string }> = {
   FREE_TRIAL: { nameKey: "compare.planFree", accentClass: "plan-free" },

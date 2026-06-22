@@ -2,7 +2,7 @@
  * Public /blog — list page.
  *
  * Server component rendered per request because locale resolution reads
- * request cookies/headers. Reskinned to the Move design ("Web Blog.dc.html"):
+ * request cookies/headers. Reskinned to the source theme ("Web Blog.dc.html"):
  * a "Moving guides" eyebrow + serif headline, a wide featured card, then a
  * three-column grid of guide cards. Real post images are used when present;
  * a gradient + category-emoji block is the fallback (matches the design's

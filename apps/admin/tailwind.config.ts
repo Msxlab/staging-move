@@ -66,7 +66,7 @@ const config: Config = {
           DEFAULT: "var(--info)",
           light: "var(--info-soft)",
         },
-        // Edition VIII Move Sapphire. Mirrors apps/web/tailwind.config.ts.
+        // Edition VIII LocateFlow Gold/Sapphire. Mirrors apps/web/tailwind.config.ts.
         brand: {
           orange: "var(--brand-orange)",
           "orange-light": "var(--brand-orange-light)",

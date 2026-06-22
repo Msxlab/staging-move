@@ -480,7 +480,7 @@ export default function NewServiceScreen() {
       : t("services.limitReachedWithCount", {
           current: serviceGate?.current ?? 0,
           limit: serviceGate?.limit ?? 0,
-          defaultValue: `Your plan includes ${serviceGate?.limit ?? 0} services. Upgrade to add more.`,
+          defaultValue: `Your current access includes ${serviceGate?.limit ?? 0} services. Review access or contact support if this looks wrong.`,
         });
   const smartSetupLanding = mode === "browse" && (prefillProviderIds.length > 0 || Boolean(guideParam));
   const smartSetupSelectedCount = prefillProviderIds.filter((id) => selectedProviders.has(id)).length;
@@ -493,7 +493,7 @@ export default function NewServiceScreen() {
         ? [{ text: t("common.ok", { defaultValue: "OK" }) }]
         : [
             { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+            { text: t("subscription.upgrade", { defaultValue: "Review access" }), onPress: () => router.push("/settings/subscription") },
           ],
     );
   };
@@ -609,7 +609,7 @@ export default function NewServiceScreen() {
                     <Text style={styles.limitCtaText}>
                       {serviceAtTopTierLimit
                         ? t("services.backToServices", { defaultValue: "Back to services" })
-                        : t("subscription.upgrade", { defaultValue: "Upgrade" })}
+                        : t("subscription.upgrade", { defaultValue: "Review access" })}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>

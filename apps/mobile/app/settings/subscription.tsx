@@ -34,7 +34,7 @@ import {
 } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { openWebUrl } from "@/lib/in-app-browser";
-import { HeroCard, MoveCard, SectionHeader, Pill, MoveRaccoon } from "@/components/move";
+import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 import {
   isMobileStorePurchasesEnabledForPlatform,
   mobileStoreCommerceAdvertisableForPlatform,
@@ -258,12 +258,12 @@ function formatDateLabel(value?: string | null) {
 
 /**
  * Compare-accordion check mark accent. `applyPlanPalette` is intentionally a
- * pass-through now, so every plan resolves to the canonical Sapphire primary in
- * light/dark while older call sites keep their helper shape.
+ * pass-through now, so every plan resolves to the canonical brand primary while
+ * older call sites keep their helper shape.
  */
 function planAccentColor(scheme: "light" | "dark", planKey: string): string {
   const base = scheme === "light" ? baseLightTheme : baseDarkTheme;
-  // Every plan resolves to base Move Sapphire primary; helper kept for compatibility.
+  // Every plan resolves to the base brand primary; helper kept for compatibility.
   return applyPlanPalette(base, scheme, planKey).colors.primary;
 }
 
@@ -451,6 +451,7 @@ function LegacySubscriptionScreen() {
     loading,
     managementKind: entitlement?.managementKind,
     effectivePlanKey,
+    effectiveStatus,
     effectiveActive,
   });
   const periodEndLabel = formatDateLabel(
@@ -889,13 +890,13 @@ function LegacySubscriptionScreen() {
           </TouchableOpacity>
         ) : null}
 
-        {/* Current plan — Move hero gradient with the raccoon mark, plan name,
-            billing cadence and a tonal status pill. */}
+        {/* Current plan — Move hero gradient with the plan name, billing cadence,
+            and a tonal status pill. */}
         <HeroCard style={styles.currentPlanCard} padding={18} radius={22}>
           <View style={styles.currentPlanTop}>
             <View style={styles.currentPlanLeft}>
               <View style={styles.currentPlanIcon}>
-                <MoveRaccoon size={26} mood={isPaidEffectivePlan ? "happy" : "calm"} />
+                <Crown size={22} color={theme.colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.currentPlanTitleRow}>
@@ -1438,20 +1439,22 @@ function LegacySubscriptionScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.footer}>
-          {isNativeStorePlatform && isUnmanagedNativeEligiblePlan
-            ? t("settings.subscription_restoreStoreOnly", {
-                defaultValue:
-                  "Restore only finds subscriptions purchased with this App Store or Google Play account.",
-              })
-            : isNativeStorePlatform && managedSubscriptionBlocksPurchase
-            ? managedElsewhereMessage
-            : isNativeStorePlatform && !canUseNativePurchases
-            ? nativePurchaseUnavailableMessage
-            : isCurrentPlatformStoreManaged
-              ? t("settings.subscription_manage")
-              : ""}
-        </Text>
+        {!showConsumerFreePanel ? (
+          <Text style={styles.footer}>
+            {isNativeStorePlatform && isUnmanagedNativeEligiblePlan
+              ? t("settings.subscription_restoreStoreOnly", {
+                  defaultValue:
+                    "Restore only finds subscriptions purchased with this App Store or Google Play account.",
+                })
+              : isNativeStorePlatform && managedSubscriptionBlocksPurchase
+              ? managedElsewhereMessage
+              : isNativeStorePlatform && !canUseNativePurchases
+              ? nativePurchaseUnavailableMessage
+              : isCurrentPlatformStoreManaged
+                ? t("settings.subscription_manage")
+                : ""}
+          </Text>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

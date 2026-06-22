@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
-import { Sparkles, X, ChevronRight, Lock, ArrowRight, Check } from "lucide-react-native";
+import { Sparkles, X, ChevronRight, ArrowRight, Check } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   buildAiBriefingActionClickedMetadata,
   buildAiBriefingViewedMetadata,
-  buildUpgradeClickedMetadata,
   PHASE1_ANALYTICS_EVENTS,
   UX_AI_BRIEFING_EXPERIENCE_FLAG,
   type BriefingActionType,
@@ -324,23 +323,10 @@ export function MoveBriefingCard({
     [router, activePlanId, telemetry.briefingMode, uxAiBriefingExperienceVariant],
   );
 
-  const handleUnlock = useCallback(() => {
+  const handlePreviewOpen = useCallback(() => {
     hapticLight();
-    trackEvent(
-      PHASE1_ANALYTICS_EVENTS.UPGRADE_CLICKED,
-      "Dashboard",
-      buildUpgradeClickedMetadata({
-        upgradeSurface: "ai_briefing",
-        targetPlanTier: "family",
-        featureGate: "ai_briefing",
-        surface: "dashboard",
-        variant: uxAiBriefingExperienceVariant,
-        experimentFlag: UX_AI_BRIEFING_EXPERIENCE_FLAG,
-        platform: mobilePlatform(),
-      }),
-    );
-    router.push("/settings/subscription");
-  }, [router, uxAiBriefingExperienceVariant]);
+    router.push("/moving");
+  }, [router]);
 
   if (visible === null || visible === false) return null;
 
@@ -348,7 +334,7 @@ export function MoveBriefingCard({
 
   // ── Value-first teaser (entitled:false) ──────────────────────
   if (!entitled) {
-    const lockedRows = [
+    const includedRows = [
       t("dashboard.briefingTeaserRow1", "A plain-English read on where your move stands"),
       t("dashboard.briefingTeaserRow2", "Your top 3 next steps, linked to the right screen"),
       t("dashboard.briefingTeaserRow3", "A fresh briefing as your move progresses"),
@@ -362,7 +348,7 @@ export function MoveBriefingCard({
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>{t("dashboard.briefingTitle", "Your move briefing")}</Text>
             <Text style={styles.aiLabel}>
-              {t("teaser.paidFeatureLabel", "Individual plan feature")}
+              {t("teaser.paidFeatureLabel", "Included feature")}
             </Text>
           </View>
           <TouchableOpacity
@@ -391,10 +377,10 @@ export function MoveBriefingCard({
         </View>
 
         <View style={styles.actions}>
-          {lockedRows.map((label, i) => (
+          {includedRows.map((label, i) => (
             <View key={label} style={[styles.actionRow, i > 0 && styles.actionRowDivider]}>
               <View style={styles.actionIcon}>
-                <Lock size={13} color={theme.colors.primary} />
+                <Check size={13} color={theme.colors.primary} />
               </View>
               <View style={styles.actionText}>
                 <Text style={styles.actionTitle}>{label}</Text>
@@ -405,13 +391,13 @@ export function MoveBriefingCard({
 
         <TouchableOpacity
           style={styles.unlockBtn}
-          onPress={handleUnlock}
+          onPress={handlePreviewOpen}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel={t("teaser.briefingUnlockCta", "Unlock with Family")}
+          accessibilityLabel={t("teaser.briefingUnlockCta", "View briefing")}
         >
-          <Lock size={14} color="#fff" />
-          <Text style={styles.unlockBtnText}>{t("teaser.briefingUnlockCta", "Unlock with Family")}</Text>
+          <Sparkles size={14} color="#fff" />
+          <Text style={styles.unlockBtnText}>{t("teaser.briefingUnlockCta", "View briefing")}</Text>
           <ArrowRight size={14} color="#fff" />
         </TouchableOpacity>
       </Card>

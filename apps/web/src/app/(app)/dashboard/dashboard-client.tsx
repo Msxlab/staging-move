@@ -230,10 +230,12 @@ export default function DashboardClient({
   initialPrefs,
   uxAiBriefingExperienceVariant = "control",
   uxTrustCopyVariant = "control",
+  consumerFree = false,
 }: {
   initialPrefs: DashboardWidgetPrefs | null;
   uxAiBriefingExperienceVariant?: UxAiBriefingExperienceVariant;
   uxTrustCopyVariant?: UxTrustCopyVariant;
+  consumerFree?: boolean;
 }) {
   const t = useTranslations("services");
   const td = useTranslations("dashboard");
@@ -430,7 +432,8 @@ export default function DashboardClient({
         const hasPremium = ent
           ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
           : sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date()));
-        setIsPremium(!!hasPremium);
+        const hasFullAccess = consumerFree || Boolean(hasPremium);
+        setIsPremium(hasFullAccess);
         setPremiumPlan((ent?.plan ?? sub.plan) || "");
         setOnboarding({
           completed: profileData.onboardingCompleted === true,
@@ -504,7 +507,7 @@ export default function DashboardClient({
               stateRule,
             };
           } catch { /* non-blocking */ }
-        } else if (!hasPremium) {
+        } else if (!hasFullAccess) {
           const previewContext = readFreeMovePreviewContext();
           if (previewContext) {
             try {
@@ -677,7 +680,8 @@ export default function DashboardClient({
     !!stats.activePlan &&
     stats.activePlan.fromCity !== "Origin" &&
     stats.activePlan.toCity !== "Destination";
-  const premiumBadgeLabel = formatPlanBadgeLabel(premiumPlan) ?? td("premiumBadge");
+  const premiumBadgeLabel = consumerFree ? "Full Access" : formatPlanBadgeLabel(premiumPlan) ?? td("premiumBadge");
+  const featurePlan = consumerFree && (!premiumPlan || premiumPlan === "FREE_TRIAL") ? "PRO" : premiumPlan;
 
   // Central widget render dispatch — every column widget body lives in this
   // one switch. A null body keeps each widget's existing self-hide behavior
@@ -877,7 +881,7 @@ export default function DashboardClient({
             <Truck className="h-10 w-10 mx-auto text-foreground/40 mb-2" />
             <p className="text-sm text-foreground/40 mb-3">{td("moving_noPlan")}</p>
             <Link
-              href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}
+              href="/moving/new"
               className="inline-flex items-center px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               {isPremium ? td("moving_planMove") : td("commandCenter_freeCta")}
@@ -896,7 +900,7 @@ export default function DashboardClient({
             // Full Geoapify basemap is Family/Pro; Free/Individual
             // get the stylized canvas fallback. premiumPlan already flows
             // from the entitlement resolved at load — no extra fetch.
-            realMap={planFeatures(premiumPlan).realMap}
+            realMap={planFeatures(featurePlan).realMap}
           />
         ) : null;
       case "milestones":
@@ -1044,7 +1048,7 @@ export default function DashboardClient({
           />
         );
       case "householdActivation":
-        return <HouseholdActivationCard key={slot} plan={premiumPlan} />;
+        return <HouseholdActivationCard key={slot} plan={featurePlan} />;
       case "commandCenter":
         return (
           <MoveCommandCenter
@@ -1140,13 +1144,13 @@ export default function DashboardClient({
           >
             <MapPin className="h-4 w-4" /> {td("addAddressBtn")}
           </Link>
-          {/* Free users can't create a MovingPlan — route the move CTA to the
-              upgrade path instead of /moving/new (which 403s for them). */}
+          {/* Staging full-access keeps the move CTA on the move-plan flow even
+              if a stale entitlement snapshot says otherwise. */}
           {/* Primary CTA wears the PLAN ACCENT (bg-primary). Pro resolves to
               Sapphire; Free/Family keep their own tier accents, matching the
               sibling primary-button convention. */}
           <Link
-            href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}
+            href="/moving/new"
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <Truck className="h-4 w-4" /> {isPremium ? td("planMoveBtn") : td("commandCenter_freeCta")}

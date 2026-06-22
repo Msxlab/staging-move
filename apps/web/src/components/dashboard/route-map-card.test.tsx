@@ -104,11 +104,11 @@ describe("resolveActiveRouteCoords", () => {
 });
 
 describe("hslTripletToHex", () => {
-  it("converts the Sapphire token shapes from globals.css", () => {
-    expect(hslTripletToHex("219.73 82.22% 64.71%")).toBe("5B8DEF"); // .plan-free/.plan-family/.plan-pro (dark)
+  it("converts the Gold/Sapphire token shapes from globals.css", () => {
+    expect(hslTripletToHex("38.53 51.17% 58.24%")).toBe("CBA45E"); // .plan-free/.plan-family/.plan-pro (dark)
     expect(hslTripletToHex("217.38 58.56% 43.53%")).toBe("2E5FB0"); // .light plan classes
     expect(hslTripletToHex("0 0% 100%")).toBe("FFFFFF");
-    expect(hslTripletToHex(" 219.73 82.22% 64.71% ")).toMatch(/^[0-9A-F]{6}$/);
+    expect(hslTripletToHex(" 38.53 51.17% 58.24% ")).toMatch(/^[0-9A-F]{6}$/);
   });
 
   it("returns null for unparseable values", () => {
@@ -123,10 +123,10 @@ describe("buildRouteMapSrc", () => {
     const src = buildRouteMapSrc(
       { lat: 41.87810001234, lng: -87.62980004321 },
       { lat: 30.2672, lng: -97.7431 },
-      { width: 640, height: 224, theme: "dark", accent: "#5B8DEF" },
+      { width: 640, height: 224, theme: "dark", accent: "#CBA45E" },
     );
     expect(src).toBe(
-      "/api/maps/static?from=41.8781%2C-87.6298&to=30.2672%2C-97.7431&w=640&h=224&theme=dark&accent=5B8DEF",
+      "/api/maps/static?from=41.8781%2C-87.6298&to=30.2672%2C-97.7431&w=640&h=224&theme=dark&accent=CBA45E",
     );
   });
 
@@ -144,10 +144,10 @@ describe("buildRouteMapSrc", () => {
     const src = buildRouteMapSrc(
       { lat: 41.8781, lng: -87.6298 },
       { lat: 30.2672, lng: -97.7431 },
-      { width: 640, height: 224, theme: "dark", accent: "#5B8DEF", preview: true },
+      { width: 640, height: 224, theme: "dark", accent: "#CBA45E", preview: true },
     );
     expect(src).toContain("preview=1");
-    expect(src).toContain("accent=5B8DEF");
+    expect(src).toContain("accent=CBA45E");
   });
 });
 

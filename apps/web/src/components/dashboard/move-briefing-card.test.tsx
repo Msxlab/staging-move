@@ -342,7 +342,7 @@ describe("briefing telemetry helpers", () => {
 });
 
 describe("MoveBriefingTeaser rendering", () => {
-  it("renders the honest pitch, a CSS-only blurred strip (no readable fake text), and the /pricing CTA", () => {
+  it("renders the honest pitch, a CSS-only blurred strip (no readable fake text), and the moving CTA", () => {
     const markup = renderToStaticMarkup(<MoveBriefingTeaser />);
 
     // Card chrome + 2-line pitch from the real catalog
@@ -354,9 +354,9 @@ describe("MoveBriefingTeaser rendering", () => {
     expect(markup).toContain('aria-hidden="true"');
     expect(markup).toContain("blur-[2px]");
 
-    // CTA → /pricing
-    expect(markup).toContain('href="/pricing"');
-    expect(markup).toContain("Unlock with Family");
+    // CTA -> /moving
+    expect(markup).toContain('href="/moving"');
+    expect(markup).toContain("View briefing");
   });
 
   it("shows the dismiss affordance only when a handler is provided", () => {

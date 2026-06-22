@@ -6,8 +6,9 @@ import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getTranslations, getLocale } from "next-intl/server";
-import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import { CONSUMER_FREE_FLAG, normalizeMovingPlanStatus } from "@locateflow/shared";
 import { canCreateMovingPlan } from "@/lib/plan-limits";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import {
   planLimitScopeForDataScope,
   resolveWorkspaceDataScope,
@@ -27,20 +28,21 @@ export default async function MovingPage() {
   const td = await getTranslations("dashboard");
   const locale = await getLocale();
 
-  // Freemium gate parity with the dashboard: free users cannot create a
-  // MovingPlan (POST /api/moving 403s), so both the "New plan" button and the
-  // empty-state CTA route them to the same value-first upgrade flow the
-  // dashboard uses instead of letting them fill the full form into a 403.
+  // Staging runs the consumer-free pivot: if entitlement data is stale, keep
+  // the visible action on the move-plan path instead of sending users to billing.
   // Fail open on gate errors — the API stays the enforcement point, and a
   // transient failure must never lock paid users out of plan creation.
-  let canStartPlan = true;
-  try {
-    const gate = await canCreateMovingPlan(userId, planLimitScopeForDataScope(scope));
-    canStartPlan = gate.allowed;
-  } catch {
-    canStartPlan = true;
+  const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG, { userId }).catch(() => false);
+  let canStartPlan = consumerFree;
+  if (!consumerFree) {
+    try {
+      const gate = await canCreateMovingPlan(userId, planLimitScopeForDataScope(scope));
+      canStartPlan = gate.allowed;
+    } catch {
+      canStartPlan = true;
+    }
   }
-  const newPlanHref = canStartPlan ? "/moving/new" : "/settings/subscription?returnTo=%2Fmoving";
+  const newPlanHref = "/moving/new";
   const newPlanLabel = canStartPlan ? t("newPlanTitle") : td("commandCenter_freeCta");
 
   const statusBadge: Record<string, { label: string; cls: string }> = {

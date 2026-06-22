@@ -1,5 +1,11 @@
 # Handoff: Staging Audit Prep - 2026-06-21
 
+## Superseded Theme Note - 2026-06-22
+
+Theme/brand notes in this historical handoff that describe a Sapphire-only
+runtime are superseded by [[2026-06-22-theme-source-integration-pass]]. Current
+staging target is `LocateFlow` with Gold in dark mode and Sapphire in light mode.
+
 ## Scope
 
 Local pre-install audit for the `Msxlab/staging-move` repo in `C:\Users\Kutay\Documents\staging-move`. The operator asked to read memory and inspect the code deeply before installing/running. No package install, migration, dev server, or browser login has been run yet. A first code-fix pass was applied on branch `codex/staging-audit-2026-06-21` for findings that did not require env or install.

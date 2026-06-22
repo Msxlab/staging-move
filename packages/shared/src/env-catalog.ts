@@ -719,6 +719,16 @@ export const EXPECTED_ENV_KEYS: readonly ExpectedEnvKey[] = [
     note: "Legally gated — keep disabled until partner/legal approval.",
   },
   {
+    key: "CONSUMER_FREE_DEFAULT",
+    classification: "optional",
+    label: "Consumer Free Default",
+    description: "Default CONSUMER_FREE behavior when the DB FeatureFlag row is absent. Dokploy staging defaults this to true.",
+    apps: ["web"],
+    isSecret: false,
+    maskStrategy: "plain",
+    note: "A DB FeatureFlag row named CONSUMER_FREE overrides this default. Set false to restore the paid ladder.",
+  },
+  {
     key: "GUIDED_PARTNERS",
     classification: "optional",
     label: "Guided Partner Catalog",

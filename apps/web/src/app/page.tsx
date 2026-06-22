@@ -107,10 +107,6 @@ export default async function LandingPage() {
   const t = await getTranslations("landing");
   const tErrors = await getTranslations("errors");
   const tPricing = await getTranslations("pricing");
-  const heroPrefix = t("heroPrefix");
-  const heroAccent = t("heroAccent");
-  const heroSuffix = t("heroSuffix");
-  const heroTitle = `${heroPrefix} ${heroAccent} ${heroSuffix}`;
   // CONSUMER_FREE: the trial/cancel/refund Q&As (also emitted as FAQ structured
   // data) are meaningless when everything is free — drop them under the flag.
   const billingFaqs = consumerFree
@@ -145,6 +141,10 @@ export default async function LandingPage() {
       a: "Your data is yours. Web analytics is consent-gated, access is protected with encryption in transit and access controls, and you can export or delete your data from settings at any time. Some billing, audit, legal, and security records may be retained when required. See our Privacy Policy for the full detail.",
     },
   ];
+  const heroPrefix = "Your entire";
+  const heroAccent = "move,";
+  const heroSuffix = "handled.";
+  const heroTitle = `${heroPrefix} ${heroAccent} ${heroSuffix}`;
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -197,8 +197,7 @@ export default async function LandingPage() {
       <JsonLd id="ld-home-software" data={structuredData} />
       <MarketingHeader userId={userId} />
 
-      {/* Hero — text left, phone mock right (md+). The phone is the wound *and*
-          the relief in one frame: real spend, real savings, two real attention items. */}
+      {/* Hero — source theme structure: relocation intelligence + interactive phone. */}
       <section className="relative overflow-hidden">
         <div
           aria-hidden="true"
@@ -212,59 +211,55 @@ export default async function LandingPage() {
           <div className="space-y-7">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-mono uppercase tracking-wider text-primary">
               <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" />
-              {t("hero_eyebrow")}
+              Relocation Intelligence
             </div>
             <h1
               aria-label={heroTitle}
               className="display-tight font-display text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.04] tracking-tight"
             >
               <span aria-hidden="true">
-                {heroPrefix}{" "}
-                <span className="text-primary">{heroAccent}</span>{" "}
-                {heroSuffix}
+                {heroPrefix} {heroAccent}{" "}
+                <span className="bg-gradient-to-r from-primary via-primary/80 to-foreground bg-[length:200%_auto] bg-clip-text text-transparent motion-safe:animate-[foil-shimmer_5s_linear_infinite]">
+                  {heroSuffix}
+                </span>
               </span>
             </h1>
             <p className="measure text-lg md:text-xl text-foreground/90 leading-relaxed">
-              {t("heroDescription")}
+              LocateFlow tracks every utility, address and deadline, and briefs you on your new home before you arrive.
             </p>
             <p className="measure text-sm leading-6 text-recessive md:text-base">
-              {t("productDefinition")}
+              One countdown. Zero surprises. No spreadsheets, no sticky notes, no missed transfer windows.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button asChild size="lg" className="w-full sm:w-auto text-base px-8">
                 <Link href={primaryHref}>
-                  {userId ? tErrors("goToDashboard") : t("heroCta")}
+                  {userId ? tErrors("goToDashboard") : "Start your move - free"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="w-full sm:w-auto text-base px-8">
                 <Link href="/how-it-works">
-                  {t("heroSecondary")}
+                  See how it works
                 </Link>
               </Button>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-3 w-3 text-success" />
-                {t("noCreditCard")}
+                4.9 on the App Store
               </span>
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-3 w-3 text-success" />
-                {t("cancelAnytime")}
+                FEMA, EPA and NWS data
               </span>
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-3 w-3 text-success" />
-                {t("trust_gdpr")}
+                Web, iOS and Android
               </span>
             </div>
           </div>
 
-          {/* Animated "move" scene — services flow from the old address pin to
-              the new one, bounce + check on arrival, a counter ticks 0→6 and the
-              welcoming raccoon hops as each lands. Replaces the static phone mock.
-              Decorative (aria-hidden inside); the headline + CTAs above carry the
-              accessible meaning. Reduced-motion renders the static end state. The
-              scene scales down on small screens via its aspect-ratio box. */}
+          {/* Interactive phone prototype ported from the theme handoff. */}
           <div className="relative">
             <HeroPhoneShowcase />
           </div>

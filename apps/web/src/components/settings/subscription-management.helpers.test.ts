@@ -73,20 +73,30 @@ describe("shouldShowConsumerFreePanel", () => {
     })).toBe(true);
   });
 
-  it("does not show when the effective entitlement is inactive or free-tier", () => {
-    expect(shouldShowConsumerFreePanel({
-      consumerFree: true,
-      loading: false,
-      managementKind: "none",
-      effectivePlanKey: "PRO",
-      effectiveActive: false,
-    })).toBe(false);
+  it("shows for active free-tier access when consumer-free is on", () => {
     expect(shouldShowConsumerFreePanel({
       consumerFree: true,
       loading: false,
       managementKind: "none",
       effectivePlanKey: "FREE_TRIAL",
       effectiveActive: true,
-    })).toBe(false);
+    })).toBe(true);
+  });
+
+  it("shows even when a non-paying free-access row is stale or inactive", () => {
+    expect(shouldShowConsumerFreePanel({
+      consumerFree: true,
+      loading: false,
+      managementKind: "none",
+      effectivePlanKey: "PRO",
+      effectiveActive: false,
+    })).toBe(true);
+    expect(shouldShowConsumerFreePanel({
+      consumerFree: true,
+      loading: false,
+      managementKind: "none",
+      effectivePlanKey: "FREE_TRIAL",
+      effectiveActive: false,
+    })).toBe(true);
   });
 });

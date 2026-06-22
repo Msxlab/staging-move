@@ -29,13 +29,13 @@ vi.mock("lucide-react", () => {
   };
   return {
     CloudSun: icon("cloud-sun"),
+    Check: icon("check"),
     Compass: icon("compass"),
     Download: icon("download"),
     Droplets: icon("droplets"),
     FlaskConical: icon("flask-conical"),
     GraduationCap: icon("graduation-cap"),
     Home: icon("home"),
-    Lock: icon("lock"),
     MapPin: icon("map-pin"),
     Mountain: icon("mountain"),
     Sparkles: icon("sparkles"),
@@ -565,7 +565,7 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).not.toContain("AQI");
   });
 
-  it("renders the free preview subset with an upgrade CTA and no full dossier rows", () => {
+  it("renders the free preview subset with an included-feature CTA and no full dossier rows", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={previewDossier()} />);
 
     expect(markup).toContain("Free preview");
@@ -574,11 +574,11 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).toContain("Moving day:");
     expect(markup).toContain("Sunny");
     expect(markup).toContain("High 84");
-    expect(markup).toContain("Unlock the full Home Dossier");
-    expect(markup).toContain("Natural hazards, radon, water, air, housing, and EV charging unlock with Individual.");
-    expect(markup).toContain("Neighborhood Intelligence and PDF export unlock with Pro.");
+    expect(markup).toContain("Open the full Home Dossier");
+    expect(markup).toContain("Natural hazards, radon, water, air, housing, EV charging");
+    expect(markup).toContain("exports are included when consumer-free access is active.");
     expect(markup).not.toContain("Unlock the full Home Dossier + PDF");
-    expect(markup).toContain('href="/pricing"');
+    expect(markup).toContain('href="/addresses"');
     expect(markup).not.toContain("Natural hazard profile");
     expect(markup).not.toContain("Radon");
     expect(markup).not.toContain("Drinking water");
@@ -776,7 +776,7 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
     code: "DOSSIER_UPGRADE_REQUIRED",
   } as HomeDossierResponse;
 
-  it("renders the four curated locked insight rows + lock glyphs + /pricing CTA (no sections in payload)", () => {
+  it("renders the four curated included insight rows + check glyphs + address CTA (no sections in payload)", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={gated} />);
 
     // Card chrome (serif dossier title) + pitch
@@ -786,12 +786,12 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
     );
 
     // The teaser shows the 4 highest-signal rows as a curated preview — not a
-    // wall of 9 near-identical locks (the CTA conveys the full report has more).
+    // wall of 9 near-identical rows (the CTA conveys the full report has more).
     expect(markup).toContain("Flood zone");
     expect(markup).toContain("School district");
     expect(markup).toContain("Moving-day weather");
     expect(markup).toContain("Natural hazard profile");
-    expect(markup.match(/data-lucide="lock"/g)).toHaveLength(4);
+    expect(markup.match(/data-lucide="check"/g)).toHaveLength(4);
 
     // The remaining insights are summarized by the CTA, not listed as more locks.
     expect(markup).not.toContain("Radon");
@@ -800,9 +800,9 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
     expect(markup).not.toContain("Housing context");
     expect(markup).not.toContain("EV charging nearby");
 
-    // CTA → /pricing
-    expect(markup).toContain('href="/pricing"');
-    expect(markup).toContain("Unlock with Individual");
+    // CTA -> /addresses
+    expect(markup).toContain('href="/addresses"');
+    expect(markup).toContain("View dossier");
 
     // Honest: no fabricated data, no real-row artifacts
     expect(markup).not.toContain("Served by");
@@ -812,7 +812,7 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
 
   it("teaser takes precedence over data rows even if a gated payload carries sections", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={{ ...dossier(), entitled: false }} />);
-    expect(markup).toContain("Unlock with Individual");
+    expect(markup).toContain("View dossier");
     expect(markup).not.toContain("Served by Austin ISD");
     expect(markup).not.toContain("Sunny");
   });
@@ -834,13 +834,13 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
   it("entitled payloads keep rendering the real rows (no teaser)", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={{ ...dossier(), entitled: true }} />);
     expect(markup).toContain("Served by Austin ISD");
-    expect(markup).not.toContain("Unlock with Individual");
+    expect(markup).not.toContain("View dossier");
   });
 
   it("HomeDossierTeaser renders standalone without a place", () => {
     const markup = renderToStaticMarkup(<HomeDossierTeaser />);
-    expect(markup).toContain('href="/pricing"');
-    expect(markup).toContain("Unlock with Individual");
+    expect(markup).toContain('href="/addresses"');
+    expect(markup).toContain("View dossier");
   });
 });
 
@@ -1025,7 +1025,7 @@ describe("HomeDossierCard — neighborhood section rendering", () => {
     expect(markup).toContain("not a valuation of this home");
   });
 
-  it("renders the locked Pro teaser (no figures) on upgrade_required", () => {
+  it("renders the included neighborhood teaser (no figures) on upgrade_required", () => {
     const markup = renderToStaticMarkup(
       <HomeDossierCard
         data={withNeighborhood({
@@ -1039,9 +1039,9 @@ describe("HomeDossierCard — neighborhood section rendering", () => {
       />,
     );
     expect(markup).toContain("Neighborhood");
-    expect(markup).toContain("Unlock with Pro");
-    expect(markup).toContain('href="/pricing"');
-    expect(markup).toContain("Pro");
+    expect(markup).toContain("View neighborhood");
+    expect(markup).toContain('href="/addresses"');
+    expect(markup).toContain("Included");
     // No fabricated neighborhood figures leak into the locked variant.
     expect(markup).not.toContain("$412,000");
     expect(markup).not.toContain("$1,850");
@@ -1052,7 +1052,7 @@ describe("HomeDossierCard — neighborhood section rendering", () => {
   it("omits the whole neighborhood row on a legacy payload without the section", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
     expect(markup).not.toContain("Median home value");
-    expect(markup).not.toContain("Unlock with Pro");
+    expect(markup).not.toContain("View neighborhood");
   });
 });
 

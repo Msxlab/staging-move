@@ -17,8 +17,8 @@ function HexIndividual({ size = 80 }: SizeProps) {
     <svg width={size} height={size} viewBox="0 0 80 80">
       <defs>
         <linearGradient id={`hi-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#83AAF5" />
-          <stop offset="100%" stopColor="#3D6FD6" />
+          <stop offset="0%" stopColor="var(--foil-a)" />
+          <stop offset="100%" stopColor="var(--foil-c)" />
         </linearGradient>
       </defs>
       <polygon
@@ -58,8 +58,8 @@ function HexFamily({ size = 80 }: SizeProps) {
       <defs>
         <linearGradient id={`hf-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#DDE7F5" />
-          <stop offset="50%" stopColor="#83AAF5" />
-          <stop offset="100%" stopColor="#3D6FD6" />
+          <stop offset="50%" stopColor="var(--foil-a)" />
+          <stop offset="100%" stopColor="var(--foil-c)" />
         </linearGradient>
       </defs>
       <polygon points="40,4 70,20 70,60 40,76 10,60 10,20" fill={`url(#hf-${id})`} />
@@ -73,7 +73,7 @@ function HexFamily({ size = 80 }: SizeProps) {
         x="40"
         y="49"
         textAnchor="middle"
-        fill="#83AAF5"
+        fill="var(--foil-a)"
         style={{
           fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontSize: 22,
@@ -83,7 +83,7 @@ function HexFamily({ size = 80 }: SizeProps) {
       >
         F
       </text>
-      <circle cx="40" cy="14" r="2" fill="#5B8DEF" />
+      <circle cx="40" cy="14" r="2" fill="var(--foil-b)" />
     </svg>
   );
 }
@@ -95,7 +95,7 @@ function HexPro({ size = 80 }: SizeProps) {
       <defs>
         <linearGradient id={`hp-foil-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#DDE7F5" />
-          <stop offset="40%" stopColor="#5B8DEF" />
+          <stop offset="40%" stopColor="var(--foil-b)" />
           <stop offset="100%" stopColor="#2E5FB0" />
         </linearGradient>
         <linearGradient id={`hp-shine-${id}`} x1="0" y1="0" x2="1" y2="1">
@@ -104,8 +104,8 @@ function HexPro({ size = 80 }: SizeProps) {
           <stop offset="100%" stopColor="#DDE7F5" stopOpacity="0.3" />
         </linearGradient>
         <radialGradient id={`hp-glow-${id}`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stopColor="#5B8DEF" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#5B8DEF" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--foil-b)" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="var(--foil-b)" stopOpacity="0" />
         </radialGradient>
       </defs>
       <circle cx="40" cy="40" r="38" fill={`url(#hp-glow-${id})`} />
@@ -119,7 +119,7 @@ function HexPro({ size = 80 }: SizeProps) {
       <polygon
         points="40,15 60,26 60,54 40,65 20,54 20,26"
         fill="none"
-        stroke="#5B8DEF"
+        stroke="var(--foil-b)"
         strokeOpacity="0.5"
         strokeWidth="0.5"
       />
@@ -127,7 +127,7 @@ function HexPro({ size = 80 }: SizeProps) {
         x="40"
         y="38"
         textAnchor="middle"
-        fill="#5B8DEF"
+        fill="var(--foil-b)"
         style={{
           fontFamily: "var(--font-mono, 'Geist Mono', ui-monospace)",
           fontSize: 8,
@@ -137,7 +137,7 @@ function HexPro({ size = 80 }: SizeProps) {
       >
         PRO
       </text>
-      <circle cx="40" cy="48" r="5" fill="#5B8DEF" />
+      <circle cx="40" cy="48" r="5" fill="var(--foil-b)" />
       <circle cx="40" cy="48" r="5" fill={`url(#hp-shine-${id})`} />
       <circle cx="38.5" cy="46.5" r="1.5" fill="#DDE7F5" opacity="0.8" />
       {([
@@ -162,8 +162,8 @@ function MedalIndividual({ size = 80 }: SizeProps) {
     <svg width={size} height={size} viewBox="0 0 80 80">
       <defs>
         <linearGradient id={`mi-${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#83AAF5" />
-          <stop offset="100%" stopColor="#3D6FD6" />
+          <stop offset="0%" stopColor="var(--foil-a)" />
+          <stop offset="100%" stopColor="var(--foil-c)" />
         </linearGradient>
       </defs>
       <circle cx="40" cy="40" r="30" fill={`url(#mi-${id})`} stroke="#fff" strokeWidth="1.5" />
@@ -205,8 +205,8 @@ function MedalFamily({ size = 80 }: SizeProps) {
       <defs>
         <linearGradient id={`mf-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#DDE7F5" />
-          <stop offset="50%" stopColor="#83AAF5" />
-          <stop offset="100%" stopColor="#3D6FD6" />
+          <stop offset="50%" stopColor="var(--foil-a)" />
+          <stop offset="100%" stopColor="var(--foil-c)" />
         </linearGradient>
       </defs>
       <polygon points={bumps} fill={`url(#mf-${id})`} />
@@ -222,7 +222,7 @@ function MedalFamily({ size = 80 }: SizeProps) {
         x="40"
         y="49"
         textAnchor="middle"
-        fill="#83AAF5"
+        fill="var(--foil-a)"
         style={{
           fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontSize: 22,
@@ -232,7 +232,7 @@ function MedalFamily({ size = 80 }: SizeProps) {
       >
         F
       </text>
-      <circle cx="40" cy="18" r="1.8" fill="#5B8DEF" />
+      <circle cx="40" cy="18" r="1.8" fill="var(--foil-b)" />
     </svg>
   );
 }
@@ -249,7 +249,7 @@ function MedalPro({ size = 80 }: SizeProps) {
       <defs>
         <linearGradient id={`mp-foil-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#DDE7F5" />
-          <stop offset="40%" stopColor="#5B8DEF" />
+          <stop offset="40%" stopColor="var(--foil-b)" />
           <stop offset="100%" stopColor="#2E5FB0" />
         </linearGradient>
         <linearGradient id={`mp-shine-${id}`} x1="0" y1="0" x2="1" y2="1">
@@ -258,8 +258,8 @@ function MedalPro({ size = 80 }: SizeProps) {
           <stop offset="100%" stopColor="#DDE7F5" stopOpacity="0.4" />
         </linearGradient>
         <radialGradient id={`mp-glow-${id}`}>
-          <stop offset="0%" stopColor="#5B8DEF" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#5B8DEF" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--foil-b)" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="var(--foil-b)" stopOpacity="0" />
         </radialGradient>
       </defs>
       <circle cx="40" cy="40" r="38" fill={`url(#mp-glow-${id})`} />
@@ -271,7 +271,7 @@ function MedalPro({ size = 80 }: SizeProps) {
         cy="40"
         r="24"
         fill="none"
-        stroke="#5B8DEF"
+        stroke="var(--foil-b)"
         strokeOpacity="0.5"
         strokeWidth="0.5"
       />
@@ -279,7 +279,7 @@ function MedalPro({ size = 80 }: SizeProps) {
         x="40"
         y="38"
         textAnchor="middle"
-        fill="#5B8DEF"
+        fill="var(--foil-b)"
         style={{
           fontFamily: "var(--font-mono, 'Geist Mono', ui-monospace)",
           fontSize: 7.5,
@@ -289,7 +289,7 @@ function MedalPro({ size = 80 }: SizeProps) {
       >
         PRO
       </text>
-      <circle cx="40" cy="48" r="5" fill="#5B8DEF" />
+      <circle cx="40" cy="48" r="5" fill="var(--foil-b)" />
       <circle cx="40" cy="48" r="5" fill={`url(#mp-shine-${id})`} />
       <circle cx="38.5" cy="46.5" r="1.5" fill="#DDE7F5" opacity="0.8" />
     </svg>
@@ -301,12 +301,12 @@ function MedalPro({ size = 80 }: SizeProps) {
 function MinimalIndividual({ size = 80 }: SizeProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80">
-      <circle cx="40" cy="40" r="30" fill="none" stroke="#5B8DEF" strokeWidth="1.5" />
+      <circle cx="40" cy="40" r="30" fill="none" stroke="var(--foil-b)" strokeWidth="1.5" />
       <text
         x="40"
         y="46"
         textAnchor="middle"
-        fill="#5B8DEF"
+        fill="var(--foil-b)"
         style={{
           fontFamily: "var(--font-mono, 'Geist Mono', ui-monospace)",
           fontSize: 7,
@@ -323,13 +323,13 @@ function MinimalIndividual({ size = 80 }: SizeProps) {
 function MinimalFamily({ size = 80 }: SizeProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80">
-      <circle cx="40" cy="40" r="32" fill="none" stroke="#83AAF5" strokeWidth="0.5" />
-      <circle cx="40" cy="40" r="28" fill="none" stroke="#83AAF5" strokeWidth="1.5" />
+      <circle cx="40" cy="40" r="32" fill="none" stroke="var(--foil-a)" strokeWidth="0.5" />
+      <circle cx="40" cy="40" r="28" fill="none" stroke="var(--foil-a)" strokeWidth="1.5" />
       <text
         x="40"
         y="46"
         textAnchor="middle"
-        fill="#83AAF5"
+        fill="var(--foil-a)"
         style={{
           fontFamily: "var(--font-mono, 'Geist Mono', ui-monospace)",
           fontSize: 7,
@@ -350,8 +350,8 @@ function MinimalPro({ size = 80 }: SizeProps) {
       <defs>
         <linearGradient id={`mnp-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#DDE7F5" />
-          <stop offset="50%" stopColor="#5B8DEF" />
-          <stop offset="100%" stopColor="#3D6FD6" />
+          <stop offset="50%" stopColor="var(--foil-b)" />
+          <stop offset="100%" stopColor="var(--foil-c)" />
         </linearGradient>
       </defs>
       <circle
@@ -359,7 +359,7 @@ function MinimalPro({ size = 80 }: SizeProps) {
         cy="40"
         r="34"
         fill="none"
-        stroke="#5B8DEF"
+        stroke="var(--foil-b)"
         strokeOpacity="0.3"
         strokeWidth="0.5"
       />
@@ -431,8 +431,8 @@ function StampIndividual({ size = 80 }: SizeProps) {
     <svg width={size} height={size} viewBox="0 0 80 80">
       <defs>
         <linearGradient id={`si-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#83AAF5" />
-          <stop offset="100%" stopColor="#3D6FD6" />
+          <stop offset="0%" stopColor="var(--foil-a)" />
+          <stop offset="100%" stopColor="var(--foil-c)" />
         </linearGradient>
       </defs>
       <path d={d} fill={`url(#si-${id})`} />
@@ -476,8 +476,8 @@ function StampFamily({ size = 80 }: SizeProps) {
       <defs>
         <linearGradient id={`sf-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#DDE7F5" />
-          <stop offset="50%" stopColor="#83AAF5" />
-          <stop offset="100%" stopColor="#3D6FD6" />
+          <stop offset="50%" stopColor="var(--foil-a)" />
+          <stop offset="100%" stopColor="var(--foil-c)" />
         </linearGradient>
       </defs>
       <path d={d} fill={`url(#sf-${id})`} />
@@ -486,7 +486,7 @@ function StampFamily({ size = 80 }: SizeProps) {
         x="40"
         y="34"
         textAnchor="middle"
-        fill="#83AAF5"
+        fill="var(--foil-a)"
         style={{
           fontFamily: "var(--font-mono, 'Geist Mono', ui-monospace)",
           fontSize: 5,
@@ -500,7 +500,7 @@ function StampFamily({ size = 80 }: SizeProps) {
         x="40"
         y="52"
         textAnchor="middle"
-        fill="#83AAF5"
+        fill="var(--foil-a)"
         style={{
           fontFamily: 'var(--font-display, "Playfair Display", Didot, Georgia, serif)',
           fontSize: 16,
@@ -522,7 +522,7 @@ function StampPro({ size = 80 }: SizeProps) {
       <defs>
         <linearGradient id={`sp-foil-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#DDE7F5" />
-          <stop offset="40%" stopColor="#5B8DEF" />
+          <stop offset="40%" stopColor="var(--foil-b)" />
           <stop offset="100%" stopColor="#2E5FB0" />
         </linearGradient>
         <linearGradient id={`sp-shine-${id}`} x1="0" y1="0" x2="1" y2="1">
@@ -531,8 +531,8 @@ function StampPro({ size = 80 }: SizeProps) {
           <stop offset="100%" stopColor="#DDE7F5" stopOpacity="0.4" />
         </linearGradient>
         <radialGradient id={`sp-glow-${id}`}>
-          <stop offset="0%" stopColor="#5B8DEF" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#5B8DEF" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--foil-b)" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="var(--foil-b)" stopOpacity="0" />
         </radialGradient>
       </defs>
       <circle cx="40" cy="40" r="38" fill={`url(#sp-glow-${id})`} />
@@ -545,7 +545,7 @@ function StampPro({ size = 80 }: SizeProps) {
         width="46"
         height="46"
         fill="none"
-        stroke="#5B8DEF"
+        stroke="var(--foil-b)"
         strokeOpacity="0.4"
         strokeWidth="0.5"
         rx="1"
@@ -554,7 +554,7 @@ function StampPro({ size = 80 }: SizeProps) {
         x="40"
         y="32"
         textAnchor="middle"
-        fill="#5B8DEF"
+        fill="var(--foil-b)"
         style={{
           fontFamily: "var(--font-mono, 'Geist Mono', ui-monospace)",
           fontSize: 5,
@@ -568,7 +568,7 @@ function StampPro({ size = 80 }: SizeProps) {
         x="40"
         y="46"
         textAnchor="middle"
-        fill="#5B8DEF"
+        fill="var(--foil-b)"
         style={{
           fontFamily: "var(--font-mono, 'Geist Mono', ui-monospace)",
           fontSize: 7,
@@ -578,7 +578,7 @@ function StampPro({ size = 80 }: SizeProps) {
       >
         PRO
       </text>
-      <line x1="20" y1="50" x2="60" y2="50" stroke="#5B8DEF" strokeOpacity="0.3" strokeWidth="0.3" />
+      <line x1="20" y1="50" x2="60" y2="50" stroke="var(--foil-b)" strokeOpacity="0.3" strokeWidth="0.3" />
       <text
         x="40"
         y="58"
@@ -593,7 +593,7 @@ function StampPro({ size = 80 }: SizeProps) {
       >
         EST · 2026
       </text>
-      <circle cx="40" cy="40" r="38" fill="none" stroke="rgba(91, 141, 239,0.15)" strokeWidth="1" />
+      <circle cx="40" cy="40" r="38" fill="none" stroke="rgba(203, 164, 94,0.15)" strokeWidth="1" />
     </svg>
   );
 }

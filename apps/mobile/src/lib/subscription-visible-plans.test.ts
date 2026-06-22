@@ -15,6 +15,16 @@ describe("shouldShowMobileConsumerFreePanel", () => {
     })).toBe(true);
   });
 
+  it("shows the included-access panel for active free-access consumer accounts on staging", () => {
+    expect(shouldShowMobileConsumerFreePanel({
+      loading: false,
+      managementKind: "none",
+      effectivePlanKey: "FREE_TRIAL",
+      effectiveStatus: "FREE_ACCESS",
+      effectiveActive: true,
+    })).toBe(true);
+  });
+
   it("waits until the entitlement has loaded", () => {
     expect(shouldShowMobileConsumerFreePanel({
       loading: true,

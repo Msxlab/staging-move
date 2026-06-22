@@ -126,7 +126,7 @@ Every paid feature must answer:
 
 Audit from homepage to web app, mobile app, and admin:
 
-- Current chosen palette is Sapphire, not Gold/Emerald/Champagne. Enforce Sapphire as the canonical light/dark runtime variant everywhere: dark `#5B8DEF` / `#83AAF5` / `#3D6FD6`, light `#2E5FB0` / `#244C90`; keep semantic warning amber/brown only for warning states.
+- Current chosen palette is LocateFlow with source-theme split: dark mode uses Gold (`#CBA45E` / `#DCBC7C` / `#B0852F`) from the new theme bundle, while light mode uses Sapphire/blue (`#2E5FB0` / `#3D74C8` / `#244C90`). Do not ship Emerald. Keep semantic warning amber/brown only for warning states, not as generic brand drift.
 - Theme token consistency between `packages/shared`, web Tailwind, admin Tailwind, and mobile theme.
 - Button/link semantics, nested interactive elements, keyboard/focus states.
 - Light/dark contrast, responsive breakpoints, text overflow, empty/loading/error states.

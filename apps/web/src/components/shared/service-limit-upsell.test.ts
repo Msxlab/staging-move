@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildServiceLimitCopy } from "./service-limit-upsell";
 
 describe("buildServiceLimitCopy", () => {
-  it("uses active campaign copy for eligible Free Access users", () => {
+  it("uses access-review copy for eligible Free Access users even when a campaign is present", () => {
     const copy = buildServiceLimitCopy({
       accessType: "FREE_ACCESS",
       limit: 10,
@@ -13,11 +13,10 @@ describe("buildServiceLimitCopy", () => {
         trialDays: 14,
       },
     });
-    expect(copy.title).toBe("You've reached your service limit");
-    expect(copy.body).toContain("Free Access includes up to 10 active services");
-    expect(copy.body).toContain("Start with 14 days free");
-    expect(copy.body).toContain("$24/year after trial");
-    expect(copy.primary).toBe("Start with 14 days free");
+    expect(copy.title).toBe("Your service access needs review");
+    expect(copy.body).toContain("Free Access currently reports up to 10 active services");
+    expect(copy.body).toContain("Full-access staging");
+    expect(copy.primary).toBe("Review access");
     expect(copy.secondary).toBe("Maybe later");
   });
 
@@ -26,9 +25,9 @@ describe("buildServiceLimitCopy", () => {
     // a trial they have not started - Free Access is the safer default and
     // matches the API's eligibleForTrial=true assumption for new accounts.
     const copy = buildServiceLimitCopy(null);
-    expect(copy.body).toContain("Free Access includes up to 10 active services");
+    expect(copy.body).toContain("Free Access currently reports up to 10 active services");
     expect(copy.body).not.toContain("Free Trial");
-    expect(copy.primary).toBe("Upgrade to Individual Annual");
+    expect(copy.primary).toBe("Review access");
   });
 
   it("uses the API-provided limit instead of the default", () => {
@@ -69,18 +68,18 @@ describe("buildServiceLimitCopy", () => {
         trialDays: 14,
       },
     });
-    expect(copy.body).toContain("Free Trial includes up to 10");
-    expect(copy.primary).toBe("Start with 14 days free");
+    expect(copy.body).toContain("Free Trial currently reports up to 10");
+    expect(copy.primary).toBe("Review access");
   });
 
   it("falls back safely when no campaign is available", () => {
     const copy = buildServiceLimitCopy({ accessType: "FREE_ACCESS", limit: 10 });
-    expect(copy.body).toContain("Upgrade to Individual Annual");
+    expect(copy.body).toContain("Full-access staging");
     expect(copy.body).not.toContain("90 days free");
-    expect(copy.primary).toBe("Upgrade to Individual Annual");
+    expect(copy.primary).toBe("Review access");
   });
 
-  it("uses monthly paid offer copy when no annual trial campaign is active", () => {
+  it("uses access-review copy when a monthly paid offer is present", () => {
     const copy = buildServiceLimitCopy({
       accessType: "FREE_ACCESS",
       limit: 10,
@@ -94,21 +93,19 @@ describe("buildServiceLimitCopy", () => {
       },
     });
 
-    expect(copy.body).toContain("Free Access includes up to 10 active services");
-    expect(copy.body).toContain("Subscribe monthly to keep adding services");
-    expect(copy.body).toContain("$4.99/month");
+    expect(copy.body).toContain("Free Access currently reports up to 10 active services");
+    expect(copy.body).toContain("Full-access staging");
     expect(copy.body).not.toContain("after trial");
-    expect(copy.primary).toBe("Subscribe monthly");
+    expect(copy.primary).toBe("Review access");
   });
 
-  it("uses move-plan upsell copy for MOVING_PLAN_UPGRADE_REQUIRED (not a service-limit message)", () => {
-    // Reused as the move paywall: the free tier has unlimited services, so this
-    // branch must NOT talk about a service-count limit and must steer to the
-    // Individual move-plan unlock.
+  it("uses move-plan access copy for MOVING_PLAN_UPGRADE_REQUIRED (not a service-limit message)", () => {
+    // Reused as the move gate fallback. In consumer-free staging this should not
+    // appear, but if it does the copy must not imply a paid package purchase.
     const copy = buildServiceLimitCopy({ code: "MOVING_PLAN_UPGRADE_REQUIRED" });
     expect(copy.title).not.toContain("service limit");
     expect(copy.body).not.toContain("active services");
-    expect(copy.body).toMatch(/Individual/);
-    expect(copy.primary).toContain("Individual");
+    expect(copy.body).toContain("Full-access staging");
+    expect(copy.primary).toBe("Review access");
   });
 });

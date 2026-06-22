@@ -76,28 +76,26 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
   // generate a move plan. Copy is move-specific, not service-limit-specific.
   if (details?.code === "MOVING_PLAN_UPGRADE_REQUIRED") {
     return {
-      title: "Unlock your full move plan",
-      body: "Your free plan organizes your home. Upgrade to Individual to unlock your full personalized move plan — checklist, countdown, state guide, provider migration, and move tracking.",
-      primary: "Unlock with Individual",
+      title: "Your full move plan should be included",
+      body: "Full-access staging includes the personalized checklist, countdown, state guide, provider migration, and move tracking. Review your access if this gate appears.",
+      primary: "Review access",
       secondary: "Maybe later",
     };
   }
 
-  // Address-limit paywall: copy is address-specific (never "active services")
-  // and stays friendly even when the API sends no numbers — the caller maps
-  // unknown upgrade-required codes onto ADDRESS_LIMIT_REACHED defensively, so
-  // raw server enums never leak into the UI.
+  // Address-limit fallback: staging should be full-access, so a limit response
+  // is treated as an access/capacity mismatch rather than an upgrade prompt.
   if (isAddressLimitCode(details?.code)) {
     const addressLimit = typeof details?.limit === "number" ? details.limit : null;
     const atTopTier = addressLimit !== null && addressLimit >= PRO_MAX_ADDRESSES;
     return {
-      title: "You've reached your address limit",
+      title: atTopTier ? "Address capacity needs review" : "Your address access needs review",
       body: atTopTier
         ? `Your plan includes up to ${addressLimit} saved addresses — our highest cap. Contact support if you need additional capacity.`
         : addressLimit !== null
-          ? `Your current plan includes up to ${addressLimit} saved address${addressLimit === 1 ? "" : "es"}. Upgrade to keep adding addresses — up to ${PRO_MAX_ADDRESSES} on Pro.`
-          : `You've reached the address limit for your current plan. Upgrade to keep adding addresses — up to ${PRO_MAX_ADDRESSES} on Pro.`,
-      primary: "Upgrade",
+          ? `Full-access staging should include Pro address capacity. This account currently reports ${addressLimit} saved address${addressLimit === 1 ? "" : "es"}; review access if this cap appears.`
+          : `Full-access staging should include Pro address capacity. Review access if this cap appears while adding an address.`,
+      primary: "Review access",
       secondary: "Maybe later",
     };
   }
@@ -115,19 +113,11 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
   }
 
   if (campaign) {
-    const trialLabel = formatTrialLabel(campaign.trialDays);
-    const headline =
-      campaign.publicHeadline ||
-      (trialLabel ? `Start ${trialLabel} free` : "Upgrade to Individual Annual");
-    const priceCopy = campaign.displayPriceLabel
-      ? `${campaign.displayPriceLabel}${trialLabel ? " after trial" : ""}`
-      : "annual billing";
     const tier = accessType === "FREE_TRIAL" ? "Free Trial" : "Free Access";
-    const upgradeCopy = trialLabel ? headline : `${headline} to keep adding services`;
     return {
-      title: "You've reached your service limit",
-      body: `${tier} includes up to ${limit} active services. ${upgradeCopy}. ${priceCopy}.`,
-      primary: headline,
+      title: "Your service access needs review",
+      body: `${tier} currently reports up to ${limit} active services. Full-access staging should include the higher service capacity; review access if this cap appears.`,
+      primary: "Review access",
       secondary: "Maybe later",
     };
   }
@@ -139,9 +129,9 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
         ? "Free Access"
         : "Free Access";
   return {
-    title: "You've reached your service limit",
-    body: `${tier} includes up to ${limit} active services. Upgrade to Individual Annual to keep adding services.`,
-    primary: "Upgrade to Individual Annual",
+    title: "Your service access needs review",
+    body: `${tier} currently reports up to ${limit} active services. Full-access staging should include the higher service capacity; review access if this cap appears.`,
+    primary: "Review access",
     secondary: "Maybe later",
   };
 }

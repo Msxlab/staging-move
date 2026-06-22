@@ -698,11 +698,11 @@ export default async function DashboardPage() {
             {stats.recentUsers.map((user: any) => {
               const planRaw = String(user.subscription?.plan || "").toUpperCase();
               const plan = planRaw.includes("FAMILY")
-                ? { label: "Family", color: "#83AAF5" }
+                ? { label: "Family", color: "var(--foil-a)" }
                 : planRaw.includes("PRO")
-                  ? { label: "Pro", color: "#5B8DEF" }
+                  ? { label: "Pro", color: "var(--foil-b)" }
                   : planRaw.includes("INDIVIDUAL")
-                    ? { label: "Individual", color: "#5B8DEF" }
+                    ? { label: "Individual", color: "var(--foil-b)" }
                     : planRaw
                       ? { label: "Free", color: "#8A94A6" }
                       : null;
@@ -724,9 +724,9 @@ export default async function DashboardPage() {
                       {moving && (
                         <span
                           className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
-                          style={{ color: "#5B8DEF", backgroundColor: "rgba(91, 141, 239,0.12)", borderColor: "rgba(91, 141, 239,0.28)" }}
+                          style={{ color: "var(--foil-b)", backgroundColor: "var(--tone-orange-bg)", borderColor: "var(--tone-orange-br)" }}
                         >
-                          <span className="h-1 w-1 rounded-full" style={{ backgroundColor: "#5B8DEF" }} />
+                          <span className="h-1 w-1 rounded-full" style={{ backgroundColor: "var(--foil-b)" }} />
                           Moving
                         </span>
                       )}

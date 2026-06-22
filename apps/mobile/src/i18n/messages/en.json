@@ -333,7 +333,7 @@
     "priced": "Priced",
     "mood": {
       "emptyTitle": "No services tracked yet",
-      "emptySubtitle": "Add your first utility, bank, or subscription and the raccoon perks up.",
+      "emptySubtitle": "Add your first utility, bank, or subscription and your dashboard comes alive.",
       "firstTitle": "First service tracked!",
       "firstSubtitle": "Great start — your move tracking is officially underway.",
       "buildingTitle_one": "{{count}} service tracked",
@@ -706,7 +706,8 @@
     "vehicleCheckRecallsLink": "Recall details at nhtsa.gov",
     "vehicleCheckDmvLink": "{{state}} DMV: {{name}}",
     "vehicleCheckFinePrint": "Specs and recalls from NHTSA — registration requirements come from your state DMV.",
-    "vehicleCheckUpgradePitch": "Decode your VIN and check for open recalls before you register in your new state — unlocks with Individual."
+    "vehicleCheckUpgradePitch": "Decode your VIN and check for open recalls before you register in your new state.",
+    "vehicleCheckCta": "Open NHTSA check"
   },
   "dossier": {
     "title": "Your new home",
@@ -750,6 +751,7 @@
     "evChargingPorts": "Ports: {{dc}} DC fast · {{level2}} Level 2",
     "evChargingFinePrint": "NLR/AFDC station listings. Verify access, pricing, connector compatibility, and live availability with the charging network.",
     "teaserPitch": "Know your new home before you arrive — flood zone, natural-hazard risks, radon, drinking water, air quality, school district, and moving-day weather for your destination, from federal sources like FEMA, the EPA, NCES, and the National Weather Service.",
+    "teaserCta": "View full dossier",
     "teaserFlood": "FEMA flood zone & risk level",
     "teaserSchool": "School district & NCES ID",
     "teaserWeather": "Moving-day weather forecast",
@@ -760,7 +762,7 @@
     "teaserHousing": "HUD rent & income-limit context",
     "teaserEvCharging": "Nearby public EV charging stations",
     "neighborhoodLabel": "Neighborhood",
-    "neighborhoodProPill": "Pro",
+    "neighborhoodProPill": "Included",
     "neighborhoodTeaser": "Area medians: home value, rent, income & ownership",
     "neighborhoodHomeValue": "Median home value",
     "neighborhoodGrossRent": "Median gross rent",
@@ -779,8 +781,8 @@
     "neighborhoodFinePrint": "U.S. Census Bureau (ACS) tract medians, EPA walkability and NCES schools - context for the area, not a valuation of this home."
   },
   "subscription": {
-    "upgradeTitle": "Unlock your move plan",
-    "upgrade": "Upgrade"
+    "upgradeTitle": "Your move plan is included",
+    "upgrade": "View access"
   },
   "budget": {
     "title": "Budget",
@@ -805,9 +807,9 @@
     "savingsRate": "{{rate}}% rate",
     "spendingByCategory": "Spending by Category",
     "total": "Total",
-    "gate_subscriptionRequired_title": "Budgeting is a paid feature",
-    "gate_subscriptionRequired_body": "Creating and saving budgets needs an active LocateFlow subscription. You can still see this month's projections from the budget overview.",
-    "gate_subscriptionRequired_cta": "View plans"
+    "gate_subscriptionRequired_title": "Budget access needs review",
+    "gate_subscriptionRequired_body": "Budgeting should be included with consumer-free access. You can still see this month's projections from the budget overview.",
+    "gate_subscriptionRequired_cta": "Review access"
   },
   "blog": {
     "title": "Blog",
@@ -1014,11 +1016,11 @@
     "subscription_featMovePlanFull": "Full move plan, checklist & countdown",
     "subscription_featDossierPdf": "New Home Dossier PDF export",
     "subscription_featProvidersReminders": "Providers, bills & renewal reminders",
-    "subscription_featHomeDossierPreview": "Home Dossier preview (flood, school district & moving-day weather)",
+    "subscription_featHomeDossierPreview": "Home Dossier access (flood, school district & moving-day weather)",
     "subscription_featHomeDossier": "New Home Dossier (flood zone, school district & moving-day weather)",
     "subscription_featVehicleCheck": "Vehicle check: VIN decode & NHTSA recall lookup",
     "subscription_featAiBriefing": "AI move briefing — your move, explained",
-    "subscription_featMovePlanPreview": "Preview your move plan (upgrade to unlock it)",
+    "subscription_featMovePlanPreview": "Personalized move plan",
     "subscription_featPrioritySupport": "Priority support",
     "subscription_featSmartSuggestions": "Smart provider suggestions (FCC broadband & utility data)",
     "subscription_featWeatherDigest": "Move-week weather alerts & weekly digest email",
@@ -1042,19 +1044,19 @@
     "oneDay": "1 day to go",
     "movingDay": "It's moving day!",
     "daysAgo": "Moved {{count}} days ago",
-    "unlockHint": "Unlock your full plan: a personalized checklist, deadline countdown, and move tracking.",
-    "unlockCta": "Unlock with Individual",
-    "briefingUnlockCta": "Unlock with Family",
-    "paidFeatureLabel": "Individual plan feature",
-    "dashboardEyebrow": "Unlock the move",
-    "dashboardTitle": "Ready to plan your move?",
-    "dashboardBody": "Free keeps your home organized — addresses, providers, bills, and reminders. The full moving plan (personalized checklist, countdown, and tracking) unlocks with Individual.",
-    "dashboardCta": "Unlock your move plan",
+    "unlockHint": "Your full plan includes a personalized checklist, deadline countdown, and move tracking.",
+    "unlockCta": "Start full plan",
+    "briefingUnlockCta": "View briefing",
+    "paidFeatureLabel": "Included feature",
+    "dashboardEyebrow": "Everything included",
+    "dashboardTitle": "LocateFlow is free for your move",
+    "dashboardBody": "Your move plan, Home Dossier, checklist, countdown, services, reminders and exports are included. No subscription or credit card is required.",
+    "dashboardCta": "Start your move plan",
     "freeIncluded": "Included free",
-    "freeAddresses": "Up to 3 homes & addresses",
-    "freeProviders": "Up to 10 providers & services",
-    "freeMovePreview": "Read-only personalized move preview",
-    "freeDossierPreview": "Home Dossier preview",
+    "freeAddresses": "Homes, addresses and route planning",
+    "freeProviders": "Provider and service tracking",
+    "freeMovePreview": "Personalized move plan and checklist",
+    "freeDossierPreview": "Full Home Dossier access",
     "freeReminders": "Bill & renewal reminders"
   },
   "onboarding": {

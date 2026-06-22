@@ -17,6 +17,7 @@ type AppShellProps = {
   showWorkspace?: boolean;
   /** Effective plan tier — kept as a class hook; colors remain Sapphire. */
   planTier?: string | null;
+  consumerFree?: boolean;
 };
 
 const EMBED_STORAGE_KEY = "lf:embed-mobile";
@@ -52,7 +53,13 @@ function useEmbedMode() {
   return embed;
 }
 
-export function AppShell({ children, showBudget = true, showWorkspace = false, planTier = null }: AppShellProps) {
+export function AppShell({
+  children,
+  showBudget = true,
+  showWorkspace = false,
+  planTier = null,
+  consumerFree = false,
+}: AppShellProps) {
   const tCommon = useTranslations("common");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const embedMode = useEmbedMode();
@@ -102,7 +109,7 @@ export function AppShell({ children, showBudget = true, showWorkspace = false, p
       >
         {tCommon("skipToMain")}
       </a>
-      <Sidebar showBudget={showBudget} showWorkspace={showWorkspace} />
+      <Sidebar showBudget={showBudget} showWorkspace={showWorkspace} consumerFree={consumerFree} />
       {mobileMenuOpen ? (
         <>
           <button
@@ -114,6 +121,7 @@ export function AppShell({ children, showBudget = true, showWorkspace = false, p
           <Sidebar
             showBudget={showBudget}
             showWorkspace={showWorkspace}
+            consumerFree={consumerFree}
             variant="mobile"
             open
             onClose={() => setMobileMenuOpen(false)}

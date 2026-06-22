@@ -6,8 +6,9 @@ import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { checkGlobalBudget } from "@/lib/global-spend-guard";
 import { scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
-import { CANCELED_MOVING_PLAN_STATUSES, planFeatures } from "@locateflow/shared";
+import { CANCELED_MOVING_PLAN_STATUSES, CONSUMER_FREE_FLAG, planFeatures } from "@locateflow/shared";
 import { getRequestEntitlement } from "@/lib/request-entitlements";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { getMergedDisplayCategoryKey, getMergedDisplayCategoryLabel, getEssentialSetupCategories, type UserProfile } from "@/lib/recommendation-engine";
 import { recordIntegrationOutcome } from "@/lib/integration-telemetry";
 import {
@@ -160,13 +161,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ configured: false });
   }
 
-  const { scope, plan: userPlan } = await getRequestEntitlement(request, userId);
+  const [{ scope, plan: userPlan }, consumerFree] = await Promise.all([
+    getRequestEntitlement(request, userId),
+    isFeatureEnabled(CONSUMER_FREE_FLAG, { userId }),
+  ]);
 
   // Paid-plan gate (owner decision): the AI briefing is Family and Pro.
   // FREE/FREE_TRIAL get a value-first upgrade teaser instead. HTTP 200 — never
   // 403 — so old clients (which require a string `briefing`) fail soft to the
   // deterministic dashboard instead of erroring.
-  if (!planFeatures(userPlan.plan).aiBriefing) {
+  if (!consumerFree && !planFeatures(userPlan.plan).aiBriefing) {
     // Fire-and-forget telemetry (never throws, never adds latency): a gated
     // request consumed no AI budget and gathered no signals.
     recordIntegrationOutcome("briefing", "gated");

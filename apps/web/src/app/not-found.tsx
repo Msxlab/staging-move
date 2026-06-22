@@ -12,8 +12,7 @@ export default function RootNotFound() {
         <RaccoonLost size={140} className="mb-6 text-muted-foreground/70" />
         <h2 className="text-2xl font-semibold mb-2">404 - Page Not Found</h2>
         <p className="text-muted-foreground mb-6 max-w-sm">
-          This little raccoon went looking for the page too — and came back
-          empty-pawed. It does not exist.
+          That LocateFlow page is not available. Check the URL or head back home.
         </p>
         <Button asChild>
           <Link href="/">Go Home</Link>

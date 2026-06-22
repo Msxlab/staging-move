@@ -45,20 +45,27 @@ import {
 //      next reload (the gradual-migration tradeoff documented below).
 //
 // Persistence: the user preference is persisted in AsyncStorage under
-// `locateflow.theme.preference`. Default is "system" (follow the OS).
+// `locateflow.theme.preference`. Default is "dark" so a fresh install starts on the source-theme canvas.
 // When the preference is "system", `Appearance.addChangeListener`
 // reacts to OS theme flips immediately.
 // ──────────────────────────────────────────────────────────────────────
 
 // Canonical Aurora accents from shared design tokens.
+// Dark follows the source theme's Gold accent; light follows its Sapphire accent.
 const ACCENT_DARK = brandColors.rose;
 const ACCENT_DARK_LIGHT = brandColors.roseLight;
 const ACCENT_DARK_DEEP = brandColors.roseDeep;
-const ACCENT_LIGHT = roseScale[900];
-const ACCENT_LIGHT_LIGHT = roseScale[700];
-const ACCENT_LIGHT_DEEP = roseScale[800];
+const ACCENT_LIGHT = roseScale[500];
+const ACCENT_LIGHT_LIGHT = roseScale[400];
+const ACCENT_LIGHT_DEEP = roseScale[700];
 const FOIL_DARK = brandColors.foil;
-const FOIL_LIGHT = brandColors.foilInk;
+const FOIL_LIGHT = roseScale[500];
+
+const LIGHT_GRADIENTS = {
+  primary: ["#3D74C8", "#2E5FB0"] as const,
+  warm: ["#3D74C8", "#2E5FB0"] as const,
+  glow: ["rgba(46, 95, 176, 0.22)", "rgba(55, 194, 201, 0.10)"] as const,
+};
 
 const darkColors = {
   primary: ACCENT_DARK,
@@ -192,9 +199,9 @@ const lightColors = {
   cyan: tonesLight.cyan,
 
   gradient: {
-    primary: gradients.primary,
-    warm: gradients.warm,
-    glow: gradients.glow,
+    primary: LIGHT_GRADIENTS.primary,
+    warm: LIGHT_GRADIENTS.warm,
+    glow: LIGHT_GRADIENTS.glow,
   },
 
   // Back-compat aliases for older mobile components.
@@ -355,7 +362,7 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
   const systemScheme = useColorScheme();
 
   const [preference, setPreferenceState] = useState<ThemePreference>(
-    initialPreference ?? "system",
+    initialPreference ?? "dark",
   );
   const [hydrated, setHydrated] = useState<boolean>(initialPreference !== undefined);
   // Mirrors `Appearance.getColorScheme()` so we react to OS-level flips

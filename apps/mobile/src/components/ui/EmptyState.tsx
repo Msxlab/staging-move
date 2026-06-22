@@ -2,7 +2,9 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Button } from "./Button";
-import { RaccoonMascot, type RaccoonVariant } from "./RaccoonMascot";
+import { MoveRaccoon, type RaccoonMood } from "@/components/move";
+
+type LegacyMascotHint = "dad" | "mom" | "kid";
 
 interface EmptyStateProps {
   icon: React.ReactNode;
@@ -17,7 +19,14 @@ interface EmptyStateProps {
    * icon disc — consistent with the splash + PlanHero personality. The icon is
    * still accepted (and ignored) so call sites don't need to change shape.
    */
-  mascot?: RaccoonVariant;
+  mascot?: LegacyMascotHint | RaccoonMood;
+}
+
+function resolveMascotMood(mascot: NonNullable<EmptyStateProps["mascot"]>): RaccoonMood {
+  if (mascot === "dad") return "calm";
+  if (mascot === "mom") return "thinking";
+  if (mascot === "kid") return "happy";
+  return mascot;
 }
 
 export function EmptyState({
@@ -40,7 +49,7 @@ export function EmptyState({
     <View style={styles.container} accessibilityRole="summary" accessibilityLabel={title} accessibilityHint={description}>
       {mascot ? (
         <View style={styles.mascotWrapper} accessible={false}>
-          <RaccoonMascot size={92} variant={mascot} fur="#aeb9c6" />
+          <MoveRaccoon size={74} mood={resolveMascotMood(mascot)} />
         </View>
       ) : (
         <View style={styles.iconWrapper} accessible={false}>{icon}</View>
@@ -87,12 +96,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(91, 141, 239, 0.2)",
+    borderColor: theme.colors.accentBorder,
   },
   mascotWrapper: {
+    width: 92,
+    height: 92,
+    borderRadius: 28,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 18,
   },
   title: {
     fontSize: 20,

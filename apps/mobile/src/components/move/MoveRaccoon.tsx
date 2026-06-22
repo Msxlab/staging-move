@@ -3,7 +3,7 @@ import Svg, { Path, Ellipse, Circle, Rect, Line, G } from "react-native-svg";
 import { useAppTheme } from "@/lib/theme";
 
 /**
- * Move raccoon mark — the sleek geometric mascot from the Move design
+ * LocateFlow mascot mark - the sleek geometric mascot from the source theme
  * (Raccoon.dc.html), ported to react-native-svg (OTA-safe, no binary asset).
  *
  * Distinct from the kawaii household {@link RaccoonMascot} (dad/mom/kid): this

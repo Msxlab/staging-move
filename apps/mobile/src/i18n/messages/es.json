@@ -706,7 +706,8 @@
     "vehicleCheckRecallsLink": "Detalles de retiradas en nhtsa.gov",
     "vehicleCheckDmvLink": "DMV de {{state}}: {{name}}",
     "vehicleCheckFinePrint": "Especificaciones y retiradas de la NHTSA — los requisitos de registro provienen del DMV de tu estado.",
-    "vehicleCheckUpgradePitch": "Decodifica tu VIN y revisa las retiradas abiertas antes de registrarte en tu nuevo estado — se desbloquea con Individual."
+    "vehicleCheckUpgradePitch": "Decodifica tu VIN y revisa las retiradas abiertas antes de registrarte en tu nuevo estado.",
+    "vehicleCheckCta": "Abrir revision NHTSA"
   },
   "dossier": {
     "title": "Tu nuevo hogar",
@@ -750,6 +751,7 @@
     "evChargingPorts": "Puertos: {{dc}} carga rapida DC · {{level2}} Nivel 2",
     "evChargingFinePrint": "Listados NLR/AFDC. Verifica acceso, precio, compatibilidad de conectores y disponibilidad en vivo con la red de carga.",
     "teaserPitch": "Conoce tu nuevo hogar antes de llegar: zona de inundación, riesgos naturales, radón, agua potable, calidad del aire, distrito escolar y clima del día de la mudanza para tu destino, con datos de fuentes federales como FEMA, la EPA, NCES y el Servicio Meteorológico Nacional.",
+    "teaserCta": "Ver dossier completo",
     "teaserFlood": "Zona de inundación y nivel de riesgo de FEMA",
     "teaserSchool": "Distrito escolar e ID de NCES",
     "teaserWeather": "Pronóstico del clima para el día de la mudanza",
@@ -760,7 +762,7 @@
     "teaserHousing": "Renta HUD y limites de ingreso",
     "teaserEvCharging": "Estaciones publicas de carga EV cercanas",
     "neighborhoodLabel": "Vecindario",
-    "neighborhoodProPill": "Pro",
+    "neighborhoodProPill": "Incluido",
     "neighborhoodTeaser": "Medianas del área: valor, renta, ingreso y propiedad",
     "neighborhoodHomeValue": "Valor medio de vivienda",
     "neighborhoodGrossRent": "Renta bruta media",
@@ -779,8 +781,8 @@
     "neighborhoodFinePrint": "Medianas del sector censal de la Oficina del Censo de EE. UU. (ACS), caminabilidad de la EPA y escuelas de NCES - contexto del área, no una valoración de esta vivienda."
   },
   "subscription": {
-    "upgradeTitle": "Desbloquea tu plan de mudanza",
-    "upgrade": "Mejorar plan"
+    "upgradeTitle": "Tu plan de mudanza esta incluido",
+    "upgrade": "Ver acceso"
   },
   "budget": {
     "title": "Presupuesto",
@@ -805,9 +807,9 @@
     "savingsRate": "tasa de {{rate}}%",
     "spendingByCategory": "Gasto por categoría",
     "total": "Total",
-    "gate_subscriptionRequired_title": "Los presupuestos son una función de pago",
-    "gate_subscriptionRequired_body": "Crear y guardar presupuestos requiere una suscripción activa de LocateFlow. Aún puedes ver las proyecciones de este mes desde el resumen de presupuesto.",
-    "gate_subscriptionRequired_cta": "Ver planes"
+    "gate_subscriptionRequired_title": "Revisa el acceso a presupuestos",
+    "gate_subscriptionRequired_body": "Los presupuestos deben estar incluidos con el acceso consumer-free. Aun puedes ver las proyecciones de este mes desde el resumen de presupuesto.",
+    "gate_subscriptionRequired_cta": "Revisar acceso"
   },
   "blog": {
     "title": "Blog",
@@ -1014,11 +1016,11 @@
     "subscription_featMovePlanFull": "Plan de mudanza completo, lista y cuenta regresiva",
     "subscription_featDossierPdf": "Exportacion en PDF del Dossier del nuevo hogar",
     "subscription_featProvidersReminders": "Proveedores, facturas y recordatorios de renovacion",
-    "subscription_featHomeDossierPreview": "Vista previa del Dossier del hogar (inundacion, distrito escolar y clima del dia de mudanza)",
+    "subscription_featHomeDossierPreview": "Acceso al Home Dossier (inundacion, distrito escolar y clima del dia de mudanza)",
     "subscription_featHomeDossier": "Dossier del nuevo hogar (zona de inundacion, distrito escolar y clima del dia de mudanza)",
     "subscription_featVehicleCheck": "Verificacion de vehiculo: decodificacion de VIN y consulta de retiros NHTSA",
     "subscription_featAiBriefing": "Resumen de mudanza con IA: tu mudanza, explicada",
-    "subscription_featMovePlanPreview": "Vista previa de tu plan de mudanza (mejora para desbloquearlo)",
+    "subscription_featMovePlanPreview": "Plan de mudanza personalizado",
     "subscription_featPrioritySupport": "Soporte prioritario",
     "subscription_featSmartSuggestions": "Sugerencias inteligentes de proveedores (datos de banda ancha FCC y servicios)",
     "subscription_featWeatherDigest": "Alertas del clima de la semana de mudanza y resumen semanal por correo",
@@ -1042,19 +1044,19 @@
     "oneDay": "Falta 1 día",
     "movingDay": "¡Es el día de la mudanza!",
     "daysAgo": "Te mudaste hace {{count}} días",
-    "unlockHint": "Desbloquea tu plan completo: lista personalizada, cuenta regresiva de plazos y seguimiento de la mudanza.",
-    "unlockCta": "Desbloquear con Individual",
-    "briefingUnlockCta": "Desbloquear con Family",
-    "paidFeatureLabel": "Función del plan Individual",
-    "dashboardEyebrow": "Desbloquea la mudanza",
-    "dashboardTitle": "¿Listo para planear tu mudanza?",
-    "dashboardBody": "El plan gratuito mantiene tu hogar organizado: direcciones, proveedores, facturas y recordatorios. El plan de mudanza completo (lista personalizada, cuenta regresiva y seguimiento) se desbloquea con Individual.",
-    "dashboardCta": "Desbloquear tu plan de mudanza",
+    "unlockHint": "Tu plan completo incluye checklist personalizada, cuenta regresiva de plazos y seguimiento de la mudanza.",
+    "unlockCta": "Iniciar plan completo",
+    "briefingUnlockCta": "Ver briefing",
+    "paidFeatureLabel": "Funcion incluida",
+    "dashboardEyebrow": "Todo incluido",
+    "dashboardTitle": "LocateFlow es gratis para tu mudanza",
+    "dashboardBody": "Tu plan de mudanza, Home Dossier, checklist, cuenta regresiva, servicios, recordatorios y exportaciones estan incluidos. No necesitas suscripcion ni tarjeta.",
+    "dashboardCta": "Iniciar tu plan de mudanza",
     "freeIncluded": "Incluido gratis",
-    "freeAddresses": "Hasta 3 hogares y direcciones",
-    "freeProviders": "Hasta 10 proveedores y servicios",
-    "freeMovePreview": "Vista previa personalizada de mudanza en solo lectura",
-    "freeDossierPreview": "Vista previa del Dossier del hogar",
+    "freeAddresses": "Hogares, direcciones y planificacion de ruta",
+    "freeProviders": "Seguimiento de proveedores y servicios",
+    "freeMovePreview": "Plan de mudanza personalizado y checklist",
+    "freeDossierPreview": "Acceso completo a Home Dossier",
     "freeReminders": "Recordatorios de facturas y renovaciones"
   },
   "onboarding": {

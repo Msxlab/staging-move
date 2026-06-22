@@ -14,7 +14,7 @@ import type PDFDocumentType from "pdfkit";
  */
 
 export const PDF_THEME = {
-  /** Move Sapphire — used for the wordmark accent and primary highlights. */
+  /** Light-mode Sapphire accent, used for wordmark and primary PDF highlights. */
   accent: "#2E5FB0",
   /** Soft brand background tint for cards. */
   accentSoft: "#EAF1F9",
