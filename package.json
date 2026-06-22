@@ -10,6 +10,8 @@
     "admin:prepare-standalone": "node scripts/prepare-admin-standalone.mjs",
     "build": "turbo build",
     "lint": "turbo lint",
+    "tokens:emit": "pnpm exec tsx scripts/emit-design-tokens.ts",
+    "tokens:check": "pnpm exec tsx scripts/emit-design-tokens.ts --check",
     "audit:providers": "pnpm exec tsx scripts/audit-provider-seed.ts",
     "audit:providers:write": "pnpm exec tsx scripts/audit-provider-seed.ts --write",
     "audit:providers:readiness": "pnpm exec tsx scripts/audit-provider-readiness.ts",

@@ -514,3 +514,13 @@ export const tokens = {
 } as const;
 
 export type DesignTokens = typeof tokens;
+
+// ────────────────────────────────────────────────────────────────────
+// CSS custom-property source of truth + emitter (Step 1 of the
+// design-system foundation). The structured CSS-var model and the
+// `emitCssVars()` / `renderTarget()` helpers live in a sibling module so
+// the runtime token model above stays focused on the values the mobile
+// app consumes. Re-exported here so `@locateflow/shared` exposes a single
+// design-token surface.
+// ────────────────────────────────────────────────────────────────────
+export * from "./design-tokens-css";
