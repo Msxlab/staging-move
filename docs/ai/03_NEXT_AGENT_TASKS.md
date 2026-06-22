@@ -14,12 +14,14 @@ Sapphire/blue (`#2E5FB0`, `#3D74C8`, `#244C90`). Older memory that says
 all-Sapphire across both modes is stale. `Move` is a domain noun only, not the product
 wordmark.
 
-The latest local pass ports the homepage hero/mobile-phone direction from the
-new HTML theme sources, remaps web/admin/mobile/shared premium and plan accents
-to the dark-Gold/light-Sapphire split, and keeps warning amber only for warning
-semantics. Remaining staging work: run the local gates on this pass, deploy it
-through Dokploy, then use the existing Chrome session for authenticated web,
-admin, and mobile/runtime visual QA.
+The latest pass ports the homepage hero/mobile-phone direction from the new HTML
+theme sources, remaps web/admin/mobile/shared premium and plan accents to the
+dark-Gold/light-Sapphire split, and keeps warning amber only for warning
+semantics. Local typecheck/tests/build passed, commit `8fb63c5b` was deployed to
+Dokploy staging, and Chrome confirmed the homepage dark Gold + light Sapphire
+views. Remaining staging work: authenticated web dashboard QA, authenticated
+admin dashboard QA after the user handles credentials/password manager, and real
+mobile/emulator runtime visual QA.
 
 Use this note as the Obsidian task queue for the next Codex, Claude Product Explorer, or Claude Product Judge pass.
 

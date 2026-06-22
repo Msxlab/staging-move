@@ -51,12 +51,22 @@ Important product decision:
 - `pnpm --filter @locateflow/admin build` passed.
 - Web/admin builds still emit existing follow-up warnings: Next middleware convention should move to `proxy`, and Turbopack warns about `@prisma/client` CommonJS `export *` usage in route import traces.
 
+## Live Staging Deploy / QA
+
+- Commit `8fb63c5b` (`Integrate source theme across staging surfaces`) was pushed to `origin/codex/staging-audit-2026-06-21`.
+- Dokploy manual compose deploy was triggered from the existing Chrome session. The first webhook refresh icon opened a token-rotation modal; it was canceled without confirming. The safe `General -> Deploy -> Confirm` path was then used.
+- Web and admin `/api/build-info` both reported commit `8fb63c5b` on branch `codex/staging-audit-2026-06-21` after polling.
+- Public smoke with `curl.exe` returned `200` for `/`, `/features`, `/why-free`, `/pricing`, `/help`, `/blog`, `/faq`, `/sign-in`, `/sign-up`, and `/onboarding`; all scanned HTML contained `LocateFlow` and no `>Move<`, `Move Admin`, or `LocateFlow Move` wordmark drift.
+- Admin smoke returned `200` for `/login`, `/api/healthz`, and `/api/ready`; admin login title is `LocateFlow Admin` and no `Move Admin` drift was found.
+- Chrome visual QA on `https://staging.locateflow.com/?qa=8fb63c5b` confirmed the new homepage: header includes Features, Why free, Pricing, Help, Blog, FAQ; hero reads `Relocation Intelligence` and `Your entire move, handled.`; interactive phone shows Rough/Dream controls. Dark mode renders Gold; light mode renders Sapphire/blue.
+- Chrome visual QA on `https://admin-staging.locateflow.com/login?qa=8fb63c5b` confirmed the admin login shell uses LocateFlow/Admin Command copy and dark Gold accents.
+- Authenticated admin dashboard QA did not proceed because the password manager popup opened and the password field was empty. Do not automate the password manager. User must fill/submit admin credentials or provide explicit next-step direction.
+
 ## Known Remaining Checks
 
-- Push branch `codex/staging-audit-2026-06-21` and redeploy Dokploy staging.
-- Confirm `/api/build-info` on web and admin reports the pushed commit.
-- Use Chrome live QA for home, features, why-free, pricing, help, blog, FAQ, login/sign-up/onboarding, app dashboard, admin login/dashboard, and public mobile-sized viewport.
-- Run a source-vs-live visual comparison against the listed HTML files for homepage, mobile, admin, blog, features, auth/login, and onboarding. Record every missing page, component, button, icon, animation, and copy mismatch before fixing.
+- Run authenticated web app dashboard QA after confirming a QA user session.
+- Run authenticated admin dashboard QA after the user fills/submits admin credentials.
+- Run a deeper source-vs-live visual comparison against the listed HTML files for mobile, admin dashboard, blog, features, auth/login, and onboarding. Record every missing component, button, icon, animation, and copy mismatch before fixing.
 - Real mobile/emulator QA remains required for native tabs, onboarding progress, services, provider cards, subscription screen, OAuth handoff, offline/cache, app lock, and reduced motion.
 
 ## Watch Items
