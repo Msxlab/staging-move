@@ -124,10 +124,9 @@ function AnimatedMascot({
 }
 
 /**
- * Plan-themed welcome hero on the dashboard for Family / Pro members: a kawaii
- * raccoon household (dad / mom / kid) with a plan-colored gradient. Pro dresses
- * the crew in top hats + bow ties. Colors come from the active (plan-tinted)
- * theme, so it is crystal-green for Family and premium Sapphire for Pro.
+ * Plan-aware welcome hero on the dashboard for Family / Pro members. The copy
+ * and illustration change by tier, while colors stay on the active Sapphire
+ * theme so Family and Pro do not reintroduce legacy plan palettes.
  * Renders nothing for Individual / unknown plans.
  */
 /**

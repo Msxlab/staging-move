@@ -34,8 +34,8 @@ import { cn } from "@/lib/utils";
  *
  * Theming: uses the homepage's existing token ramp — `hsl(var(--primary))`
  * is Move Sapphire, `var(--sage)` / `--success-soft` is the success green. No
- * honey here (that's the Pro accent) — the homepage stays the Individual /
- * Sapphire look. The whole scene tracks light/dark automatically.
+ * amber here; the homepage stays in the Sapphire look. The whole scene tracks
+ * light/dark automatically.
  *
  * Coordinate system: everything is laid out in a fixed 1120×600 logical box
  * and positioned by percentage, so the SVG guide layer and the HTML chip

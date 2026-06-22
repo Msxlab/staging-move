@@ -58,7 +58,7 @@ function matchesFilter(notif: FeedNotification, filter: FeedFilter): boolean {
 
 // A friendly icon + tone per notification type so the feed reads like a real
 // inbox instead of identical grey dots — mirrors presentationFor() on mobile.
-// Honey is reserved for the subscription/premium rows only (Edition VII rule).
+// Subscription/premium rows use Sapphire/foil, not legacy plan palettes.
 function presentationFor(type: string): { Icon: LucideIcon; chip: string; icon: string } {
   switch (type) {
     case "BILL_REMINDER":
@@ -79,7 +79,7 @@ function presentationFor(type: string): { Icon: LucideIcon; chip: string; icon: 
       return { Icon: Zap, chip: "bg-tone-amber-bg", icon: "text-tone-amber-fg" };
     case "SUBSCRIPTION":
     case "ACCOUNT_UPDATED":
-      return { Icon: Crown, chip: "bg-tone-honey-bg", icon: "text-tone-honey-fg" };
+      return { Icon: Crown, chip: "bg-tone-foil-bg", icon: "text-tone-foil-fg" };
     default:
       return { Icon: Bell, chip: "bg-foreground/5", icon: "text-muted-foreground" };
   }

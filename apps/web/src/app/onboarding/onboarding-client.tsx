@@ -1450,7 +1450,7 @@ export default function OnboardingClient({
 
       {/* Step Indicator — mobile/tablet only; the aside's vertical rail owns
           step progress on ≥lg. The design's stepped-card header: a localized
-          step name + numeric counter over a thin Sapphire→honey gradient progress
+          step name + numeric counter over a thin Sapphire progress
           bar, then the existing chip rail underneath. */}
       <div className="space-y-3 lg:hidden">
         <div className="flex items-center justify-between">
@@ -1463,7 +1463,7 @@ export default function OnboardingClient({
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-foreground/10">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-tone-honey-fg transition-[width] duration-300"
+            className="h-full rounded-full bg-gradient-to-r from-primary to-tone-sky-fg transition-[width] duration-300"
             style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
           />
         </div>

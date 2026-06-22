@@ -31,7 +31,7 @@ async function resolveShowWorkspace(userId: string): Promise<boolean> {
 
 /**
  * The user's effective plan tier ("FAMILY" | "PRO" | "INDIVIDUAL" | ...), used by
- * AppShell to apply the per-plan accent theme. Independent of the workspace flag —
+ * AppShell to apply the plan class hook. Independent of the workspace flag —
  * a Family/Pro user is themed even if the workspace model is off. Best-effort: any
  * failure returns null (base theme).
  */

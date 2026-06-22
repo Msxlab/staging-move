@@ -311,6 +311,49 @@ HTTP responses and masked/indirect Dokploy state.
 - Follow-up source cleanup removed remaining user-facing old-product-name references from JSON-LD, OpenGraph, how-it-works, DPA/refund, blog preview fallback, partner consent, settings/subscription/cancel survey/appearance copy, help Spanish copy, and shared provider action descriptions. Domain labels such as `Move date`, `Move-in`, `Move tasks`, and moving-plan terminology remain intentional.
 - Verification for the follow-up cleanup: `git diff --check`, `pnpm --filter @locateflow/web test -- src/components/seo/json-ld.test.ts`, `pnpm verify:typecheck`, and `pnpm verify:tests` passed locally. Local runtime is Node `v24.12.0`, so pnpm printed the expected repo-engine warning for Node `22.x`; a Docker Node 22 retry was blocked by host Windows `node_modules` lacking Rollup's Linux optional native package.
 
+## 2026-06-22 Sapphire Theme Drift Correction Pass
+
+- The latest design zips were rechecked: the prototype files still contain Gold
+  as a default and `Move` labels, but Sapphire variants are present. Current
+  product decision remains `LocateFlow + Sapphire` for staging.
+- Found residual premium/plan theme drift after the earlier branding deploy:
+  admin Pro plan cards, web plan class globals, admin plan distribution colors,
+  shared `planColors`, premium sticker/medallion SVG highlights, mobile Family
+  badge, web export PDF buttons, subscription/account notification chips,
+  homepage risk/mobile CTA accents, and onboarding progress were still capable
+  of rendering Gold/honey/Family teal in non-warning contexts.
+- Fixed those to Sapphire pass-throughs. Plan classes/selectors are retained for
+  compatibility (`plan-free`, `plan-family`, `plan-pro`, admin `au-plan-*`), but
+  all now resolve to LocateFlow Sapphire in light/dark. Amber/honey is reserved
+  for warning/caution/pending states only; green remains semantic success/healthy.
+- Mobile theme logic was cross-checked: `applyPlanPalette` is intentionally a
+  pass-through, so Free/Individual/Family/Pro do not recolor the app. Stale
+  comments in auth/session, subscription, invite, dashboard, and theme files were
+  updated to avoid future reintroduction of plan-specific palettes.
+- Free-pivot logic was reread: consumer read paths still apply
+  `CONSUMER_FREE` through `resolveConsumerEntitlement` /
+  `buildUnifiedEntitlementSnapshot`, while admin/billing truth remains raw. The
+  targeted free-pivot and mobile visibility tests passed.
+- Brand check: manifests, web/admin metadata, OpenGraph, mobile app name, and
+  visible product labels remain `LocateFlow`. Internal/domain identifiers such as
+  `MoveWidget`, `MoveTask`, `MoveCommandCenter`, "Move date", and moving-plan
+  labels remain intentional.
+- Verification completed locally on host Node `v24.12.0` (repo wants Node
+  `22.x`, so pnpm prints engine warnings): `git diff --check` passed with CRLF
+  warnings only; targeted web theme tests passed (45 tests); mobile targeted
+  tests passed (21 tests); shared entitlement tests passed (33 tests); targeted
+  web free-pivot tests passed (100 tests); full `pnpm verify:typecheck` passed;
+  full `pnpm verify:tests` passed (web 2760, admin 779, mobile 325, shared 388,
+  connectors 105 tests); Prisma validate passed using a dummy syntactic MySQL
+  `DATABASE_URL` because no real local `.env` file is present.
+- Security/diff note: no dependency files changed and a diff-level secret/auth
+  keyword scan found no secret values or auth behavior changes. `pnpm audit
+  --audit-level high` timed out after roughly 124 seconds, so it is not counted
+  as completed evidence.
+- Pending after this pass: commit/push this correction, trigger Dokploy redeploy,
+  then confirm staging `/api/build-info` and cache-busted web/admin pages render
+  the pushed commit and Sapphire theme.
+
 ## Minimum Env Categories Needed For Real Tests
 
 Do not paste values into chat. Set locally.

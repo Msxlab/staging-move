@@ -36,10 +36,9 @@ import {
 const COMPARE_PLANS: readonly BillingPlan[] = ["FREE_TRIAL", "INDIVIDUAL", "FAMILY", "PRO"];
 
 /**
- * Per-plan accent for the column header. Reuses the canonical .plan-free /
- * .plan-family / .plan-pro classes from globals.css (Free pink, Family teal,
- * Pro Sapphire); Individual carries NO class - absent class = base Move Sapphire,
- * the same convention AppShell uses for member tiers.
+ * Column header accent class hooks. The classes stay in place for layout/test
+ * contracts, but globals.css resolves them all to the canonical Sapphire accent.
+ * Individual carries NO class - absent class = base LocateFlow Sapphire.
  */
 const PLAN_HEADER: Record<BillingPlan, { nameKey: string; accentClass: string }> = {
   FREE_TRIAL: { nameKey: "compare.planFree", accentClass: "plan-free" },

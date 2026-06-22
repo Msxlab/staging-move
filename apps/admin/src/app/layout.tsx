@@ -8,7 +8,7 @@ import { AdminNavigationFallback } from "@/components/admin-navigation-fallback"
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-// Move design system — DM Sans drives admin chrome, Playfair Display for
+// LocateFlow design system — DM Sans drives admin chrome, Playfair Display for
 // headings, DM Mono for numerals/meta. Repointed onto the existing
 // --font-sans / --font-mono / --font-display CSS vars so every admin page
 // flips fonts from this one file.

@@ -37,7 +37,7 @@ import { hapticSuccess, hapticError } from "@/lib/haptics";
  *      style link works without extra native config.
  *
  * Both call the same accept endpoint the web uses and refresh the plan entitlement
- * (planTier) on success so the new Family/Pro theme applies immediately.
+ * (planTier) on success so plan-aware labels/gates apply immediately.
  */
 export default function AcceptInviteScreen() {
   const theme = useAppTheme();

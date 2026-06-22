@@ -49,7 +49,7 @@ interface Palette {
   ink: string;
   /** Move Sapphire (web --rose): calm water, rain. */
   cool: string;
-  /** Honey/champagne foil (web --foil-b): bubbles, windows, sun, bolt. */
+  /** Sapphire foil (web --foil-b): bubbles, windows, sun, bolt. */
   honey: string;
   /** Aurora mint (web --sage): clean-air breeze + leaf. */
   mint: string;

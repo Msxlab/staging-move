@@ -1142,9 +1142,9 @@ export default function DashboardClient({
           </Link>
           {/* Free users can't create a MovingPlan — route the move CTA to the
               upgrade path instead of /moving/new (which 403s for them). */}
-          {/* Primary CTA wears the PLAN ACCENT (bg-primary), not the always-cool
-              tone-orange token — so Pro renders honey, Free renders pink, etc.,
-              matching the sibling primary-button convention. */}
+          {/* Primary CTA wears the PLAN ACCENT (bg-primary). Pro resolves to
+              Sapphire; Free/Family keep their own tier accents, matching the
+              sibling primary-button convention. */}
           <Link
             href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

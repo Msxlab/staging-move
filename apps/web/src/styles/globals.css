@@ -3,18 +3,18 @@
 @tailwind utilities;
 
 /* =========================================================================
-   Move — Edition VIII · Move Sapphire
+   LocateFlow — Edition VIII · Sapphire
    Source of truth: packages/shared/src/design-tokens.ts. Mirrors the
    numeric values exported by that module so web/admin (which don't import
    tokens at runtime) and mobile (which does) render the same palette.
    The legacy `--brand-orange` and `--orange-*` names are intentionally
    preserved — every Tailwind utility (`bg-orange-500`, `text-amber-400`,
-   `border-orange-300`, …) resolves to the Move Sapphire / teal / green values,
+   `border-orange-300`, …) resolves to the LocateFlow Sapphire values,
    so the palette flips without touching component code.
    ========================================================================= */
 :root,
 .dark {
-  /* ─────────────── Brand core — Move Sapphire primary, teal + green accents ─── */
+  /* ─────────────── Brand core — LocateFlow Sapphire primary ─────────────── */
   --rose:          #5B8DEF;
   --rose-light:    #83AAF5;
   --rose-deep:     #3D6FD6;
@@ -32,13 +32,13 @@
   --sage:          #54CB7E;
   --sage-soft:     #8BE3A8;
 
-  /* Legacy brand aliases — flipped to Move Sapphire / honey */
+  /* Legacy brand aliases — flipped to LocateFlow Sapphire; amber stays semantic warn */
   --brand-orange:        #5B8DEF;
   --brand-orange-light:  #83AAF5;
   --brand-orange-dark:   #3D6FD6;
   --brand-amber:         #E0A85A;
 
-  /* "orange" scale — now the Move Sapphire scale (kept for `bg-orange-500` etc.) */
+  /* "orange" scale — now the LocateFlow Sapphire scale (kept for `bg-orange-500` etc.) */
   --orange-50:  #EEF5FF;
   --orange-100: #DBE8FF;
   --orange-200: #C8D9FB;
@@ -58,7 +58,7 @@
   --surface-3:     #16203A;
   --elevated:      #1D2943;
 
-  /* ─────────────── Foreground — Move dark ink ramp ─────────────────────── */
+  /* ─────────────── Foreground — LocateFlow dark ink ramp ───────────────── */
   --fg:            #EFF3FA;
   --fg-1:          rgba(239, 243, 250, 1);
   --fg-2:          rgba(239, 243, 250, 0.66);
@@ -232,7 +232,7 @@
   --glass-border:  rgba(20, 32, 47, 0.06);
   --glass-hover:   rgba(255, 255, 255, 0.92);
 
-  /* Accents — darker Move Sapphire / honey on paper for AA contrast */
+  /* Accents — darker LocateFlow Sapphire on paper; amber stays semantic warn */
   --rose:          #2E5FB0;
   --rose-light:    #3D74C8;
   --rose-deep:     #2E5FB0;
@@ -309,7 +309,7 @@
 
 /* =========================================================================
    shadcn HSL tokens — drive every `bg-primary`, `text-foreground`,
-   `border-border` utility. HSL of #5B8DEF = 219.73 82.22% 64.71% (Move Sapphire).
+   `border-border` utility. HSL of #5B8DEF = 219.73 82.22% 64.71% (LocateFlow Sapphire).
    Backgrounds match the navy canvas above (HSL of #0A0F18 ≈ 218 43% 6%).
    Mirrors the values in apps/web/src/styles/aurora.css `.lf-aurora` so
    the palette is consistent whether or not a subtree opts into the
@@ -359,15 +359,13 @@
     --text-tertiary: rgba(236, 241, 248, 0.43);
   }
 
-  /* Per-plan accent — additive; AppShell adds .plan-free / .plan-family /
-     .plan-pro per member tier. Dark is the default; a .light ancestor switches
-     to the light values. Absent class (Individual) = base Move Sapphire theme.
-     Canonical plan hexes (design handoff, additions.css): Free #FF9DB2/#A8324F,
-     Family #4FD1B5/#0F6B50, Pro #5B8DEF/#2E5FB0. */
-  .plan-free { --primary: 347 100% 81%; --ring: 347 100% 81%; }
-  .light .plan-free { --primary: 345 54% 43%; --ring: 345 54% 43%; }
-  .plan-family { --primary: 168 60% 56%; --ring: 168 60% 56%; }
-  .light .plan-family { --primary: 162 75% 24%; --ring: 162 75% 24%; }
+  /* Plan classes are kept for legacy selectors, but all resolve to the
+     canonical LocateFlow Sapphire accent. Plan identity should be expressed by
+     copy/badges, not by changing the global brand color. */
+  .plan-free { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
+  .light .plan-free { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
+  .plan-family { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
+  .light .plan-family { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
   .plan-pro { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
@@ -1094,7 +1092,7 @@
 }
 
 /* ----------------------------------------------------------------------
- * Blog article prose — Move Sapphire palette overrides on top of
+ * Blog article prose — LocateFlow Sapphire palette overrides on top of
  * @tailwindcss/typography. The `prose` base gives us spacing and
  * sensible defaults; this layer retunes colors to the site theme
  * (cool links, foil quotes, display headings) so a published
@@ -1242,7 +1240,7 @@
  * The orchestrated chip travel / bounce / counter / raccoon are driven in
  * the component via framer-motion. All of it is gated off under
  * prefers-reduced-motion, where the component renders the static end state.
- * Colors use the token ramp (--primary Move Sapphire, --success sage mint) so
+ * Colors use the token ramp (--primary LocateFlow Sapphire, --success sage mint) so
  * the scene tracks light/dark and the per-plan accent automatically.
  * -------------------------------------------------------------------- */
 .lf-hero-aura {
@@ -2087,27 +2085,26 @@ html[data-embed="mobile"] .install-prompt {
    ========================================================================= */
 
 :root {
-  /* Move Sapphire foil fill — tokens/effects.css `--gradient-foil`. The
+  /* LocateFlow Sapphire foil fill — tokens/effects.css `--gradient-foil`. The
      --foil-a/b/c stops already flip per mode above. */
   --gradient-foil: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
 }
 
-/* Family plan tone — canonical plan hexes (design handoff, additions.css):
-   Family #4FD1B5 on dark, #0F6B50 on paper. Follows the tone-* ramp shape. */
+/* Family plan tone hook — compatibility alias that resolves to Sapphire. */
 :root,
 .dark {
-  --tone-family-bg: rgba(79, 209, 181, 0.10);
-  --tone-family-br: rgba(79, 209, 181, 0.22);
-  --tone-family-fg: #4FD1B5;
+  --tone-family-bg: rgba(91, 141, 239, 0.10);
+  --tone-family-br: rgba(91, 141, 239, 0.22);
+  --tone-family-fg: #5B8DEF;
 }
 .light {
-  --tone-family-bg: rgba(15, 107, 80, 0.10);
-  --tone-family-br: rgba(15, 107, 80, 0.22);
-  --tone-family-fg: #0F6B50;
+  --tone-family-bg: rgba(46, 95, 176, 0.10);
+  --tone-family-br: rgba(46, 95, 176, 0.22);
+  --tone-family-fg: #2E5FB0;
 }
 
-/* — Button · foil variant (lf-btn--foil): champagne fill, dark ink, warm
-   glow on hover, warm focus ring. Sits after @tailwind utilities so the
+/* — Button · foil variant (lf-btn--foil): Sapphire fill, dark ink, cool
+   glow on hover, cool focus ring. Sits after @tailwind utilities so the
    ring-color override wins the focus-visible tie. — */
 .btn-foil {
   background: var(--gradient-foil);

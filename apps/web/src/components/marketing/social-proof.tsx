@@ -66,7 +66,7 @@ export function SocialProof() {
             className="flex flex-col rounded-xl border bg-card p-6 space-y-4 hover:shadow-md transition-all"
           >
             <div
-              className="flex items-center gap-0.5 text-tone-honey-fg"
+              className="flex items-center gap-0.5 text-tone-foil-fg"
               aria-hidden="true"
             >
               {Array.from({ length: 5 }).map((_, i) => (

@@ -34,8 +34,8 @@
   --au-cool-soft: rgba(91, 141, 239, 0.20);
   --au-violet:    #5B8DEF;
   --au-violet-soft: rgba(91, 141, 239, 0.20);
-  --au-family:    #4FD1B5;
-  --au-family-soft: rgba(79, 209, 181, 0.14);
+  --au-family:    #5B8DEF;
+  --au-family-soft: rgba(91, 141, 239, 0.14);
   --au-mint:      #8BE3A8;
   --au-mint-soft: rgba(84, 203, 126, 0.20);
   --au-amber:     #E0A85A;
@@ -113,8 +113,8 @@ html:not(.dark) .adm-aurora {
   --au-cool-soft: rgba(46, 95, 176, 0.10);
   --au-violet:    #2E5FB0;
   --au-violet-soft: rgba(46, 95, 176, 0.10);
-  --au-family:    #1F9E78;
-  --au-family-soft: rgba(31, 158, 120, 0.10);
+  --au-family:    #2E5FB0;
+  --au-family-soft: rgba(46, 95, 176, 0.10);
   --au-mint:      #0F6B50;
   --au-mint-soft: rgba(15, 107, 80, 0.10);
   --au-amber:     #7A5418;
@@ -520,7 +520,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --card-foreground:      214 40% 98%;
   --popover:              218 22% 19%;
   --popover-foreground:   214 40% 98%;
-  /* Primary = LocateFlow Sapphire #5B8DEF (honey is warn/premium only). */
+  /* Primary = LocateFlow Sapphire #5B8DEF (honey is warn/caution only). */
   --primary:              219.73 82.22% 64.71%;
   --primary-foreground:   215 45% 8%;
   --secondary:            215 24% 82%;
@@ -748,7 +748,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
 }
 .adm-aurora .tier-stamp.tier-family {
   background: var(--au-family-soft);
-  border-color: rgba(79, 209, 181, 0.32);
+  border-color: rgba(91, 141, 239, 0.32);
   color: var(--au-family);
 }
 .adm-aurora .tier-stamp.tier-pro {
@@ -763,10 +763,10 @@ html:not(.dark) .adm-aurora .kpi-foil {
   color: var(--au-amber);
 }
 
-/* Tier distribution bar — cool (Individual) / teal (Family) / honey (Pro). */
+/* Tier distribution bar — cool (Individual) / teal (Family) / Sapphire (Pro). */
 .adm-aurora .tier-bar { background: var(--au-track); }
 .adm-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
-.adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), #2FB89C); }
+.adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), var(--au-cool)); }
 .adm-aurora .tier-bar-seg-pro {
   background: linear-gradient(90deg, #83AAF5 0%, var(--au-violet) 60%, #3D6FD6 100%);
   box-shadow: 0 0 8px rgba(91, 141, 239, 0.4);
@@ -829,8 +829,8 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
-/* Foil-text inside the sidebar wordmark — keep the champagne/honey gradient
-   regardless of theme so the brand mark always reads premium Pro. */
+/* Foil-text inside the sidebar wordmark — keep the Sapphire gradient
+   regardless of theme so the brand mark stays on theme. */
 .adm-aurora aside .foil-text {
   background: linear-gradient(135deg, #83AAF5 0%, var(--au-violet) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
@@ -843,8 +843,8 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
   border: 1px solid var(--au-accent-line);
 }
 
-/* The shared sidebar logo SVG carries its champagne/honey gradient inline
-   in the SVG `<defs>` so the brand mark matches the honey Pro chrome.
+/* The shared sidebar logo SVG carries its Sapphire gradient inline
+   in the SVG `<defs>` so the brand mark matches the app chrome.
    Everything else cascades through the variable overrides above. */
 
 /* ====================================================================
@@ -855,15 +855,15 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
      Free       → coral   (the $0 identity chip)
      Individual → LocateFlow Sapphire
      Family     → teal, featured/POPULAR border
-     Pro        → honey (premium — the only honey on the page)
+     Pro        → LocateFlow Sapphire
    Card chrome stays slate-enterprise: flat solid surface, 1px hairline,
    feather shadow. Tints derive from the accent via color-mix so theme
    switches (light slate / dark) re-resolve automatically.
    ==================================================================== */
-.adm-aurora .au-plan-free       { --plan-accent: var(--au-coral);  --plan-accent-soft: var(--au-coral-soft); }
+.adm-aurora .au-plan-free       { --plan-accent: var(--au-cool);   --plan-accent-soft: var(--au-cool-soft); }
 .adm-aurora .au-plan-individual { --plan-accent: var(--au-cool);   --plan-accent-soft: var(--au-cool-soft); }
-.adm-aurora .au-plan-family     { --plan-accent: var(--au-family); --plan-accent-soft: var(--au-family-soft); }
-.adm-aurora .au-plan-pro        { --plan-accent: var(--au-amber);  --plan-accent-soft: var(--au-amber-soft); }
+.adm-aurora .au-plan-family     { --plan-accent: var(--au-cool);   --plan-accent-soft: var(--au-cool-soft); }
+.adm-aurora .au-plan-pro        { --plan-accent: var(--au-cool);   --plan-accent-soft: var(--au-cool-soft); }
 
 .adm-aurora .au-plancard {
   position: relative;

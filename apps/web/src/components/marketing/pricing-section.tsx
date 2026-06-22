@@ -334,8 +334,8 @@ function PlanCard({
       </ul>
 
       <div className="mt-6">
-        {/* Pro wears the champagne foil — the one premium moment on this
-            grid. Individual keeps the highlighted primary fill. */}
+        {/* Pro wears the Sapphire foil, matching the canonical light/dark theme.
+            Individual keeps the highlighted primary fill. */}
         <Button
           asChild
           variant={planId === "PRO" ? "foil" : isHighlighted ? "default" : "outline"}

@@ -25,7 +25,7 @@ import {
 } from "@/lib/seo";
 
 // Legacy Geist/Fraunces variables stay loaded for older references while the
-// current Move design system below provides canonical CSS vars.
+// current LocateFlow design system below provides canonical CSS vars.
 const geistSans = Geist({
   subsets: ["latin"],
   display: "swap",
@@ -51,7 +51,7 @@ const fraunces = Fraunces({
   fallback: ["Didot", "Georgia", "serif"],
 });
 
-// Move design system — Playfair Display (display/serif), DM Sans (UI),
+// LocateFlow design system — Playfair Display (display/serif), DM Sans (UI),
 // DM Mono (numerals/meta). Repointed via --font-display/sans/mono in
 // globals.css. Fraunces/Geist stay loaded for any not-yet-migrated refs.
 const playfair = Playfair_Display({

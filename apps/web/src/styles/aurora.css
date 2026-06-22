@@ -27,13 +27,13 @@
   --au-cool:      #5B8DEF;
   --au-cool-2:    #3D6FD6;
   --au-cool-soft: rgba(91, 141, 239, 0.14);
-  /* Legacy name — holds HONEY since Edition VII killed purple ("mor yok").
-     Kept so old class names keep compiling; never reintroduce violet here. */
+  /* Legacy name — now holds Sapphire. Kept so old class names keep compiling;
+     never reintroduce violet here. */
   --au-violet:    #5B8DEF;
   --au-violet-soft: rgba(91, 141, 239, 0.14);
-  /* Family plan teal (canonical #4FD1B5 / light #0F6B50). */
-  --au-family:    #4FD1B5;
-  --au-family-soft: rgba(79, 209, 181, 0.14);
+  /* Family plan hook — compatibility alias that resolves to Sapphire. */
+  --au-family:    #5B8DEF;
+  --au-family-soft: rgba(91, 141, 239, 0.14);
   --au-mint:      #54CB7E;
   --au-mint-soft: rgba(84, 203, 126, 0.14);
   --au-amber:     #E0A85A;
@@ -77,8 +77,8 @@
   --au-cool-soft: rgba(46, 95, 176, 0.10);
   --au-violet:    #2E5FB0;
   --au-violet-soft: rgba(46, 95, 176, 0.10);
-  --au-family:    #0F6B50;
-  --au-family-soft: rgba(15, 107, 80, 0.10);
+  --au-family:    #2E5FB0;
+  --au-family-soft: rgba(46, 95, 176, 0.10);
   --au-mint:      #0F6B50;
   --au-mint-soft: rgba(15, 107, 80, 0.10);
   --au-amber:     #7A5418;
@@ -460,7 +460,7 @@
   --ring:                 219.73 82.22% 64.71%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect — anything still calling --rose gets the Move Sapphire
+  /* Brand-token redirect — anything still calling --rose gets LocateFlow Sapphire
      primary; --foil-* also resolves to the Sapphire accent. The SVG
      sidebar logo sets its own gradients via inline `<defs>`, so it's not
      affected. */
@@ -548,7 +548,7 @@
     var(--au-base-2);
 }
 
-/* Foil text → Move Sapphire gradient. Affects sidebar wordmark + any inline
+/* Foil text → LocateFlow Sapphire gradient. Affects sidebar wordmark + any inline
    `<em>` titles via `.foil-text`, plus h1/h2/h3 `<em>` segments. */
 .lf-aurora .foil-text,
 .lf-aurora h1 em,
@@ -644,7 +644,7 @@
 }
 .lf-aurora .tier-stamp.tier-family {
   background: var(--au-family-soft);
-  border-color: rgba(79, 209, 181, 0.32);
+  border-color: rgba(91, 141, 239, 0.32);
   color: var(--au-family);
 }
 .lf-aurora .tier-stamp.tier-pro {
@@ -659,12 +659,12 @@
   color: var(--au-amber);
 }
 
-/* Tier distribution bar — cool (Individual) / teal (Family) / honey (Pro). */
+/* Tier distribution bar — cool (Individual) / teal (Family) / Sapphire (Pro). */
 .lf-aurora .tier-bar { background: var(--au-rule); }
 .lf-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
-.lf-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), #2FB89C); }
+.lf-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), var(--au-cool)); }
 .lf-aurora .tier-bar-seg-pro {
-  background: linear-gradient(90deg, #83AAF5 0%, var(--au-amber) 100%);
+  background: linear-gradient(90deg, #83AAF5 0%, var(--au-cool) 60%, #3D6FD6 100%);
   box-shadow: 0 0 8px rgba(91, 141, 239, 0.4);
 }
 
@@ -678,7 +678,7 @@
   box-shadow: 0 0 0 2px rgba(91, 141, 239, 0.20);
 }
 
-/* Tables inside admin-panel — slim hover with Move Sapphire tint. */
+/* Tables inside admin-panel — slim hover with LocateFlow Sapphire tint. */
 .lf-aurora .admin-panel table tbody tr:hover {
   background: var(--au-cool-soft);
 }
@@ -718,12 +718,12 @@
 }
 
 /* Sidebar nav active state — already uses bg-primary/10, which now reads
-   Move Sapphire. Add a subtle inner border ring like the prototype. */
+   LocateFlow Sapphire. Add a subtle inner border ring like the prototype. */
 .lf-aurora aside a.bg-primary\/10 {
   border: 1px solid rgba(91, 141, 239, 0.22);
 }
 
-/* The shared sidebar logo SVG keeps its champagne-and-rose gradient
-   (defined inline in the SVG `<defs>`) — that's intentional, it's the
-   brand mark. Everything else cascades through the variable overrides
+/* The shared sidebar logo SVG keeps its Sapphire gradient (defined inline
+   in the SVG `<defs>`) — that's intentional, it's the brand mark.
+   Everything else cascades through the variable overrides
    above. */

@@ -344,9 +344,9 @@ export function MoveCommandCenter({
               {t("commandCenter_noPlanBody")}
             </p>
           </div>
-          {/* Plan-a-Move CTA wears the PLAN ACCENT (bg-primary), not the
-              always-cool tone-orange token — so Pro renders honey, Family
-              teal, etc., matching the sibling primary-button convention. */}
+          {/* Plan-a-Move CTA wears the PLAN ACCENT (bg-primary). Pro resolves
+              to Sapphire; Family remains teal, matching the sibling
+              primary-button convention. */}
           <Link
             href="/moving/new"
             className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

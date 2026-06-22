@@ -257,17 +257,13 @@ function formatDateLabel(value?: string | null) {
 }
 
 /**
- * Per-tier accent for the compare-accordion check marks, mirroring the web
- * compare table's per-column plan accent (.plan-free pink / Individual base
- * cool / .plan-family teal / .plan-pro honey). Derived from the canonical
- * `applyPlanPalette` accents in theme.ts against the BASE scheme theme — never
- * the viewer's plan-tinted theme — so each row reads in its own plan color
- * regardless of who is signed in. No hex lives here; Aurora tokens only.
+ * Compare-accordion check mark accent. `applyPlanPalette` is intentionally a
+ * pass-through now, so every plan resolves to the canonical Sapphire primary in
+ * light/dark while older call sites keep their helper shape.
  */
 function planAccentColor(scheme: "light" | "dark", planKey: string): string {
   const base = scheme === "light" ? baseLightTheme : baseDarkTheme;
-  // Individual (and unknown) carry no plan tint — base Move Sapphire primary,
-  // matching the web table where Individual gets no .plan-* class.
+  // Every plan resolves to base Move Sapphire primary; helper kept for compatibility.
   return applyPlanPalette(base, scheme, planKey).colors.primary;
 }
 

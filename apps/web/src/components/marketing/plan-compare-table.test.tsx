@@ -137,7 +137,7 @@ describe("PlanCompareTable markup", () => {
     expect(html).toContain("$59/year");
   });
 
-  it("colors column headers with the canonical plan-accent classes (Individual = base Move Sapphire, no class)", () => {
+  it("colors column headers with the canonical plan-accent classes (Individual = base LocateFlow Sapphire, no class)", () => {
     expect(html.match(/plan-free/g)).toHaveLength(1);
     expect(html.match(/plan-family/g)).toHaveLength(1);
     expect(html.match(/plan-pro/g)).toHaveLength(1);

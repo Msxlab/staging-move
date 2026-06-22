@@ -104,16 +104,16 @@ describe("resolveActiveRouteCoords", () => {
 });
 
 describe("hslTripletToHex", () => {
-  it("converts the plan-accent token shapes from globals.css", () => {
-    expect(hslTripletToHex("347 100% 81%")).toBe("FF9EB3"); // .plan-free (dark)
-    expect(hslTripletToHex("219.73 82.22% 64.71%")).toBe("5B8DEF"); // default --primary (dark) = #5B8DEF
+  it("converts the Sapphire token shapes from globals.css", () => {
+    expect(hslTripletToHex("219.73 82.22% 64.71%")).toBe("5B8DEF"); // .plan-free/.plan-family/.plan-pro (dark)
+    expect(hslTripletToHex("217.38 58.56% 43.53%")).toBe("2E5FB0"); // .light plan classes
     expect(hslTripletToHex("0 0% 100%")).toBe("FFFFFF");
     expect(hslTripletToHex(" 219.73 82.22% 64.71% ")).toMatch(/^[0-9A-F]{6}$/);
   });
 
   it("returns null for unparseable values", () => {
     expect(hslTripletToHex("")).toBeNull();
-    expect(hslTripletToHex("#FF9DB2")).toBeNull();
+    expect(hslTripletToHex("#5B8DEF")).toBeNull();
     expect(hslTripletToHex("347 100%")).toBeNull();
   });
 });
@@ -123,10 +123,10 @@ describe("buildRouteMapSrc", () => {
     const src = buildRouteMapSrc(
       { lat: 41.87810001234, lng: -87.62980004321 },
       { lat: 30.2672, lng: -97.7431 },
-      { width: 640, height: 224, theme: "dark", accent: "#FF9DB2" },
+      { width: 640, height: 224, theme: "dark", accent: "#5B8DEF" },
     );
     expect(src).toBe(
-      "/api/maps/static?from=41.8781%2C-87.6298&to=30.2672%2C-97.7431&w=640&h=224&theme=dark&accent=FF9DB2",
+      "/api/maps/static?from=41.8781%2C-87.6298&to=30.2672%2C-97.7431&w=640&h=224&theme=dark&accent=5B8DEF",
     );
   });
 
@@ -144,10 +144,10 @@ describe("buildRouteMapSrc", () => {
     const src = buildRouteMapSrc(
       { lat: 41.8781, lng: -87.6298 },
       { lat: 30.2672, lng: -97.7431 },
-      { width: 640, height: 224, theme: "dark", accent: "#FF9DB2", preview: true },
+      { width: 640, height: 224, theme: "dark", accent: "#5B8DEF", preview: true },
     );
     expect(src).toContain("preview=1");
-    expect(src).toContain("accent=FF9DB2");
+    expect(src).toContain("accent=5B8DEF");
   });
 });
 

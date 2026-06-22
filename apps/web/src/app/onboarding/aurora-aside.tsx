@@ -18,7 +18,7 @@ import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
  *    all token-themed, so the per-plan `--primary` and light/dark themes flow
  *    through automatically.
  *  - The display-serif quote uses the `.h1` helper so the italic <em> renders
- *    the cool gradient by decree (honey/foil stays reserved for Pro moments).
+ *    the Sapphire gradient by decree (foil stays reserved for Pro moments).
  *  - DELIBERATE deviation from the design prototype: there is NO plan-picker
  *    step in onboarding — billing stays post-onboarding. The footnote below
  *    the rail says so out loud.

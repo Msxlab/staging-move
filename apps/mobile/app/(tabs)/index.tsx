@@ -423,7 +423,7 @@ export default function DashboardScreen() {
       // upsell. Best-effort + fire-and-forget — never blocks or throws.
       void persistLastPlanHint({ premium: !!hasPremium, planTier: planValue });
       // Mirror into the global auth store so ThemeProvider applies the
-      // Family/Pro accent palette app-wide (not just on this screen).
+      // plan-aware labels app-wide (not just on this screen); colors stay Sapphire.
       useAuthStore.getState().setPlanTier(planValue);
 
       // Household / Workspace card (Family/Pro). Best-effort and gated
@@ -912,7 +912,7 @@ export default function DashboardScreen() {
           // Drop the accepted invite immediately, then refresh the dashboard.
           // acceptPendingInvitation already wrote the resolved plan tier into the
           // auth store (via refreshPlanTierFromProfile) so ThemeProvider repaints
-          // the Family/Pro accent; the refresh also surfaces the new
+          // the plan-aware label; the refresh also surfaces the new
           // Household/Workspace card.
           setPendingInvites((prev) => prev.filter((i) => i.id !== invite.id));
           await fetchDashboard();
@@ -1008,7 +1008,7 @@ export default function DashboardScreen() {
   const planBadge = (() => {
     const p = (planTier ?? "").toUpperCase();
     if (p === "FAMILY")
-      return { label: t("dashboard.familyBadge", "Family"), fg: "#4FD1B5", bg: "rgba(79,209,181,0.12)", border: "rgba(79,209,181,0.32)", Icon: Users };
+      return { label: t("dashboard.familyBadge", "Family"), fg: "#83AAF5", bg: "rgba(91,141,239,0.12)", border: "rgba(91,141,239,0.32)", Icon: Users };
     if (p === "PRO")
       return { label: t("dashboard.proBadge", "Pro"), fg: "#5B8DEF", bg: "rgba(91, 141, 239,0.12)", border: "rgba(91, 141, 239,0.34)", Icon: Sparkles };
     return { label: t("dashboard.premiumBadge"), fg: "#5B8DEF", bg: "rgba(91, 141, 239,0.12)", border: "rgba(91, 141, 239,0.3)", Icon: Sparkles };

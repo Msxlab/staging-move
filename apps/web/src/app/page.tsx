@@ -206,7 +206,7 @@ export default async function LandingPage() {
         />
         <div
           aria-hidden="true"
-          className="aurora-blob-2 pointer-events-none absolute -bottom-60 -left-40 h-[500px] w-[500px] rounded-full bg-tone-honey-bg blur-3xl"
+          className="aurora-blob-2 pointer-events-none absolute -bottom-60 -left-40 h-[500px] w-[500px] rounded-full bg-tone-foil-bg blur-3xl"
         />
         <div className="container relative grid items-center gap-14 py-16 md:grid-cols-[1.15fr_1fr] md:py-24">
           <div className="space-y-7">
@@ -306,8 +306,8 @@ export default async function LandingPage() {
       {/* Risk grid — what goes to your old address (existing) */}
       <section className="container py-20 border-t">
         <div className="text-center mb-14 max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-tone-honey-br bg-tone-honey-bg px-3 py-1 text-xs text-tone-honey-fg dark:text-tone-honey-fg">
-            <span className="h-1.5 w-1.5 rounded-full bg-tone-honey-fg" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-tone-foil-br bg-tone-foil-bg px-3 py-1 text-xs text-tone-foil-fg">
+            <span className="h-1.5 w-1.5 rounded-full bg-tone-foil-fg" />
             {t("risk_eyebrow")}
           </div>
           <h2 className="display-tight font-display text-3xl md:text-4xl font-bold">{t("risk_title")}</h2>
@@ -323,9 +323,9 @@ export default async function LandingPage() {
           ].map((item) => (
             <div
               key={item.titleKey}
-              className="rounded-2xl border bg-card p-5 space-y-3 hover:border-tone-honey-br hover:shadow-md transition-all"
+              className="rounded-2xl border bg-card p-5 space-y-3 hover:border-tone-foil-br hover:shadow-md transition-all"
             >
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-tone-honey-bg text-tone-honey-fg dark:text-tone-honey-fg">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-tone-foil-bg text-tone-foil-fg">
                 <item.icon className="h-5 w-5" />
               </div>
               <h3 className="text-sm font-semibold">{t(item.titleKey as any)}</h3>
@@ -556,7 +556,7 @@ export default async function LandingPage() {
         <div className="grid md:grid-cols-2 gap-12 items-center max-w-5xl mx-auto">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-tone-honey-fg motion-safe:animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-primary motion-safe:animate-pulse" />
               {t("mobile_eyebrow")}
             </div>
             <h2 className="display-tight font-display text-3xl md:text-4xl font-bold tracking-tight">{t("mobile_title")}</h2>

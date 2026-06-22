@@ -698,7 +698,7 @@ export default async function DashboardPage() {
             {stats.recentUsers.map((user: any) => {
               const planRaw = String(user.subscription?.plan || "").toUpperCase();
               const plan = planRaw.includes("FAMILY")
-                ? { label: "Family", color: "#4FD1B5" }
+                ? { label: "Family", color: "#83AAF5" }
                 : planRaw.includes("PRO")
                   ? { label: "Pro", color: "#5B8DEF" }
                   : planRaw.includes("INDIVIDUAL")
