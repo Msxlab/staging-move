@@ -21,10 +21,30 @@ function readGitCommit() {
   }
 }
 
+function readPublicEnv() {
+  const environment = process.env.EXPO_PUBLIC_ENV || process.env.EAS_BUILD_PROFILE || process.env.NODE_ENV || null;
+  const profile = (process.env.EAS_BUILD_PROFILE || environment || "").toLowerCase();
+  const profileApiUrl = profile === "production"
+    ? "https://locateflow.com/api"
+    : /staging|preview/.test(profile)
+      ? "https://staging.locateflow.com/api"
+      : null;
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || profileApiUrl;
+  const appUrl =
+    process.env.EXPO_PUBLIC_APP_URL ||
+    apiUrl?.replace(/\/api\/?$/, "").replace(/\/+$/, "") ||
+    null;
+
+  return Object.fromEntries(
+    Object.entries({ apiUrl, appUrl, environment }).filter(([, value]) => Boolean(value)),
+  );
+}
+
 module.exports = () => ({
   ...appJson.expo,
   extra: {
     ...(appJson.expo.extra || {}),
+    ...readPublicEnv(),
     build: {
       commit: readGitCommit(),
       profile:

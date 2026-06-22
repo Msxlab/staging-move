@@ -1,19 +1,16 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Lock, ArrowRight, Sparkles, MapPin, Bell, Zap, ClipboardList, FileText } from "lucide-react-native";
+import { ArrowRight, Sparkles, MapPin, Bell, Zap, ClipboardList, FileText } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
+import { MoveRaccoon } from "@/components/move";
 import { Card } from "./Card";
-import { RaccoonMascot } from "./RaccoonMascot";
 
 /**
  * FREE DASHBOARD HERO (freemium re-architecture).
  *
- * Replaces the full Moving command center for FREE users. Honest framing: free
- * keeps your home organized (addresses, providers, bills, reminders); the full
- * moving plan — personalized checklist, countdown, and tracking — unlocks with
- * Individual. Tapping "Unlock" routes to the subscription page where the normal
- * plan-creation flow becomes available after upgrade.
+ * Legacy free-dashboard card kept for compatibility. It now presents the
+ * consumer-free staging promise instead of the old paid unlock ladder.
  *
  * No fabricated numbers/dates — this is a static value statement, not a preview
  * of a plan the user hasn't entered. (The onboarding teaser, computed from real
@@ -30,10 +27,10 @@ export function FreeMoveUpsellCard({ onUnlock }: Props) {
   const { t } = useTranslation();
 
   const freeFeatures = [
-    { icon: MapPin, label: t("teaser.freeAddresses", { defaultValue: "Up to 3 homes & addresses" }) },
-    { icon: Zap, label: t("teaser.freeProviders", { defaultValue: "Up to 10 providers & services" }) },
-    { icon: ClipboardList, label: t("teaser.freeMovePreview", { defaultValue: "Read-only personalized move preview" }) },
-    { icon: FileText, label: t("teaser.freeDossierPreview", { defaultValue: "Home Dossier preview" }) },
+    { icon: MapPin, label: t("teaser.freeAddresses", { defaultValue: "Homes, addresses and route planning" }) },
+    { icon: Zap, label: t("teaser.freeProviders", { defaultValue: "Provider and service tracking" }) },
+    { icon: ClipboardList, label: t("teaser.freeMovePreview", { defaultValue: "Personalized move plan and checklist" }) },
+    { icon: FileText, label: t("teaser.freeDossierPreview", { defaultValue: "Full Home Dossier access" }) },
     { icon: Bell, label: t("teaser.freeReminders", { defaultValue: "Bill & renewal reminders" }) },
   ];
 
@@ -41,15 +38,15 @@ export function FreeMoveUpsellCard({ onUnlock }: Props) {
     <Card variant="glow" style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.mascot}>
-          <RaccoonMascot size={48} variant="dad" />
+          <MoveRaccoon size={44} mood="approved" />
         </View>
         <View style={{ flex: 1 }}>
           <View style={styles.eyebrowRow}>
             <Sparkles size={13} color={theme.colors.primary} />
-            <Text style={styles.eyebrow}>{t("teaser.dashboardEyebrow", { defaultValue: "Unlock the move" })}</Text>
+            <Text style={styles.eyebrow}>{t("teaser.dashboardEyebrow", { defaultValue: "Everything included" })}</Text>
           </View>
           <Text style={styles.title} numberOfLines={2}>
-            {t("teaser.dashboardTitle", { defaultValue: "Ready to plan your move?" })}
+            {t("teaser.dashboardTitle", { defaultValue: "LocateFlow is free for your move" })}
           </Text>
         </View>
       </View>
@@ -57,7 +54,7 @@ export function FreeMoveUpsellCard({ onUnlock }: Props) {
       <Text style={styles.body}>
         {t("teaser.dashboardBody", {
           defaultValue:
-            "Free keeps your home organized — addresses, providers, bills, and reminders. The full moving plan (personalized checklist, countdown, and tracking) unlocks with Individual.",
+            "Your move plan, Home Dossier, checklist, countdown, services, reminders and exports are included. No subscription or credit card is required.",
         })}
       </Text>
 
@@ -79,10 +76,9 @@ export function FreeMoveUpsellCard({ onUnlock }: Props) {
         onPress={onUnlock}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel={t("teaser.dashboardCta", { defaultValue: "Unlock your move plan" })}
+        accessibilityLabel={t("teaser.dashboardCta", { defaultValue: "Start your move plan" })}
       >
-        <Lock size={16} color="#fff" />
-        <Text style={styles.unlockBtnText}>{t("teaser.dashboardCta", { defaultValue: "Unlock your move plan" })}</Text>
+        <Text style={styles.unlockBtnText}>{t("teaser.dashboardCta", { defaultValue: "Start your move plan" })}</Text>
         <ArrowRight size={16} color="#fff" />
       </TouchableOpacity>
     </Card>

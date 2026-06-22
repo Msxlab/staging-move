@@ -8,7 +8,6 @@ import { trackEvent } from "@/lib/analytics";
 import {
   buildAiBriefingActionClickedMetadata,
   buildAiBriefingViewedMetadata,
-  buildUpgradeClickedMetadata,
   MOVE_BRIEFING_NOT_ADVICE_COPY,
   PHASE1_ANALYTICS_EVENTS,
   UX_AI_BRIEFING_EXPERIENCE_FLAG,
@@ -334,20 +333,7 @@ export function MoveBriefingTeaser({
 
       <div className="mt-4">
         <Link
-          href="/pricing"
-          onClick={() => {
-            trackEvent(
-              PHASE1_ANALYTICS_EVENTS.UPGRADE_CLICKED,
-              buildUpgradeClickedMetadata({
-                upgradeSurface: "ai_briefing",
-                targetPlanTier: "family",
-                featureGate: "ai_briefing",
-                surface: "dashboard",
-                variant: uxAiBriefingExperienceVariant,
-                experimentFlag: UX_AI_BRIEFING_EXPERIENCE_FLAG,
-              }),
-            );
-          }}
+          href="/moving"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
         >
           <Sparkles className="h-4 w-4" /> {td("briefing_teaser_cta")}

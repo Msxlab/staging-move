@@ -80,13 +80,12 @@ import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
 import { HomeDossierCard } from "@/components/ui/HomeDossierCard";
 import { HomeInsightCard } from "@/components/ui/HomeInsightCard";
 import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
-import { FreeMoveUpsellCard } from "@/components/ui/FreeMoveUpsellCard";
 import { UpNext } from "@/components/ui/UpNext";
 import { SavingsInsightsCard } from "@/components/ui/SavingsInsightsCard";
 import { computeSavingsInsights, type ServiceLike } from "@/lib/service-insights";
 import { getCategoryIcon, getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { SkeletonBlock, SkeletonCard, SkeletonStatGrid } from "@/components/ui/Skeleton";
+import { SkeletonCard, SkeletonStatGrid } from "@/components/ui/Skeleton";
 import { CountUp } from "@/components/ui/CountUp";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { formatCurrency } from "@/lib/format";
@@ -148,42 +147,63 @@ function computeReadiness(
   return Math.max(0, Math.min(100, floored));
 }
 
-/**
- * NEUTRAL hero placeholder shown while the entitlement is still resolving and we
- * have no active plan to paint. Tier-agnostic on purpose: it must NOT hint FREE
- * or PRO (that swap-after-reveal IS the flash we're killing). Just a calm,
- * card-shaped block matching the hero footprint. Reduce-motion is honoured by the
- * shared SkeletonBlock shimmer.
- */
 function HeroSkeleton({ theme }: { theme: Theme }) {
   return (
-    <View
-      style={{
-        marginBottom: 16,
-        borderRadius: theme.radius.xl,
-        padding: theme.spacing.lg,
-        backgroundColor: theme.colors.card,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-      }}
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel=""
-      importantForAccessibility="no-hide-descendants"
+    <HeroCard
+      style={{ marginBottom: 16 }}
+      padding={16}
+      radius={22}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <SkeletonBlock width={110} height={11} />
-        <SkeletonBlock width={92} height={22} radius={theme.radius.full} />
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginTop: 20 }}>
-        <SkeletonBlock width={96} height={96} radius={48} />
-        <View style={{ flex: 1 }}>
-          <SkeletonBlock width="55%" height={28} />
-          <SkeletonBlock width="40%" height={11} style={{ marginTop: 10 }} />
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+        <MoveRaccoon size={48} mood="thinking" />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <Text
+              style={{
+                color: theme.colors.primary,
+                fontFamily: fonts.sansBold,
+                fontSize: 12,
+                fontWeight: "800",
+                letterSpacing: 0.6,
+                textTransform: "uppercase",
+              }}
+            >
+              AI Briefing
+            </Text>
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: theme.colors.primary,
+              }}
+            />
+            <Text style={{ color: theme.colors.textMuted, fontSize: 12, fontWeight: "700" }}>
+              Syncing
+            </Text>
+          </View>
+          <Text
+            style={{
+              marginTop: 8,
+              color: theme.colors.text,
+              fontFamily: fonts.serifBold,
+              fontSize: 21,
+              lineHeight: 26,
+            }}
+          >
+            Preparing your move command center
+          </Text>
+          <Text style={{ marginTop: 6, color: theme.colors.textSecondary, fontSize: 13, lineHeight: 18 }}>
+            Loading your briefing, countdown, Home Dossier and next actions.
+          </Text>
         </View>
       </View>
-      <SkeletonBlock width="70%" height={12} style={{ marginTop: 20 }} />
-    </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
+        <Pill label="Dossier" tone="info" />
+        <Pill label="Countdown" tone="warning" />
+        <Pill label="Free Pro" tone="success" />
+      </View>
+    </HeroCard>
   );
 }
 
@@ -1317,10 +1337,6 @@ export default function DashboardScreen() {
             up, showing last-known) also exits the skeleton so it never spins. */}
         {!heroPlan && !offline && !entitlementResolved ? (
           <HeroSkeleton theme={theme} />
-        ) : !isPremium && !stats?.activePlan ? (
-          <View style={{ marginBottom: 16 }}>
-            <FreeMoveUpsellCard onUnlock={() => router.push("/settings/subscription")} />
-          </View>
         ) : !heroPlan ? (
           <View style={{ marginBottom: 16 }}>
             <MoveCommandCenter
@@ -1766,7 +1782,7 @@ export default function DashboardScreen() {
                     style={[
                       styles.statCard,
                       {
-                        backgroundColor: card.color.bg,
+                        backgroundColor: theme.colors.surface,
                         borderColor: card.color.border,
                       },
                     ]}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronDown, ChevronUp, ExternalLink, Loader2, Lock, Sparkles, Truck } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ExternalLink, Loader2, Sparkles, Truck } from "lucide-react";
 import { MovingQuoteForm } from "@/components/moving/moving-quote-form";
 
 /**
@@ -19,9 +19,10 @@ import { MovingQuoteForm } from "@/components/moving/moving-quote-form";
  * explicitly expands it — no mover data (and no sponsored impression) is
  * ever auto-shown.
  *
- * Plan gate (GATE-API contract, mirrors the dossier): the API answers 200
- * { entitled:false, upgradeRequired } for FREE/INDIVIDUAL plans and this
- * component renders the value-first upgrade teaser instead of data.
+ * Plan gate fallback (GATE-API contract, mirrors the dossier): staging should
+ * resolve users to full access. If an older 200 { entitled:false,
+ * upgradeRequired } payload arrives, render an included-feature teaser instead
+ * of a billing CTA.
  *
  * Sponsored slot: when the API includes `sponsored` (SPONSORED_ENABLED flag
  * on + an active placement for the state), ONE clearly-labeled card renders
@@ -183,19 +184,19 @@ export function MoversListCard({ data }: { data: MoversResponse | null }) {
 }
 
 /**
- * Value-first upgrade teaser (FREE/INDIVIDUAL): same pattern as the dossier
- * teaser — honest locked pitch, no fabricated mover rows, /pricing CTA.
+ * Value-first included-feature teaser: same pattern as the dossier teaser —
+ * honest pitch, no fabricated mover rows, and no billing CTA.
  */
 export function MoversTeaser() {
   const t = useTranslations("moving");
   return (
     <div className="space-y-3">
       <div className="flex items-start gap-3 p-3 rounded-xl border border-border bg-foreground/[0.02]">
-        <Lock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" aria-hidden="true" />
+        <Check className="h-4 w-4 text-tone-orange-fg shrink-0 mt-0.5" aria-hidden="true" />
         <p className="text-xs text-muted-foreground">{t("movers_teaser_pitch")}</p>
       </div>
       <Link
-        href="/pricing"
+        href="/moving"
         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
       >
         <Sparkles className="h-4 w-4" /> {t("movers_teaser_cta")}

@@ -877,7 +877,7 @@ export default function DashboardClient({
             <Truck className="h-10 w-10 mx-auto text-foreground/40 mb-2" />
             <p className="text-sm text-foreground/40 mb-3">{td("moving_noPlan")}</p>
             <Link
-              href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}
+              href="/moving/new"
               className="inline-flex items-center px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               {isPremium ? td("moving_planMove") : td("commandCenter_freeCta")}
@@ -1140,13 +1140,13 @@ export default function DashboardClient({
           >
             <MapPin className="h-4 w-4" /> {td("addAddressBtn")}
           </Link>
-          {/* Free users can't create a MovingPlan — route the move CTA to the
-              upgrade path instead of /moving/new (which 403s for them). */}
+          {/* Staging full-access keeps the move CTA on the move-plan flow even
+              if a stale entitlement snapshot says otherwise. */}
           {/* Primary CTA wears the PLAN ACCENT (bg-primary). Pro resolves to
               Sapphire; Free/Family keep their own tier accents, matching the
               sibling primary-button convention. */}
           <Link
-            href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}
+            href="/moving/new"
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <Truck className="h-4 w-4" /> {isPremium ? td("planMoveBtn") : td("commandCenter_freeCta")}

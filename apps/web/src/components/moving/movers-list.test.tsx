@@ -21,7 +21,7 @@ vi.mock("lucide-react", () => {
     ChevronUp: icon("chevron-up"),
     ExternalLink: icon("external-link"),
     Loader2: icon("loader-2"),
-    Lock: icon("lock"),
+    Check: icon("check"),
     Sparkles: icon("sparkles"),
     Truck: icon("truck"),
   };
@@ -153,13 +153,13 @@ describe("MoversListCard", () => {
     expect(html.indexOf("Sponsored Van Lines")).toBeLessThan(html.indexOf("Acme Movers"));
   });
 
-  it("renders the gated teaser (no fabricated rows) with the /pricing CTA", () => {
+  it("renders the gated teaser (no fabricated rows) with the moving CTA", () => {
     const html = renderToStaticMarkup(
       <MoversListCard
         data={{ configured: true, entitled: false, upgradeRequired: "MOVER_SUGGESTIONS_UPGRADE_REQUIRED" }}
       />,
     );
-    expect(html).toContain('href="/pricing"');
+    expect(html).toContain('href="/moving"');
     expect(html).not.toContain("USDOT #");
   });
 
@@ -177,10 +177,10 @@ describe("MoversListCard", () => {
 });
 
 describe("MoversTeaser", () => {
-  it("pitches the feature honestly with a lock and an upgrade CTA", () => {
+  it("pitches the feature honestly with a check and a moving CTA", () => {
     const html = renderToStaticMarkup(<MoversTeaser />);
-    expect(html).toContain('data-lucide="lock"');
-    expect(html).toContain('href="/pricing"');
+    expect(html).toContain('data-lucide="check"');
+    expect(html).toContain('href="/moving"');
   });
 });
 

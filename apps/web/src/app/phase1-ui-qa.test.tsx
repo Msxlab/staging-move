@@ -116,8 +116,8 @@ describe("Phase-1 UI QA automated-render verification", () => {
 
   it("Exp 1: fallback/teaser UI routes and telemetry buckets stay coarse", () => {
     const teaserMarkup = renderToStaticMarkup(<MoveBriefingTeaser uxAiBriefingExperienceVariant="variant" />);
-    expect(teaserMarkup).toContain('href="/pricing"');
-    expect(teaserMarkup).toContain("Unlock with Family");
+    expect(teaserMarkup).toContain('href="/moving"');
+    expect(teaserMarkup).toContain("View briefing");
 
     const parsed = parseBriefing(encodedBriefing);
     expect(actionHref(parsed.actions[0])).toBe("/services/new?category=UTILITY_INTERNET");

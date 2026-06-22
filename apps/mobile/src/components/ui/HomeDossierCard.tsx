@@ -18,8 +18,9 @@ import {
   Wind,
   Building2,
   Zap,
-  Lock,
   ArrowRight,
+  Check,
+  Sparkles,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
@@ -188,16 +189,17 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
   const view = useMemo(() => deriveHomeDossierView(dossier), [dossier]);
 
-  const handleUnlock = useCallback(() => {
+  const handlePreviewOpen = useCallback(() => {
+    if (!addressId) return;
     hapticLight();
-    router.push("/settings/subscription");
-  }, [router]);
+    router.push({ pathname: "/addresses/[id]", params: { id: String(addressId) } });
+  }, [addressId, router]);
 
   if (!addressId || !dossier || view.kind === "hidden") return null;
 
   // ── Value-first teaser (entitled:false) ─────────────────────────────
   if (view.kind === "teaser") {
-    const lockedRows = [
+    const includedRows = [
       { Icon: Waves, color: theme.colors.sky.text, label: t("dossier.floodLabel"), value: t("dossier.teaserFlood") },
       { Icon: GraduationCap, color: theme.colors.emerald.text, label: t("dossier.schoolLabel"), value: t("dossier.teaserSchool") },
       { Icon: CloudSun, color: theme.colors.amber.text, label: t("dossier.weatherLabel"), value: t("dossier.teaserWeather") },
@@ -224,7 +226,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
         <Text style={styles.teaserPitch}>{t("dossier.teaserPitch")}</Text>
 
-        {lockedRows.map(({ Icon, color, label, value }) => (
+        {includedRows.map(({ Icon, color, label, value }) => (
           <View key={label} style={styles.row}>
             <View style={styles.rowIcon}>
               <Icon size={14} color={color} />
@@ -232,7 +234,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
             <View style={styles.rowBody}>
               <View style={styles.rowTop}>
                 <Text style={styles.rowLabel}>{label}</Text>
-                <Lock size={12} color={theme.colors.textMuted} />
+                <Check size={12} color={theme.colors.primary} />
               </View>
               <Text style={styles.teaserRowValue}>{value}</Text>
             </View>
@@ -241,13 +243,13 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
         <TouchableOpacity
           style={styles.unlockBtn}
-          onPress={handleUnlock}
+          onPress={handlePreviewOpen}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel={t("teaser.unlockCta")}
+          accessibilityLabel={t("dossier.teaserCta")}
         >
-          <Lock size={14} color="#fff" />
-          <Text style={styles.unlockBtnText}>{t("teaser.unlockCta")}</Text>
+          <Sparkles size={14} color="#fff" />
+          <Text style={styles.unlockBtnText}>{t("dossier.teaserCta")}</Text>
           <ArrowRight size={14} color="#fff" />
         </TouchableOpacity>
       </Card>

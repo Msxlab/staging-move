@@ -10,7 +10,7 @@ interface UpgradePromptProps {
 }
 
 export default function UpgradePrompt({ feature, message, compact = false }: UpgradePromptProps) {
-  const defaultMessage = `Upgrade your plan to unlock ${feature} and more premium features.`;
+  const defaultMessage = `${feature} should be included with full-access staging. Review access if this appears.`;
 
   if (compact) {
     return (
@@ -18,10 +18,10 @@ export default function UpgradePrompt({ feature, message, compact = false }: Upg
         <Sparkles className="h-4 w-4 text-tone-orange-fg shrink-0" />
         <p className="text-xs text-tone-orange-fg flex-1">{message || defaultMessage}</p>
         <Link
-          href="/pricing"
+          href="/settings/subscription"
           className="flex items-center gap-1 px-3 py-1 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap"
         >
-          Upgrade <ArrowRight className="h-3 w-3" />
+          Review <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
     );
@@ -34,15 +34,15 @@ export default function UpgradePrompt({ feature, message, compact = false }: Upg
           <Sparkles className="h-6 w-6 text-tone-orange-fg" />
         </div>
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">Unlock {feature}</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-2">Review {feature} access</h3>
       <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
         {message || defaultMessage}
       </p>
       <Link
-        href="/pricing"
+        href="/settings/subscription"
         className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
       >
-        View Plans <ArrowRight className="h-4 w-4" />
+        Review Access <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
   );

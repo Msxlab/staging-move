@@ -1417,7 +1417,7 @@ export default function OnboardingClient({
                 loading={saving}
                 loadingLabel="Finishing..."
               >
-                Unlock with Individual
+                Continue with full access
               </ObCta>
             </div>
             <p className="mt-3 text-[11px] text-tone-orange-fg/80">

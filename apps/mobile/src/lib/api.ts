@@ -60,8 +60,11 @@ function resolveApiUrl() {
 }
 
 function enforceProductionApiUrl(url: string) {
+  const publicEnv =
+    (Constants.expoConfig?.extra as { environment?: string } | undefined)?.environment ||
+    process.env.EXPO_PUBLIC_ENV;
   const allowLocalDebugProxy =
-    process.env.EXPO_PUBLIC_ENV === "development" &&
+    publicEnv === "development" &&
     /^http:\/\/(?:10\.0\.2\.2|localhost|127\.0\.0\.1)(?::\d+)?(?:\/|$)/i.test(url);
 
   if (!__DEV__ && !/^https:\/\//i.test(url) && !allowLocalDebugProxy) {
@@ -79,6 +82,8 @@ const API_URL = enforceProductionApiUrl(resolveApiUrl());
  * production. Never returns a localhost origin in a release build.
  */
 function resolveWebAppUrl() {
+  const extraAppUrl = (Constants.expoConfig?.extra as { appUrl?: string } | undefined)?.appUrl;
+  if (extraAppUrl) return extraAppUrl.replace(/\/+$/, "");
   const explicit = process.env.EXPO_PUBLIC_APP_URL;
   if (explicit) return explicit.replace(/\/+$/, "");
   const derived = API_URL.replace(/\/api\/?$/, "").replace(/\/+$/, "");

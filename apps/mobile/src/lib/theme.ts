@@ -45,7 +45,7 @@ import {
 //      next reload (the gradual-migration tradeoff documented below).
 //
 // Persistence: the user preference is persisted in AsyncStorage under
-// `locateflow.theme.preference`. Default is "system" (follow the OS).
+// `locateflow.theme.preference`. Default is "dark" so a fresh install starts on the source-theme canvas.
 // When the preference is "system", `Appearance.addChangeListener`
 // reacts to OS theme flips immediately.
 // ──────────────────────────────────────────────────────────────────────
@@ -362,7 +362,7 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
   const systemScheme = useColorScheme();
 
   const [preference, setPreferenceState] = useState<ThemePreference>(
-    initialPreference ?? "system",
+    initialPreference ?? "dark",
   );
   const [hydrated, setHydrated] = useState<boolean>(initialPreference !== undefined);
   // Mirrors `Appearance.getColorScheme()` so we react to OS-level flips

@@ -203,7 +203,7 @@ export default function AddressesScreen() {
       : t("addresses.limitReachedWithCount", {
           current: addresses.length,
           limit: addressLimit,
-          defaultValue: `Your plan includes ${addressLimit} addresses. Upgrade to add more.`,
+          defaultValue: `Your current access includes ${addressLimit} addresses. Review access or contact support if this looks wrong.`,
         });
   const openNewAddress = () => {
     if (addressLimitReached) {
@@ -214,7 +214,7 @@ export default function AddressesScreen() {
           ? [{ text: t("common.ok", { defaultValue: "OK" }) }]
           : [
               { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-              { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+              { text: t("subscription.upgrade", { defaultValue: "Review access" }), onPress: () => router.push("/settings/subscription") },
             ],
       );
       return;

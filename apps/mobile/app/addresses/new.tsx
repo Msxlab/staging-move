@@ -230,7 +230,7 @@ export default function NewAddressScreen() {
       : t("addresses.limitReachedWithCount", {
           current: addressGate?.current ?? 0,
           limit: addressGate?.limit ?? 0,
-          defaultValue: `Your plan includes ${addressGate?.limit ?? 0} addresses. Upgrade to add more.`,
+          defaultValue: `Your current access includes ${addressGate?.limit ?? 0} addresses. Review access or contact support if this looks wrong.`,
         });
   const showAddressLimitAlert = (message?: string) => {
     hapticError();
@@ -241,7 +241,7 @@ export default function NewAddressScreen() {
         ? [{ text: t("common.ok", { defaultValue: "OK" }) }]
         : [
             { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+            { text: t("subscription.upgrade", { defaultValue: "Review access" }), onPress: () => router.push("/settings/subscription") },
           ],
     );
   };
@@ -294,7 +294,7 @@ export default function NewAddressScreen() {
                   <Text style={styles.limitCtaText}>
                     {addressAtTopTierLimit
                       ? t("addresses.backToAddresses", { defaultValue: "Back to addresses" })
-                      : t("subscription.upgrade", { defaultValue: "Upgrade" })}
+                      : t("subscription.upgrade", { defaultValue: "Review access" })}
                   </Text>
                 </TouchableOpacity>
               </View>

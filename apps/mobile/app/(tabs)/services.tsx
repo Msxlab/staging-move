@@ -399,7 +399,7 @@ export default function ServicesScreen() {
       : t("services.limitReachedWithCount", {
           current: totalServiceCount,
           limit: serviceLimit,
-          defaultValue: `Your plan includes ${serviceLimit} services. Upgrade to add more.`,
+          defaultValue: `Your current access includes ${serviceLimit} services. Review access or contact support if this looks wrong.`,
         });
   const categories = [...new Set(services.map((s) => getMergedDisplayCategoryKey(s.category)))].sort((a, b) => serviceCategoryLabel(a).localeCompare(serviceCategoryLabel(b)));
   const uncostedCount = filtered.filter((service) => !service.monthlyCost || service.monthlyCost <= 0).length;
@@ -539,7 +539,7 @@ export default function ServicesScreen() {
           ? [{ text: t("common.ok", { defaultValue: "OK" }) }]
           : [
               { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-              { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+              { text: t("subscription.upgrade", { defaultValue: "Review access" }), onPress: () => router.push("/settings/subscription") },
             ],
       );
       return;

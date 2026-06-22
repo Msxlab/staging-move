@@ -71,10 +71,8 @@ import {
 } from "@/lib/legal";
 import {
   buildOnboardingTeaserViewedMetadata,
-  buildUpgradeClickedMetadata,
   detectStateZipMismatch,
   generateChecklist,
-  getOnboardingTeaserPrimaryAction,
   PHASE1_ANALYTICS_EVENTS,
   resolveUxOnboardingTeaserVariant,
   shouldShowOnboardingTeaser,
@@ -596,7 +594,7 @@ export default function OnboardingScreen() {
       : t("services.limitReachedWithCount", {
           current: serviceSelectionLimit,
           limit: serviceSelectionLimit,
-          defaultValue: `Your plan includes ${serviceSelectionLimit} services. Upgrade to add more.`,
+          defaultValue: `Your current access includes ${serviceSelectionLimit} services. Review access or contact support if this looks wrong.`,
         }), [serviceSelectionAtTopTier, serviceSelectionLimit, t]);
 
   const toggleProvider = (provider: ScoredProvider) => {
@@ -1093,24 +1091,7 @@ export default function OnboardingScreen() {
   };
 
   const handleTeaserPrimary = () => {
-    const action = getOnboardingTeaserPrimaryAction({ isPremium });
-    if (action === "create_plan") {
-      return handleComplete({ skipTeaser: true });
-    }
-    trackEvent(
-      PHASE1_ANALYTICS_EVENTS.UPGRADE_CLICKED,
-      "Onboarding",
-      buildUpgradeClickedMetadata({
-        upgradeSurface: "onboarding_teaser",
-        targetPlanTier: "individual",
-        featureGate: "onboarding_teaser",
-        surface: "onboarding",
-        variant: uxOnboardingTeaserVariant,
-        experimentFlag: UX_ONBOARDING_TEASER_FLAG,
-        platform: Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "unknown",
-      }),
-    );
-    return completeWithoutPlan("subscription");
+    return handleComplete({ skipTeaser: true });
   };
 
   const maybeOfferPushSoftPrompt = async () => {
@@ -1894,7 +1875,7 @@ export default function OnboardingScreen() {
                         limit: serviceSelectionLimit,
                         defaultValue: serviceSelectionAtTopTier
                           ? `You can add up to ${serviceSelectionLimit} services. Choose the essentials now; add the rest later.`
-                          : `Your plan includes ${serviceSelectionLimit} services. Choose the essentials now; upgrade for the rest.`,
+                          : `Your access currently reports ${serviceSelectionLimit} services. Choose the essentials now; review access if you need more.`,
                       })}
                     </Text>
                   )}
@@ -2142,7 +2123,7 @@ export default function OnboardingScreen() {
                         ? t("onboarding.teaser_continuePlanA11y", { defaultValue: "Continue to your moving plan" })
                         : undefined
                     }
-                    ctaIcon={isPremium ? "arrow" : "lock"}
+                    ctaIcon="arrow"
                     footerHint={
                       isPremium
                         ? t("onboarding.teaser_continuePlanHint", {

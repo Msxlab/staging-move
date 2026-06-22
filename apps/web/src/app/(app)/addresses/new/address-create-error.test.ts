@@ -3,7 +3,7 @@ import { resolveAddressCreateError } from "./address-create-error";
 import { buildServiceLimitCopy } from "@/components/shared/service-limit-upsell";
 
 describe("resolveAddressCreateError", () => {
-  it("maps ADDRESS_LIMIT_REACHED onto the upsell modal with /pricing as the CTA target", () => {
+  it("maps ADDRESS_LIMIT_REACHED onto the upsell modal with access-review as the CTA target", () => {
     const resolution = resolveAddressCreateError(
       403,
       {
@@ -20,7 +20,7 @@ describe("resolveAddressCreateError", () => {
     expect(resolution.details.code).toBe("ADDRESS_LIMIT_REACHED");
     expect(resolution.details.limit).toBe(3);
     expect(resolution.details.current).toBe(3);
-    expect(resolution.details.upgradePath).toBe("/pricing");
+    expect(resolution.details.upgradePath).toBe("/settings/subscription");
   });
 
   it("maps SETUP_ADDRESS_LIMIT_REACHED onto the upsell modal", () => {
@@ -48,7 +48,7 @@ describe("resolveAddressCreateError", () => {
     expect(resolution.details.limit).toBeNull();
     const copy = buildServiceLimitCopy(resolution.details);
     expect(copy.body).not.toContain("active services");
-    expect(copy.body).toContain("address limit");
+    expect(copy.body).toContain("address capacity");
   });
 
   it("does NOT hijack non-upgrade 403 gates (email verification, legal acceptance)", () => {
@@ -96,17 +96,17 @@ describe("resolveAddressCreateError", () => {
 describe("buildServiceLimitCopy — address limit branch", () => {
   it("renders plan-aware address copy with the real Pro cap (never 'unlimited')", () => {
     const copy = buildServiceLimitCopy({ code: "ADDRESS_LIMIT_REACHED", limit: 3, current: 3 });
-    expect(copy.title).toBe("You've reached your address limit");
-    expect(copy.body).toContain("up to 3 saved addresses");
-    expect(copy.body).toContain("up to 25 on Pro");
+    expect(copy.title).toBe("Your address access needs review");
+    expect(copy.body).toContain("currently reports 3 saved addresses");
+    expect(copy.body).toContain("Full-access staging");
     expect(copy.body).not.toContain("active services");
     expect(copy.body.toLowerCase()).not.toContain("unlimited");
-    expect(copy.primary).toBe("Upgrade");
+    expect(copy.primary).toBe("Review access");
   });
 
   it("uses singular 'address' when the limit is 1", () => {
     const copy = buildServiceLimitCopy({ code: "ADDRESS_LIMIT_REACHED", limit: 1 });
-    expect(copy.body).toContain("up to 1 saved address.");
+    expect(copy.body).toContain("currently reports 1 saved address");
   });
 
   it("switches to contact-support copy at the top-tier cap instead of a dead-end upsell", () => {
@@ -118,7 +118,7 @@ describe("buildServiceLimitCopy — address limit branch", () => {
 
   it("stays generic and friendly when the API sends no numbers", () => {
     const copy = buildServiceLimitCopy({ code: "ADDRESS_LIMIT_REACHED" });
-    expect(copy.title).toBe("You've reached your address limit");
-    expect(copy.body).toContain("address limit for your current plan");
+    expect(copy.title).toBe("Your address access needs review");
+    expect(copy.body).toContain("address capacity");
   });
 });

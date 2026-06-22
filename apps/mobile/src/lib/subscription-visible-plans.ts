@@ -8,17 +8,20 @@ export function shouldShowMobileConsumerFreePanel({
   loading,
   managementKind,
   effectivePlanKey,
+  effectiveStatus,
   effectiveActive,
 }: {
   loading: boolean;
   managementKind: string | null | undefined;
   effectivePlanKey: PlanKey;
+  effectiveStatus?: string | null | undefined;
   effectiveActive: boolean;
 }) {
   if (loading) return false;
-  if (!effectiveActive || !isPaidPlan(effectivePlanKey)) return false;
+  if (!effectiveActive) return false;
   if (managementKind == null) return false;
-  return managementKind !== "stripe" && managementKind !== "store";
+  if (managementKind === "stripe" || managementKind === "store") return false;
+  return isPaidPlan(effectivePlanKey) || effectiveStatus === "FREE_ACCESS";
 }
 
 export function shouldShowMobileSubscriptionPlan({

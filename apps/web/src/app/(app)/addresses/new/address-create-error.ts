@@ -19,7 +19,7 @@ export type AddressCreateErrorResolution =
   | { kind: "limit"; details: ServiceLimitDetails }
   | { kind: "message"; message: string };
 
-const ADDRESS_UPGRADE_PATH = "/pricing";
+const ADDRESS_ACCESS_REVIEW_PATH = "/settings/subscription";
 
 export function resolveAddressCreateError(
   status: number,
@@ -40,7 +40,7 @@ export function resolveAddressCreateError(
         code: isAddressLimitCode(code) ? code : "ADDRESS_LIMIT_REACHED",
         limit: typeof body.limit === "number" ? body.limit : null,
         current: typeof body.current === "number" ? body.current : null,
-        upgradePath: ADDRESS_UPGRADE_PATH,
+        upgradePath: ADDRESS_ACCESS_REVIEW_PATH,
       },
     };
   }

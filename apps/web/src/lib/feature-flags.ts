@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { CONSUMER_FREE_FLAG } from "@locateflow/shared";
 
 export interface FeatureFlag {
   name: string;
@@ -10,6 +11,19 @@ export interface FeatureFlag {
 let flagCache: Map<string, FeatureFlag> = new Map();
 let cacheTimestamp = 0;
 const CACHE_TTL = 60_000; // 1 minute
+
+function parseOptionalBoolean(value: string | undefined): boolean | null {
+  if (value == null) return null;
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return null;
+}
+
+function defaultFlagEnabled(flagName: string): boolean {
+  if (flagName !== CONSUMER_FREE_FLAG) return false;
+  return parseOptionalBoolean(process.env.CONSUMER_FREE_DEFAULT) ?? false;
+}
 
 async function loadFlags(): Promise<Map<string, FeatureFlag>> {
   if (Date.now() - cacheTimestamp < CACHE_TTL && flagCache.size > 0) {
@@ -39,7 +53,7 @@ export async function isFeatureEnabled(
 ): Promise<boolean> {
   const flags = await loadFlags();
   const flag = flags.get(flagName);
-  if (!flag) return false;
+  if (!flag) return defaultFlagEnabled(flagName);
   if (!flag.enabled) return false;
 
   if (flag.targetType === "ALL") return true;

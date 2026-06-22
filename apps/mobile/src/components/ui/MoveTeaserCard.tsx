@@ -107,7 +107,7 @@ export function MoveTeaserCard({
   variant = "onboarding",
   ctaLabel,
   ctaAccessibilityLabel,
-  ctaIcon = "lock",
+  ctaIcon = "arrow",
   footerHint,
 }: Props) {
   const theme = useAppTheme();
@@ -215,7 +215,7 @@ export function MoveTeaserCard({
           {footerHint ??
             t("teaser.unlockHint", {
               defaultValue:
-                "Unlock your full plan: a personalized checklist, deadline countdown, and move tracking.",
+                "Your full plan includes a personalized checklist, deadline countdown, and move tracking.",
             })}
         </Text>
         <TouchableOpacity
@@ -226,7 +226,7 @@ export function MoveTeaserCard({
           accessibilityRole="button"
           accessibilityLabel={
             ctaAccessibilityLabel ??
-            t("teaser.unlockCta", { defaultValue: "Unlock your full move plan with Individual" })
+            t("teaser.unlockCta", { defaultValue: "Start your full move plan" })
           }
           accessibilityState={{ disabled: busy }}
         >
@@ -236,7 +236,7 @@ export function MoveTeaserCard({
             <>
               {ctaIcon === "lock" ? <Lock size={16} color="#fff" /> : null}
               <Text style={styles.unlockBtnText}>
-                {ctaLabel ?? t("teaser.unlockCta", { defaultValue: "Unlock with Individual" })}
+                {ctaLabel ?? t("teaser.unlockCta", { defaultValue: "Start full plan" })}
               </Text>
               <ArrowRight size={16} color="#fff" />
             </>

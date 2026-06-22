@@ -30,7 +30,6 @@ import {
   Sparkles,
   Truck,
   PackageCheck,
-  Lock,
   CheckCircle2,
 } from "lucide-react";
 import {
@@ -70,10 +69,8 @@ export interface MoveCommandCenterProps {
    */
   hasOriginDestination?: boolean;
   /**
-   * Freemium gate: free (non-paid) users cannot create a MovingPlan. When false
-   * and there is no active plan, the no-plan hero becomes an UPGRADE teaser
-   * card (Unlock with Individual) instead of the "Start your move" CTA that
-   * deep-links to /moving/new (which would 403 for them).
+   * Entitlement signal for the move-plan path. Staging runs consumer-free, so
+   * stale false values still keep the visible CTA on /moving/new.
    */
   isPremium?: boolean;
   freePreview?: {
@@ -255,10 +252,10 @@ export function MoveCommandCenter({
               </p>
             </div>
             <Link
-              href="/settings/subscription?returnTo=%2Fdashboard"
+              href="/moving/new"
               className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
             >
-              <Sparkles className="h-4 w-4" /> {t("commandCenter_freePreviewCta")}
+              <Truck className="h-4 w-4" /> {t("commandCenter_freePreviewCta")}
             </Link>
           </div>
 
@@ -293,15 +290,15 @@ export function MoveCommandCenter({
     );
   }
 
-  // ── NO-PLAN + FREE: upgrade teaser hero ───────────────────────────────────
-  // Free users can't create a MovingPlan, so the full Command Center is gated.
-  // Show an honest "unlock the move" card instead of a CTA that would 403.
+  // ── NO-PLAN + FREE-FALLBACK: keep the included move path visible ──────────
+  // Staging runs consumer-free; if a stale entitlement still reaches this
+  // branch, keep the user on the full move-plan path instead of a billing page.
   if (!activePlan && !isPremium) {
     return (
       <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
           <div className="h-14 w-14 shrink-0 rounded-2xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center">
-            <Lock className="h-7 w-7 text-tone-orange-fg" />
+            <PackageCheck className="h-7 w-7 text-tone-orange-fg" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-tone-orange-fg">
@@ -315,10 +312,10 @@ export function MoveCommandCenter({
             </p>
           </div>
           <Link
-            href="/settings/subscription?returnTo=%2Fdashboard"
+            href="/moving/new"
             className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
           >
-            <Sparkles className="h-4 w-4" /> {t("commandCenter_freeCta")}
+            <Truck className="h-4 w-4" /> {t("commandCenter_freeCta")}
           </Link>
         </div>
       </div>
