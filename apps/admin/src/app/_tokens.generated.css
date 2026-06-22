@@ -31,10 +31,12 @@
   --orange-800:         #86631A;
   --orange-900:         #5F4614;
 
-  --bg:                 #171E2B;
-  --surface:            #1C2535;
-  --surface-2:          #232D40;
-  --surface-3:          #2A364C;
+  --bg:                 #070B14;
+  --panel:              #0E1626;
+  --panel2:             #16203A;
+  --surface:            #121B2D;
+  --surface-2:          #18233A;
+  --surface-3:          #1F2C47;
 
   --line:               rgba(255, 255, 255, 0.10);
   --line-2:             rgba(255, 255, 255, 0.16);

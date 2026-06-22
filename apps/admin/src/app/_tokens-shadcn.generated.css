@@ -28,27 +28,27 @@
   }
 
   .dark {
-    /* Dark mode — Linear-style graphite canvas: near-black neutral surfaces
-       (faint cool tint, not navy), hairline borders, one restrained blue
-       accent. Lower saturation + tighter contrast steps read calmer + sharper. */
-    --background:             218 26% 14%;
+    /* Dark mode — unified Aurora navy canvas (D7): admin shares web's
+       #070B14 navy surfaces (graphite #171E2B dropped). Gold primary
+       accent + cool navy panels; hairline borders, calm contrast steps. */
+    --background:             222 48% 5%;
     --foreground:             220 16% 98%;
-    --card:                   218 22% 19%;
+    --card:                   220 46% 10%;
     --card-foreground:        220 16% 98%;
-    --popover:                218 22% 19%;
+    --popover:                220 46% 10%;
     --popover-foreground:     220 16% 98%;
     --primary:                38.53 51.17% 58.24%;
     --primary-foreground:     222 40% 8%;
     --secondary:              220 10% 82%;
     --secondary-foreground:   222 40% 8%;
-    --muted:                  218 18% 24%;
+    --muted:                  221 41% 16%;
     --muted-foreground:       215 22% 78%;
-    --accent:                 218 18% 27%;
+    --accent:                 220 39% 20%;
     --accent-foreground:      220 16% 98%;
     --destructive:            359 68% 70%;
     --destructive-foreground: 222 40% 8%;
-    --border:                 217 20% 30%;
-    --input:                  217 20% 30%;
+    --border:                 223 45% 16%;
+    --input:                  223 45% 16%;
     --ring:                   38.53 51.17% 58.24%;
   }
 }

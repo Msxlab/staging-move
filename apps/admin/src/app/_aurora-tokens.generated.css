@@ -9,9 +9,9 @@
   --au-ink-3:         #9AA8BD;
   --au-ink-4:         #6E7C92;
 
-  --au-base:          #171E2B;
-  --au-base-2:        #1C2535;
-  --au-base-3:        #232D40;
+  --au-base:          #070B14;
+  --au-base-2:        #0E1626;
+  --au-base-3:        #16203A;
   /* Glass alphas ~halved per the flat-corporate note. */
   --au-pane:          rgba(255, 255, 255, 0.04);
   --au-pane-2:        rgba(255, 255, 255, 0.06);
@@ -49,11 +49,11 @@
   --au-accent-soft:   rgba(203, 164, 94, 0.13);
   --au-accent-line:   rgba(203, 164, 94, 0.28);
 
-  --au-surface:     #1C2535;                   /* solid chrome slab (rail/topbar/drawer/cards) */
-  --au-field:       #232D40;                   /* solid control fill */
+  --au-surface:     #0E1626;                   /* solid chrome slab (rail/topbar/drawer/cards) */
+  --au-field:       #16203A;                   /* solid control fill */
   --au-hover:       rgba(255, 255, 255, 0.05); /* neutral hover wash */
-  --au-track:       #243049;                   /* progress/bar track */
-  --au-seg-on:      #2A364C;                   /* active segmented chip */
+  --au-track:       #1F2C47;                   /* progress/bar track */
+  --au-seg-on:      #1F2C47;                   /* active segmented chip */
   --au-seg-shadow:    none;
   --au-scrim:         rgba(8, 12, 20, 0.55);
 

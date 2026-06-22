@@ -45,7 +45,7 @@
   --bg-deep:            #060B18;
   --surface:            #121B2D;
   --surface-2:          #18233A;
-  --surface-3:          #16203A;
+  --surface-3:          #1F2C47;
   --elevated:           #1D2943;
 
   /* ─────────────── Foreground — LocateFlow dark ink ramp ───────────────── */
@@ -123,11 +123,11 @@
   --tone-cyan-fg:       #37C2C9;
 
   /* ─────────────── Radii ─────────────── */
-  --radius-sm:          6px;
-  --radius-md:          10px;
-  --radius-lg:          14px;
-  --radius-xl:          20px;
-  --radius-2xl:         28px;
+  --radius-sm:          8px;
+  --radius-md:          13px;
+  --radius-lg:          18px;
+  --radius-xl:          22px;
+  --radius-2xl:         26px;
   --radius-full:        9999px;
 
   /* ─────────────── Spacing ─────────────── */
@@ -196,10 +196,10 @@
 }
 
 .light {
-  --bg:                 #F2F4F8;
+  --bg:                 #EFEADF;
   --bg-deep:            #EAEEF4;
   --surface:            #FFFFFF;
-  --surface-2:          #EAEEF4;
+  --surface-2:          #F5F0E7;
   --surface-3:          #E2E7EE;
   --elevated:           #FFFFFF;
 
