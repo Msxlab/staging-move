@@ -1,0 +1,86 @@
+# move-app — Design↔Code Gap (Move mobile shell + app dashboard)
+
+**Area:** move-app · **Type:** GAP ANALYSIS ONLY (no code changes).
+
+**Sources**
+- NEW design (source of truth): `C:/Users/Windows/Downloads/New folder/Initial check requested-handoff (7)/initial-check-requested/project/Move.dc.html` (128 KB, the largest handoff file — the full mobile app shell) and `Raccoon.dc.html` (parametric mascot).
+- CURRENT impl: `apps/mobile/app/**` (Expo Router tabs + stack) and `apps/web/src/app/(app)/dashboard/**`; cross-read `docs/ui-renewal/13_MOBILE_SCREENS.md`, `docs/ui-renewal/11_WEB_APP_PAGES.md`, `docs/design-sync/01_DESIGN_SYSTEM_DELTA.md`.
+
+---
+
+## designSummary
+
+`Move.dc.html` is a single 390×844 phone mock with a 42px-rounded device frame, status bar, a 5-tab bottom nav (**Home / Moving / Services / Addresses / More**), a stack-overlay system (native push screens + embedded `dc-import` modules), and a 2.4s **splash** (Raccoon mascot + "Move" Playfair 900 wordmark + "Relocation Intelligence" eyebrow + "PRO" pill).
+
+Tabs/sections in the design:
+- **Home:** greeting header (gold eyebrow + Playfair name + date) with theme-toggle + notif bell (unread badge); **AI Briefing card** (Raccoon `thinking`, animated typing dots, "Updated now", chips `48 days out` / `N critical` / `Midtown fits ✓`, "Open full briefing →"); **Move countdown hero** (Playfair 60px days, from→to city, task progress bar, "View move plan →"); **Reminders · this week** (3 urgent task rows w/ checkboxes); **Home Dossier** (priority-sorted, swipe/snap or "View full" grid of `DossierScene` cards — Weather/Air/Water/Area Confidence/Transit/Cost/Housing — each with a 5-segment band + label, plus swipe dots); **Moving guides** (featured blog card).
+- **Moving:** "Move command" header + settings gear; **Next best action** card; **Live move intelligence** card with an **animated OSM-style route map** (dashed gold route, traveling truck/Raccoon-truck SVG, glass corner labels Austin↔NY, "1,742 mi route preview / arrival in 48 days") + 3 ops-signal tiles; **Risk panel** (gauge SVG, "RISK LEVEL · HIGH", crit/expiring/done chips); a second **countdown**; **Mission timeline** (vertical rail, 5 phases w/ status badges); **Admin sprint** task rows; **Category progress** accordion.
+- **Services:** 3 health stat tiles, old→new transfer progress, monthly-cost old→new, "act now" alerts, **location toggle** (Austin/NY segmented), category-grouped service cards w/ status pills + actions.
+- **Addresses:** count subhead, animated mini route hero, address chip row, **live OSM tile map** (`osmMap()` real tiles), selected-address card (Directions/Edit/Set primary), services-at-address list, all-addresses list, "Add address" dashed CTA.
+- **More:** profile card (avatar gradient, email, "PRO Annual" badge), **Move PRO** banner ("renews Dec 15", Manage), grouped menu (Account / Tools / App), Appearance theme toggle, Sign out, "Move v2.1.0 · PRO" footer.
+- **Stack overlays (native):** Notifications, Blog list, Blog post, Service detail (Transfer/Edit), **Subscription** ("Move PRO / Annual Plan / $47.88/yr / Active", PRO features w/ checks), Settings, Profile (fields + age-range chips), **Budget** ("$3,240 estimated", breakdown, Add expense), Privacy ("Your data, your control", Export JSON/PDF, Danger zone). **Module overlays** via `dc-import`: Reminders, Help, Search, Providers, CustomProviders, Invitations.
+
+Theme: in-component `theme()` emits a `--var` string. **Default accent = Gold `#CBA45E`** (dark) with a runtime **3-way accent picker (Gold / Sapphire / Emerald)** and a **`lightBg` selector (Greige / Pearl / Taupe / Sapphire)**. Dark bg `#0A0F1C`; light bg warm greige `#EFEADF`. Fonts Playfair Display / DM Sans / DM Mono. Mascot = single parametric **Raccoon** (`head/mask/ear/eye/pupil` props, moods calm/alert/happy/thinking/approved).
+
+## currentSummary
+
+`apps/mobile` is the **in-flight "Move" renewal of LocateFlow** — it already implements this design's language, not a from-scratch port. Per `13_MOBILE_SCREENS.md`: `ThemeProvider` (default **dark**, light+dark live-switch), tokens from `@locateflow/shared` `design-tokens.ts`, accent = `brandColors.rose` (Gold/rose), Playfair/DM Sans/DM Mono fonts, and a `move/primitives` set (`SectionHeader`, `MoveCard`, `HeroCard`, `MoveProgressBar`, `Pill`, gradient progress, tonal status pills) "faithful to Move.dc.html". The Raccoon mascot is the identity (`MoveRaccoon`/`RaccoonMascot`/`AnimatedSplash`/`LogoBrand`).
+
+Concrete matches verified in source:
+- **Tabs:** `(tabs)/_layout.tsx` has 5 tabs (Dashboard/Addresses/Moving/Services/More), active=`primary`, bg `bg2`, hairline top border.
+- **Dashboard `(tabs)/index.tsx` (2328 lines):** imports `MoveRaccoon, HeroCard, MoveCard, SectionHeader, MoveProgressBar, Pill`; renders **AI Briefing** (`MoveBriefingCard`, first-run, dismiss-persisted, A/B variant via `getMobileUxAiBriefingExperienceVariant`, fed by `/api/onboarding/briefing`), **Home Dossier** (`HomeDossierCard`), **countdown** (`getMoveCountdown`, tz-correct), insight cards, command center, up-next, savings, count-up stats, dossier/countdown `Pill`s.
+- **Moving `(tabs)/moving.tsx`:** **Next best action** callout, **opsSignals** (derived from real portfolio counts), **Mission timeline** (real plan list as vertical timeline), **Admin sprint**, **Category progress** accordion — i.e. the design's Moving tab sections exist by name.
+- **Services/Addresses/More** tabs and all stack screens (Notifications, Blog, Service detail, Subscription, Profile, Budget, Privacy, Reminders, Help, Search, Providers, CustomProviders, Invitations) all exist as real routes (see `13_MOBILE_SCREENS.md`).
+- **Maps:** `TransitRouteMap.tsx` + `transit-route-map-url.ts` exist; addresses tab renders themed map.
+
+Where current **diverges** from the design: OS-level branding is still **LocateFlow** (`app.json` name "LocateFlow", slug/scheme `locateflow`, bundle `com.locateflow.mobile`, deep-link host `locateflow.com`, FaceID copy "unlock LocateFlow"); monorepo packages are `@locateflow/*`; storage keys are `locateflow.*`. The "100% free" rebrand positioning conflicts with the design's own retained **paid "Move PRO"** subscription surfaces. Accent default (rose vs Gold), the new runtime **accent picker** and **lightBg** selector, warm-greige light canvas, and the +18–26px radius bump are not yet adopted. Hardcoded `CATEGORY_COLORS` hex (3 copies) and scattered `#fff` on accents remain.
+
+---
+
+## Gap table
+
+| ID | Type | Title | Design evidence | Code evidence | Severity | Decision? |
+|---|---|---|---|---|---|---|
+| move-app-01 | rebrand | OS/app identity still "LocateFlow" | `Move.dc.html:924` wordmark "Move", `:925` "Relocation Intelligence", splash; `manifest.json` name "Move", theme_color `#070B14` | `apps/mobile/app.json:3,4,8,19,63,67,144,172` name "LocateFlow", slug/scheme `locateflow`, bundle `com.locateflow.mobile`, applinks `locateflow.com`, FaceID "unlock LocateFlow" | High | Yes |
+| move-app-02 | rebrand | Monorepo packages + storage keys `@locateflow/*` / `locateflow.*` | Product is "Move" | `package.json` name `locateflow`, `@locateflow/{web,admin,mobile,db,shared,connectors}`; `(tabs)/index.tsx:110` key `locateflow.moveBriefingDismissed` | Medium | Yes |
+| move-app-03 | rebrand/different | "100% free" positioning vs retained paid "Move PRO" | Brief: product "100% free". BUT design **keeps PRO**: `Move.dc.html:632` "PRO Annual", `:639-647` "Move PRO active · renews Dec 15", `:767-792` Subscription "$47.88/yr / Active", `:929` splash "PRO" pill | Mobile has `PRO/premium` gating across `(tabs)/index,moving,services,more,addresses`; `settings/subscription.tsx` (1693 lines, IAP flows) | High | Yes |
+| move-app-04 | theme | Accent default rose vs design Gold `#CBA45E` | `Move.dc.html:989` `Gold:['#CBA45E',…]` default accent | `theme.ts` accent = `brandColors.rose` / `roseScale[500]` (per `13_MOBILE_SCREENS.md` line 14) | Medium | Yes |
+| move-app-05 | new | Runtime 3-way accent picker (Gold/Sapphire/Emerald) | `Move.dc.html:986-993` `accentFamily()` + props enum `accent:[Gold,Sapphire,Emerald]` (`:964`) | No accent-picker UI; single mode-flip accent only (`13_MOBILE_SCREENS.md`, `01_DESIGN_SYSTEM_DELTA.md §4`) | Medium | Yes |
+| move-app-06 | new | `lightBg` light-canvas selector (Greige/Pearl/Taupe/Sapphire) | `Move.dc.html:964` props `lightBg`; `:1132-1140` `lightPage()` 4 gradients | No light-canvas selector; single light theme | Low | Yes |
+| move-app-07 | theme | Warm greige light bg `#EFEADF` vs cool `#F2F4F8` | `Move.dc.html:1020` light `bg:'#EFEADF'`, surface2 `#F5F0E7` | Current light bg `#F2F4F8` (per `01_DESIGN_SYSTEM_DELTA.md §1/3`) | Medium | No |
+| move-app-08 | theme | Radius bump (cards 18–26px, frame 42px, pills 99px) | `Move.dc.html:37` frame 42px; cards `:76` 22px, `:102` 26px; pills 99px; icon-btn 13px | Current cards ~8–10px radius (`01_DESIGN_SYSTEM_DELTA.md §3`) — global `radii` bump needed | Medium | No |
+| move-app-09 | different | Live OSM-tile address map vs current transit map | `Move.dc.html:1074-1087` `osmMap()` real `tile.openstreetmap.org` tiles + `:558-570` tiled map div | `TransitRouteMap.tsx` + `transit-route-map-url.ts` (static/URL map). Verify tile-render parity & attribution `© OpenStreetMap` | Medium | No |
+| move-app-10 | different | Animated route map on Moving tab ("Live move intelligence") | `Move.dc.html:232-293` map w/ dashed `mv-dash` route, `mv-travel` truck/Raccoon-truck SVG, glass labels, "1,742 mi route preview" + 3 ops tiles | `(tabs)/moving.tsx` has `opsSignals` + Next-best-action; **verify** the animated map/traveling-vehicle visual exists at that fidelity | Medium | No |
+| move-app-11 | new | Raccoon-as-truck travel marker | `Move.dc.html:257-268` SVG raccoon riding the moving truck along the route path | No equivalent marker found in `MoveRaccoon`/maps; mascot is static disc/illustration | Low | No |
+| move-app-12 | different | Dossier 7-metric matrix + 5-segment band + swipe/full toggle | `Move.dc.html:1196-1219` 7 metrics (Weather/Air/Water/Area Confidence/Transit/Cost/Housing), `seg0-4` band, `dViewLabel` swipe↔grid, swipe dots `:179-185` | `HomeDossierCard` exists; **verify** all 7 metric types, 5-segment band, priority sort, swipe-snap + "View full" grid, and dot indicator | Medium | No |
+| move-app-13 | different | `DossierScene` prop-driven condition art (weather/area/water/transit/cost/air, level good/mid/bad) | `Move.dc.html:163` `dc-import DossierScene type/level/tone/glow`; full art in `DossierScene.dc.html` (58 KB) | Web has `dashboard/dossier-ambient` `.da-*`; mobile dossier scene art parity unverified — design is richer/prop-driven (`01_DESIGN_SYSTEM_DELTA.md §4`) | Medium | No |
+| move-app-14 | different | AI Briefing card chips + typing dots + Raccoon `thinking` | `Move.dc.html:76-99` Raccoon `mood=thinking`, 3 blinking dots, "Updated now", chips `48 days out`/`N critical`/`Midtown fits ✓`, "Open full briefing →" | `MoveBriefingCard` exists & first-run gated; **verify** typing-dot animation, the 3 specific chips, and Raccoon `thinking` mood are present | Low | No |
+| move-app-15 | different | Risk panel gauge ("RISK LEVEL · HIGH" speedometer) | `Move.dc.html:296-315` arc-gauge SVG + needle + crit/expiring/done chips | Not surfaced in `moving.tsx` grep (has Next-best-action, opsSignals, timeline). **Verify** a risk/gauge panel exists; likely **missing** | Medium | No |
+| move-app-16 | different | Services monthly-cost old→new + transfer progress + health tiles | `Move.dc.html:413-453` 3 health tiles, `🏠──🏢` transfer bar, "Monthly services" `$312→$418 (+$106/mo)` | `(tabs)/services.tsx` (category cards). **Verify** health tiles, old→new monthly cost, and 🏠→🏢 transfer bar exist | Low | No |
+| move-app-17 | wrong | `CATEGORY_COLORS` hardcoded hex duplicated 3× | Design colors are tokenized via `theme()` | `services.tsx:84-86`, `services/[id].tsx:56-58`, `services/[id]/edit.tsx:45-54` — 32 hex hits, 3 copies (`13_MOBILE_SCREENS.md`) | Low | No |
+| move-app-18 | wrong | `#fff`/`#000` on filled accents/checkmarks (use `onAccent`) | Design uses `--on-gold` token (`:1010/1027`) | `services.tsx:953-954`, `moving/[id].tsx:947/1351/1658`, `onboarding.tsx:1609/2312/2366` (`13_MOBILE_SCREENS.md`) | Low | No |
+| move-app-19 | theme | Pre-splash hardcoded `#0A0F18` (off by design `#0A0F1C`) | Design mobile dark bg `#0A0F1C` (`:1003`); PWA `#070B14` | `app/_layout.tsx:525` pre-splash `#0A0F18` hardcoded (`13_MOBILE_SCREENS.md`) | Low | No |
+| move-app-20 | different | Legacy Geist/Fraunces fonts still loaded | Design uses only Playfair/DM Sans/DM Mono | Mobile still loads Fraunces+Geist during transition (`13_MOBILE_SCREENS.md` line 15) | Low | No |
+| move-app-21 | different | Web dashboard 13-widget dnd grid vs mobile single scroll | Design is a single mobile scroll of fixed-order sections | `dashboard/dashboard-client.tsx`: 13 drag-reorderable collapsible widgets, customization panel, A/B top-slots (`11_WEB_APP_PAGES.md §2`) — far richer/different than the mock's fixed mobile layout | Medium | Yes |
+| move-app-22 | different | More-tab "v2.1.0 · PRO" footer & PRO Annual badge | `Move.dc.html:682` "Move v2.1.0 · PRO"; `:630-633` "PRO Annual" badge | `(tabs)/more.tsx` profile header + menu + Language/Theme selectors; **verify** version footer + plan badge copy (and the free-vs-PRO tension from move-app-03) | Low | Yes |
+| move-app-23 | new | Splash tagline "Relocation Intelligence" + PRO pill | `Move.dc.html:924-930` "Move" / "Relocation Intelligence" / "PRO" | `AnimatedSplash.tsx` exists but the literal tagline string was **not** found in source — verify wordmark+tagline+PRO pill render | Low | Yes |
+| move-app-24 | theme | Mascot palette: design `head #8C9AB2 / mask #0C1525 / ear #C4A090 / eye=accent` parametric | `Raccoon.dc.html:54-72` parametric props; `Move.dc.html` passes `eye=var(--gold)` so eyes follow accent | Mobile `MoveRaccoon` + `theme.ts raccoon{}` palette; **verify** eye color tracks active accent (it should recolor with accent picker) | Low | No |
+
+---
+
+## Detail notes
+
+**Biggest single decision (move-app-03 + move-app-01/02): "100% free" vs the design's own PRO surfaces.** The rebrand brief says Move is "100% free", yet `Move.dc.html` *itself* keeps a full paid tier: "PRO Annual" profile badge, a "Move PRO active — renews Dec 15" banner, a Subscription screen quoting "$47.88/yr · Active", a "v2.1.0 · PRO" footer, and a "PRO" splash pill. The current app has matching paid infra (`settings/subscription.tsx`, IAP, `consumerFree`/plan gating across tabs). These cannot both be true. Product must decide: (a) Move is genuinely free → strip PRO/subscription/IAP from app and design copy; or (b) freemium with a PRO tier → "100% free" is marketing for the base tier and the PRO surfaces stay. This blocks copy and a large amount of subscription UI work.
+
+**The dark-mode theme swap is small; the structural/brand work is the cost.** Per `01_DESIGN_SYSTEM_DELTA.md`, dark Gold `#CBA45E`, surfaces `#121B2D/#18233A`, text `#EFF3FA`, and dark green/red/amber/teal are already identical. The real deltas are: the LocateFlow→Move identity codemod (move-app-01/02), the accent-picker + lightBg net-new infra (move-app-05/06), warm-greige light canvas (move-app-07), and a global radius bump (move-app-08).
+
+**Sections that likely need building/verifying on Moving:** the **Risk gauge panel** (move-app-15) did not appear in the `moving.tsx` grep and is probably missing; the **animated route map with the Raccoon-truck** travel marker (move-app-10/11) needs fidelity verification against the design's `mv-dash`/`mv-travel` animation. Most other Home/Moving sections (AI Briefing, Dossier, countdown, Next-best-action, ops signals, Mission timeline, Admin sprint, Category progress) already exist by name in current source — the work there is fidelity/parity, not greenfield.
+
+**Web dashboard is a deliberately different surface (move-app-21).** The design's "app dashboard" is the *mobile* Home scroll; the web `/dashboard` is a 13-widget, drag-reorderable, A/B-flagged grid with a customization panel. The handoff does not provide a web-dashboard mock matching this (web mocks are `Move Web.dc.html` / `Web.dc.html`, public-facing). Decision: does the web dashboard adopt the mobile Home's fixed-section IA, or keep its widget system? Treat as product/scope.
+
+## openQuestions
+1. Is Move "100% free" (remove PRO/subscription/IAP entirely) or freemium with a PRO tier (keep the design's own PRO surfaces)? (move-app-03)
+2. Rebrand scope: rename app identity, bundle id, scheme, deep-link domain, monorepo packages, and storage keys from `locateflow`→`move`? Or keep internal `locateflow` and only rebrand user-facing strings? (move-app-01/02)
+3. Adopt the runtime accent picker (Gold/Sapphire/Emerald) and `lightBg` selector as real settings, and switch the default accent from rose to Gold? (move-app-04/05/06)
+4. Should the web `/dashboard` 13-widget dnd system be replaced by the mobile Home fixed-section IA, or stay as-is? (move-app-21)
+5. Confirm whether the Moving "Risk gauge" panel and the animated Raccoon-truck route marker are in-scope to build. (move-app-10/11/15)
