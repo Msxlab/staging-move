@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { monthlyAmountForCycle } from "@/lib/budget-planning";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import { formatAddressStartMonth } from "./address-format";
 
 const typeIcons: Record<string, React.ElementType> = {
   HOME: Home,
@@ -346,7 +347,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                     </span>
                   </div>
                   <span className="font-mono text-xs text-foreground/35">
-                    {new Date(address.startDate).toLocaleDateString(locale, { month: "short", year: "numeric" })}
+                    {formatAddressStartMonth(address.startDate, locale)}
                   </span>
                 </div>
 
