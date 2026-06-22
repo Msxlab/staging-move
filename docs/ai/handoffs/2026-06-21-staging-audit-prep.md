@@ -92,6 +92,25 @@ were narrowed to `RecognitionChipStorm` and `MobileMockup`, then changed to
 Sapphire/primary demo accents. Real warning/caution semantics in app/admin
 surfaces remain allowed to use warning tones.
 
+Public header follow-up: the home-page top navigation was expanded so desktop
+and mobile expose the same public entrypoints near the top of the page:
+`Features`, `Why free`, `Pricing`, `Help`, `Blog`, and `FAQ`. Sign-in and
+sign-up remain the right-side auth actions.
+
+Live verification after the header follow-up:
+
+- Runtime code commit `f8cf30160e6a631b1b96b8049c69a2762361596d` reached both
+  web and admin staging.
+- Web build time: `2026-06-22T02:31:20.339Z`.
+- Admin build time: `2026-06-22T02:31:20.354Z`.
+- Header HTML contains `Features`, `Why free`, `Pricing`, `Help`, `Blog`, and
+  `FAQ`.
+- Final cache-busted smoke returned `200` for web health, web ready, admin
+  ready, admin healthz, `/`, `/features`, `/why-free`, `/pricing`, `/blog`,
+  `/help`, `/sign-in`, `/sign-up`, and admin `/login`.
+- Final checked public HTML still had no `>Move<`, `Move app`, `Move Admin`,
+  `Move Gold`, `move-gold`, `tone-honey`, `honey`, or `gold` hits.
+
 Live verification after the follow-up cleanup:
 
 - Web and admin `build-info` both reached commit
