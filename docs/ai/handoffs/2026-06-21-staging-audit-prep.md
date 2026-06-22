@@ -302,6 +302,15 @@ HTTP responses and masked/indirect Dokploy state.
 - `git diff --check` passes after the design/branding edits, with only expected CRLF warnings.
 - Runtime proof still needed after deploy: Chrome screenshot pass for homepage hero, features/why-free/blog/login/onboarding/help/legal pages, admin login/dashboard, mobile preview/emulator surfaces, OpenGraph image route, and light/dark Sapphire parity.
 
+### Post-deploy follow-up
+
+- Dokploy webhook deploy was triggered from the existing Chrome/Dokploy session without opening a new Chrome window. The webhook requires a GitHub-style `push` payload with the branch ref; a blank call returns `Branch Not Match`.
+- Staging web/admin build-info confirmed deployed commit `0f634f2980f55e0bc710ca079a18423f4ba322c8` on `codex/staging-audit-2026-06-21`. Web `/api/health` and `/api/ready` returned healthy/ready; admin `/api/build-info` matched the same commit.
+- Existing Chrome initially showed a stale `/sign-up` shell with old branding. A cache-busted navigation to `/sign-up?lfqa=0f634f29` confirmed the deployed auth shell renders `LocateFlow`; the stale view was tab/cache state, not current source.
+- Live homepage cache-busted screenshot confirmed the LocateFlow Sapphire homepage and animated phone hero are serving on staging.
+- Follow-up source cleanup removed remaining user-facing old-product-name references from JSON-LD, OpenGraph, how-it-works, DPA/refund, blog preview fallback, partner consent, settings/subscription/cancel survey/appearance copy, help Spanish copy, and shared provider action descriptions. Domain labels such as `Move date`, `Move-in`, `Move tasks`, and moving-plan terminology remain intentional.
+- Verification for the follow-up cleanup: `git diff --check`, `pnpm --filter @locateflow/web test -- src/components/seo/json-ld.test.ts`, `pnpm verify:typecheck`, and `pnpm verify:tests` passed locally. Local runtime is Node `v24.12.0`, so pnpm printed the expected repo-engine warning for Node `22.x`; a Docker Node 22 retry was blocked by host Windows `node_modules` lacking Rollup's Linux optional native package.
+
 ## Minimum Env Categories Needed For Real Tests
 
 Do not paste values into chat. Set locally.

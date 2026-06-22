@@ -48,7 +48,7 @@ const steps = [
   {
     step: "04",
     icon: Truck,
-    title: "Move without the list",
+    title: "Organize without the list",
     body: "When you relocate, the moving checklist uses your saved services and destination context to suggest tasks.",
     detail:
       "Guidance may include US state and DC context, but requirements and provider processes change. Verify each task with the provider or agency before acting.",
@@ -80,7 +80,7 @@ export default function HowItWorksPage() {
   const howTo = howToSchema({
     name: "How to organize your providers, addresses, and moving tasks with LocateFlow",
     description:
-      "Four steps to set up Move: add your addresses, log every service, stay ahead of renewals, and turn a move into a checklist.",
+      "Four steps to set up LocateFlow: add your addresses, log every service, stay ahead of renewals, and turn a move into a checklist.",
     steps: steps.map((s) => ({
       name: s.title,
       text: s.body,

@@ -23,7 +23,7 @@ export function AppearanceCard() {
         <h2 className="text-xs font-semibold text-foreground/40 uppercase tracking-wider">Appearance</h2>
       </div>
       <div className="px-5 pb-5 space-y-3">
-        <p className="text-xs text-muted-foreground">Choose how Move looks. System matches your device setting.</p>
+        <p className="text-xs text-muted-foreground">Choose how LocateFlow looks. System matches your device setting.</p>
         <div
           role="radiogroup"
           aria-label="Theme preference"

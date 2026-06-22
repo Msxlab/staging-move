@@ -49,7 +49,7 @@ const HELP_COPY = {
   },
   es: {
     title: "Centro de ayuda",
-    subtitle: "Encuentra respuestas y guias para usar Move",
+    subtitle: "Encuentra respuestas y guias para usar LocateFlow",
     searchPlaceholder: "Buscar articulos y preguntas...",
     searchLabel: "Buscar articulos de ayuda y preguntas frecuentes",
     noResultsTitle: "No hay contenido coincidente",

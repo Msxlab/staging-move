@@ -10,7 +10,7 @@ import {
 
 const ctx = {
   siteUrl: "https://locateflow.com",
-  siteName: "Move",
+  siteName: "LocateFlow",
   logoUrl: "https://locateflow.com/logo.svg",
 };
 
@@ -83,7 +83,7 @@ describe("JSON-LD schema builders", () => {
 
   it("builds HowTo schema with positioned steps from supplied visible content", () => {
     const schema = howToSchema({
-      name: "How to set up Move",
+      name: "How to set up LocateFlow",
       description: "Two real steps.",
       steps: [
         { name: "Add your addresses", text: "Start with the home you live in today." },
@@ -93,7 +93,7 @@ describe("JSON-LD schema builders", () => {
 
     expect(schema).toMatchObject({
       "@type": "HowTo",
-      name: "How to set up Move",
+      name: "How to set up LocateFlow",
       inLanguage: "en-US",
       step: [
         { "@type": "HowToStep", position: 1, name: "Add your addresses" },

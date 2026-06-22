@@ -129,7 +129,7 @@ export function CancelSurveyModal({
             Before you go — what's making you {flavor === "trial" ? "end the trial" : "cancel renewal"}?
           </h2>
           <p className="text-sm text-muted-foreground">
-            Pick the closest reason so we can keep improving Move. This is optional —
+            Pick the closest reason so we can keep improving LocateFlow. This is optional —
             you can skip and cancel anyway.
           </p>
         </div>

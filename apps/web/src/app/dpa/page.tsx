@@ -23,7 +23,7 @@ const highlights = [
   {
     icon: Database,
     title: "Roles",
-    description: "The customer is generally controller for personal data they enter; Move acts as processor for that customer data.",
+    description: "The customer is generally controller for personal data they enter; LocateFlow acts as processor for that customer data.",
   },
   {
     icon: ShieldCheck,
@@ -72,7 +72,7 @@ export default function DpaPage() {
 
       <PublicSection title="1. Scope, duration, and roles">
         <p>
-          This DPA applies only to personal data that a customer submits to LocateFlow for processing on behalf of another identifiable person. The customer determines the purposes and means of processing. Move processes that data to provide, secure, support, and improve the service.
+          This DPA applies only to personal data that a customer submits to LocateFlow for processing on behalf of another identifiable person. The customer determines the purposes and means of processing. LocateFlow processes that data to provide, secure, support, and improve the service.
         </p>
         <p>
           Processing lasts for the term of the customer's use of LocateFlow and any additional retention period described in the Privacy Policy, Terms, Billing Policy, security logs, backups, legal records, or processor records.

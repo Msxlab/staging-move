@@ -384,13 +384,13 @@ const MOVE_TASK_EFFECT_COPY: Record<
     effect: "UPDATE_SERVICE_ADDRESS",
     label: "Update service address locally",
     description:
-      "Updates Move local service state without updating any external provider account.",
+      "Updates LocateFlow local service state without updating any external provider account.",
   },
   MARK_ADDRESS_UPDATED: {
     effect: "MARK_ADDRESS_UPDATED",
     label: "Mark address update done",
     description:
-      "Records that the user completed an address update outside Move.",
+      "Records that the user completed an address update outside LocateFlow.",
   },
   MARK_AVAILABILITY_VERIFIED_BY_USER: {
     effect: "MARK_AVAILABILITY_VERIFIED_BY_USER",

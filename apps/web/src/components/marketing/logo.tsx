@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * Brand mark — shared raccoon asset used by launcher, favicon, PWA, and admin.
+ * Brand mark shared by launcher, favicon, PWA, and admin.
  */
 export function LogoMark({
   size = 32,
@@ -24,8 +24,8 @@ export function LogoMark({
 }
 
 /**
- * Full wordmark lockup — mark + "Locateflow" with italic foil "flow" segment.
- * Uses the canonical display CSS variable from the Move design system.
+ * Full wordmark lockup for LocateFlow.
+ * Uses the canonical display CSS variable from the LocateFlow design system.
  */
 export function Wordmark({
   href = "/",

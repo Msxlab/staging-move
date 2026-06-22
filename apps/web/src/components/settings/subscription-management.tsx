@@ -598,7 +598,7 @@ export default function SubscriptionManagementPage({
     if (currentState === "GRACE_PERIOD") return "Your payment needs attention. Access continues during the short grace period.";
     if (currentState === "PAST_DUE") return "Update billing to continue full access.";
     if (currentState === "PENDING_CHECKOUT") return "Activating checkout... we are confirming with Stripe. This usually takes a few seconds.";
-    return "Review your current Move access.";
+    return "Review your current LocateFlow access.";
   })();
   const offerHeadline = publicCampaign?.publicHeadline || monthlyOffer?.publicHeadline || "Upgrade to Individual";
   const offerSubheadline =
@@ -652,7 +652,7 @@ export default function SubscriptionManagementPage({
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Everything included</span>
           </div>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            You have full access to every Move feature — no subscription, no credit card, nothing to renew or cancel.
+            You have full access to every LocateFlow feature — no subscription, no credit card, nothing to renew or cancel.
           </p>
         </div>
 

@@ -6,7 +6,7 @@ import { createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
   title: "Refund Policy",
-  description: "Move refund eligibility, refund request windows, and store-purchase refund handling.",
+  description: "LocateFlow refund eligibility, refund request windows, and store-purchase refund handling.",
   path: "/refund",
 });
 
@@ -84,7 +84,7 @@ export default function RefundPolicyPage() {
 
       <PublicSection title="How to request a refund">
         <p>
-          Email <a href={mailto(LEGAL_CONTACTS.billing, "Move refund request")} className="underline">{LEGAL_CONTACTS.billing}</a> with the account email, purchase platform, charge date, and a short description. Do not send payment card numbers or sensitive secrets.
+          Email <a href={mailto(LEGAL_CONTACTS.billing, "LocateFlow refund request")} className="underline">{LEGAL_CONTACTS.billing}</a> with the account email, purchase platform, charge date, and a short description. Do not send payment card numbers or sensitive secrets.
         </p>
         <p>
           See the <Link href="/billing-policy" className="underline">Billing Policy</Link> for subscription, renewal, failed payment, tax, and cancellation terms.
