@@ -282,6 +282,15 @@ export async function canCreateAddress(userId: string, scope: PlanLimitScope = {
   }
 
   if (count >= userPlan.limits.maxAddresses) {
+    if (userPlan.plan === "PRO") {
+      return {
+        allowed: false,
+        code: "ADDRESS_LIMIT_REACHED",
+        reason: `You've reached the maximum of ${userPlan.limits.maxAddresses} addresses for this account. Archive an old address or contact support if you need more.`,
+        current: count,
+        limit: userPlan.limits.maxAddresses,
+      };
+    }
     return {
       allowed: false,
       code: "ADDRESS_LIMIT_REACHED",
@@ -326,6 +335,15 @@ export async function canCreateService(userId: string, scope: PlanLimitScope = {
   }
 
   if (count >= userPlan.limits.maxServices) {
+    if (userPlan.plan === "PRO") {
+      return {
+        allowed: false,
+        code: "SERVICE_LIMIT_REACHED",
+        reason: `You've reached the maximum of ${userPlan.limits.maxServices} services for this account. Archive old services or contact support if you need more.`,
+        current: count,
+        limit: userPlan.limits.maxServices,
+      };
+    }
     return {
       allowed: false,
       code: "SERVICE_LIMIT_REACHED",
@@ -342,16 +360,15 @@ export async function canCreateService(userId: string, scope: PlanLimitScope = {
 /**
  * Check if the user can create a moving plan.
  *
- * FREEMIUM CONTRACT: the moving plan is the paid unlock. Only paid tiers
- * (Individual/Family/Pro — i.e. `hasPremium`) may create one. Everyone else,
- * including a FREE *active* user (FREE_TRIAL limits, `isActive:true`,
- * `hasPremium:false`) and a setup-grace user, is blocked with a single
- * upgrade-required signal. The onboarding/dashboard clients render the
- * value-first teaser + "Unlock with Individual" CTA off this code rather than
- * persisting a plan, so the gate must key on **paid tier**, never `isActive`.
+ * Flag-off paid-ladder contract: the moving plan is the paid unlock. Only
+ * paid tiers (Individual/Family/Pro — i.e. `hasPremium`) may create one.
+ * Everyone else, including a FREE *active* user (FREE_TRIAL limits,
+ * `isActive:true`, `hasPremium:false`) and a setup-grace user, is blocked with
+ * a single upgrade-required signal.
  *
- * The prior setup-grace "1 free moving plan" allowance is removed entirely —
- * free never creates a plan.
+ * CONSUMER_FREE is handled earlier by `getUserPlan`: eligible consumers resolve
+ * to PRO/hasPremium before this check, so they can create moving plans until
+ * the separate abuse/safety cap is reached.
  */
 export async function canCreateMovingPlan(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
   const userPlan = await getPlanForLimitScope(userId, scope);
@@ -369,12 +386,12 @@ export async function canCreateMovingPlan(userId: string, scope: PlanLimitScope 
 }
 
 /**
- * Destination-address check for the moving-plan create flow. Since free users
- * can no longer create a moving plan at all (canCreateMovingPlan blocks them
- * first), this is only reached by paid users, and it simply applies their
- * normal per-tier address cap. The old setup-grace bypass (which granted a free
- * destination address for the first move) is gone with the moving-plan
- * allowance.
+ * Destination-address check for the moving-plan create flow. Under the
+ * flag-off paid ladder this is only reached by paid users because
+ * canCreateMovingPlan blocks free users first. Under CONSUMER_FREE, eligible
+ * consumers resolve to PRO before this path, and the normal PRO address cap
+ * plus the moving-plan safety cap apply. The old setup-grace bypass (which
+ * granted a free destination address for the first move) is gone.
  */
 export async function canCreateMovingDestinationAddress(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
   return canCreateAddress(userId, scope);

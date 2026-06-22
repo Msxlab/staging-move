@@ -39,7 +39,7 @@ import { AddressesMap } from "@/components/addresses/AddressesMap";
 import { TransitRouteMap } from "@/components/addresses/TransitRouteMap";
 import { HeroCard, MoveCard, SectionHeader, Pill, type PillTone } from "@/components/move";
 import { useAuthStore } from "@/lib/auth-store";
-import { addressLimitForPlan } from "@/lib/plan-comparison";
+import { addressLimitForPlan, isHighestConsumerPlan } from "@/lib/plan-comparison";
 import type { Address } from "@locateflow/shared";
 
 // ── Addresses tab — reskinned to the Move design's ADDRESSES layout ──
@@ -191,20 +191,31 @@ export default function AddressesScreen() {
   const totalMonthly = addresses.reduce((sum, a) => sum + addressPerMonth(a), 0);
   const totalServices = addresses.reduce((sum, a) => sum + (a.services?.length || 0), 0);
   const addressLimit = addressLimitForPlan(planTier);
-  const addressLimitReached = addresses.length >= addressLimit;
+  const addressLimitReached = planTier != null && addresses.length >= addressLimit;
+  const addressAtTopTierLimit = addressLimitReached && isHighestConsumerPlan(planTier);
+  const addressLimitBody = () =>
+    addressAtTopTierLimit
+      ? t("addresses.safetyLimitWithCount", {
+          current: addresses.length,
+          limit: addressLimit,
+          defaultValue: `You've reached the safety limit of ${addressLimit} addresses for this account. Archive an old address or contact support if you need more.`,
+        })
+      : t("addresses.limitReachedWithCount", {
+          current: addresses.length,
+          limit: addressLimit,
+          defaultValue: `Your plan includes ${addressLimit} addresses. Upgrade to add more.`,
+        });
   const openNewAddress = () => {
     if (addressLimitReached) {
       Alert.alert(
         t("addresses.limitReachedTitle", { defaultValue: "Address limit reached" }),
-        t("addresses.limitReachedWithCount", {
-          current: addresses.length,
-          limit: addressLimit,
-          defaultValue: `Your plan includes ${addressLimit} addresses. Upgrade to add more.`,
-        }),
-        [
-          { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-          { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
-        ],
+        addressLimitBody(),
+        addressAtTopTierLimit
+          ? [{ text: t("common.ok", { defaultValue: "OK" }) }]
+          : [
+              { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+              { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+            ],
       );
       return;
     }
@@ -557,16 +568,12 @@ export default function AddressesScreen() {
                 {/* Add address */}
                 <TouchableOpacity
                   style={[styles.addCard, addressLimitReached && styles.addCardLimit]}
-                  onPress={addressLimitReached ? () => router.push("/settings/subscription") : openNewAddress}
+                  onPress={openNewAddress}
                 >
                   <Plus size={16} color={theme.colors.primary} />
                   <Text style={[styles.addText, addressLimitReached && styles.addTextLimit]}>
                     {addressLimitReached
-                      ? t("addresses.limitReachedWithCount", {
-                          current: addresses.length,
-                          limit: addressLimit,
-                          defaultValue: `Your plan includes ${addressLimit} addresses. Upgrade to add more.`,
-                        })
+                      ? addressLimitBody()
                       : "Add address"}
                   </Text>
                 </TouchableOpacity>

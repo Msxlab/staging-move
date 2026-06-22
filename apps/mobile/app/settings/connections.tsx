@@ -176,7 +176,7 @@ export default function ConnectionsScreen() {
               <Text style={styles.heroStatValue}>
                 {apiSync
                   ? t("connections.stat_on", { defaultValue: "On" })
-                  : t("connections.stat_plan", { defaultValue: "Plan" })}
+                  : t("connections.stat_review", { defaultValue: "Review" })}
               </Text>
               <Text style={styles.heroStatLabel}>{t("connections.stat_autoSync", { defaultValue: "auto sync" })}</Text>
             </View>
@@ -273,7 +273,7 @@ export default function ConnectionsScreen() {
                   </TouchableOpacity>
                   ) : c.mode === "API_SYNC" ? (
                     <TouchableOpacity onPress={() => router.push("/settings/subscription")} style={styles.ghostBtn} activeOpacity={0.85}>
-                      <Text style={styles.ghostBtnText}>{t("connections.upgrade", { defaultValue: "Upgrade" })}</Text>
+                      <Text style={styles.ghostBtnText}>{t("connections.reviewAccess", { defaultValue: "Review access" })}</Text>
                     </TouchableOpacity>
                   ) : c.mode === "GUIDED_UPDATE" && c.guidedAction?.url ? (
                     <TouchableOpacity onPress={() => openWebUrl(c.guidedAction!.url)} style={styles.ghostBtn} activeOpacity={0.85}>

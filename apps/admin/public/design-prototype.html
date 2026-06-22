@@ -25,14 +25,14 @@
           },
           colors: {
             brand: {
-              gold: '#F2C46C',
-              goldLight: '#FBE7BD',
-              goldDark: '#D99A4E',
+              sapphire: '#5B8DEF',
+              sapphireLight: '#DDE9FF',
+              sapphireDark: '#3D6FD6',
               blue: '#5C9DDC',
               blueLight: '#7FB6E8',
               blueDark: '#1F5FA0',
               purple: '#A5C9F0',
-              purpleDeep: '#8A5E14',
+              purpleDeep: '#244C90',
               sage: '#87DDC0',
             },
             darkBg: '#090D14',
@@ -69,8 +69,8 @@
       top: -100px;
       right: -100px;
     }
-    .dark .aurora-bg-gold {
-      background: radial-gradient(circle, #f2c46c 0%, transparent 70%);
+    .dark .aurora-bg-sapphire {
+      background: radial-gradient(circle, #5b8def 0%, transparent 70%);
       bottom: -150px;
       left: 10%;
     }
@@ -107,7 +107,7 @@
       transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .floating-dock:hover {
-      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(242, 196, 108, 0.2);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(91, 141, 239, 0.2);
     }
 
     /* Dock Icon Hover Animation (macOS style zoom) */
@@ -128,7 +128,7 @@
     }
     .glass-card:hover {
       background: rgba(20, 27, 43, 0.65);
-      border-color: rgba(242, 196, 108, 0.2);
+      border-color: rgba(91, 141, 239, 0.2);
       transform: translateY(-2px);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
     }
@@ -140,19 +140,19 @@
     }
     .light .glass-card:hover {
       background: rgba(255, 255, 255, 0.9);
-      border-color: rgba(176, 120, 30, 0.2);
+      border-color: rgba(46, 95, 176, 0.2);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
     }
 
     /* Foil text */
     .foil-text {
-      background: linear-gradient(135deg, #FBE7BD 0%, #F2C46C 50%, #D99A4E 100%);
+      background: linear-gradient(135deg, #DDE9FF 0%, #5B8DEF 50%, #3D6FD6 100%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
     .light .foil-text {
-      background: linear-gradient(135deg, #B0781E 0%, #D99A4E 50%, #8A5E14 100%);
+      background: linear-gradient(135deg, #2E5FB0 0%, #3D6FD6 50%, #244C90 100%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
@@ -160,8 +160,8 @@
 
     /* Navigation item active indicator */
     .nav-item-active {
-      background: rgba(242, 196, 108, 0.1);
-      color: #F2C46C;
+      background: rgba(91, 141, 239, 0.1);
+      color: #5B8DEF;
       font-weight: 600;
     }
     .nav-item-active::before {
@@ -173,24 +173,24 @@
       height: 18px;
       width: 3px;
       border-radius: 0 4px 4px 0;
-      background-color: #F2C46C;
+      background-color: #5B8DEF;
     }
     .light .nav-item-active {
-      background: rgba(176, 120, 30, 0.08);
-      color: #B0781E;
+      background: rgba(46, 95, 176, 0.08);
+      color: #2E5FB0;
     }
     .light .nav-item-active::before {
-      background-color: #B0781E;
+      background-color: #2E5FB0;
     }
 
     /* Ribbon Sidebar Collapsed Item */
     .ribbon-item-active {
-      background-color: rgba(242, 196, 108, 0.1);
-      color: #F2C46C;
+      background-color: rgba(91, 141, 239, 0.1);
+      color: #5B8DEF;
     }
     .light .ribbon-item-active {
-      background-color: rgba(176, 120, 30, 0.08);
-      color: #B0781E;
+      background-color: rgba(46, 95, 176, 0.08);
+      color: #2E5FB0;
     }
 
     /* Spring Animation */
@@ -224,12 +224,12 @@
     }
   </style>
 </head>
-<body class="font-sans text-slate-200 bg-darkBg selection:bg-brand-gold/30 selection:text-white transition-colors duration-300">
+<body class="font-sans text-slate-200 bg-darkBg selection:bg-brand-sapphire/30 selection:text-white transition-colors duration-300">
 
   <!-- Aurora Background -->
   <div class="relative w-full min-h-screen overflow-hidden bg-darkBg dark:bg-darkBg light:bg-lightBg text-slate-200 dark:text-slate-200 light:text-slate-800">
     <div class="aurora-bg aurora-bg-blue"></div>
-    <div class="aurora-bg aurora-bg-gold"></div>
+    <div class="aurora-bg aurora-bg-sapphire"></div>
 
     <!-- Layout Container (Dynamic) -->
     <div class="flex h-screen overflow-hidden relative z-10" id="layout-wrapper">
@@ -279,21 +279,21 @@
       <aside id="ribbon-sidebar" class="hidden glass-effect w-16 flex-col shrink-0 h-full items-center py-4 justify-between border-r border-white/5 z-20">
         <!-- Top Item: Logo -->
         <div class="flex flex-col items-center gap-6">
-          <div class="h-10 w-10 rounded-xl bg-brand-gold/10 text-brand-gold border border-brand-gold/20 flex items-center justify-center cursor-pointer" onclick="toggleLayout('hub')" title="Ana Merkeze Git">
+          <div class="h-10 w-10 rounded-xl bg-brand-sapphire/10 text-brand-sapphire border border-brand-sapphire/20 flex items-center justify-center cursor-pointer" onclick="toggleLayout('hub')" title="Ana Merkeze Git">
             <i data-lucide="layout-grid" class="h-5 w-5"></i>
           </div>
           <!-- Menu Ribbon Groups -->
           <div class="flex flex-col gap-2.5">
-            <button onclick="switchTab('dashboard', this); selectRibbon(this)" class="ribbon-item-active h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-gold hover:bg-white/5 transition-all" title="Kontrol Paneli">
+            <button onclick="switchTab('dashboard', this); selectRibbon(this)" class="ribbon-item-active h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-sapphire hover:bg-white/5 transition-all" title="Kontrol Paneli">
               <i data-lucide="layout-dashboard" class="h-5 w-5"></i>
             </button>
-            <button onclick="switchTab('providers', this); selectRibbon(this)" class="h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-gold hover:bg-white/5 transition-all" title="Hizmet Sağlayıcılar">
+            <button onclick="switchTab('providers', this); selectRibbon(this)" class="h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-sapphire hover:bg-white/5 transition-all" title="Hizmet Sağlayıcılar">
               <i data-lucide="building-2" class="h-5 w-5"></i>
             </button>
-            <button onclick="switchTab('moving', this); selectRibbon(this)" class="h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-gold hover:bg-white/5 transition-all" title="Taşıma Planları">
+            <button onclick="switchTab('moving', this); selectRibbon(this)" class="h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-sapphire hover:bg-white/5 transition-all" title="Taşıma Planları">
               <i data-lucide="truck" class="h-5 w-5"></i>
             </button>
-            <button onclick="switchTab('users', this); selectRibbon(this)" class="h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-gold hover:bg-white/5 transition-all" title="Kullanıcılar">
+            <button onclick="switchTab('users', this); selectRibbon(this)" class="h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-sapphire hover:bg-white/5 transition-all" title="Kullanıcılar">
               <i data-lucide="users" class="h-5 w-5"></i>
             </button>
           </div>
@@ -303,7 +303,7 @@
           <button onclick="toggleTheme()" class="h-9 w-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all">
             <i data-lucide="moon" class="h-4 w-4"></i>
           </button>
-          <div class="h-8 w-8 rounded-full bg-brand-gold/15 text-brand-gold font-bold text-xs flex items-center justify-center border border-brand-gold/20">
+          <div class="h-8 w-8 rounded-full bg-brand-sapphire/15 text-brand-sapphire font-bold text-xs flex items-center justify-center border border-brand-sapphire/20">
             K
           </div>
         </div>
@@ -336,7 +336,7 @@
             <input
               type="text"
               placeholder="Her şeyi hızlıca bulun (⌘K / yazmaya başlayın)..."
-              class="w-full rounded-xl border border-white/5 dark:border-white/5 light:border-black/10 bg-slate-950/40 pl-9 pr-14 py-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-gold/50 focus:border-brand-gold/50 transition-all shadow-inner"
+              class="w-full rounded-xl border border-white/5 dark:border-white/5 light:border-black/10 bg-slate-950/40 pl-9 pr-14 py-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-sapphire/50 focus:border-brand-sapphire/50 transition-all shadow-inner"
             />
             <kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 rounded bg-slate-800 dark:bg-slate-800 light:bg-slate-200 border border-white/10 px-1.5 py-0.5 text-[9px] font-mono text-slate-400">Ctrl K</kbd>
           </div>
@@ -346,7 +346,7 @@
             <div class="flex items-center gap-1.5 bg-slate-900/40 dark:bg-slate-900/40 light:bg-slate-200 border border-white/5 dark:border-white/5 light:border-black/5 rounded-xl p-1">
               <button onclick="toggleLayout('sidebar')" id="btn-layout-sidebar" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all text-slate-400 hover:text-white">Klasik Menü</button>
               <button onclick="toggleLayout('ribbon')" id="btn-layout-ribbon" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all text-slate-400 hover:text-white">Şerit Menü</button>
-              <button onclick="toggleLayout('hub')" id="btn-layout-hub" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-gold/15 text-brand-gold border border-brand-gold/25 shadow-sm">Yüzen Panel</button>
+              <button onclick="toggleLayout('hub')" id="btn-layout-hub" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-sapphire/15 text-brand-sapphire border border-brand-sapphire/25 shadow-sm">Yüzen Panel</button>
             </div>
 
             <span class="h-4 w-px bg-white/10 dark:bg-white/10 light:bg-black/10"></span>
@@ -354,7 +354,7 @@
             <!-- Quick Notification -->
             <button class="relative p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all">
               <i data-lucide="bell" class="h-4.5 w-4.5"></i>
-              <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-brand-gold"></span>
+              <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-brand-sapphire"></span>
             </button>
           </div>
         </header>
@@ -397,12 +397,12 @@
             <div class="glass-card rounded-2xl p-6 space-y-4">
               <div class="flex items-center justify-between">
                 <h3 class="text-sm font-semibold text-white dark:text-white light:text-slate-900">Operasyonel İşlem Hacmi (Haftalık)</h3>
-                <span class="text-[11px] text-brand-gold bg-brand-gold/10 px-2.5 py-0.5 rounded border border-brand-gold/20">Maksimum Performans</span>
+                <span class="text-[11px] text-brand-sapphire bg-brand-sapphire/10 px-2.5 py-0.5 rounded border border-brand-sapphire/20">Maksimum Performans</span>
               </div>
               <div class="h-44 w-full flex items-end">
                 <svg class="w-full h-full" viewBox="0 0 500 150" preserveAspectRatio="none">
-                  <path d="M 0 130 Q 80 80 160 90 T 320 60 T 480 30 L 500 30 L 500 150 L 0 150 Z" fill="rgba(242, 196, 108, 0.08)" />
-                  <path d="M 0 130 Q 80 80 160 90 T 320 60 T 480 30" fill="none" stroke="#F2C46C" stroke-width="3" />
+                  <path d="M 0 130 Q 80 80 160 90 T 320 60 T 480 30 L 500 30 L 500 150 L 0 150 Z" fill="rgba(91, 141, 239, 0.08)" />
+                  <path d="M 0 130 Q 80 80 160 90 T 320 60 T 480 30" fill="none" stroke="#5B8DEF" stroke-width="3" />
                 </svg>
               </div>
             </div>
@@ -415,7 +415,7 @@
                 <h1 class="text-2xl font-bold font-display text-white dark:text-white light:text-slate-900">Hizmet Sağlayıcılar</h1>
                 <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500">Sistem nakliyat partnerlerini ve performanslarını izleyin.</p>
               </div>
-              <button class="flex items-center gap-2 rounded-xl bg-brand-gold hover:bg-brand-goldLight text-slate-900 font-semibold px-4 py-2 text-xs transition-all shadow-[0_4px_16px_rgba(242,196,108,0.2)]">
+              <button class="flex items-center gap-2 rounded-xl bg-brand-sapphire hover:bg-brand-sapphireLight text-slate-900 font-semibold px-4 py-2 text-xs transition-all shadow-[0_4px_16px_rgba(91,141,239,0.2)]">
                 <i data-lucide="plus" class="h-4 w-4"></i> Yeni Sağlayıcı
               </button>
             </div>
@@ -426,7 +426,7 @@
               <!-- Provider Card 1 -->
               <div class="glass-card rounded-2xl p-5 space-y-4 relative overflow-hidden">
                 <div class="flex items-center gap-3">
-                  <div class="h-10 w-10 rounded-xl bg-brand-gold/10 text-brand-gold border border-brand-gold/20 flex items-center justify-center font-bold text-sm">EE</div>
+                  <div class="h-10 w-10 rounded-xl bg-brand-sapphire/10 text-brand-sapphire border border-brand-sapphire/20 flex items-center justify-center font-bold text-sm">EE</div>
                   <div class="min-w-0 flex-1">
                     <h4 class="font-semibold text-white dark:text-white light:text-slate-800 truncate">Evden Eve Lojistik A.Ş.</h4>
                     <span class="text-[10px] text-slate-400">Şehirler Arası</span>
@@ -439,12 +439,12 @@
                 </div>
                 <div class="flex justify-between items-center text-xs">
                   <span class="text-slate-400">Kalite Skoru:</span>
-                  <span class="text-brand-gold font-bold flex items-center gap-1"><i data-lucide="star" class="h-3 w-3 fill-brand-gold"></i> 4.8</span>
+                  <span class="text-brand-sapphire font-bold flex items-center gap-1"><i data-lucide="star" class="h-3 w-3 fill-brand-sapphire"></i> 4.8</span>
                 </div>
                 <div class="flex justify-between items-center text-xs pt-1">
                   <span class="inline-flex items-center gap-1 rounded-full bg-brand-sage/10 px-2 py-0.5 text-[9px] font-semibold text-brand-sage border border-brand-sage/20">Aktif</span>
                   <div class="flex gap-1">
-                    <button class="p-1 rounded bg-white/5 hover:bg-brand-gold/15 hover:text-brand-gold"><i data-lucide="edit-3" class="h-3 w-3"></i></button>
+                    <button class="p-1 rounded bg-white/5 hover:bg-brand-sapphire/15 hover:text-brand-sapphire"><i data-lucide="edit-3" class="h-3 w-3"></i></button>
                     <button class="p-1 rounded bg-white/5 hover:bg-red-500/10 hover:text-red-400"><i data-lucide="slash" class="h-3 w-3"></i></button>
                   </div>
                 </div>
@@ -466,12 +466,12 @@
                 </div>
                 <div class="flex justify-between items-center text-xs">
                   <span class="text-slate-400">Kalite Skoru:</span>
-                  <span class="text-brand-gold font-bold flex items-center gap-1"><i data-lucide="star" class="h-3 w-3 fill-brand-gold"></i> 4.5</span>
+                  <span class="text-brand-sapphire font-bold flex items-center gap-1"><i data-lucide="star" class="h-3 w-3 fill-brand-sapphire"></i> 4.5</span>
                 </div>
                 <div class="flex justify-between items-center text-xs pt-1">
                   <span class="inline-flex items-center gap-1 rounded-full bg-brand-sage/10 px-2 py-0.5 text-[9px] font-semibold text-brand-sage border border-brand-sage/20">Aktif</span>
                   <div class="flex gap-1">
-                    <button class="p-1 rounded bg-white/5 hover:bg-brand-gold/15 hover:text-brand-gold"><i data-lucide="edit-3" class="h-3 w-3"></i></button>
+                    <button class="p-1 rounded bg-white/5 hover:bg-brand-sapphire/15 hover:text-brand-sapphire"><i data-lucide="edit-3" class="h-3 w-3"></i></button>
                     <button class="p-1 rounded bg-white/5 hover:bg-red-500/10 hover:text-red-400"><i data-lucide="slash" class="h-3 w-3"></i></button>
                   </div>
                 </div>
@@ -496,9 +496,9 @@
                   <span class="text-slate-400 font-medium italic">Skor Yok</span>
                 </div>
                 <div class="flex justify-between items-center text-xs pt-1">
-                  <span class="inline-flex items-center gap-1 rounded-full bg-brand-gold/10 px-2 py-0.5 text-[9px] font-semibold text-brand-gold border border-brand-gold/20">İncelemede</span>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-brand-sapphire/10 px-2 py-0.5 text-[9px] font-semibold text-brand-sapphire border border-brand-sapphire/20">İncelemede</span>
                   <div class="flex gap-1">
-                    <button class="p-1 rounded bg-white/5 hover:bg-brand-gold/15 hover:text-brand-gold"><i data-lucide="edit-3" class="h-3 w-3"></i></button>
+                    <button class="p-1 rounded bg-white/5 hover:bg-brand-sapphire/15 hover:text-brand-sapphire"><i data-lucide="edit-3" class="h-3 w-3"></i></button>
                     <button class="p-1 rounded bg-white/5 hover:bg-red-500/10 hover:text-red-400"><i data-lucide="slash" class="h-3 w-3"></i></button>
                   </div>
                 </div>
@@ -522,7 +522,7 @@
                   <span class="text-[9px] font-mono bg-white/5 px-2 py-0.5 rounded">12</span>
                 </div>
                 <div class="bg-slate-950/40 p-3 rounded-xl border border-white/5 space-y-2">
-                  <div class="flex justify-between text-[10px]"><span class="text-brand-gold">#MP-9482</span><span>₺18.5k</span></div>
+                  <div class="flex justify-between text-[10px]"><span class="text-brand-sapphire">#MP-9482</span><span>₺18.5k</span></div>
                   <p class="text-xs font-semibold text-white">Kadıköy → Karşıyaka</p>
                 </div>
               </div>
@@ -539,10 +539,10 @@
               <div class="glass-card rounded-2xl p-4 space-y-4">
                 <div class="flex justify-between items-center border-b border-white/5 pb-2">
                   <span class="text-xs font-semibold">Yolda / Yükleme</span>
-                  <span class="text-[9px] font-mono bg-brand-gold/15 text-brand-gold px-2 py-0.5 rounded">5</span>
+                  <span class="text-[9px] font-mono bg-brand-sapphire/15 text-brand-sapphire px-2 py-0.5 rounded">5</span>
                 </div>
-                <div class="bg-slate-950/40 p-3 rounded-xl border border-brand-gold/20 space-y-2">
-                  <div class="flex justify-between text-[10px]"><span class="text-brand-gold">#MP-9411</span><span>₺15.8k</span></div>
+                <div class="bg-slate-950/40 p-3 rounded-xl border border-brand-sapphire/20 space-y-2">
+                  <div class="flex justify-between text-[10px]"><span class="text-brand-sapphire">#MP-9411</span><span>₺15.8k</span></div>
                   <p class="text-xs font-semibold text-white">Bodrum → Kadıköy</p>
                 </div>
               </div>
@@ -578,7 +578,7 @@
       <!-- 4. FLOATING DOCK (Visible ONLY in Hub layout - The ultra creative way) -->
       <div id="creative-dock" class="floating-dock glass-effect transition-all duration-300">
         <!-- Dock Item: Dashboard -->
-        <button onclick="switchTab('dashboard', this); selectDock(this)" class="dock-icon h-12 w-12 rounded-2xl bg-brand-gold/10 text-brand-gold flex items-center justify-center border border-brand-gold/25 shadow-sm" title="Özet Paneli">
+        <button onclick="switchTab('dashboard', this); selectDock(this)" class="dock-icon h-12 w-12 rounded-2xl bg-brand-sapphire/10 text-brand-sapphire flex items-center justify-center border border-brand-sapphire/25 shadow-sm" title="Özet Paneli">
           <i data-lucide="layout-dashboard" class="h-5 w-5"></i>
         </button>
         <!-- Dock Item: Providers -->
@@ -612,13 +612,13 @@
 
           <!-- Top section -->
           <div class="flex flex-col items-center text-center space-y-2">
-            <span class="text-[10px] font-mono tracking-widest text-brand-gold uppercase font-bold">Locateflow Hub</span>
+            <span class="text-[10px] font-mono tracking-widest text-brand-sapphire uppercase font-bold">Locateflow Hub</span>
             <h2 class="text-3xl font-display font-bold text-white leading-none">Tüm Sistem Modülleri</h2>
             <p class="text-xs text-slate-400 max-w-md">Klavye kısayolları veya arama çubuğunu kullanarak gitmek istediğiniz modüle anında erişin.</p>
             
             <div class="relative w-80 mt-4">
               <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-              <input type="text" placeholder="Modül adı ara..." class="w-full rounded-xl border border-white/10 bg-slate-950/60 pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-gold" />
+              <input type="text" placeholder="Modül adı ara..." class="w-full rounded-xl border border-white/10 bg-slate-950/60 pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-sapphire" />
             </div>
           </div>
 
@@ -627,17 +627,17 @@
             
             <!-- Category: Core -->
             <div class="glass-card rounded-2xl p-4 space-y-3 border border-white/5">
-              <h4 class="text-[10px] font-bold text-brand-gold uppercase tracking-wider">Ana Sistem</h4>
+              <h4 class="text-[10px] font-bold text-brand-sapphire uppercase tracking-wider">Ana Sistem</h4>
               <div class="space-y-2">
-                <a href="#" onclick="clickFromMega('dashboard')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-gold/10 hover:text-brand-gold transition-all">
+                <a href="#" onclick="clickFromMega('dashboard')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-sapphire/10 hover:text-brand-sapphire transition-all">
                   <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="layout-dashboard" class="h-4 w-4"></i> Özet Paneli</span>
                   <span class="text-[9px] font-mono text-slate-500">1</span>
                 </a>
-                <a href="#" onclick="clickFromMega('providers')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-gold/10 hover:text-brand-gold transition-all">
+                <a href="#" onclick="clickFromMega('providers')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-sapphire/10 hover:text-brand-sapphire transition-all">
                   <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="building-2" class="h-4 w-4"></i> Sağlayıcılar</span>
                   <span class="text-[9px] font-mono text-slate-500">2</span>
                 </a>
-                <a href="#" onclick="clickFromMega('moving')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-gold/10 hover:text-brand-gold transition-all">
+                <a href="#" onclick="clickFromMega('moving')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-sapphire/10 hover:text-brand-sapphire transition-all">
                   <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="truck" class="h-4 w-4"></i> Taşıma Planları</span>
                   <span class="text-[9px] font-mono text-slate-500">3</span>
                 </a>
@@ -740,17 +740,17 @@
         sidebar.style.display = 'flex';
         ribbon.style.display = 'none';
         dock.style.display = 'none';
-        document.getElementById('btn-layout-sidebar').className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-gold/15 text-brand-gold border border-brand-gold/25 shadow-sm";
+        document.getElementById('btn-layout-sidebar').className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-sapphire/15 text-brand-sapphire border border-brand-sapphire/25 shadow-sm";
       } else if (layout === 'ribbon') {
         sidebar.style.display = 'none';
         ribbon.style.display = 'flex';
         dock.style.display = 'none';
-        document.getElementById('btn-layout-ribbon').className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-gold/15 text-brand-gold border border-brand-gold/25 shadow-sm";
+        document.getElementById('btn-layout-ribbon').className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-sapphire/15 text-brand-sapphire border border-brand-sapphire/25 shadow-sm";
       } else if (layout === 'hub') {
         sidebar.style.display = 'none';
         ribbon.style.display = 'none';
         dock.style.display = 'flex';
-        document.getElementById('btn-layout-hub').className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-gold/15 text-brand-gold border border-brand-gold/25 shadow-sm";
+        document.getElementById('btn-layout-hub').className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-sapphire/15 text-brand-sapphire border border-brand-sapphire/25 shadow-sm";
       }
     }
 
@@ -792,7 +792,7 @@
       document.querySelectorAll('#creative-dock button').forEach(btn => {
         btn.className = "dock-icon h-12 w-12 rounded-2xl bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-all";
       });
-      el.className = "dock-icon h-12 w-12 rounded-2xl bg-brand-gold/10 text-brand-gold flex items-center justify-center border border-brand-gold/25 shadow-sm";
+      el.className = "dock-icon h-12 w-12 rounded-2xl bg-brand-sapphire/10 text-brand-sapphire flex items-center justify-center border border-brand-sapphire/25 shadow-sm";
     }
 
     // Dark/Light Theme Switch

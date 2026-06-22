@@ -27,7 +27,7 @@ import { api } from "@/lib/api";
 import { formatLocalDateKey } from "@/lib/date-only";
 import { hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
-import { addressLimitForPlan } from "@/lib/plan-comparison";
+import { addressLimitForPlan, isHighestConsumerPlan } from "@/lib/plan-comparison";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 
@@ -54,7 +54,7 @@ export default function NewAddressScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
-  const [addressGate, setAddressGate] = useState<{ current: number; limit: number } | null>(null);
+  const [addressGate, setAddressGate] = useState<{ current: number; limit: number; plan: string | null } | null>(null);
   // Success micro-moment: fire the raccoon toast on save, then go back when it
   // finishes so the user actually sees the loop close.
   const [showSuccess, setShowSuccess] = useState(false);
@@ -111,6 +111,7 @@ export default function NewAddressScreen() {
       setAddressGate({
         current: addressesRes.data?.addresses?.length || 0,
         limit: addressLimitForPlan(plan),
+        plan,
       });
     })().catch(() => {
       if (!cancelled) setAddressGate(null);
@@ -197,9 +198,8 @@ export default function NewAddressScreen() {
     setLoading(false);
     if (res.error) {
       hapticError();
-      // Plan-limit / inactive-subscription gates carry a code + an upgrade
-      // message — turn those into an upsell with an Upgrade button instead of a
-      // generic "Try again" that dead-ends the user.
+      // Plan-limit / inactive-subscription gates carry a code. Turn those into
+      // a clear access-review path instead of a generic "Try again" dead end.
       if (res.code && UPSELL_GATE_CODES.includes(res.code)) {
         showAddressLimitAlert(res.error);
       } else {
@@ -219,20 +219,30 @@ export default function NewAddressScreen() {
     defaultValue: "Add a real address so providers, reminders, and local details match the right place.",
   });
   const addressLimitReached = addressGate != null && addressGate.current >= addressGate.limit;
+  const addressAtTopTierLimit = addressLimitReached && isHighestConsumerPlan(addressGate?.plan);
+  const addressLimitBody = () =>
+    addressAtTopTierLimit
+      ? t("addresses.safetyLimitWithCount", {
+          current: addressGate?.current ?? 0,
+          limit: addressGate?.limit ?? 0,
+          defaultValue: `You've reached the safety limit of ${addressGate?.limit ?? 0} addresses for this account. Archive an old address or contact support if you need more.`,
+        })
+      : t("addresses.limitReachedWithCount", {
+          current: addressGate?.current ?? 0,
+          limit: addressGate?.limit ?? 0,
+          defaultValue: `Your plan includes ${addressGate?.limit ?? 0} addresses. Upgrade to add more.`,
+        });
   const showAddressLimitAlert = (message?: string) => {
     hapticError();
     Alert.alert(
       t("addresses.limitReachedTitle", { defaultValue: "Address limit reached" }),
-      message ||
-        t("addresses.limitReachedWithCount", {
-          current: addressGate?.current ?? 0,
-          limit: addressGate?.limit ?? 0,
-          defaultValue: `Your plan includes ${addressGate?.limit ?? 0} addresses. Upgrade to add more.`,
-        }),
-      [
-        { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-        { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
-      ],
+      message || addressLimitBody(),
+      addressAtTopTierLimit
+        ? [{ text: t("common.ok", { defaultValue: "OK" }) }]
+        : [
+            { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+          ],
     );
   };
 
@@ -274,18 +284,18 @@ export default function NewAddressScreen() {
                   {t("addresses.limitReachedTitle", { defaultValue: "Address limit reached" })}
                 </Text>
                 <Text style={styles.limitBody}>
-                  {t("addresses.limitReachedWithCount", {
-                    current: addressGate?.current ?? 0,
-                    limit: addressGate?.limit ?? 0,
-                    defaultValue: `Your plan includes ${addressGate?.limit ?? 0} addresses. Upgrade to add more.`,
-                  })}
+                  {addressLimitBody()}
                 </Text>
                 <TouchableOpacity
                   style={styles.limitCta}
-                  onPress={() => router.push("/settings/subscription")}
+                  onPress={() => addressAtTopTierLimit ? router.back() : router.push("/settings/subscription")}
                   activeOpacity={0.72}
                 >
-                  <Text style={styles.limitCtaText}>{t("subscription.upgrade", { defaultValue: "Upgrade" })}</Text>
+                  <Text style={styles.limitCtaText}>
+                    {addressAtTopTierLimit
+                      ? t("addresses.backToAddresses", { defaultValue: "Back to addresses" })
+                      : t("subscription.upgrade", { defaultValue: "Upgrade" })}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>

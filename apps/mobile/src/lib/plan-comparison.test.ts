@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildPlanComparison,
   comparisonPriceLabel,
+  isHighestConsumerPlan,
+  isKnownBillingPlan,
   shouldShowComparisonPrice,
   type PlanComparisonEntry,
 } from "./plan-comparison";
@@ -225,5 +227,19 @@ describe("shouldShowComparisonPrice", () => {
     expect(
       shouldShowComparisonPrice({ ...base, isNativeStorePlatform: false, planHasAvailableNativeSku: false }),
     ).toBe(true);
+  });
+});
+
+describe("plan key helpers", () => {
+  it("recognizes known billing plans and treats only Pro as the highest consumer cap", () => {
+    expect(isKnownBillingPlan("FREE_TRIAL")).toBe(true);
+    expect(isKnownBillingPlan("PRO")).toBe(true);
+    expect(isKnownBillingPlan("LEGACY")).toBe(false);
+    expect(isKnownBillingPlan(null)).toBe(false);
+
+    expect(isHighestConsumerPlan("PRO")).toBe(true);
+    expect(isHighestConsumerPlan("FAMILY")).toBe(false);
+    expect(isHighestConsumerPlan("INDIVIDUAL")).toBe(false);
+    expect(isHighestConsumerPlan(null)).toBe(false);
   });
 });

@@ -106,9 +106,9 @@ describe("resolveActiveRouteCoords", () => {
 describe("hslTripletToHex", () => {
   it("converts the plan-accent token shapes from globals.css", () => {
     expect(hslTripletToHex("347 100% 81%")).toBe("FF9EB3"); // .plan-free (dark)
-    expect(hslTripletToHex("39 51% 58%")).toBe("CBA45D"); // default --primary (dark) ≈ #CBA45E
+    expect(hslTripletToHex("219.73 82.22% 64.71%")).toBe("5B8DEF"); // default --primary (dark) = #5B8DEF
     expect(hslTripletToHex("0 0% 100%")).toBe("FFFFFF");
-    expect(hslTripletToHex(" 39 51% 58% ")).toMatch(/^[0-9A-F]{6}$/);
+    expect(hslTripletToHex(" 219.73 82.22% 64.71% ")).toMatch(/^[0-9A-F]{6}$/);
   });
 
   it("returns null for unparseable values", () => {

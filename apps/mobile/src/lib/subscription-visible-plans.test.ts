@@ -1,8 +1,61 @@
 import { describe, expect, it } from "vitest";
 import {
+  shouldShowMobileConsumerFreePanel,
   shouldRenderMobileSubscriptionPlanCard,
   shouldShowMobileSubscriptionPlan,
 } from "./subscription-visible-plans";
+
+describe("shouldShowMobileConsumerFreePanel", () => {
+  it("shows the included-access panel for an active paid entitlement without billing management", () => {
+    expect(shouldShowMobileConsumerFreePanel({
+      loading: false,
+      managementKind: "none",
+      effectivePlanKey: "PRO",
+      effectiveActive: true,
+    })).toBe(true);
+  });
+
+  it("waits until the entitlement has loaded", () => {
+    expect(shouldShowMobileConsumerFreePanel({
+      loading: true,
+      managementKind: "none",
+      effectivePlanKey: "PRO",
+      effectiveActive: true,
+    })).toBe(false);
+    expect(shouldShowMobileConsumerFreePanel({
+      loading: false,
+      managementKind: null,
+      effectivePlanKey: "PRO",
+      effectiveActive: true,
+    })).toBe(false);
+  });
+
+  it("keeps real Stripe and store subscriptions on the billing-management screen", () => {
+    for (const managementKind of ["stripe", "store"]) {
+      expect(shouldShowMobileConsumerFreePanel({
+        loading: false,
+        managementKind,
+        effectivePlanKey: "PRO",
+        effectiveActive: true,
+      })).toBe(false);
+    }
+  });
+
+  it("does not show for inactive or free-trial entitlements", () => {
+    expect(shouldShowMobileConsumerFreePanel({
+      loading: false,
+      managementKind: "none",
+      effectivePlanKey: "PRO",
+      effectiveActive: false,
+    })).toBe(false);
+    expect(shouldShowMobileConsumerFreePanel({
+      loading: false,
+      managementKind: "none",
+      effectivePlanKey: "FREE_TRIAL",
+      effectiveActive: true,
+    })).toBe(false);
+  });
+});
 
 describe("shouldShowMobileSubscriptionPlan", () => {
   it("shows every plan in non-native environments", () => {

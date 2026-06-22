@@ -3,52 +3,52 @@
 @tailwind utilities;
 
 /* =========================================================================
-   LocateFlow — Edition VII · Aurora
+   Move — Edition VIII · Move Sapphire
    Source of truth: packages/shared/src/design-tokens.ts. Mirrors the
    numeric values exported by that module so web/admin (which don't import
    tokens at runtime) and mobile (which does) render the same palette.
    The legacy `--brand-orange` and `--orange-*` names are intentionally
    preserved — every Tailwind utility (`bg-orange-500`, `text-amber-400`,
-   `border-orange-300`, …) resolves to the Aurora cool/violet/mint values,
+   `border-orange-300`, …) resolves to the Move Sapphire / teal / green values,
    so the palette flips without touching component code.
    ========================================================================= */
 :root,
 .dark {
-  /* ─────────────── Brand core — Aurora cool primary, violet accent ─────── */
-  --rose:          #CBA45E;
-  --rose-light:    #DCBC7C;
-  --rose-deep:     #B0852F;
-  --rose-dark:     #9A7325;
+  /* ─────────────── Brand core — Move Sapphire primary, teal + green accents ─── */
+  --rose:          #5B8DEF;
+  --rose-light:    #83AAF5;
+  --rose-deep:     #3D6FD6;
+  --rose-dark:     #2E5FB0;
 
-  --foil-a:        #DCBC7C;
-  --foil-b:        #CBA45E;
-  --foil-c:        #B0852F;
-  --foil:          #CBA45E;
-  --foil-ink:      #765514;
+  --foil-a:        #83AAF5;
+  --foil-b:        #5B8DEF;
+  --foil-c:        #3D6FD6;
+  --foil:          #5B8DEF;
+  --foil-ink:      #2E5FB0;
 
-  --nude:          #CBA45E;
-  --nude-deep:     #B0852F;
+  --nude:          #5B8DEF;
+  --nude-deep:     #3D6FD6;
 
   --sage:          #54CB7E;
   --sage-soft:     #8BE3A8;
 
-  /* Legacy brand aliases — flipped to Aurora cool / honey */
-  --brand-orange:        #CBA45E;
-  --brand-orange-light:  #DCBC7C;
-  --brand-orange-dark:   #B0852F;
+  /* Legacy brand aliases — flipped to Move Sapphire / honey */
+  --brand-orange:        #5B8DEF;
+  --brand-orange-light:  #83AAF5;
+  --brand-orange-dark:   #3D6FD6;
   --brand-amber:         #E0A85A;
 
-  /* "orange" scale — now the Aurora cool scale (kept for `bg-orange-500` etc.) */
-  --orange-50:  #FCF7EA;
-  --orange-100: #F6E9C8;
-  --orange-200: #EBD39B;
-  --orange-300: #E4C68B;
-  --orange-400: #CBA45E;
-  --orange-500: #CBA45E;
-  --orange-600: #B89142;
-  --orange-700: #B0852F;
-  --orange-800: #9A7325;
-  --orange-900: #765514;
+  /* "orange" scale — now the Move Sapphire scale (kept for `bg-orange-500` etc.) */
+  --orange-50:  #EEF5FF;
+  --orange-100: #DBE8FF;
+  --orange-200: #C8D9FB;
+  --orange-300: #A9C5F8;
+  --orange-400: #5B8DEF;
+  --orange-500: #5B8DEF;
+  --orange-600: #3D74C8;
+  --orange-700: #3D6FD6;
+  --orange-800: #2E5FB0;
+  --orange-900: #2E5FB0;
 
   /* ─────────────── Surfaces — Aurora deep navy ─────────────────────────── */
   --bg:            #070B14;
@@ -58,7 +58,7 @@
   --surface-3:     #16203A;
   --elevated:      #1D2943;
 
-  /* ─────────────── Foreground — Aurora cool ink ramp ───────────────────── */
+  /* ─────────────── Foreground — Move dark ink ramp ─────────────────────── */
   --fg:            #EFF3FA;
   --fg-1:          rgba(239, 243, 250, 1);
   --fg-2:          rgba(239, 243, 250, 0.66);
@@ -69,10 +69,10 @@
   /* ─────────────── Borders ─────────────────────────────────────────────── */
   --line:          rgba(110, 150, 225, 0.12);
   --line-2:        rgba(110, 150, 225, 0.18);
-  --line-foil:     rgba(203, 164, 94, 0.24);
-  --line-rose:     rgba(203, 164, 94, 0.30);
+  --line-foil:     rgba(91, 141, 239, 0.24);
+  --line-rose:     rgba(91, 141, 239, 0.30);
   --border-strong: rgba(255, 255, 255, 0.14);
-  --border-focus:  rgba(203, 164, 94, 0.55);
+  --border-focus:  rgba(91, 141, 239, 0.55);
 
   /* ─────────────── Glass ───────────────────────────────────────────────── */
   --glass-bg:      rgba(255, 255, 255, 0.03);
@@ -94,9 +94,9 @@
   --tone-rose-br:    rgba(226, 92, 92, 0.28);
   --tone-rose-fg:    #E25C5C;
 
-  --tone-foil-bg:    rgba(203, 164, 94, 0.10);
-  --tone-foil-br:    rgba(203, 164, 94, 0.24);
-  --tone-foil-fg:    #CBA45E;
+  --tone-foil-bg:    rgba(91, 141, 239, 0.10);
+  --tone-foil-br:    rgba(91, 141, 239, 0.24);
+  --tone-foil-fg:    #5B8DEF;
 
   --tone-sage-bg:    rgba(84, 203, 126, 0.10);
   --tone-sage-br:    rgba(84, 203, 126, 0.22);
@@ -106,9 +106,9 @@
   --tone-honey-br:   rgba(224, 168, 90, 0.24);
   --tone-honey-fg:   #E0A85A;
 
-  --tone-umber-bg:   rgba(176, 133, 47, 0.10);
-  --tone-umber-br:   rgba(176, 133, 47, 0.22);
-  --tone-umber-fg:   #B0852F;
+  --tone-umber-bg:   rgba(61, 111, 214, 0.10);
+  --tone-umber-br:   rgba(61, 111, 214, 0.22);
+  --tone-umber-fg:   #3D6FD6;
 
   --tone-slate-bg:   rgba(168, 181, 201, 0.10);
   --tone-slate-br:   rgba(168, 181, 201, 0.22);
@@ -116,9 +116,9 @@
 
   /* Legacy tone aliases — orange→rose(cool), emerald→sage(mint),
      amber→honey(amber), sky/cyan→slate(ink-2). */
-  --tone-orange-bg:  rgba(203, 164, 94, 0.10);
-  --tone-orange-br:  rgba(203, 164, 94, 0.22);
-  --tone-orange-fg:  #CBA45E;
+  --tone-orange-bg:  rgba(91, 141, 239, 0.10);
+  --tone-orange-br:  rgba(91, 141, 239, 0.22);
+  --tone-orange-fg:  #5B8DEF;
   --tone-emerald-bg: rgba(84, 203, 126, 0.10);
   --tone-emerald-br: rgba(84, 203, 126, 0.22);
   --tone-emerald-fg: #54CB7E;
@@ -158,9 +158,9 @@
   --shadow-md:   0 6px 18px rgba(0, 0, 0, 0.40);
   --shadow-lg:   0 20px 50px rgba(0, 0, 0, 0.55);
   --shadow-xl:   0 40px 80px rgba(0, 0, 0, 0.60);
-  --shadow-rose: 0 0 20px rgba(203, 164, 94, 0.28);
-  --shadow-foil: 0 0 30px rgba(203, 164, 94, 0.20);
-  --shadow-glow: 0 0 20px rgba(203, 164, 94, 0.28);
+  --shadow-rose: 0 0 20px rgba(91, 141, 239, 0.28);
+  --shadow-foil: 0 0 30px rgba(91, 141, 239, 0.20);
+  --shadow-glow: 0 0 20px rgba(91, 141, 239, 0.28);
 
   /* ─────────────── Typography ─────────────── */
   --font-display: var(--font-playfair), "Playfair Display", "Didot", Georgia, serif;
@@ -223,50 +223,50 @@
 
   --line:          rgba(20, 32, 47, 0.06);
   --line-2:        rgba(20, 32, 47, 0.14);
-  --line-foil:     rgba(134, 99, 26, 0.30);
-  --line-rose:     rgba(134, 99, 26, 0.30);
+  --line-foil:     rgba(46, 95, 176, 0.30);
+  --line-rose:     rgba(46, 95, 176, 0.30);
   --border-strong: rgba(20, 32, 47, 0.14);
-  --border-focus:  rgba(134, 99, 26, 0.55);
+  --border-focus:  rgba(46, 95, 176, 0.55);
 
   --glass-bg:      rgba(255, 255, 255, 0.55);
   --glass-border:  rgba(20, 32, 47, 0.06);
   --glass-hover:   rgba(255, 255, 255, 0.92);
 
-  /* Accents — darker Aurora cool / honey on paper for AA contrast */
-  --rose:          #765514;
-  --rose-light:    #AD8534;
-  --rose-deep:     #765514;
-  --foil:          #765514;
-  --foil-ink:      #5A3D0E;
+  /* Accents — darker Move Sapphire / honey on paper for AA contrast */
+  --rose:          #2E5FB0;
+  --rose-light:    #3D74C8;
+  --rose-deep:     #2E5FB0;
+  --foil:          #2E5FB0;
+  --foil-ink:      #244C90;
   --sage:          #0F6B50;
 
   --tone-rose-fg:    #A83333;
-  --tone-foil-fg:    #765514;
+  --tone-foil-fg:    #244C90;
   --tone-sage-fg:    #0F6B50;
-  --tone-honey-fg:   #765514;
-  --tone-umber-fg:   #765514;
+  --tone-honey-fg:   #7A5418;
+  --tone-umber-fg:   #244C90;
   --tone-slate-fg:   #4A5C75;
-  --tone-orange-fg:  #765514;
+  --tone-orange-fg:  #244C90;
   --tone-emerald-fg: #0F6B50;
-  --tone-amber-fg:   #765514;
+  --tone-amber-fg:   #7A5418;
   --tone-sky-fg:     #16666B;
   --tone-cyan-fg:    #16666B;
 
   /* Tonal alphas — Aurora light ramp (darker text-on-paper, lighter bg). */
   --tone-rose-bg:    rgba(168, 51, 51, 0.10);
   --tone-rose-br:    rgba(168, 51, 51, 0.22);
-  --tone-foil-bg:    rgba(134, 99, 26, 0.10);
-  --tone-foil-br:    rgba(134, 99, 26, 0.22);
+  --tone-foil-bg:    rgba(46, 95, 176, 0.10);
+  --tone-foil-br:    rgba(46, 95, 176, 0.22);
   --tone-sage-bg:    rgba(15, 107, 80, 0.10);
   --tone-sage-br:    rgba(15, 107, 80, 0.22);
   --tone-honey-bg:   rgba(138, 91, 22, 0.10);
   --tone-honey-br:   rgba(138, 91, 22, 0.22);
-  --tone-umber-bg:   rgba(134, 99, 26, 0.10);
-  --tone-umber-br:   rgba(134, 99, 26, 0.22);
+  --tone-umber-bg:   rgba(46, 95, 176, 0.10);
+  --tone-umber-br:   rgba(46, 95, 176, 0.22);
   --tone-slate-bg:   rgba(74, 92, 117, 0.10);
   --tone-slate-br:   rgba(74, 92, 117, 0.22);
-  --tone-orange-bg:  rgba(134, 99, 26, 0.10);
-  --tone-orange-br:  rgba(134, 99, 26, 0.22);
+  --tone-orange-bg:  rgba(46, 95, 176, 0.10);
+  --tone-orange-br:  rgba(46, 95, 176, 0.22);
   --tone-emerald-bg: rgba(15, 107, 80, 0.10);
   --tone-emerald-br: rgba(15, 107, 80, 0.22);
   --tone-amber-bg:   rgba(138, 91, 22, 0.10);
@@ -276,25 +276,25 @@
   --tone-cyan-bg:    rgba(22, 102, 107, 0.10);
   --tone-cyan-br:    rgba(22, 102, 107, 0.22);
 
-  --orange-50:  #FCF7EA;
-  --orange-100: #F6E9C8;
-  --orange-200: #EBD39B;
-  --orange-300: #E4C68B;
-  --orange-400: #9A7325;
-  --orange-500: #765514;
-  --orange-600: #765514;
-  --orange-700: #6D5014;
-  --orange-800: #6D5014;
-  --orange-900: #4F3A0E;
+  --orange-50:  #EEF5FF;
+  --orange-100: #DBE8FF;
+  --orange-200: #C8D9FB;
+  --orange-300: #A9C5F8;
+  --orange-400: #2E5FB0;
+  --orange-500: #2E5FB0;
+  --orange-600: #2E5FB0;
+  --orange-700: #244C90;
+  --orange-800: #244C90;
+  --orange-900: #18345F;
 
-  --brand-orange:       #765514;
-  --brand-orange-light: #AD8534;
-  --brand-orange-dark:  #765514;
+  --brand-orange:       #2E5FB0;
+  --brand-orange-light: #3D74C8;
+  --brand-orange-dark:  #2E5FB0;
 
   /* Semantic — Aurora light ramp. Darker ink-on-paper hues for AA contrast. */
   --success:       #0F6B50;
   --success-soft:  rgba(15, 107, 80, 0.10);
-  --warning:       #765514;
+  --warning:       #7A5418;
   --warning-soft:  rgba(138, 91, 22, 0.10);
   --danger:        #A83333;
   --danger-soft:   rgba(168, 51, 51, 0.10);
@@ -302,14 +302,14 @@
   --info-soft:     rgba(22, 102, 107, 0.10);
 
   /* Glow shadows — flip from cool-on-dark to cool-on-paper. */
-  --shadow-rose: 0 0 20px rgba(134, 99, 26, 0.20);
-  --shadow-foil: 0 0 30px rgba(134, 99, 26, 0.16);
-  --shadow-glow: 0 0 20px rgba(134, 99, 26, 0.20);
+  --shadow-rose: 0 0 20px rgba(46, 95, 176, 0.20);
+  --shadow-foil: 0 0 30px rgba(46, 95, 176, 0.16);
+  --shadow-glow: 0 0 20px rgba(46, 95, 176, 0.20);
 }
 
 /* =========================================================================
    shadcn HSL tokens — drive every `bg-primary`, `text-foreground`,
-   `border-border` utility. HSL of #CBA45E ≈ 39 51% 58% (Aurora cool).
+   `border-border` utility. HSL of #5B8DEF = 219.73 82.22% 64.71% (Move Sapphire).
    Backgrounds match the navy canvas above (HSL of #0A0F18 ≈ 218 43% 6%).
    Mirrors the values in apps/web/src/styles/aurora.css `.lf-aurora` so
    the palette is consistent whether or not a subtree opts into the
@@ -327,7 +327,7 @@
     --popover: 217 41% 9%;
     --popover-foreground: 214 36% 95%;
 
-    --primary: 39 51% 58%;
+    --primary: 219.73 82.22% 64.71%;
     --primary-foreground: 218 43% 6%;
 
     --secondary: 215 22% 72%;
@@ -348,7 +348,7 @@
 
     --border: 217 32% 18%;
     --input: 217 32% 18%;
-    --ring: 39 51% 58%;
+    --ring: 219.73 82.22% 64.71%;
 
     --radius: 0.625rem; /* 10px */
 
@@ -361,15 +361,15 @@
 
   /* Per-plan accent — additive; AppShell adds .plan-free / .plan-family /
      .plan-pro per member tier. Dark is the default; a .light ancestor switches
-     to the light values. Absent class (Individual) = base Aurora theme.
+     to the light values. Absent class (Individual) = base Move Sapphire theme.
      Canonical plan hexes (design handoff, additions.css): Free #FF9DB2/#A8324F,
-     Family #4FD1B5/#0F6B50, Pro #CBA45E/#765514. */
+     Family #4FD1B5/#0F6B50, Pro #5B8DEF/#2E5FB0. */
   .plan-free { --primary: 347 100% 81%; --ring: 347 100% 81%; }
   .light .plan-free { --primary: 345 54% 43%; --ring: 345 54% 43%; }
   .plan-family { --primary: 168 60% 56%; --ring: 168 60% 56%; }
   .light .plan-family { --primary: 162 75% 24%; --ring: 162 75% 24%; }
-  .plan-pro { --primary: 39 51% 58%; --ring: 39 51% 58%; }
-  .light .plan-pro { --primary: 37 67% 29%; --ring: 37 67% 29%; }
+  .plan-pro { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
+  .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
     --background: 220 23% 96%;
@@ -381,7 +381,7 @@
     --popover: 218 21% 96%;
     --popover-foreground: 213 39% 13%;
 
-    --primary: 41 68% 31%;
+    --primary: 217.38 58.56% 43.53%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 214 22% 38%;
@@ -396,13 +396,13 @@
     --destructive: 358 47% 43%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 37 67% 29%;
+    --warning: 36.73 67.12% 28.63%;
     --success: 162 75% 24%;
     --info: 184 66% 25%;
 
     --border: 213 18% 82%;
     --input: 213 18% 82%;
-    --ring: 41 68% 31%;
+    --ring: 217.38 58.56% 43.53%;
 
     --radius: 0.625rem;
 
@@ -603,8 +603,8 @@
 
 .app-shell-backdrop {
   background:
-    linear-gradient(135deg, rgba(203, 164, 94, 0.10) 0%, transparent 32%),
-    linear-gradient(220deg, transparent 8%, rgba(203, 164, 94, 0.055) 44%, transparent 78%),
+    linear-gradient(135deg, rgba(91, 141, 239, 0.10) 0%, transparent 32%),
+    linear-gradient(220deg, transparent 8%, rgba(91, 141, 239, 0.055) 44%, transparent 78%),
     linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--surface) 86%, transparent) 100%),
     repeating-linear-gradient(90deg, rgba(236, 241, 248, 0.026) 0 1px, transparent 1px 72px),
     repeating-linear-gradient(0deg, rgba(236, 241, 248, 0.018) 0 1px, transparent 1px 72px);
@@ -613,8 +613,8 @@
 
 .light .app-shell-backdrop {
   background:
-    linear-gradient(135deg, rgba(154, 115, 37, 0.055) 0%, transparent 34%),
-    linear-gradient(220deg, transparent 6%, rgba(134, 99, 26, 0.04) 46%, transparent 82%),
+    linear-gradient(135deg, rgba(46, 95, 176, 0.055) 0%, transparent 34%),
+    linear-gradient(220deg, transparent 6%, rgba(46, 95, 176, 0.04) 46%, transparent 82%),
     linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--surface) 88%, transparent) 100%),
     repeating-linear-gradient(90deg, rgba(20, 32, 47, 0.026) 0 1px, transparent 1px 72px),
     repeating-linear-gradient(0deg, rgba(20, 32, 47, 0.018) 0 1px, transparent 1px 72px);
@@ -677,7 +677,7 @@
 
 .light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(20, 32, 47, 0.1); }
 
-.light .focus\:ring-orange-500\/50:focus { --tw-ring-color: rgba(154, 115, 37, 0.30); }
+.light .focus\:ring-orange-500\/50:focus { --tw-ring-color: rgba(46, 95, 176, 0.30); }
 
 .light .bg-black\/20 { background-color: rgba(255, 255, 255, 0.65); }
 .light .bg-black\/50 { background-color: rgba(0, 0, 0, 0.3); }
@@ -694,7 +694,7 @@
 .light .text-amber-300 { color: #8a5a00; }
 .light .text-orange-300,
 .light .text-orange-400 { color: #b45309; }
-.light .text-violet-300 { color: #765514; }
+.light .text-violet-300 { color: #2E5FB0; }
 .light .text-red-300,
 .light .text-red-400 { color: #b91c1c; }
 
@@ -810,7 +810,7 @@
 .premium-sticker svg { display: block; overflow: visible; }
 .premium-sticker:hover { transform: translateY(-1px) scale(1.04); }
 .premium-sticker.tier-pro:hover {
-  filter: drop-shadow(0 0 8px rgba(203, 164, 94, 0.4));
+  filter: drop-shadow(0 0 8px rgba(91, 141, 239, 0.4));
 }
 
 .ps-shimmer-overlay {
@@ -891,12 +891,12 @@
   width: min(540px, 92vw);
   padding: 56px 40px 40px;
   background: linear-gradient(180deg, #131C2C 0%, #0E1521 100%);
-  border: 1px solid rgba(203, 164, 94, 0.22);
+  border: 1px solid rgba(91, 141, 239, 0.22);
   border-radius: 24px;
   text-align: center;
   box-shadow:
     0 40px 100px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(203, 164, 94, 0.1) inset;
+    0 0 0 1px rgba(91, 141, 239, 0.1) inset;
   overflow: hidden;
   color: #ECF1F8;
 }
@@ -906,7 +906,7 @@
   inset: 0;
   background: radial-gradient(
     600px 300px at 50% 0%,
-    rgba(203, 164, 94, 0.16),
+    rgba(91, 141, 239, 0.16),
     transparent 60%
   );
   pointer-events: none;
@@ -953,11 +953,11 @@
   pointer-events: none;
 }
 .reveal-sticker-stage::before {
-  background: radial-gradient(circle, rgba(203, 164, 94, 0.30), transparent 60%);
+  background: radial-gradient(circle, rgba(91, 141, 239, 0.30), transparent 60%);
   animation: reveal-glow 2.4s ease-out infinite;
 }
 .reveal-sticker-stage::after {
-  border: 1px solid rgba(203, 164, 94, 0.4);
+  border: 1px solid rgba(91, 141, 239, 0.4);
   animation: reveal-ring 2.4s ease-out infinite;
 }
 @keyframes reveal-glow {
@@ -991,14 +991,14 @@
   position: absolute;
   width: 6px;
   height: 6px;
-  background: #CBA45E;
+  background: #5B8DEF;
   border-radius: 1px;
   animation: confetti-fall 2s ease-out forwards;
   opacity: 0;
 }
-.reveal-confetti span:nth-child(odd) { background: #CBA45E; }
+.reveal-confetti span:nth-child(odd) { background: #5B8DEF; }
 .reveal-confetti span:nth-child(3n) {
-  background: #F6E9C8;
+  background: #DBE8FF;
   width: 4px;
   height: 4px;
 }
@@ -1012,7 +1012,7 @@
   font-family: var(--font-mono, "Geist Mono", ui-monospace, monospace);
   font-size: 11px;
   letter-spacing: 0.2em;
-  color: #CBA45E;
+  color: #5B8DEF;
   text-transform: uppercase;
   margin-bottom: 12px;
   position: relative;
@@ -1035,7 +1035,7 @@
 .reveal-title em {
   font-style: italic;
   font-weight: 400;
-  background: linear-gradient(135deg, #F6E9C8 0%, #CBA45E 50%, #B0852F 100%);
+  background: linear-gradient(135deg, #DBE8FF 0%, #5B8DEF 50%, #3D6FD6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1094,7 +1094,7 @@
 }
 
 /* ----------------------------------------------------------------------
- * Blog article prose — Edition VI palette overrides on top of
+ * Blog article prose — Move Sapphire palette overrides on top of
  * @tailwindcss/typography. The `prose` base gives us spacing and
  * sensible defaults; this layer retunes colors to the site theme
  * (cool links, foil quotes, display headings) so a published
@@ -1242,7 +1242,7 @@
  * The orchestrated chip travel / bounce / counter / raccoon are driven in
  * the component via framer-motion. All of it is gated off under
  * prefers-reduced-motion, where the component renders the static end state.
- * Colors use the token ramp (--primary cool-blue, --success sage mint) so
+ * Colors use the token ramp (--primary Move Sapphire, --success sage mint) so
  * the scene tracks light/dark and the per-plan accent automatically.
  * -------------------------------------------------------------------- */
 .lf-hero-aura {
@@ -2087,7 +2087,7 @@ html[data-embed="mobile"] .install-prompt {
    ========================================================================= */
 
 :root {
-  /* Champagne foil fill — tokens/effects.css `--gradient-foil`. The
+  /* Move Sapphire foil fill — tokens/effects.css `--gradient-foil`. The
      --foil-a/b/c stops already flip per mode above. */
   --gradient-foil: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
 }
@@ -2117,7 +2117,7 @@ html[data-embed="mobile"] .install-prompt {
   box-shadow: var(--shadow-foil);
 }
 .btn-foil:focus-visible {
-  --tw-ring-color: rgba(203, 164, 94, 0.55);
+  --tw-ring-color: rgba(91, 141, 239, 0.55);
 }
 
 /* — Button · press shimmer (primary + foil): CSS-only radial bloom on

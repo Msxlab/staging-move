@@ -14,7 +14,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
-  getEffectiveEntitlement,
   can,
   type EffectiveEntitlement,
   type WorkspaceRole,
@@ -23,6 +22,7 @@ import {
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 
 /** Canonical lf_workspace_id cookie name + write options (match accept/create routes). */
 const WORKSPACE_COOKIE_NAME = "lf_workspace_id";
@@ -199,7 +199,7 @@ export async function requireWorkspaceContext(request: Request): Promise<Workspa
   }
 
   const ownerSub = await prisma.subscription.findUnique({ where: { userId: workspace.ownerUserId } });
-  const entitlement = getEffectiveEntitlement(ownerSub);
+  const { entitlement } = await resolveConsumerEntitlement(ownerSub);
 
   const role = member.role as WorkspaceRole;
   const status = member.status as WorkspaceMemberStatus;

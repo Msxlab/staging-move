@@ -1450,7 +1450,7 @@ export default function OnboardingClient({
 
       {/* Step Indicator — mobile/tablet only; the aside's vertical rail owns
           step progress on ≥lg. The design's stepped-card header: a localized
-          step name + numeric counter over a thin gold→honey gradient progress
+          step name + numeric counter over a thin Sapphire→honey gradient progress
           bar, then the existing chip rail underneath. */}
       <div className="space-y-3 lg:hidden">
         <div className="flex items-center justify-between">

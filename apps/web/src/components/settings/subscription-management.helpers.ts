@@ -12,8 +12,12 @@ export function shouldShowConsumerFreePanel(input: {
   consumerFree: boolean;
   loading: boolean;
   managementKind: string | null | undefined;
+  effectivePlanKey?: string | null;
+  effectiveActive?: boolean;
 }): boolean {
   if (!input.consumerFree || input.loading) return false;
   if (input.managementKind == null) return false; // entitlement not loaded yet
+  if (input.effectiveActive !== true) return false;
+  if (!["INDIVIDUAL", "FAMILY", "PRO"].includes(input.effectivePlanKey || "")) return false;
   return input.managementKind !== "stripe" && input.managementKind !== "store";
 }

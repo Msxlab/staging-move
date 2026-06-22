@@ -494,7 +494,7 @@ export default async function DashboardPage() {
       mrr: count * (def?.monthlyPriceUsd ?? 0),
     };
   });
-  // Donut/legend tier ramp — Individual cool, Family mint, Pro honey.
+  // Donut/legend tier ramp — Individual cool, Family mint, Pro Sapphire.
   const tierDotColor: Record<(typeof tierOrder)[number], string> = {
     INDIVIDUAL: "var(--au-cool)",
     FAMILY: "var(--au-family)",
@@ -700,9 +700,9 @@ export default async function DashboardPage() {
               const plan = planRaw.includes("FAMILY")
                 ? { label: "Family", color: "#4FD1B5" }
                 : planRaw.includes("PRO")
-                  ? { label: "Pro", color: "#CBA45E" }
+                  ? { label: "Pro", color: "#5B8DEF" }
                   : planRaw.includes("INDIVIDUAL")
-                    ? { label: "Individual", color: "#CBA45E" }
+                    ? { label: "Individual", color: "#5B8DEF" }
                     : planRaw
                       ? { label: "Free", color: "#8A94A6" }
                       : null;
@@ -724,9 +724,9 @@ export default async function DashboardPage() {
                       {moving && (
                         <span
                           className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
-                          style={{ color: "#CBA45E", backgroundColor: "rgba(203, 164, 94,0.12)", borderColor: "rgba(203, 164, 94,0.28)" }}
+                          style={{ color: "#5B8DEF", backgroundColor: "rgba(91, 141, 239,0.12)", borderColor: "rgba(91, 141, 239,0.28)" }}
                         >
-                          <span className="h-1 w-1 rounded-full" style={{ backgroundColor: "#CBA45E" }} />
+                          <span className="h-1 w-1 rounded-full" style={{ backgroundColor: "#5B8DEF" }} />
                           Moving
                         </span>
                       )}

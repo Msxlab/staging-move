@@ -19,7 +19,7 @@ import { requestHasPlanFeature } from "@/lib/request-entitlements";
  *                  for retina density)
  *   theme          dark | light — Aurora-styled muted navy/ink palettes
  *   accent         optional RRGGBB plan-accent override (validated hex);
- *                  defaults to the Aurora cool-blue accent per theme
+ *                  defaults to the Move Sapphire accent per theme
  *
  * Cost / cache posture: responses are immutable per (coords, size, theme,
  * accent) so they get long private cache headers, plus a small in-process
@@ -44,9 +44,9 @@ const DEFAULT_HEIGHT = 320;
 /** Aurora map palettes — hexes mirror web globals.css / mobile theme.ts. */
 const MAP_THEMES = {
   dark: {
-    // sage --sage #54CB7E, accent --rose / default --primary #CBA45E
+    // sage --sage #54CB7E, accent --rose / default --primary #5B8DEF
     sage: "54CB7E",
-    accent: "CBA45E",
+    accent: "5B8DEF",
     styles: [
       "element:geometry|color:0x0F1726",
       "element:labels.text.fill|color:0x8A99AD",
@@ -62,9 +62,9 @@ const MAP_THEMES = {
     ],
   },
   light: {
-    // light-mode tokens: --sage #1F6F3E, --rose #765514
+    // light-mode tokens: --sage #1F6F3E, --rose #2E5FB0
     sage: "1F6F3E",
-    accent: "86631A",
+    accent: "2E5FB0",
     styles: [
       "element:geometry|color:0xEDF1F7",
       "element:labels.text.fill|color:0x5B6B7E",

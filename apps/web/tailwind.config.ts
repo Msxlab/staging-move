@@ -66,7 +66,7 @@ const config: Config = {
           DEFAULT: "var(--info)",
           light: "var(--info-soft)",
         },
-        // Brand namespace — Edition VI · Champagne & Rose.
+        // Brand namespace — Edition VIII · Move Sapphire.
         // Legacy `brand-orange` / `brand-amber` aliases remain so existing
         // call sites keep rendering; values now resolve to rose / foil.
         brand: {
@@ -101,7 +101,7 @@ const config: Config = {
           DEFAULT: "var(--sage)",
         },
         // Orange scale — preserved for legacy `bg-orange-500` usage.
-        // Values now point at the rose scale via CSS custom properties.
+        // Values now point at the Sapphire scale via CSS custom properties.
         orange: {
           50: "var(--orange-50)",
           100: "var(--orange-100)",
@@ -169,7 +169,7 @@ const config: Config = {
         mono: ["var(--font-mono)", '"DM Mono"', "Geist Mono", "JetBrains Mono", "Consolas", "Courier New", "monospace"],
       },
       fontSize: {
-        // Canonical type scale — Edition VI (px values match colors_and_type.css).
+        // Canonical type scale — Move handoff scale.
         "brand-xs": ["11px", { lineHeight: "16px" }],
         "brand-sm": ["12px", { lineHeight: "18px" }],
         "brand-base": ["14px", { lineHeight: "20px" }],

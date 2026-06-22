@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   workspaceFindUnique: vi.fn(),
   subscriptionFindUnique: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
+  resolveConsumerEntitlement: vi.fn(),
 }));
 
 vi.mock("@/lib/user-auth", () => ({
@@ -14,6 +15,10 @@ vi.mock("@/lib/user-auth", () => ({
 
 vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: mocks.getRuntimeConfigValue,
+}));
+
+vi.mock("@/lib/consumer-entitlement", () => ({
+  resolveConsumerEntitlement: (...args: unknown[]) => mocks.resolveConsumerEntitlement(...args),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -42,6 +47,14 @@ describe("requireWorkspaceContext", () => {
     mocks.getUserSession.mockResolvedValue({ userId: "user_1" });
     mocks.getRuntimeConfigValue.mockResolvedValue("true");
     mocks.subscriptionFindUnique.mockResolvedValue(null);
+    mocks.resolveConsumerEntitlement.mockResolvedValue({
+      entitlement: {
+        effectivePlan: "PRO",
+        hasAccess: true,
+        hasPremium: true,
+      },
+      consumerFreeApplied: true,
+    });
   });
 
   it("rejects a stale mobile workspace header instead of falling back silently", async () => {

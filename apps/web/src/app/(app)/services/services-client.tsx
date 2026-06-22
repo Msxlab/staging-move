@@ -506,10 +506,11 @@ export function ServicesClient({
             )}
           </div>
         </div>
-        <Link href="/services/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition">
-            <Plus className="h-4 w-4" />{t("newTitle")}
-          </button>
+        <Link
+          href="/services/new"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition"
+        >
+          <Plus className="h-4 w-4" />{t("newTitle")}
         </Link>
       </div>
 
@@ -687,10 +688,11 @@ export function ServicesClient({
                   <span className="text-[10px] text-foreground/35">~{checklist.nextAction.estimatedMinutes} min</span>
                 )}
               </div>
-              <Link href="/services/new">
-                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-xs font-medium shadow-sm hover:opacity-90 transition whitespace-nowrap">
-                  {t("doIt")} <ArrowRight className="h-3 w-3" />
-                </button>
+              <Link
+                href="/services/new"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-xs font-medium shadow-sm hover:opacity-90 transition whitespace-nowrap"
+              >
+                {t("doIt")} <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           )}

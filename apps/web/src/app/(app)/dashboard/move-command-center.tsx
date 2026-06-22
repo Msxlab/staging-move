@@ -174,7 +174,7 @@ function ConfettiBurst() {
       Array.from({ length: 14 }, (_, i) => ({
         left: `${(i / 14) * 100 + (i % 3) * 4}%`,
         delay: `${(i % 5) * 90}ms`,
-        color: ["#CBA45E", "#CBA45E", "#54CB7E", "#CBA45E"][i % 4],
+        color: ["#5B8DEF", "#5B8DEF", "#54CB7E", "#5B8DEF"][i % 4],
       })),
     [],
   );

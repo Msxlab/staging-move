@@ -82,7 +82,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "rgba(242, 196, 108, 0.18)",
+    backgroundColor: "rgba(224, 168, 90, 0.18)",
     alignItems: "center",
     justifyContent: "center",
   },

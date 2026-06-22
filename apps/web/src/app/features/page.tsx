@@ -55,7 +55,7 @@ export default function FeaturesPage() {
     <PublicPageShell
       eyebrow="Features"
       title="Everything tied to the move, finally in one place."
-      description="The design bundle treats features as a first-class web page. This page maps that surface onto the live product areas: moving, services, addresses, providers, search, dossiers, budgets, reminders, exports, and household collaboration."
+      description="Bring moving plans, services, addresses, providers, search, dossiers, budgets, reminders, exports, and household collaboration into one calm workspace."
     >
       <div className="grid gap-5">
         {featureGroups.map((group) => (

@@ -158,9 +158,17 @@ const CONCURRENT_PLAN_LIMIT: Record<BillingPlan, number> = {
   PRO: 3,
 };
 
+export function isKnownBillingPlan(planKey: string | null | undefined): planKey is BillingPlan {
+  return typeof planKey === "string" && BILLING_PLAN_ORDER.includes(planKey as BillingPlan);
+}
+
 function normalizePlanKey(planKey: string | null | undefined): BillingPlan {
   const match = BILLING_PLAN_ORDER.find((key) => key === planKey);
   return match || "FREE_TRIAL";
+}
+
+export function isHighestConsumerPlan(planKey: string | null | undefined): boolean {
+  return normalizePlanKey(planKey) === "PRO";
 }
 
 /**

@@ -56,7 +56,7 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { useAuthStore } from "@/lib/auth-store";
-import { serviceLimitForPlan } from "@/lib/plan-comparison";
+import { isHighestConsumerPlan, serviceLimitForPlan } from "@/lib/plan-comparison";
 import {
   SERVICE_CATEGORIES,
   generateChecklist,
@@ -81,9 +81,9 @@ function readServicesCache(raw: unknown): { services: unknown[]; addresses: unkn
 
 const catColors: Record<string, string> = {
   // Aurora-flavored categorical palette — distinct hues, all readable on dark navy.
-  GOVERNMENT: "#E25C5C", UTILITY: "#CBA45E", FINANCIAL: "#54CB7E",
-  HOUSING: "#CBA45E", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#B0852F",
-  KIDS: "#B0852F", FITNESS: "#CBA45E", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
+  GOVERNMENT: "#E25C5C", UTILITY: "#5B8DEF", FINANCIAL: "#54CB7E",
+  HOUSING: "#5B8DEF", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#3D6FD6",
+  KIDS: "#3D6FD6", FITNESS: "#5B8DEF", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
 };
 
 const serviceCategoryValues = new Set<string>(SERVICE_CATEGORIES.map((c) => c.value));
@@ -387,7 +387,20 @@ export default function ServicesScreen() {
   const totalMonthly = filtered.reduce((sum, s) => sum + (s.monthlyCost || 0), 0);
   const selectedAddress = selectedAddressId ? addresses.find((address) => address.id === selectedAddressId) : null;
   const serviceLimit = serviceLimitForPlan(planTier);
-  const serviceLimitReached = totalServiceCount >= serviceLimit;
+  const serviceLimitReached = planTier != null && totalServiceCount >= serviceLimit;
+  const serviceAtTopTierLimit = serviceLimitReached && isHighestConsumerPlan(planTier);
+  const serviceLimitBody = () =>
+    serviceAtTopTierLimit
+      ? t("services.safetyLimitWithCount", {
+          current: totalServiceCount,
+          limit: serviceLimit,
+          defaultValue: `You've reached the safety limit of ${serviceLimit} services for this account. Archive old services or contact support if you need more.`,
+        })
+      : t("services.limitReachedWithCount", {
+          current: totalServiceCount,
+          limit: serviceLimit,
+          defaultValue: `Your plan includes ${serviceLimit} services. Upgrade to add more.`,
+        });
   const categories = [...new Set(services.map((s) => getMergedDisplayCategoryKey(s.category)))].sort((a, b) => serviceCategoryLabel(a).localeCompare(serviceCategoryLabel(b)));
   const uncostedCount = filtered.filter((service) => !service.monthlyCost || service.monthlyCost <= 0).length;
 
@@ -521,15 +534,13 @@ export default function ServicesScreen() {
     if (serviceLimitReached) {
       Alert.alert(
         t("services.limitReachedTitle", { defaultValue: "Service limit reached" }),
-        t("services.limitReachedWithCount", {
-          current: totalServiceCount,
-          limit: serviceLimit,
-          defaultValue: `Your plan includes ${serviceLimit} services. Upgrade to add more.`,
-        }),
-        [
-          { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-          { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
-        ],
+        serviceLimitBody(),
+        serviceAtTopTierLimit
+          ? [{ text: t("common.ok", { defaultValue: "OK" }) }]
+          : [
+              { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+              { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+            ],
       );
       return;
     }
@@ -892,7 +903,7 @@ export default function ServicesScreen() {
           const currentItems = checklist.phases.find((p) => p.phase === checklist.currentPhase);
           const pending = currentItems?.items.filter((i) => !i.isCompleted).slice(0, 3) || [];
           return (
-            <View style={{ marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(203, 164, 94,0.2)", backgroundColor: "rgba(203, 164, 94,0.04)", padding: 14 }}>
+            <View style={{ marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(91, 141, 239,0.2)", backgroundColor: "rgba(91, 141, 239,0.04)", padding: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <CategoryIcon emoji={phase?.icon || ""} size={16} color={theme.colors.primary} />

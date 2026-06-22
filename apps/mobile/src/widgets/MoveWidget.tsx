@@ -35,7 +35,7 @@ const COLORS = {
   border: "#1E2A3D",
   text: "#F2F5FA",
   textDim: "#8A98AC",
-  accent: "#CBA45E",
+  accent: "#5B8DEF",
   success: "#4FD1B5",
 } as const;
 
@@ -87,7 +87,7 @@ export function MoveWidget({ snapshot }: { snapshot: WidgetSnapshot }) {
     >
       {/* Eyebrow */}
       <TextWidget
-        text="LOCATEFLOW · YOUR MOVE"
+        text="MOVE · YOUR MOVE"
         style={{ fontSize: 9, fontWeight: "700", letterSpacing: 0.5, color: COLORS.accent }}
       />
 
@@ -128,7 +128,7 @@ export function MoveWidget({ snapshot }: { snapshot: WidgetSnapshot }) {
         </FlexWidget>
       ) : (
         <TextWidget
-          text="Tap to open LocateFlow"
+          text="Tap to open Move"
           style={{ fontSize: 11, fontWeight: "600", color: COLORS.accent }}
         />
       )}

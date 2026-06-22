@@ -126,6 +126,7 @@ Every paid feature must answer:
 
 Audit from homepage to web app, mobile app, and admin:
 
+- Current chosen palette is Sapphire, not Gold/Emerald/Champagne. Enforce Sapphire as the canonical light/dark runtime variant everywhere: dark `#5B8DEF` / `#83AAF5` / `#3D6FD6`, light `#2E5FB0` / `#244C90`; keep semantic warning amber/brown only for warning states.
 - Theme token consistency between `packages/shared`, web Tailwind, admin Tailwind, and mobile theme.
 - Button/link semantics, nested interactive elements, keyboard/focus states.
 - Light/dark contrast, responsive breakpoints, text overflow, empty/loading/error states.
@@ -193,7 +194,7 @@ Treat these as required re-checks, not assumptions:
 - Re-check the branch fix that corrected the mover application Terms link and rerun route/link inventory for web, admin, and mobile.
 - Re-check the branch fix that added the mobile vehicle-check recall base i18n key; run namespace-aware EN/ES parity and no-fallback missing-key scans.
 - Re-check deployment smoke docs and live checks: admin public liveness is `/api/healthz`, while authenticated detailed admin health remains `/api/health`.
-- Re-check shared legacy constants, web/admin/mobile theme colors, Android platform color, sign-in/sign-up Apple button contrast, and typography source of truth: Playfair Display + DM Sans + DM Mono are canonical; public SVG/blog art still needs visual review.
+- Re-check shared legacy constants, web/admin/mobile Sapphire theme colors, Android platform color, sign-in/sign-up Apple button contrast, and typography source of truth: Playfair Display + DM Sans + DM Mono are canonical; public SVG/blog art still needs visual review.
 - Re-check cookie/session behavior in a real HTTPS browser: portal magic-link cookies, CCPA opt-out/revoke cookie, locale cookie, Google/Apple OAuth callback cleanup, partner-consent OAuth callback cleanup, and invalid admin-session expiry must set/clear the root-scoped cookies as expected.
 - Re-check admin team invite emails on staging: configured admin URL should win, and if it is absent the set-password link must use the current staging admin origin, never production solely because `NODE_ENV=production`.
 - Re-check uptime cron target resolution on staging: `UPTIME_WEB_BASE_URL`, `UPTIME_ADMIN_BASE_URL`, or `NEXT_PUBLIC_ADMIN_URL` should point to staging, and missing staging/preview env must not silently probe `locateflow.com` / `admin.locateflow.com`.

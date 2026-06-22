@@ -21,8 +21,8 @@ interface AdminPageHeaderProps {
  * it, and a right-aligned actions cluster, sitting on a translucent
  * sticky-feeling bar that reads like the operations console top bar. The
  * optional mono eyebrow is preserved as an uppercase kicker above the
- * title. The `<em>` segment keeps the brand foil gradient (the design's
- * gold maps to the brand accent) and renders upright. This stays a
+   * title. The `<em>` segment keeps the brand foil gradient (the design's
+   * Sapphire maps to the brand accent) and renders upright. This stays a
  * server-rendered, client-free component.
  */
 export function AdminPageHeader({

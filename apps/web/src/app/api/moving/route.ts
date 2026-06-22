@@ -122,6 +122,16 @@ export async function POST(request: NextRequest) {
       ),
     });
     if (activePlanCount >= concurrentPlanLimit) {
+      if (consumerFree) {
+        return NextResponse.json({
+          configured: true,
+          entitled: false,
+          code: "CONCURRENT_PLAN_LIMIT",
+          reason: `You've reached the safety limit of ${concurrentPlanLimit} active moving plans for this account. Complete or archive an old plan before creating another.`,
+          current: activePlanCount,
+          limit: concurrentPlanLimit,
+        });
+      }
       return NextResponse.json({
         configured: true,
         entitled: false,

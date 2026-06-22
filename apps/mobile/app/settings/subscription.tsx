@@ -57,6 +57,7 @@ import {
   shouldEmphasizeAnnualBilledPrice,
 } from "@/lib/subscription-app-review";
 import {
+  shouldShowMobileConsumerFreePanel,
   shouldRenderMobileSubscriptionPlanCard,
   shouldShowMobileSubscriptionPlan,
 } from "@/lib/subscription-visible-plans";
@@ -265,7 +266,7 @@ function formatDateLabel(value?: string | null) {
  */
 function planAccentColor(scheme: "light" | "dark", planKey: string): string {
   const base = scheme === "light" ? baseLightTheme : baseDarkTheme;
-  // Individual (and unknown) carry no plan tint — base Aurora cool primary,
+  // Individual (and unknown) carry no plan tint — base Move Sapphire primary,
   // matching the web table where Individual gets no .plan-* class.
   return applyPlanPalette(base, scheme, planKey).colors.primary;
 }
@@ -450,6 +451,12 @@ function LegacySubscriptionScreen() {
     () => effectivePlanKey ? PLANS.find((plan) => plan.key === effectivePlanKey) || null : null,
     [effectivePlanKey]
   );
+  const showConsumerFreePanel = shouldShowMobileConsumerFreePanel({
+    loading,
+    managementKind: entitlement?.managementKind,
+    effectivePlanKey,
+    effectiveActive,
+  });
   const periodEndLabel = formatDateLabel(
     subscription?.currentPeriodEndsAt || subscription?.stripeCurrentPeriodEnd || subscription?.premiumUntil
   );
@@ -517,7 +524,7 @@ function LegacySubscriptionScreen() {
     () =>
       // Inherited Family/Pro members already have access — don't offer them
       // plans to buy (would double-charge); the inherited notice covers it.
-      inheritedEntitlement
+      inheritedEntitlement || showConsumerFreePanel
         ? []
         : PLANS.filter((plan) =>
         shouldShowMobileSubscriptionPlan({
@@ -532,7 +539,14 @@ function LegacySubscriptionScreen() {
           currentPlanKey,
         }),
       ),
-    [inheritedEntitlement, currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform, mobileStorePurchasesEnabled],
+    [
+      inheritedEntitlement,
+      showConsumerFreePanel,
+      currentPlanKey,
+      hasConfiguredNativeSku,
+      isNativeStorePlatform,
+      mobileStorePurchasesEnabled,
+    ],
   );
 
   // Informational side-by-side matrix: every tier from the shared definitions,
@@ -554,6 +568,40 @@ function LegacySubscriptionScreen() {
   );
   // null = default (current plan expanded); "" = all collapsed.
   const [expandedComparePlan, setExpandedComparePlan] = useState<string | null>(null);
+
+  const currentPlanDisplayName = showConsumerFreePanel
+    ? t("settings.subscription_consumerFreePlanName", { defaultValue: "Free" })
+    : effectivePlan?.name
+      ? effectivePlan.name +
+        (currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "YEAR"
+          ? ` · ${t("settings.subscription_billingIntervalAnnual", { defaultValue: "Annual" })}`
+          : currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "MONTH"
+            ? ` · ${t("settings.subscription_billingIntervalMonthly", { defaultValue: "Monthly" })}`
+            : "")
+      : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" });
+  const currentPlanMetaText = inheritedEntitlement
+    ? t("settings.subscription_inheritedNotice", { defaultValue: "Included with your family/workspace plan" })
+    : showConsumerFreePanel
+      ? t("settings.subscription_consumerFreeMeta", {
+          defaultValue: "No subscription, no renewal, no credit card.",
+        })
+      : periodEndLabel && effectiveStatus === "CANCEL_AT_PERIOD_END"
+        ? t("settings.subscription_ends", { date: periodEndLabel, defaultValue: "Ends {{date}}" })
+        : periodEndLabel
+          ? t("settings.subscription_renews", { date: periodEndLabel })
+          : trialEndLabel
+            ? t("settings.subscription_renews", { date: trialEndLabel })
+            : t("settings.subscription_choosePlan", { defaultValue: "Choose a plan to start." });
+  const currentPlanStatusLabel = showConsumerFreePanel
+    ? t("settings.subscription_includedStatus", { defaultValue: "Included" })
+    : effectiveStatus;
+  const currentPlanStatusTone =
+    showConsumerFreePanel ||
+    effectiveStatus === "ACTIVE" ||
+    effectiveStatus === "TRIALING" ||
+    (effectiveActive && isPaidEffectivePlan)
+      ? "success"
+      : "muted";
 
   const managedElsewhereMessage = isStripeManaged
     ? t("settings.subscription_webManagedReadOnly")
@@ -856,39 +904,27 @@ function LegacySubscriptionScreen() {
               <View style={{ flex: 1 }}>
                 <View style={styles.currentPlanTitleRow}>
                   <Text style={styles.currentPlanTitle}>
-                    {effectivePlan?.name
-                      ? effectivePlan.name +
-                        (currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "YEAR"
-                          ? ` · ${t("settings.subscription_billingIntervalAnnual", { defaultValue: "Annual" })}`
-                          : currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "MONTH"
-                            ? ` · ${t("settings.subscription_billingIntervalMonthly", { defaultValue: "Monthly" })}`
-                            : "")
-                      : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
+                    {currentPlanDisplayName}
                   </Text>
-                  {isPaidEffectivePlan ? <Pill label={effectivePlanKey as string} tone="accent" /> : null}
+                  {showConsumerFreePanel ? (
+                    <Pill
+                      label={t("settings.subscription_everythingIncluded", { defaultValue: "Everything included" })}
+                      tone="success"
+                    />
+                  ) : isPaidEffectivePlan ? (
+                    <Pill label={effectivePlanKey as string} tone="accent" />
+                  ) : null}
                 </View>
                 <Text style={styles.currentPlanMeta}>
-                  {inheritedEntitlement
-                    ? t("settings.subscription_inheritedNotice", { defaultValue: "Included with your family/workspace plan" })
-                    : periodEndLabel && effectiveStatus === "CANCEL_AT_PERIOD_END"
-                      ? t("settings.subscription_ends", { date: periodEndLabel, defaultValue: "Ends {{date}}" })
-                      : periodEndLabel
-                        ? t("settings.subscription_renews", { date: periodEndLabel })
-                        : trialEndLabel
-                          ? t("settings.subscription_renews", { date: trialEndLabel })
-                          : t("settings.subscription_choosePlan", { defaultValue: "Choose a plan to start." })}
+                  {currentPlanMetaText}
                 </Text>
               </View>
             </View>
           </View>
           <View style={styles.currentPlanStatusRow}>
             <Pill
-              label={effectiveStatus}
-              tone={
-                effectiveStatus === "ACTIVE" || effectiveStatus === "TRIALING" || (effectiveActive && isPaidEffectivePlan)
-                  ? "success"
-                  : "muted"
-              }
+              label={currentPlanStatusLabel}
+              tone={currentPlanStatusTone}
             />
           </View>
         </HeroCard>
@@ -907,7 +943,7 @@ function LegacySubscriptionScreen() {
           </MoveCard>
         ) : null}
 
-        {isNativeStorePlatform && (isStripeManaged || isOtherPlatformStoreManaged || !canUseNativePurchases) && (
+        {isNativeStorePlatform && !showConsumerFreePanel && (isStripeManaged || isOtherPlatformStoreManaged || !canUseNativePurchases) && (
           <MoveCard style={styles.mobileBillingNotice} padding={14} radius={16}>
             <Text style={styles.mobileBillingNoticeText}>
               {isStripeManaged || isOtherPlatformStoreManaged
@@ -932,13 +968,32 @@ function LegacySubscriptionScreen() {
           </MoveCard>
         )}
 
-        <View style={styles.heroBox}>
-          <Crown size={28} color={theme.colors.primary} />
-          <Text style={styles.heroTitle}>{t("pricing.title")}</Text>
-          <Text style={styles.heroDesc}>
-            {t("pricing.subtitle")}
-          </Text>
-        </View>
+        {showConsumerFreePanel ? (
+          <MoveCard style={styles.includedAccessCard} padding={16} radius={18}>
+            <Text style={styles.includedAccessEyebrow}>
+              {t("settings.subscription_currentPlan", { defaultValue: "Current plan" })}
+            </Text>
+            <Text style={styles.includedAccessTitle}>
+              {t("settings.subscription_freeIncludedTitle", {
+                defaultValue: "Everything Move does, included",
+              })}
+            </Text>
+            <Text style={styles.includedAccessCopy}>
+              {t("settings.subscription_freeIncludedCopy", {
+                defaultValue:
+                  "You have full access to every Move feature. There is no subscription, no credit card, and nothing to renew or cancel.",
+              })}
+            </Text>
+          </MoveCard>
+        ) : (
+          <View style={styles.heroBox}>
+            <Crown size={28} color={theme.colors.primary} />
+            <Text style={styles.heroTitle}>{t("pricing.title")}</Text>
+            <Text style={styles.heroDesc}>
+              {t("pricing.subtitle")}
+            </Text>
+          </View>
+        )}
 
         {visiblePlans.map((plan) => {
           const dynamicPeriod = plan.period;
@@ -1276,7 +1331,7 @@ function LegacySubscriptionScreen() {
           </MoveCard>
           );
         })}
-        {canUseNativePurchases && !managedSubscriptionBlocksPurchase && (
+        {canUseNativePurchases && !managedSubscriptionBlocksPurchase && !showConsumerFreePanel && (
           <TouchableOpacity
             style={styles.restoreBtn}
             activeOpacity={0.7}
@@ -1295,6 +1350,8 @@ function LegacySubscriptionScreen() {
           </TouchableOpacity>
         )}
 
+        {!showConsumerFreePanel ? (
+          <>
         <SectionHeader
           label={t("settings.subscription_compareTitle", { defaultValue: "What you get with each plan" })}
           style={styles.compareSectionHeader}
@@ -1357,6 +1414,8 @@ function LegacySubscriptionScreen() {
             );
           })}
         </MoveCard>
+          </>
+        ) : null}
 
         <View style={styles.legalLinksRow}>
           <TouchableOpacity
@@ -1477,6 +1536,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontFamily: fonts.sansSemibold,
     color: theme.colors.primary,
   },
+  includedAccessCard: {
+    marginTop: 16,
+    gap: 8,
+  },
+  includedAccessEyebrow: {
+    fontSize: 11,
+    fontFamily: fonts.sansBold,
+    color: theme.colors.primary,
+    textTransform: "uppercase",
+  },
+  includedAccessTitle: { fontSize: 18, fontFamily: fonts.serifBold, color: theme.colors.text },
+  includedAccessCopy: { fontSize: 13, lineHeight: 19, fontFamily: fonts.sans, color: theme.colors.dim },
   heroBox: { alignItems: "center", paddingVertical: 24, gap: 8 },
   heroTitle: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text },
   heroDesc: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.dim, textAlign: "center", maxWidth: 280 },

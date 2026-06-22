@@ -277,12 +277,18 @@ describe("moving mutation gates", () => {
       movingPlanCountMock.mockResolvedValue(24);
       expect((await movingRequest()).status).toBe(404);
 
-      // 25 active plans → at the finite abuse ceiling → teaser still trips.
+      // 25 active plans -> at the finite abuse ceiling -> safety limit trips.
       movingPlanCountMock.mockResolvedValue(25);
       const response = await movingRequest();
       const body = await response.json();
       expect(response.status).toBe(200);
-      expect(body.upgradeRequired).toBe("CONCURRENT_PLAN_LIMIT");
+      expect(body).toMatchObject({
+        code: "CONCURRENT_PLAN_LIMIT",
+        current: 25,
+        limit: 25,
+        reason: expect.stringContaining("safety limit"),
+      });
+      expect(body.upgradeRequired).toBeUndefined();
     });
   });
 

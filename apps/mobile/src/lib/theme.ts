@@ -143,7 +143,7 @@ const darkColors = {
   },
 } as const;
 
-// Light palette — Aurora cool paper (Edition VII), Aurora ink-1 text.
+// Light palette — Move Sapphire paper (Edition VIII), Aurora ink-1 text.
 const lightColors = {
   ...darkColors,
 

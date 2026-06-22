@@ -9,7 +9,7 @@ export interface PlanDonutSegment {
   count: number;
 }
 
-/* Tier ramp — Individual cool, Family mint, Pro honey (no purple). The
+/* Tier ramp — Individual cool, Family mint, Pro Sapphire (no purple). The
  * vars re-resolve per theme (slate light / aurora dark) automatically. */
 const TIER_COLOR: Record<PlanDonutSegment["tier"], string> = {
   INDIVIDUAL: "var(--au-cool)",

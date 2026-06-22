@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
  *
  * A faithful React recreation of the design bundle's `hero-animation.html`
  * prototype: an OLD address pin (bottom-left, dims/greys as services leave)
- * and a NEW address pin (top-right, Move Gold, breathing aura). Six service
+ * and a NEW address pin (top-right, Move Sapphire, breathing aura). Six service
  * chips travel one-by-one along S-curve paths from the old pin up to a tidy
  * 3×2 grid beside the new pin, bounce on arrival, pop a sage checkmark, and
  * a counter ticks 0→6. A welcoming raccoon fades in and hops on each arrival.
@@ -33,9 +33,9 @@ import { cn } from "@/lib/utils";
  * cycle loops.
  *
  * Theming: uses the homepage's existing token ramp — `hsl(var(--primary))`
- * is Move Gold, `var(--sage)` / `--success-soft` is the success green. No
+ * is Move Sapphire, `var(--sage)` / `--success-soft` is the success green. No
  * honey here (that's the Pro accent) — the homepage stays the Individual /
- * Gold look. The whole scene tracks light/dark automatically.
+ * Sapphire look. The whole scene tracks light/dark automatically.
  *
  * Coordinate system: everything is laid out in a fixed 1120×600 logical box
  * and positioned by percentage, so the SVG guide layer and the HTML chip
@@ -156,7 +156,7 @@ export function HeroMoveAnimation({ className }: { className?: string }) {
         className="relative w-full overflow-visible"
         style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}`, containerType: "inline-size" }}
       >
-        {/* Soft ambient wash — cool-blue + a hint of mint, matches the hero glow */}
+        {/* Soft ambient wash — Move Sapphire + a hint of mint, matches the hero glow */}
         <div
           className="pointer-events-none absolute inset-0 -z-10 rounded-[40px]"
           style={{
@@ -334,7 +334,7 @@ function ChipGlyph({
 function Raccoon({ className }: { className?: string }) {
   // Reuse the existing welcoming mover-raccoon illustration (box-hugging pose).
   // It themes off --primary/--foreground tokens already, so it tracks the
-  // cool-blue homepage look. Width scales with the stage.
+  // Move Sapphire homepage look. Width scales with the stage.
   return (
     <RaccoonHero
       size={118}

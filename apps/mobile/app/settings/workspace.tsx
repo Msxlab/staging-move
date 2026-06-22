@@ -13,11 +13,10 @@ import {
 import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { ArrowLeft, Users, Trash2, ExternalLink, Ticket, Pencil } from "lucide-react-native";
+import { ArrowLeft, Users, Trash2, Ticket, Pencil } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, fonts, type Theme } from "@/lib/theme";
-import { api, APP_WEB_URL } from "@/lib/api";
-import { openWebUrl } from "@/lib/in-app-browser";
+import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { getSelectedWorkspaceId, setSelectedWorkspaceId } from "@/lib/workspace-selection";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -69,7 +68,7 @@ function managedSyncOn(role: string, flag: boolean | null): boolean {
 // Managed sync (pushing an address change to a member's partner connectors on their
 // behalf) is not yet generally available: the connector backend stays gated behind
 // FEATURE_API_CONNECTORS until partner agreements + legal sign-off. Until then we surface
-// "Coming soon" and disable the consent switch so Family/Pro users aren't shown a feature
+// "Coming soon" and disable the consent switch so users aren't shown a feature
 // that can't run yet. Flip to false once connectors are live to restore the switch.
 const MANAGED_SYNC_COMING_SOON = true;
 
@@ -139,7 +138,7 @@ export default function WorkspaceScreen() {
     setFeatureOff(false);
     const list = res.data?.workspaces ?? [];
     setWorkspaces(list);
-    // Default to a shared (non-personal) workspace when present so a Family/Pro
+    // Default to a shared (non-personal) workspace when present so a shared
     // member lands on the household they actually share, not their own personal
     // data container. The empty, redundant personal-solo is already excluded
     // server-side, so it never appears in the switcher.
@@ -380,7 +379,7 @@ export default function WorkspaceScreen() {
             <View style={styles.stateIcon}>
               <Users size={22} color={theme.colors.primary} />
             </View>
-            <Text style={styles.empty}>{t("workspace.unavailable", "Shared household workspaces (members, shared services, child accounts) are rolling out for Family & Pro — coming soon. Your plan's higher limits are already active.")}</Text>
+            <Text style={styles.empty}>{t("workspace.unavailable", "Shared household workspaces (members, shared services, child accounts) are rolling out soon. Your higher limits are already active.")}</Text>
           </View>
         ) : workspaces.length === 0 ? (
           <View style={styles.stateWrap}>
@@ -388,27 +387,8 @@ export default function WorkspaceScreen() {
               <Users size={22} color={theme.colors.primary} />
             </View>
             <Text style={styles.empty}>
-              {t("workspace.none", "You're not part of any shared workspace yet. A Family or Pro plan lets you create one.")}
+              {t("workspace.none", "You're not part of any shared workspace yet. Join with an invite when a household is ready for you.")}
             </Text>
-            <TouchableOpacity
-              onPress={() => openWebUrl(`${APP_WEB_URL}/pricing#family-pro`)}
-              style={styles.gradientBtnWrap}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={t("workspace.upgradeWebA11y", "See Family and Pro plans on the web")}
-            >
-              <LinearGradient
-                colors={theme.colors.gradient.primary}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.gradientBtn, { flexDirection: "row", gap: 8 }]}
-              >
-                <ExternalLink size={16} color={theme.colors.onAccent} />
-                <Text style={styles.gradientBtnText}>
-                  {t("workspace.upgradeWeb", "See Family & Pro on the web")}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/workspace/accept-invite" as Href)}
               style={styles.joinInviteRow}
@@ -557,7 +537,7 @@ export default function WorkspaceScreen() {
                     <Text style={styles.cardDesc}>
                       {t(
                         "workspace.personalHint",
-                        "This is your personal workspace — just your own data. Upgrade to a Family or Pro plan to invite people and share it as a household.",
+                        "This is your personal workspace - just your own data. Shared workspace invitations appear here when available.",
                       )}
                     </Text>
                   </View>
@@ -628,7 +608,7 @@ export default function WorkspaceScreen() {
               </>
             )}
 
-            {/* Persistent entry point: a Pro user can be invited to additional
+            {/* Persistent entry point: a user can be invited to additional
                 workspaces, so keep "Join a workspace" reachable even when one
                 workspace already exists. */}
             <TouchableOpacity
