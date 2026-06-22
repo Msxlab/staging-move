@@ -35,4 +35,10 @@
 - Mobile typecheck + tests green; do NOT touch billing/auth/PRO gating (that's the truly-free phase); keep the name LocateFlow.
 - ⚠️ Mobile visuals need a human/emulator preview (renders not verifiable from code).
 
-_Plan authored 2026-06-22 — starting Increment A._
+## Progress
+- **✅ Increment A DONE (merged `feat/design-foundation`):** CATEGORY_COLORS de-duped to a single `theme.ts categoryColors` (identical values); `#fff`→`onAccent` on the 3 unambiguous on-accent sites (correctly LEFT the green-fill checkmarks + gradient-button icons where white is right); pre-splash `#0A0F18`→`#0A0F1C`; removed legacy Geist/Fraunces fonts + deps + lockfile; raccoon eye already accent-bound. Mobile-only, 9 files, mobile typecheck 0 + **326 tests green**.
+  - **Follow-up flag:** `apps/mobile/src/components/ui/Button.tsx` hardcodes `#fff` for `text_primary`/`text_gradient`/spinner (on accent fills) — tokenize in a dedicated Button pass (app-wide regression surface).
+  - **⚠️ Emulator/visual check still required:** dark+light — category chips, on-accent contrast, pre-splash flash, raccoon eye Gold(dark)/Sapphire(light).
+- **Next:** Increment B (fidelity verification) → Increment C (risk gauge D16, raccoon-truck, completable reminders D21).
+
+_Plan authored 2026-06-22 — Increment A done; B/C remaining._
