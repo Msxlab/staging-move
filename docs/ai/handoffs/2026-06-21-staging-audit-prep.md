@@ -450,11 +450,32 @@ Live verification after the follow-up cleanup:
   `pnpm --filter @locateflow/web lint` passed; `pnpm --filter @locateflow/mobile
   lint` passed; targeted web tests passed (42 tests); full mobile Vitest passed
   (34 files / 325 tests).
-- Still pending for honest completion: push/deploy this commit, verify staging
-  build-info and cache-busted public/auth/onboarding pages, verify existing
-  Chrome/Dokploy state without opening a new Chrome window, and run native
-  widget/mobile visual QA in a real simulator/device build because Swift
-  WidgetKit cannot be compiled/rendered in this Windows repo session.
+- Post-push Dokploy verification: commit
+  `7e3cecbb0f9ed8718665ab546f28a51f55516649` reached both staging web and
+  admin. `GET /api/build-info` returned `commitSha=7e3cecbb...`,
+  `sourceBranch=codex/staging-audit-2026-06-21`, web build time
+  `2026-06-22T02:51:25.192Z`, and admin build time
+  `2026-06-22T02:51:25.198Z`.
+- Cache-busted smoke returned `200` for `/`, `/features`, `/why-free`,
+  `/pricing`, `/blog`, `/help`, `/sign-in`, `/sign-up`, `/onboarding`, and
+  admin `/login`. The HTML scan found no `>Move<`, `Move app`, `Move Admin`,
+  `Move Gold`, `LocateFlow Move`, `move-gold`, `tone-honey`, standalone
+  `honey`, or standalone `gold` hits in those pages.
+- Existing Chrome/Dokploy verification: no new Chrome window was opened. The
+  already-open Mustafa Chrome session showed the Dokploy Staging Move
+  deployment entry for `Fix LocateFlow Sapphire integration drift`; the old
+  "Move Admin" browser tab title was stale tab text only, while the loaded admin
+  document/title rendered `LocateFlow Admin`.
+- Live visual QA in the existing Chrome session: homepage renders LocateFlow
+  Sapphire with the animated phone hero and top links for Features / Why free /
+  Pricing / Help / Blog / FAQ plus auth actions. `/sign-up`, the unauthenticated
+  `/onboarding` redirect shell, and admin `/login` render LocateFlow/Sapphire
+  surfaces without visible old-product-name or Gold drift.
+- Still pending for honest completion: native widget/mobile visual QA in a real
+  simulator/device build because Swift WidgetKit cannot be compiled/rendered in
+  this Windows repo session; authenticated app/admin flows still need operator
+  credentials/2FA at action time; full delegated Codex Security Deep Security
+  Scan remains separate from this parent-agent static/runtime pass.
 
 ## Minimum Env Categories Needed For Real Tests
 
