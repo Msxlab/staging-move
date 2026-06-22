@@ -76,4 +76,11 @@ Add a per-reminder done model + persistence (checkbox, strike-through, "{open} o
 ## Pending (next batches)
 Group B theme mechanics: D6 (single token source), D7 (admin navy vs graphite), D9 (warm greige canvas), D10 (radius), D11 (token emitter first), D12 (aurora layer). Group C features: D14–D22. Group D IA/rollout: D23 (web shell), D26 (admin nav), D30 (onboarding profile depth), D32 (providers layout), D33 (marketing sections), D34 (rollout order).
 
-_Last updated: 2026-06-22._
+## Phase 1 — Build outcomes (so far)
+- **Step 1 ✅ (token emitter):** single-source `design-tokens-css.ts` + emitter; 664 declarations byte-identical (zero visual change); merged `feat/design-foundation`.
+- **Step 2 ✅ (palette + radius + font cleanup):** admin→navy `#070B14` (graphite dropped), light greige `#EFEADF`, dark `surface-3 #1F2C47`, radius bump (sm8/md13/lg18/xl22/2xl26, full unchanged), removed legacy Geist+Fraunces fonts (kept Playfair/DM + Geist_Mono which is still used). Merged (`b104e364`). All green (emitter --check, drift, contrast, typecheck).
+  - **AA refinement (D9):** the design's lighter light-mode green/teal (`#1C8A63`/`#168E9C`) **fail WCAG AA on greige** (3.20/2.92). **DECISION: keep the current AA-passing `#0F6B50`/`#16666B`** (accessible, visually near-identical). The lighter design hues would need a component change (darker chip fill / larger text) — deferred to the re-skin phases, not a token-value change.
+  - **Note:** admin shadcn dark HSL triples are visually-equivalent navy but not byte-identical to web's; optional to unify later.
+- **Remaining Phase 1:** Step 5 (raccoon mark component + regenerate favicon/PWA/OG), Step 6 (honest token aliases `--gold/--sapphire/--teal/--green` as thin re-exports), Step 7 (finish web aurora re-skin + wordmark "LocateFlow" in Playfair 900). Step 3 (typography) + Step 4 (radius) were folded into Step 2.
+
+_Last updated: 2026-06-22 (Phase 1 Steps 1–2 done + merged)._
