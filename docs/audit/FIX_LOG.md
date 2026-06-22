@@ -56,6 +56,27 @@
 
 ---
 
+## Sprint 2 — additional remediation (branch `fix/audit-sprint2`)
+
+### S2.1 EV-charging upstream host corrected — `nlr.gov → NREL nrel.gov`
+- **Commit:** `a143482a`. Replaced the wrong `developer.nlr.gov` host with `developer.nrel.gov` (the real NREL Alt-Fuel Stations API) in `lib/nlr-alt-fuel-stations.ts` (+test). Dead/incorrect upstream → working data source.
+
+### S2.2 `TRUSTED_PROXY_HEADERS` required in prod (fail-closed) — `app-bootstrap-config`
+- **Commit:** `8d5e8107`. `production-readiness.ts` now **fails** (was `warn`) when `TRUSTED_PROXY_HEADERS` is unset/compat/unknown in prod, so client-IP spoofing via forged proxy headers can't slip through a soft warning. Added `TRUSTED_PROXY_HEADERS="cloudflare"` to `.env.example` + `.env.production.example`.
+
+### S2.3 Impersonated-mutation audit helper + initial wiring — `admin-impersonation-02`
+- **Commit:** `f3b0d50d`. Added `auditImpersonatedMutation(request, {action, entityType, entityId, route?, details?})` (best-effort, no-op for normal sessions) and wired it into `account/delete` + `export`. Forensic `AdminAuditLog` attribution for actions taken while a SUPER_ADMIN impersonates a user.
+
+### S2.4 Affiliate postback + leads hardening — `partners-affiliate-movers-01/04`, `api-map-02`
+- **Commit:** `c17a6c94`. (a) postback no longer **cross-attributes** a conversion to a different provider — a resolvable `clickId` whose owner disagrees with an explicit `providerId` now 400s, and the click's owner is authoritative; (b) **IP-keyed rate limit** added BEFORE the HMAC/DB work so unsigned floods can't burn CPU/DB (fail-open — a Redis outage must not drop real network postbacks); (c) `/api/leads` limiter is now **`failClosed:true`** (no lead-cap bypass / PII fan-out / CPL over-charge under a Redis outage). +2 cross-attribution tests. 12/12.
+- **Files:** `api/affiliate/postback/[network]/route.ts` (+test), `api/leads/route.ts`.
+
+### S2.5 Impersonated-mutation audit rollout extended — `admin-impersonation-02`
+- **Commit:** `b4b90328`. Continued the S2.3 rollout into the two core relocation-PII mutations: `addresses/[id]` PATCH+DELETE and `moving/[id]` PATCH+DELETE. Typecheck clean; impersonation+addresses+moving suites 104/104.
+- **Still remaining (rollout):** other user-scoped mutating routes (`custom-providers/[id]`, `services/[id]`, `user/preferences`, `notifications/*`, `providers/saved`, `tickets/[id]`, `auth/password/change`) — same one-line call; lower forensic value, tracked below.
+
+---
+
 ## Deferred / flagged follow-ups (not lost — tracked here)
 
 | Item | Why deferred | Where it belongs |
@@ -71,4 +92,4 @@
 3. After all: `tsc --noEmit` web + admin → 0 errors.
 4. ⚠️ Not run (needs broader setup / a running app): full `pnpm verify:tests`, `pnpm build`, E2E, and **runtime visual contrast** checks.
 
-_Last updated: 2026-06-22._
+_Last updated: 2026-06-22 (Sprint 2 added: S2.1–S2.5 on `fix/audit-sprint2`)._
