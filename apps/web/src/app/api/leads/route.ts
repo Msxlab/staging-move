@@ -41,6 +41,10 @@ export async function POST(request: NextRequest) {
     const rl = await rateLimit(getRateLimitKey(request, "leads", { userId }), {
       limit: 10,
       windowSeconds: 60 * 60,
+      // Fail closed (match affiliate/click + acquisition/redeem): under a Redis
+      // outage a user must not exceed the lead cap and fan PII to partners or
+      // accrue CPL charges. (partners-affiliate-movers-04)
+      failClosed: true,
     });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
