@@ -61,8 +61,8 @@
     "connector:new": "node scripts/new-connector.mjs"
   },
   "devDependencies": {
-    "turbo": "^2.9.14",
-    "sharp": "^0.34.5"
+    "turbo": "^2.9.18",
+    "sharp": "^0.35.2"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
