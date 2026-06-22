@@ -5,6 +5,7 @@ import { apiGateErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { addressSchema } from "@/lib/validators";
 import { geocodeFallbackForPersist } from "@/lib/census-geocoder";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
@@ -158,6 +159,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const meta = extractRequestMeta(request);
     await createAuditLog({ userId, action: "UPDATE", entityType: "Address", entityId: id, changes: validated, ...meta });
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Address", entityId: id, route: `/api/addresses/${id}` });
 
     const moveTaskSync = await syncMoveTasksForAddress(userId, id, { workspaceId: scope.workspaceId });
 
@@ -280,6 +283,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       },
       ...meta,
     });
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "DELETE", entityType: "Address", entityId: id, route: `/api/addresses/${id}` });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
