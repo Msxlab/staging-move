@@ -40,6 +40,15 @@
   --orange-800:         #86631A;
   --orange-900:         #5F4614;
 
+  /* Honest canonical names (D13) — additive aliases of the brand/semantic
+     hues by their true colour. Gold + Sapphire are literal regardless of
+     mode; teal/green follow the per-mode info/success ramp. Legacy aliases
+     (rose/foil/sage/brand-orange/tone-*) above stay as-is (no codemod). */
+  --gold:               #CBA45E;
+  --sapphire:           #2E5FB0;
+  --teal:               #37C2C9;
+  --green:              #54CB7E;
+
   /* ─────────────── Surfaces — Aurora deep navy ─────────────────────────── */
   --bg:                 #070B14;
   --bg-deep:            #060B18;
@@ -279,6 +288,13 @@
   --brand-orange:       #2E5FB0;
   --brand-orange-light: #3D74C8;
   --brand-orange-dark:  #2E5FB0;
+
+  /* Honest canonical names (D13) — Gold + Sapphire stay literal; teal/green
+     follow the AA-safe light info/success ramp. */
+  --gold:               #CBA45E;
+  --sapphire:           #2E5FB0;
+  --teal:               #16666B;
+  --green:              #0F6B50;
 
   /* Semantic — Aurora light ramp. Darker ink-on-paper hues for AA contrast. */
   --success:            #0F6B50;

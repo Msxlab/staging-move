@@ -31,6 +31,13 @@
   --orange-800:         #86631A;
   --orange-900:         #5F4614;
 
+  /* Honest canonical names (D13) — Gold + Sapphire literal; teal/green
+     follow the per-mode info/success ramp. */
+  --gold:               #CBA45E;
+  --sapphire:           #2E5FB0;
+  --teal:               #37C2C9;
+  --green:              #54CB7E;
+
   --bg:                 #070B14;
   --panel:              #0E1626;
   --panel2:             #16203A;
@@ -97,6 +104,13 @@
   --orange-700:         #2E5FB0;
   --orange-800:         #244C90;
   --orange-900:         #18345F;
+
+  /* Honest canonical names (D13) — Gold + Sapphire literal; teal/green
+     follow the AA-safe light info/success ramp. */
+  --gold:               #CBA45E;
+  --sapphire:           #2E5FB0;
+  --teal:               #16666B;
+  --green:              #0F6B50;
 
   --bg:                 #F2F4F8;
   --surface:            #FFFFFF;
