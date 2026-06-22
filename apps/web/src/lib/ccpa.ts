@@ -26,14 +26,12 @@ function cookieSaysOptOut(value: string | undefined): boolean {
 }
 
 /**
- * Resolve opt-out state inside a route handler that already has the
- * `NextRequest`. Synchronous-feeling, single DB call at most.
+ * Resolve opt-out state for a known user with NO request/cookie context — the
+ * authoritative path for background workers (e.g. the lead-dispatch cron). The
+ * DataConsent DO_NOT_SELL row is the source of truth for a logged-in user; a
+ * background job has no first-party cookie to consult.
  */
-export async function hasCcpaOptOut(
-  request: NextRequest,
-  userId?: string | null,
-): Promise<boolean> {
-  if (cookieSaysOptOut(request.cookies.get(CCPA_COOKIE)?.value)) return true;
+export async function hasCcpaOptOutForUser(userId?: string | null): Promise<boolean> {
   if (!userId) return false;
 
   const row = await prisma.dataConsent
@@ -47,6 +45,18 @@ export async function hasCcpaOptOut(
 }
 
 /**
+ * Resolve opt-out state inside a route handler that already has the
+ * `NextRequest`. Synchronous-feeling, single DB call at most.
+ */
+export async function hasCcpaOptOut(
+  request: NextRequest,
+  userId?: string | null,
+): Promise<boolean> {
+  if (cookieSaysOptOut(request.cookies.get(CCPA_COOKIE)?.value)) return true;
+  return hasCcpaOptOutForUser(userId);
+}
+
+/**
  * Resolve opt-out state inside a server component or server action
  * where only `cookies()` is available (no direct `NextRequest`).
  */
@@ -55,14 +65,5 @@ export async function hasCcpaOptOutServer(
 ): Promise<boolean> {
   const cookieStore = await cookies();
   if (cookieSaysOptOut(cookieStore.get(CCPA_COOKIE)?.value)) return true;
-  if (!userId) return false;
-
-  const row = await prisma.dataConsent
-    .findFirst({
-      where: { userId, category: "DO_NOT_SELL" },
-      orderBy: { createdAt: "desc" },
-      select: { granted: true },
-    })
-    .catch(() => null);
-  return Boolean(row?.granted);
+  return hasCcpaOptOutForUser(userId);
 }

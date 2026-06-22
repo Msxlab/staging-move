@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   sendLoggedEmail: vi.fn(),
   decrypt: vi.fn(),
   accruePartnerLeadCharge: vi.fn(),
+  hasCcpaOptOutForUser: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -25,6 +26,7 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/shared-encryption", () => ({ decrypt: mocks.decrypt }));
 vi.mock("@/lib/email-service", () => ({ sendLoggedEmail: mocks.sendLoggedEmail }));
 vi.mock("@/lib/leads/billing", () => ({ accruePartnerLeadCharge: mocks.accruePartnerLeadCharge }));
+vi.mock("@/lib/ccpa", () => ({ hasCcpaOptOutForUser: mocks.hasCcpaOptOutForUser }));
 
 import { drainLeadDispatches } from "./dispatch-leads";
 
@@ -38,6 +40,7 @@ const dispatch = (over: Record<string, unknown> = {}) => ({
   idempotencyKey: "lead1:mover_application:app1",
   attemptCount: 0,
   lead: {
+    userId: "user1",
     category: "moving",
     fromZip: "90001",
     toZip: "78701",
@@ -61,6 +64,7 @@ describe("drainLeadDispatches", () => {
     // updateMany; default to a winning claim so processing proceeds.
     mocks.dispatchUpdateMany.mockResolvedValue({ count: 1 });
     mocks.accruePartnerLeadCharge.mockResolvedValue({ accrued: false, amountCents: 0 });
+    mocks.hasCcpaOptOutForUser.mockResolvedValue(false);
   });
 
   it("emails the partner and marks the dispatch SENT (idempotent via dedupeKey)", async () => {
@@ -79,6 +83,25 @@ describe("drainLeadDispatches", () => {
     expect(mocks.dispatchUpdate.mock.calls[0][0].data).toMatchObject({ status: "SENT" });
     // Movers are not billed via the partner CPL ledger.
     expect(mocks.accruePartnerLeadCharge).not.toHaveBeenCalled();
+  });
+
+  it("suppresses a lead whose owner set a CPRA Do-Not-Sell opt-out: no email, no charge, terminal", async () => {
+    mocks.dispatchFindMany.mockResolvedValue([dispatch()]);
+    mocks.hasCcpaOptOutForUser.mockResolvedValue(true);
+
+    const res = await drainLeadDispatches({ now: NOW });
+
+    expect(res).toMatchObject({ processed: 1, sent: 0, suppressed: 1 });
+    expect(mocks.hasCcpaOptOutForUser).toHaveBeenCalledWith("user1");
+    // An opted-out lead is never resolved to a recipient, emailed, or billed.
+    expect(mocks.moverFindUnique).not.toHaveBeenCalled();
+    expect(mocks.sendLoggedEmail).not.toHaveBeenCalled();
+    expect(mocks.accruePartnerLeadCharge).not.toHaveBeenCalled();
+    // Marked terminal with the CCPA reason so it is not retried.
+    expect(mocks.dispatchUpdate.mock.calls.at(-1)![0].data).toMatchObject({
+      status: "FAILED",
+      lastErrorCode: "CCPA_OPT_OUT",
+    });
   });
 
   it("routes a generic Partner dispatch (R4) to the Partner's contactEmail", async () => {

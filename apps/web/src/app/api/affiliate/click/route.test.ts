@@ -17,9 +17,12 @@ vi.mock("@/lib/rate-limit", () => ({
   getRateLimitKey: vi.fn(() => "affiliate:click:test"),
 }));
 
+vi.mock("@/lib/ccpa", () => ({ hasCcpaOptOut: vi.fn() }));
+
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { hasCcpaOptOut } from "@/lib/ccpa";
 import { POST } from "./route";
 
 const mockPrisma = {
@@ -49,6 +52,7 @@ describe("affiliate click route", () => {
     mockPrisma.affiliateClick.create.mockResolvedValue({ id: "click-1" });
     mockPrisma.affiliateClick.findFirst.mockResolvedValue(null);
     mockPrisma.address.findFirst.mockResolvedValue({ id: "addr-1" });
+    (hasCcpaOptOut as Mock).mockResolvedValue(false);
   });
 
   it("records a click and returns the stored affiliate URL for an active https offer", async () => {
@@ -123,6 +127,25 @@ describe("affiliate click route", () => {
     const response = await POST(makeRequest({ source: "services" }));
     expect(response.status).toBe(400);
     expect(mockPrisma.serviceProvider.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("honors a CCPA Do-Not-Sell opt-out: returns the url but records no attributed click", async () => {
+    (hasCcpaOptOut as Mock).mockResolvedValue(true);
+    mockPrisma.serviceProvider.findFirst.mockResolvedValue({
+      id: "prov-1",
+      affiliateActive: true,
+      affiliateUrl: "https://partner.example/offer",
+      affiliateNetwork: "impact",
+    });
+
+    const response = await POST(makeRequest({ providerId: "prov-1", source: "services" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.url).toBe("https://partner.example/offer");
+    // No attribution read or write happens for an opted-out user.
+    expect(mockPrisma.affiliateClick.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.affiliateClick.create).not.toHaveBeenCalled();
   });
 
   it("de-dups: skips the write when a recent click already exists but still returns the url", async () => {
