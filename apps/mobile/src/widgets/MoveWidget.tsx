@@ -128,7 +128,7 @@ export function MoveWidget({ snapshot }: { snapshot: WidgetSnapshot }) {
         </FlexWidget>
       ) : (
         <TextWidget
-          text="Tap to open Move"
+          text="Tap to open LocateFlow"
           style={{ fontSize: 11, fontWeight: "600", color: COLORS.accent }}
         />
       )}

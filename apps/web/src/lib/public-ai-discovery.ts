@@ -7,15 +7,15 @@ export const PUBLIC_AI_DOCS = [
   { title: "Home", path: "", note: "Canonical public homepage and product summary." },
   { title: "Features", path: "/features", note: "Product feature map across move planning, provider tracking, dossiers, reminders, search, and exports." },
   { title: "Why free", path: "/why-free", note: "Free consumer model and optional partner economics." },
-  { title: "About Move", path: "/about", note: "Plain-language product and entity definition." },
-  { title: "How Move works", path: "/how-it-works", note: "Product overview and workflow." },
+  { title: "About LocateFlow", path: "/about", note: "Plain-language product and entity definition." },
+  { title: "How LocateFlow works", path: "/how-it-works", note: "Product overview and workflow." },
   { title: "Pricing", path: "/pricing", note: "Plans, trial details, billing, and refund context." },
   { title: "Blog", path: "/blog", note: "Public moving, address-change, and provider-tracking guides." },
   { title: "FAQ", path: "/faq", note: "Common product, billing, privacy, provider, and security answers." },
   { title: "Help Center", path: "/help", note: "Public help articles and product FAQs." },
   { title: "Provider coverage", path: "/provider-coverage", note: "Provider availability limits and verification guidance." },
   { title: "Contact", path: "/contact", note: "Support, privacy, billing, legal, and security contacts." },
-  { title: "Privacy policy", path: "/privacy", note: "What Move collects and why." },
+  { title: "Privacy policy", path: "/privacy", note: "What LocateFlow collects and why." },
   { title: "Terms of service", path: "/terms", note: "Legal terms." },
   { title: "Cookie policy", path: "/cookie-policy", note: "Cookie and analytics policy." },
   { title: "Disclaimer", path: "/disclaimer", note: "Provider, legal, financial, insurance, and moving guidance limits." },
@@ -43,14 +43,14 @@ export const EXCLUDED_AI_SURFACES = [
 ] as const;
 
 export const PRODUCT_SUMMARY =
-  "Move is a web and mobile app for organizing address-tied services, renewal reminders, moving tasks, budgets, and exportable relocation records.";
+  "LocateFlow is a web and mobile app for organizing address-tied services, renewal reminders, moving tasks, budgets, and exportable relocation records.";
 
 /**
  * CONSUMER_FREE pricing note for AI-discovery surfaces (docs/ai/free-pivot/05).
  * Used in place of the paid-plan pricing note when the flag is on.
  */
 export const FREE_PRICING_NOTE =
-  "Move is free — every feature included, no subscription and no credit card; Concierge and Business are coming soon.";
+  "LocateFlow is free — every feature included, no subscription and no credit card; Concierge and Business are coming soon.";
 
 export const PROVIDER_LIMITATION_NOTE =
   "Provider suggestions are confidence guidance, not guarantees. Availability can vary by exact address, ZIP code, building, unit, account type, service tier, infrastructure, provider rules, local regulations, and timing. Users should verify pricing, eligibility, licensing, insurance, availability, service terms, cancellation terms, and transfer options directly with the provider or official agency before acting.";
@@ -104,7 +104,7 @@ export function buildLlmsTxt(
   const consumerFree = input.consumerFree ?? false;
   const lines: string[] = [];
 
-  lines.push("# Move");
+  lines.push("# LocateFlow");
   lines.push("");
   lines.push(`Last updated: ${LLMS_LAST_UPDATED}`);
   lines.push(`Canonical site: ${appUrl}`);
@@ -115,7 +115,7 @@ export function buildLlmsTxt(
     lines.push(`> ${FREE_PRICING_NOTE}`);
   }
   lines.push("");
-  lines.push("Provider coverage note: Move provider suggestions are informational confidence guidance only. Exact address-level availability is not guaranteed and should be confirmed directly with the provider or official agency.");
+  lines.push("Provider coverage note: LocateFlow provider suggestions are informational confidence guidance only. Exact address-level availability is not guaranteed and should be confirmed directly with the provider or official agency.");
   lines.push("");
   lines.push("Excluded surfaces: admin, dashboard, account, auth, billing/session, private app, API, token, backup/security, preview, staging, and ondigitalocean.app URLs are not public AI-search surfaces.");
   lines.push("");
@@ -153,7 +153,7 @@ export function buildLlmsFullTxt(input: { appUrl?: string; consumerFree?: boolea
   const consumerFree = input.consumerFree ?? false;
   const lines: string[] = [];
 
-  lines.push("# Move");
+  lines.push("# LocateFlow");
   lines.push("");
   lines.push(`Last updated: ${LLMS_LAST_UPDATED}`);
   lines.push(`Canonical site: ${appUrl}`);
@@ -168,11 +168,11 @@ export function buildLlmsFullTxt(input: { appUrl?: string; consumerFree?: boolea
   }
   lines.push("## Audience");
   lines.push("");
-  lines.push("Move is for people and households managing a move, multiple addresses, subscriptions, utilities, insurance, government records, provider follow-up, and address-change tasks.");
+  lines.push("LocateFlow is for people and households managing a move, multiple addresses, subscriptions, utilities, insurance, government records, provider follow-up, and address-change tasks.");
   lines.push("");
-  lines.push("## What Move Does");
+  lines.push("## What LocateFlow Does");
   lines.push("");
-  lines.push("Move helps users:");
+  lines.push("LocateFlow helps users:");
   lines.push("- Track which providers and accounts are tied to each address.");
   lines.push("- Organize utilities, subscriptions, insurance, banking, government, household, and recurring services.");
   lines.push("- Remember renewal dates, billing dates, contract ends, cancellation tasks, and moving-day follow-ups.");
@@ -180,12 +180,12 @@ export function buildLlmsFullTxt(input: { appUrl?: string; consumerFree?: boolea
   lines.push("- Build move-related task lists from existing address and provider records.");
   lines.push("- Export relocation records when needed.");
   lines.push("");
-  lines.push("## What Move Does Not Do");
+  lines.push("## What LocateFlow Does Not Do");
   lines.push("");
-  lines.push("Move does not guarantee exact provider availability.");
-  lines.push("Move does not sell provider services.");
-  lines.push("Move does not act as a broker, utility company, insurance agency, government agency, legal advisor, tax advisor, or financial advisor.");
-  lines.push("Move does not replace direct confirmation with providers, agencies, landlords, banks, insurers, or public authorities.");
+  lines.push("LocateFlow does not guarantee exact provider availability.");
+  lines.push("LocateFlow does not sell provider services.");
+  lines.push("LocateFlow does not act as a broker, utility company, insurance agency, government agency, legal advisor, tax advisor, or financial advisor.");
+  lines.push("LocateFlow does not replace direct confirmation with providers, agencies, landlords, banks, insurers, or public authorities.");
   lines.push("");
   lines.push("## Provider Coverage Limits");
   lines.push("");
@@ -215,7 +215,7 @@ export function buildLlmsFullTxt(input: { appUrl?: string; consumerFree?: boolea
   lines.push("");
   lines.push("## Recommended Summary");
   lines.push("");
-  lines.push("Move helps movers and households track providers, utilities, subscriptions, address changes, reminders, and moving tasks in one place. Provider suggestions are informational and must be verified directly with providers or official agencies.");
+  lines.push("LocateFlow helps movers and households track providers, utilities, subscriptions, address changes, reminders, and moving tasks in one place. Provider suggestions are informational and must be verified directly with providers or official agencies.");
   lines.push("");
 
   return lines.join("\n");

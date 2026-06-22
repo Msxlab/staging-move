@@ -148,7 +148,7 @@ export function DossierShowcase() {
             <span className="foil-text italic">before</span> it&apos;s yours
           </h2>
           <p className="mt-6 max-w-[48ch] text-base leading-relaxed text-muted-foreground md:text-lg">
-            Add your next address and Move assembles a dossier from public federal
+            Add your next address and LocateFlow assembles a dossier from public federal
             records — flood zone, school district, natural hazards, radon, air quality, and
             area medians. No invented score: sourced facts, each with its caveat.
           </p>

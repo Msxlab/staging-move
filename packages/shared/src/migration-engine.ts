@@ -513,7 +513,7 @@ export function generateMigrationTasks(
     const svcId = item.currentService?.id || "unknown";
     tasks.push({
       title: `${item.icon} Update ${item.currentService?.providerName || item.categoryLabel} address`,
-      description: `${item.note}\n\nThis is local Move guidance. Confirm the provider's address-update process before acting.`,
+      description: `${item.note}\n\nThis is local LocateFlow guidance. Confirm the provider's address-update process before acting.`,
       category: item.category,
       priority: "MEDIUM",
       dueDate: dueFrom(3),
@@ -530,7 +530,7 @@ export function generateMigrationTasks(
     const svcId = item.currentService?.id || "unknown";
     tasks.push({
       title: `${item.icon} Transfer ${item.currentService?.providerName || item.categoryLabel} to ${toState}`,
-      description: `${item.note}\n\nContact the provider to confirm whether service can be transferred to the new address. Move does not perform the transfer.`,
+      description: `${item.note}\n\nContact the provider to confirm whether service can be transferred to the new address. LocateFlow does not perform the transfer.`,
       category: item.category,
       priority: "HIGH",
       dueDate: dueFrom(-3),

@@ -181,7 +181,7 @@ export function NotificationPrimingCard({ style }: NotificationPrimingCardProps)
         <Text style={styles.deniedHint}>
           {t("onboarding.notifPriming_denied", {
             defaultValue:
-              "Notifications are turned off for Move in your device settings. You can enable them there any time.",
+              "Notifications are turned off for LocateFlow in your device settings. You can enable them there any time.",
           })}
         </Text>
       )}

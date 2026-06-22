@@ -159,7 +159,7 @@ export function InstallPrompt() {
               <Logo className="h-7 w-7 text-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">Get the Move app</p>
+              <p className="text-sm font-semibold text-foreground">Get the LocateFlow app</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {storeUrl
                   ? `Faster, offline-ready, with push notifications. Free on ${storeLabel}.`

@@ -245,7 +245,7 @@ export default function MoreScreen() {
                 <Text style={styles.planBannerTitle} numberOfLines={1}>
                   {hasPaidPlan
                     ? t("more.planActive", {
-                        defaultValue: "Move {{plan}} active",
+                        defaultValue: "LocateFlow {{plan}} active",
                         plan: planLabel,
                       })
                     : t("more.planManageTitle", { defaultValue: "Your plan" })}
@@ -343,7 +343,7 @@ export default function MoreScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.version}>Move v{Constants.expoConfig?.version ?? "0.0.0"}</Text>
+        <Text style={styles.version}>LocateFlow v{Constants.expoConfig?.version ?? "0.0.0"}</Text>
         {buildLabel ? <Text style={styles.buildMeta}>{buildLabel}</Text> : null}
       </ScrollView>
     </SafeAreaView>

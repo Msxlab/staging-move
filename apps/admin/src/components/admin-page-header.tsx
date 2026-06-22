@@ -16,7 +16,7 @@ interface AdminPageHeaderProps {
 }
 
 /**
- * Move Admin page header / top bar. Mirrors the design's MAIN header: a
+ * LocateFlow Admin page header / top bar. Mirrors the design's MAIN header: a
  * Playfair Display (`font-display`) title, a small faint meta line under
  * it, and a right-aligned actions cluster, sitting on a translucent
  * sticky-feeling bar that reads like the operations console top bar. The

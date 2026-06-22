@@ -489,8 +489,8 @@ export default function MovingPlanDetailClient({ id }: { id: string }) {
       {/* Posture disclaimer — consistent with the list view's legal copy. */}
       <div className="rounded-lg border border-border bg-muted/20 p-3">
         <p className="text-[11px] text-muted-foreground">
-          Read-only operator context. Move does not update provider accounts or execute address
-          changes; task completion reflects Move state only.
+          Read-only operator context. LocateFlow does not update provider accounts or execute address
+          changes; task completion reflects LocateFlow state only.
         </p>
       </div>
     </div>

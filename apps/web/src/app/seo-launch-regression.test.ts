@@ -252,8 +252,8 @@ describe("production SEO launch surfaces", () => {
     const response = await GET();
     const text = await response.text();
 
-    expect(text).toContain("# Move");
-    expect(text).toContain("Move is a web and mobile app");
+    expect(text).toContain("# LocateFlow");
+    expect(text).toContain("LocateFlow is a web and mobile app");
     expect(text).toContain("Full LLM summary: https://locateflow.com/llms-full.txt");
     expect(text).toContain("Provider coverage note:");
     expect(text).toContain("https://locateflow.com/about");
@@ -276,7 +276,7 @@ describe("production SEO launch surfaces", () => {
     const text = await response.text();
 
     expect(response.headers.get("content-type")).toContain("text/plain");
-    expect(text).toContain("# Move");
+    expect(text).toContain("# LocateFlow");
     expect(text).toContain("Canonical site: https://locateflow.com");
     expect(text).toContain("Provider suggestions are confidence guidance, not guarantees.");
     expect(text).toContain("https://locateflow.com/provider-coverage");

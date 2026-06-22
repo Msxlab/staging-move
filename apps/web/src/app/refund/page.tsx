@@ -19,7 +19,7 @@ const highlights = [
   {
     icon: CreditCard,
     title: "Web purchases",
-    description: "Stripe web purchases are reviewed by Move support under the request windows below.",
+    description: "Stripe web purchases are reviewed by LocateFlow support under the request windows below.",
   },
   {
     icon: Store,
@@ -38,7 +38,7 @@ export default function RefundPolicyPage() {
     <PublicPageShell
       eyebrow="Legal"
       title="Refund Policy"
-      description="This policy explains how refund requests are handled for Move subscriptions. It does not replace the final offer terms shown at checkout or mobile store rules."
+      description="This policy explains how refund requests are handled for LocateFlow subscriptions. It does not replace the final offer terms shown at checkout or mobile store rules."
     >
       <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
 
@@ -69,7 +69,7 @@ export default function RefundPolicyPage() {
       <PublicSection title="Mobile store refunds">
         <p>{STORE_PURCHASE_DISTINCTION}</p>
         <p>
-          If you subscribed through Apple App Store or Google Play, refund requests may need to be submitted directly to Apple or Google. Move may not be able to issue a direct refund for store-managed purchases.
+          If you subscribed through Apple App Store or Google Play, refund requests may need to be submitted directly to Apple or Google. LocateFlow may not be able to issue a direct refund for store-managed purchases.
         </p>
       </PublicSection>
 

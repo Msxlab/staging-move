@@ -1219,7 +1219,7 @@ export default function OnboardingClient({
             <div>
               <h2 className="text-lg font-semibold text-foreground">Required legal acknowledgements</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Accept these before using Move.
+                Accept these before using LocateFlow.
               </p>
             </div>
           </div>
@@ -1920,7 +1920,7 @@ export default function OnboardingClient({
           <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3">
             <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">Listed providers, manual tracking only</p>
             <p className="mt-1 text-[11px] leading-relaxed text-tone-honey-fg/80 dark:text-tone-honey-fg/75">
-              Listed providers are directory entries, not proof of activation at your address. Adding one creates a Move service record; it does not update your address with the provider.
+              Listed providers are directory entries, not proof of activation at your address. Adding one creates a LocateFlow service record; it does not update your address with the provider.
             </p>
           </div>
 

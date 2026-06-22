@@ -1122,7 +1122,7 @@ export default function OnboardingScreen() {
           t("onboarding.pushPromptTitle", { defaultValue: "Stay on top of your move" }),
           t("onboarding.pushPromptBody", {
             defaultValue:
-              "Move can send reminders for moving tasks, provider replies, and billing notices. You can change this any time in Settings.",
+              "LocateFlow can send reminders for moving tasks, provider replies, and billing notices. You can change this any time in Settings.",
           }),
           [
             {
@@ -1433,7 +1433,7 @@ export default function OnboardingScreen() {
                     {t("onboarding.headerKicker", { defaultValue: "A moving companion" })}
                   </Text>
                   <Text style={styles.headerTitle} numberOfLines={1}>
-                    {t("onboarding.headerTitle", { defaultValue: "Move once. Remember everything." })}
+                    {t("onboarding.headerTitle", { defaultValue: "Relocate once. Remember everything." })}
                   </Text>
                 </View>
                 <View style={styles.headerPill}>

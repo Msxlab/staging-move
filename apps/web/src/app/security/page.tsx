@@ -5,7 +5,7 @@ import { createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
   title: "Security",
-  description: "How Move protects accounts and the data you store, with current security limitations stated plainly.",
+  description: "How LocateFlow protects accounts and the data you store, with current security limitations stated plainly.",
   path: "/security",
 });
 
@@ -13,7 +13,7 @@ const highlights = [
   {
     icon: Lock,
     title: "Transport protection",
-    description: "Move uses TLS for browser and API traffic in production configurations.",
+    description: "LocateFlow uses TLS for browser and API traffic in production configurations.",
   },
   {
     icon: KeyRound,
@@ -37,7 +37,7 @@ export default function SecurityPage() {
     <PublicPageShell
       eyebrow="Trust"
       title="Security overview"
-      description="A practical summary of security practices Move uses today. This page does not claim SOC 2, HIPAA, PCI certification by Move, or perfect security."
+      description="A practical summary of security practices LocateFlow uses today. This page does not claim SOC 2, HIPAA, PCI certification by LocateFlow, or perfect security."
     >
       <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
 
@@ -64,10 +64,10 @@ export default function SecurityPage() {
 
       <PublicSection title="Data protection">
         <p>
-          Move uses TLS for traffic in production. Some sensitive application fields may be encrypted at the field level when configured, and infrastructure providers may provide at-rest encryption for databases, object storage, and backups depending on deployment.
+          LocateFlow uses TLS for traffic in production. Some sensitive application fields may be encrypted at the field level when configured, and infrastructure providers may provide at-rest encryption for databases, object storage, and backups depending on deployment.
         </p>
         <p>
-          Do not treat this page as a claim that every field, log, backup, processor copy, or third-party system is separately field-encrypted by Move.
+          Do not treat this page as a claim that every field, log, backup, processor copy, or third-party system is separately field-encrypted by LocateFlow.
         </p>
       </PublicSection>
 
@@ -82,29 +82,29 @@ export default function SecurityPage() {
 
       <PublicSection title="Backups and recovery">
         <p>
-          Move maintains backup and recovery procedures appropriate to the deployment. Restore testing should be completed and documented before full production launch or enterprise commitments are made.
+          LocateFlow maintains backup and recovery procedures appropriate to the deployment. Restore testing should be completed and documented before full production launch or enterprise commitments are made.
         </p>
       </PublicSection>
 
       <PublicSection title="Payment security">
         <p>{STORE_PURCHASE_DISTINCTION}</p>
         <p>
-          Move does not store full payment card numbers. Card entry and payment processing are handled by payment processors or app stores. Those providers may have their own PCI obligations and security practices.
+          LocateFlow does not store full payment card numbers. Card entry and payment processing are handled by payment processors or app stores. Those providers may have their own PCI obligations and security practices.
         </p>
       </PublicSection>
 
       <PublicSection title="Responsible disclosure">
         <p>
-          To report a vulnerability, email <a href={mailto(LEGAL_CONTACTS.security, "Move security disclosure")} className="underline">{LEGAL_CONTACTS.security}</a> with a brief description, steps to reproduce, affected URLs or account context, and any suggested remediation. Do not send passwords, payment card numbers, private keys, or real user data.
+          To report a vulnerability, email <a href={mailto(LEGAL_CONTACTS.security, "LocateFlow security disclosure")} className="underline">{LEGAL_CONTACTS.security}</a> with a brief description, steps to reproduce, affected URLs or account context, and any suggested remediation. Do not send passwords, payment card numbers, private keys, or real user data.
         </p>
         <p>
-          Good-faith testing should avoid service degradation, social engineering, persistence, data exfiltration, destructive actions, and public disclosure before Move has had a reasonable opportunity to respond.
+          Good-faith testing should avoid service degradation, social engineering, persistence, data exfiltration, destructive actions, and public disclosure before LocateFlow has had a reasonable opportunity to respond.
         </p>
       </PublicSection>
 
       <PublicSection title="Incident response">
         <p>
-          If Move determines that a security incident materially affects customer data, Move will use reasonable efforts to notify affected users and regulators when required by applicable law. DPA-level breach terms are summarized in the Data Processing Addendum.
+          If LocateFlow determines that a security incident materially affects customer data, LocateFlow will use reasonable efforts to notify affected users and regulators when required by applicable law. DPA-level breach terms are summarized in the Data Processing Addendum.
         </p>
       </PublicSection>
     </PublicPageShell>

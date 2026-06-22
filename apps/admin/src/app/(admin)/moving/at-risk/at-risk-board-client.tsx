@@ -299,7 +299,7 @@ export default function AtRiskBoardClient() {
       <div className="rounded-2xl border border-border bg-muted/20 p-4">
         <p className="text-[11px] text-muted-foreground">
           Read-only risk board. Signals are derived from move dates, checklist task status and tracked
-          services — no records are modified. Move does not update provider accounts.
+          services — no records are modified. LocateFlow does not update provider accounts.
         </p>
       </div>
     </div>

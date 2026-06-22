@@ -640,7 +640,7 @@ function LegacySubscriptionScreen() {
     }
     if (message === "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE") {
       return t("settings.subscription_activeManagedElsewhere", {
-        defaultValue: "This account already has an active subscription managed elsewhere. You can continue using Move here.",
+        defaultValue: "This account already has an active subscription managed elsewhere. You can continue using LocateFlow here.",
       });
     }
     return message || t("toast.networkError");
@@ -975,13 +975,13 @@ function LegacySubscriptionScreen() {
             </Text>
             <Text style={styles.includedAccessTitle}>
               {t("settings.subscription_freeIncludedTitle", {
-                defaultValue: "Everything Move does, included",
+                defaultValue: "Everything LocateFlow does, included",
               })}
             </Text>
             <Text style={styles.includedAccessCopy}>
               {t("settings.subscription_freeIncludedCopy", {
                 defaultValue:
-                  "You have full access to every Move feature. There is no subscription, no credit card, and nothing to renew or cancel.",
+                  "You have full access to every LocateFlow feature. There is no subscription, no credit card, and nothing to renew or cancel.",
               })}
             </Text>
           </MoveCard>

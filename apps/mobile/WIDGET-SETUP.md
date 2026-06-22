@@ -22,7 +22,7 @@ appear on a device, and — honestly — what is already verified here versus wh
   - `computeWidgetSnapshot()` computes `{ daysToGo, phase, nextTaskTitle,
     readinessPercent, routeLabel, updatedAt }` from the dashboard data the app
     already loads. Countdown uses the same `getMoveCountdown` from
-    `@locateflow/shared`; readiness uses the **identical blend** the in-app Move
+    `@locateflow/shared`; readiness uses the **identical blend** the in-app moving
     Command Center uses; next-task uses the same open-task selection as the Up
     Next strip.
   - `persistWidgetSnapshot()` mirrors the snapshot to **AsyncStorage**
@@ -95,10 +95,8 @@ pnpm build:dev:ios          # or: pnpm build:ios   (needs an Apple paid dev acco
 
 Then **install the build on a device** and **add the widget**:
 
-- **Android:** long-press the home screen → **Widgets** → find **"LocateFlow
-  Move"** → drag to the home screen.
-- **iOS:** long-press the home screen → **+** (top-left) → search **"LocateFlow
-  Move"** → add. (WidgetKit widgets do not show in the simulator's widget gallery
+- **Android:** long-press the home screen → **Widgets** → find **"LocateFlow"** → drag to the home screen.
+- **iOS:** long-press the home screen → **+** (top-left) → search **"LocateFlow"** → add. (WidgetKit widgets do not show in the simulator's widget gallery
   as reliably as on a real device — prefer a device.)
 
 Open the app once (so the dashboard runs and writes a snapshot), then check the
@@ -188,6 +186,6 @@ pnpm --filter @locateflow/mobile exec vitest run src/lib/widget-data.test.ts
 
 # Native (needs your machine + device — NOT verifiable remotely):
 cd apps/mobile && npx expo prebuild --clean
-pnpm build:dev:android   # add the "LocateFlow Move" widget on a device
+pnpm build:dev:android   # add the "LocateFlow" widget on a device
 pnpm build:dev:ios       # iOS render pending the App Group bridge (see above)
 ```

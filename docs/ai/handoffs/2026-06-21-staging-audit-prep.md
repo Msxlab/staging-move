@@ -288,6 +288,20 @@ HTTP responses and masked/indirect Dokploy state.
 - `docker compose -f docker-compose.dokploy-dbprep.yml config` and `docker compose -f docker-compose.dokploy-dbcopy.yml config` were checked with staging identifiers and produced distinct `locateflow-staging-*` containers plus `locateflow-staging_mysql_data`.
 - `docker compose -f docker-compose.prod.yml config` was checked with dummy env and showed migrate runs only `prisma migrate deploy`; inactive `seed-admin` no longer makes base config require seed env.
 
+## 2026-06-21 Design Zip / LocateFlow Sapphire Integration Pass
+
+- Design source inventory was rechecked from `design-src/handoffs/Initial check requested-handoff (7).zip` extracted under `design-src/initial-check-requested/project`.
+- Source files present: public web shell/home (`Web.dc.html`, `Move Web.dc.html`), public pages (`Web Features.dc.html`, `Web Why-Free.dc.html`, `Web Blog.dc.html`, `Web Login.dc.html`, `Web Onboarding.dc.html`), mobile/app screens (`Move.dc.html`, `Index.dc.html`, `Onboarding.dc.html`, `Auth.dc.html`, `Providers.dc.html`, `CustomProviders.dc.html`, `Search.dc.html`, `Reminders.dc.html`, `Help.dc.html`, `Invitations.dc.html`, `DossierScene.dc.html`), admin (`Admin.dc.html`), and shared mascot/source art (`Raccoon.dc.html`).
+- Source design files still carry the old `Move` label and default Gold theme variants. The product decision for staging is explicit: runtime brand is `LocateFlow`, and the selected visual direction is Sapphire/blue for both light and dark modes.
+- Homepage integration updated `apps/web/src/app/page.tsx` to use a new `HeroPhoneShowcase` component based on the zip's animated phone/route concept, adapted to LocateFlow copy and Sapphire tokens.
+- Public web brand cleanup now covers homepage, pricing, about, FAQ/help, blog metadata/OpenGraph, legal/policy pages, provider coverage, moving guide CTAs, partner/mover portals, app install prompt, manifests, SVG logos, service-worker/offline copy, and AI-discovery/legal summaries.
+- Mobile brand cleanup now covers Expo app name, app lock, onboarding, notifications, subscription/settings, help/version footer, widget copy, push channel name, and mobile SVG app icons. Internal code identifiers such as `MoveWidget`, `MoveTask`, and move-domain model names remain unchanged.
+- Admin brand cleanup now covers metadata/manifests, sidebar/wordmark, admin logo SVGs, offline/service-worker copy, and visible support/settings/admin-shell labels while preserving move-domain labels such as move date, move tasks, and moving plans.
+- Binary icon corruption risk from a PowerShell text rewrite was detected and corrected by restoring PNG/ICO assets from the last good commit; only text/SVG/manifest branding changes remain in this pass.
+- Static brand-risk scan after cleanup reports no user-facing old-product-name hits for the audited public/app/legal/help/marketing patterns; remaining `Move` hits are code identifiers, comments, move-domain terms, tests for generic marker behavior, or external/legal phrases such as FMCSA "Protect Your Move".
+- `git diff --check` passes after the design/branding edits, with only expected CRLF warnings.
+- Runtime proof still needed after deploy: Chrome screenshot pass for homepage hero, features/why-free/blog/login/onboarding/help/legal pages, admin login/dashboard, mobile preview/emulator surfaces, OpenGraph image route, and light/dark Sapphire parity.
+
 ## Minimum Env Categories Needed For Real Tests
 
 Do not paste values into chat. Set locally.

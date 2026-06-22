@@ -201,7 +201,7 @@ export const SERVICE_PRIORITY_MAP: ServicePriorityItem[] = [
     phase: 0, daysRelativeToMove: -14, deadlineDays: null, priority: "URGENT", isRequired: true,
     moveTypes: ["PERSONAL", "BUSINESS"], conditions: [],
     estimatedMinutes: 10, icon: "📬", actionUrl: USPS_MOVERS_GUIDE_URL,
-    tips: "Finish on the official USPS site (usps.com), which charges a small one-time identity-verification fee — Move never collects it. Forward for 6–12 months, and notify important contacts separately.",
+    tips: "Finish on the official USPS site (usps.com), which charges a small one-time identity-verification fee — LocateFlow never collects it. Forward for 6–12 months, and notify important contacts separately.",
   },
   {
     id: "P0_SCHOOL_RECORDS", category: "KIDS_SCHOOL", title: "Request School Transfer Records",

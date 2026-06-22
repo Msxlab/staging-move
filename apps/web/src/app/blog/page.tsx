@@ -63,22 +63,22 @@ export async function generateMetadata({
     alternates: {
       canonical,
       types: {
-        "application/rss+xml": [{ url: `${SITE_URL}/blog/feed.xml`, title: "Move Blog · RSS" }],
-        "application/atom+xml": [{ url: `${SITE_URL}/blog/atom.xml`, title: "Move Blog · Atom" }],
+        "application/rss+xml": [{ url: `${SITE_URL}/blog/feed.xml`, title: "LocateFlow Blog · RSS" }],
+        "application/atom+xml": [{ url: `${SITE_URL}/blog/atom.xml`, title: "LocateFlow Blog · Atom" }],
       },
     },
     openGraph: {
       type: "website",
       url: canonical,
-      title: page > 1 ? `Move Blog - Page ${page}` : "Move Blog",
+      title: page > 1 ? `LocateFlow Blog - Page ${page}` : "LocateFlow Blog",
       description:
         "Field-tested guides on moving smarter, tracking provider records in one place, and checking address-sensitive services before they become expensive.",
-      siteName: "Move",
-      images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE), width: 1200, height: 630, alt: "Move" }],
+      siteName: "LocateFlow",
+      images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE), width: 1200, height: 630, alt: "LocateFlow" }],
     },
     twitter: {
       card: "summary_large_image",
-      title: page > 1 ? `Move Blog - Page ${page}` : "Move Blog",
+      title: page > 1 ? `LocateFlow Blog - Page ${page}` : "LocateFlow Blog",
       description:
         "Field-tested guides on moving smarter, tracking provider records in one place, and checking address-sensitive services before they become expensive.",
       images: [absoluteUrl(DEFAULT_OG_IMAGE)],

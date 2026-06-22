@@ -297,7 +297,7 @@ const MOVE_TASK_STATUS_COPY: Record<
     status: "SUGGESTED",
     label: "Suggested",
     description:
-      "Move suggested this task from move context and provider data.",
+      "LocateFlow suggested this task from move context and provider data.",
   },
   ACCEPTED: {
     status: "ACCEPTED",
@@ -313,7 +313,7 @@ const MOVE_TASK_STATUS_COPY: Record<
     status: "COMPLETED",
     label: "Completed",
     description:
-      "The task is complete inside Move. No external provider update is implied.",
+      "The task is complete inside LocateFlow. No external provider update is implied.",
   },
   DISMISSED: {
     status: "DISMISSED",
@@ -334,7 +334,7 @@ const MOVE_TASK_SOURCE_COPY: Record<
   CLASSIFIER: {
     source: "CLASSIFIER",
     label: "Classifier",
-    description: "Suggested by deterministic Move logic.",
+    description: "Suggested by deterministic LocateFlow logic.",
   },
   USER: {
     source: "USER",
@@ -354,7 +354,7 @@ const MOVE_TASK_SOURCE_COPY: Record<
   SYSTEM: {
     source: "SYSTEM",
     label: "System",
-    description: "Created by Move system behavior.",
+    description: "Created by LocateFlow system behavior.",
   },
 };
 
@@ -366,19 +366,19 @@ const MOVE_TASK_EFFECT_COPY: Record<
     effect: "CLOSE_OLD_SERVICE",
     label: "Close old service locally",
     description:
-      "Marks the old service closed in Move only. The external provider is not changed.",
+      "Marks the old service closed in LocateFlow only. The external provider is not changed.",
   },
   CREATE_DESTINATION_SERVICE: {
     effect: "CREATE_DESTINATION_SERVICE",
     label: "Create destination service",
     description:
-      "Creates a Move service record for the destination address.",
+      "Creates a LocateFlow service record for the destination address.",
   },
   LINK_DESTINATION_PROVIDER: {
     effect: "LINK_DESTINATION_PROVIDER",
     label: "Link destination provider",
     description:
-      "Links a Move service or task to a listed or user-added provider.",
+      "Links a LocateFlow service or task to a listed or user-added provider.",
   },
   UPDATE_SERVICE_ADDRESS: {
     effect: "UPDATE_SERVICE_ADDRESS",
@@ -413,7 +413,7 @@ const CURRENT_PRODUCT_COPY: Record<CurrentProductCopyKey, string> = {
   MANUAL_TRACKING_ONLY: "Manual tracking only.",
   NO_AUTOMATIC_ACCOUNT_UPDATE: "No automatic account update.",
   TASK_COMPLETION_UPDATES_LOCATEFLOW_ONLY:
-    "Task completion updates Move only.",
+    "Task completion updates LocateFlow only.",
 };
 
 const MOVE_TRANSITION_ACTION_COPY: Record<

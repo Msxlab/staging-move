@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -108,7 +108,7 @@ export default function ConnectionsScreen() {
   const revoke = (consent: Consent) => {
     Alert.alert(
       t("connections.revokeTitle", "Disconnect?"),
-      t("connections.revokeBody", "Move will stop syncing addresses to this partner."),
+      t("connections.revokeBody", "LocateFlow will stop syncing addresses to this partner."),
       [
         { text: t("common.cancel", "Cancel"), style: "cancel" },
         {
@@ -158,7 +158,7 @@ export default function ConnectionsScreen() {
               <Text style={styles.heroSub}>
                 {t(
                   "connections.intro",
-                  "Connect a partner once and Move can keep your address up to date there when you move.",
+                  "Connect a partner once and LocateFlow can keep your address up to date there when you move.",
                 )}
               </Text>
             </View>

@@ -421,7 +421,7 @@ export default function HelpScreen() {
 
         <TouchableOpacity activeOpacity={0.7} onPress={handleContactUs} style={styles.footerWrap}>
           <Text style={styles.footerText}>
-            Move v{Constants.expoConfig?.version ?? "0.0.0"}
+            LocateFlow v{Constants.expoConfig?.version ?? "0.0.0"}
           </Text>
           <ExternalLink size={11} color={theme.colors.faint} />
         </TouchableOpacity>

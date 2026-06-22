@@ -825,7 +825,7 @@ export default function UserDetailClient() {
     !user.profile ? "User has not created a profile yet." : null,
     !primaryAddress ? "No primary address is available." : null,
     totalServices === 0 ? "No services have been added yet." : null,
-    activeMove && totalServices === 0 ? "Move is planned but service setup has not started." : null,
+    activeMove && totalServices === 0 ? "A move is planned but service setup has not started." : null,
     openMoveTasks.length > 0 ? `${openMoveTasks.length} move task${openMoveTasks.length === 1 ? "" : "s"} still open.` : null,
     lowConfidenceMoveTasks.length > 0 ? `${lowConfidenceMoveTasks.length} low-confidence move task${lowConfidenceMoveTasks.length === 1 ? "" : "s"} need caveated support guidance.` : null,
     customProviders.some((provider: any) => provider.adminReviewStatus !== "REVIEWED")
@@ -1930,7 +1930,7 @@ export default function UserDetailClient() {
                     />
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    This is operator context for manual guidance. Move does not update provider accounts or execute address changes.
+                    This is operator context for manual guidance. LocateFlow does not update provider accounts or execute address changes.
                   </p>
                 </div>
                 <span className="rounded-full border border-tone-honey-br bg-background px-2.5 py-1 text-xs font-medium text-tone-honey-fg">
@@ -1983,7 +1983,7 @@ export default function UserDetailClient() {
                           </span>
                         </div>
                         <p className="mt-2 text-[11px] text-muted-foreground">
-                          Confidence: {formatStatus(task.confidence)}. Completion updates Move only; no external provider account is changed.
+                          Confidence: {formatStatus(task.confidence)}. Completion updates LocateFlow only; no external provider account is changed.
                         </p>
                       </div>
                     ))}

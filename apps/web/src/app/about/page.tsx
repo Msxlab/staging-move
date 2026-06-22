@@ -6,16 +6,16 @@ import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
 import { absoluteUrl, createPublicPageMetadata, SITE_URL } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
-  title: "About Move",
+  title: "About LocateFlow",
   description:
-    "What Move is, who it is for, and what it does and does not do for moving, address, and provider organization.",
+    "What LocateFlow is, who it is for, and what it does and does not do for moving, address, and provider organization.",
   path: "/about",
 });
 
 const principles = [
-  "Move helps people keep track of addresses, service-provider records, moving tasks, reminders, and exports.",
-  "Move is not a provider marketplace, broker, mover, utility company, government agency, or official address-change service.",
-  "Move does not automatically update external provider accounts. Users still verify and complete changes with each provider or agency.",
+  "LocateFlow helps people keep track of addresses, service-provider records, moving tasks, reminders, and exports.",
+  "LocateFlow is not a provider marketplace, broker, mover, utility company, government agency, or official address-change service.",
+  "LocateFlow does not automatically update external provider accounts. Users still verify and complete changes with each provider or agency.",
   "Provider and moving guidance is informational and may be incomplete or outdated, so users should confirm details with authoritative sources.",
 ] as const;
 
@@ -31,12 +31,12 @@ export default function AboutPage() {
       />
       <PublicPageShell
         eyebrow="About"
-        title="Move is a home-service and moving organization app."
+        title="LocateFlow is a home-service and moving organization app."
         description="It gives individuals one place to manage the records that follow an address: utilities, banks, insurance, subscriptions, renewal dates, and moving tasks."
       >
-        <PublicSection title="What Move is">
+        <PublicSection title="What LocateFlow is">
           <p className="text-[15px] leading-relaxed text-foreground/90">
-            Move is built for people who want a reliable list of every service,
+            LocateFlow is built for people who want a reliable list of every service,
             renewal, and task tied to where they live. It is especially
             useful before, during, and after a move because address changes tend to
             scatter across providers, agencies, inboxes, apps, and paper records.
@@ -48,7 +48,7 @@ export default function AboutPage() {
           </p>
         </PublicSection>
 
-        <PublicSection title="What Move does not do">
+        <PublicSection title="What LocateFlow does not do">
           <div className="space-y-4">
             {principles.slice(1).map((item) => (
               <div
@@ -66,7 +66,7 @@ export default function AboutPage() {
 
         <PublicSection title="Who it is for">
           <p className="text-[15px] leading-relaxed text-foreground/90">
-            Move is for renters, homeowners, frequent movers, students,
+            LocateFlow is for renters, homeowners, frequent movers, students,
             caregivers, and anyone who manages household services across one or more
             addresses. It is also useful for people who want a clean export of their
             own provider and address records.

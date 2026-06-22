@@ -4,7 +4,7 @@ import { getPartnerPortalSession } from "@/lib/partner-portal-auth";
 import { PartnerPortalRequestForm } from "@/components/partners/partner-portal-request-form";
 
 export const metadata: Metadata = {
-  title: "Partner portal · Move",
+  title: "Partner portal · LocateFlow",
   robots: { index: false, follow: false },
 };
 

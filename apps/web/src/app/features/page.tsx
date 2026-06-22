@@ -19,7 +19,7 @@ import { createPublicPageMetadata } from "@/lib/seo";
 export const metadata = createPublicPageMetadata({
   title: "Features",
   description:
-    "Move brings address records, provider tracking, moving tasks, reminders, budgets, dossiers, exports, and shared household workflows into one calm workspace.",
+    "LocateFlow brings address records, provider tracking, moving tasks, reminders, budgets, dossiers, exports, and shared household workflows into one calm workspace.",
   path: "/features",
 });
 
@@ -27,7 +27,7 @@ const featureGroups = [
   {
     title: "Plan the move",
     items: [
-      { icon: Truck, title: "Move command center", body: "Create a move plan, connect origin and destination addresses, and see the next tasks that need attention." },
+      { icon: Truck, title: "Moving command center", body: "Create a move plan, connect origin and destination addresses, and see the next tasks that need attention." },
       { icon: CheckCircle2, title: "Guided task flow", body: "Track government, utility, insurance, school, vehicle, mail, and logistics steps without hiding the manual confirmation work." },
       { icon: Bell, title: "Reminders", body: "Surface overdue, this-week, and upcoming tasks across web and mobile so the move does not rely on memory." },
     ],
@@ -81,7 +81,7 @@ export default function FeaturesPage() {
           Start with your current address.
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Move will organize the rest around it: services, providers, reminders, budgets, dossiers, and the checklist for what changes next.
+          LocateFlow will organize the rest around it: services, providers, reminders, budgets, dossiers, and the checklist for what changes next.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg">
@@ -97,7 +97,7 @@ export default function FeaturesPage() {
         <div className="flex gap-3">
           <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden />
           <p>
-            Move tracks and reminds. It does not log into provider accounts, file government forms, transfer utilities, or change billing on your behalf. The product keeps the real-world action visible so users confirm each change through the official provider or agency.
+            LocateFlow tracks and reminds. It does not log into provider accounts, file government forms, transfer utilities, or change billing on your behalf. The product keeps the real-world action visible so users confirm each change through the official provider or agency.
           </p>
         </div>
       </PublicSection>

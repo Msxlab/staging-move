@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+﻿import { afterEach, describe, expect, it, vi } from "vitest";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -79,19 +79,19 @@ describe("SEO helpers", () => {
 
     const metadata = seo.createPublicPageMetadata({
       title: "FAQ",
-      description: "Answers about Move.",
+      description: "Answers about LocateFlow.",
       path: "/faq",
     });
 
     expect(metadata.alternates).toMatchObject({ canonical: "/faq" });
     expect(metadata.openGraph).toMatchObject({
       url: "https://locateflow.com/faq",
-      title: "FAQ | Move",
-      description: "Answers about Move.",
+      title: "FAQ | LocateFlow",
+      description: "Answers about LocateFlow.",
     });
     expect(metadata.twitter).toMatchObject({
       card: "summary_large_image",
-      title: "FAQ | Move",
+      title: "FAQ | LocateFlow",
     });
     expect(metadata.openGraph).toMatchObject({
       images: [

@@ -101,7 +101,7 @@ export default function NotificationSettingsScreen() {
       Alert.alert(
         t("notifications.title"),
         t("notifications.pushPermissionDenied", {
-          defaultValue: "Your preferences were saved. To receive push alerts, turn on notifications for Move in your device Settings.",
+          defaultValue: "Your preferences were saved. To receive push alerts, turn on notifications for LocateFlow in your device Settings.",
         }),
       );
       return;

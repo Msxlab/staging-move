@@ -62,7 +62,7 @@ export default function TermsPage() {
         <p className="mt-2">Legal entity: {displayLegalEntityName()}</p>
         <p>
           Legal notices:{" "}
-          <a href={mailto(LEGAL_CONTACTS.legal, "Move legal notice")} className="text-primary underline">
+          <a href={mailto(LEGAL_CONTACTS.legal, "LocateFlow legal notice")} className="text-primary underline">
             {LEGAL_CONTACTS.legal}
           </a>
         </p>
@@ -94,7 +94,7 @@ export default function TermsPage() {
 
       <PublicSection title="Related legal notice">
         <p>
-          The separate policies below explain user-entered data, third-party provider information, billing, refunds, privacy, acceptable use, and legal-risk allocation inside Move.
+          The separate policies below explain user-entered data, third-party provider information, billing, refunds, privacy, acceptable use, and legal-risk allocation inside LocateFlow.
         </p>
         <div className="flex flex-wrap gap-3">
           <Link href="/disclaimer" className="inline-flex rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-primary transition hover:border-primary/40">Disclaimer</Link>

@@ -28,7 +28,7 @@ import { RaccoonMascot } from "./RaccoonMascot";
  * MovingPlan — the checklist is computed ephemerally by the caller and passed in.
  *
  * Reused by onboarding (the move step) and the dashboard (free users see this
- * in place of the full Move Command Center).
+ * in place of the full moving command center).
  */
 
 export type MoveTeaserStep = {

@@ -46,7 +46,7 @@ export function Wordmark({
           fontWeight: 900,
         }}
       >
-        Move
+        LocateFlow
       </span>
     </Link>
   );

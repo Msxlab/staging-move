@@ -30,7 +30,7 @@ export default function NotFoundScreen() {
         </Text>
         <Text style={styles.body}>
           {t("errors.routeNotFoundBody", {
-            defaultValue: "It may be expired, mistyped, or from a newer version of Move.",
+            defaultValue: "It may be expired, mistyped, or from a newer version of LocateFlow.",
           })}
         </Text>
         <View style={styles.actions}>

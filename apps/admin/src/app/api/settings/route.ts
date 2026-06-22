@@ -172,7 +172,7 @@ const CURRENT_PRODUCT_READINESS_MODES = [
     id: "move_transition_classifier_enabled",
     label: "Move transition guidance",
     status: "enabled",
-    detail: "Move service guidance is deterministic and creates local move tasks. Provider account updates are not executed.",
+    detail: "LocateFlow service guidance is deterministic and creates local move tasks. Provider account updates are not executed.",
   },
   {
     id: "move_transition_tasks_enabled",

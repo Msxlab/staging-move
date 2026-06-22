@@ -11,7 +11,7 @@
 import { ImageResponse } from "next/og";
 import { getPublicPostBySlug } from "@/lib/blog/queries";
 
-export const alt = "Move blog article";
+export const alt = "LocateFlow blog article";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -61,12 +61,12 @@ export default async function BlogPostOgImage({
               boxShadow: "0 0 40px rgba(91, 141, 239, 0.40)",
             }}
           >
-            <span style={{ fontSize: 36, fontWeight: 800, color: "#EFF3FA" }}>M</span>
+            <span style={{ fontSize: 36, fontWeight: 800, color: "#EFF3FA" }}>L</span>
           </div>
           <span
             style={{ fontSize: 38, fontWeight: 800, letterSpacing: -1.2, color: "#EFF3FA" }}
           >
-            Move
+            LocateFlow
           </span>
         </div>
 

@@ -92,7 +92,7 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
       "New Home Dossier: flood zone, school district & moving-day weather",
       "VIN recall check for your vehicles",
       "Moving-day weather alerts & weekly digest",
-      "Move checklist, countdown & state guide",
+      "Moving checklist, countdown & state guide",
       "Provider migration & move tasks",
       "Up to 10 addresses & 100 services",
       "Bill & renewal reminders",

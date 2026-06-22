@@ -476,7 +476,7 @@ export default async function MovingCityPage({
                   </li>
                   <li>
                     <Link href="/how-it-works" className="text-primary transition hover:underline">
-                      How Move organizes your move
+                      How LocateFlow organizes your move
                     </Link>
                   </li>
                   <li>
@@ -500,13 +500,13 @@ export default async function MovingCityPage({
           {/* CTA */}
           <section className="rounded-3xl border bg-gradient-to-b from-primary/[0.06] to-transparent p-8 text-center shadow-sm sm:p-10">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
-              Try Move
+              Try LocateFlow
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Keep every {metro.name} move task, provider, and deadline in one place.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-              Move turns this guide into a checklist tied to your {metro.name} address, with
+              LocateFlow turns this guide into a checklist tied to your {metro.name} address, with
               reminders before each deadline. Trial length, renewal date, and price are shown before
               checkout.
             </p>

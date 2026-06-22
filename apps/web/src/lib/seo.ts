@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-export const SITE_NAME = "Move";
-export const SITE_TITLE = "Move | Moving Checklist, Utility Setup & Provider Tracker";
+export const SITE_NAME = "LocateFlow";
+export const SITE_TITLE = "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker";
 export const SITE_DESCRIPTION =
   "Plan your move, track every provider tied to your address, organize utilities, subscriptions, documents, reminders, and know what to update before moving day.";
 export const DEFAULT_OG_IMAGE = "/opengraph-image";

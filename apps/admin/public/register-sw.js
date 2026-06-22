@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   if (!("serviceWorker" in navigator)) return;
   var refreshing = false;
 

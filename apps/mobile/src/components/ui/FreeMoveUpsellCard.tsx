@@ -9,7 +9,7 @@ import { RaccoonMascot } from "./RaccoonMascot";
 /**
  * FREE DASHBOARD HERO (freemium re-architecture).
  *
- * Replaces the full Move Command Center for FREE users. Honest framing: free
+ * Replaces the full Moving command center for FREE users. Honest framing: free
  * keeps your home organized (addresses, providers, bills, reminders); the full
  * moving plan — personalized checklist, countdown, and tracking — unlocks with
  * Individual. Tapping "Unlock" routes to the subscription page where the normal

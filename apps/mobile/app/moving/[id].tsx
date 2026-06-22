@@ -628,7 +628,7 @@ export default function MovingDetailScreen() {
             <Text style={{ fontSize: 12.5, lineHeight: 18, color: theme.colors.textSecondary }}>
               {t("moving.uspsBody", {
                 defaultValue:
-                  "Forward your mail to your new address — best done about 2 weeks before you move. You'll finish on the official USPS site, which charges a small one-time identity-verification fee. Move never collects it.",
+                  "Forward your mail to your new address — best done about 2 weeks before you move. You'll finish on the official USPS site, which charges a small one-time identity-verification fee. LocateFlow never collects it.",
               })}
             </Text>
             <TouchableOpacity

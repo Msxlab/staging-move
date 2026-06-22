@@ -315,7 +315,7 @@ function buildPlan(
     input.serviceProviderName || input.service.providerName || input.service.name || null;
   const caveats = [
     ...(input.caveats || []),
-    "Manual guidance only. Move does not update provider accounts or execute address changes.",
+    "Manual guidance only. LocateFlow does not update provider accounts or execute address changes.",
   ];
   const destinationProviderCandidates = (input.candidates || [])
     .slice(0, 5)

@@ -639,7 +639,7 @@ export default function SubscriptionManagementPage({
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Your plan</h1>
-            <p className="text-sm text-muted-foreground">Everything Move does, included</p>
+            <p className="text-sm text-muted-foreground">Everything LocateFlow does, included</p>
           </div>
         </div>
 

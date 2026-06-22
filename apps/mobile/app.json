@@ -1,6 +1,6 @@
-{
+﻿{
   "expo": {
-    "name": "Move",
+    "name": "LocateFlow",
     "slug": "locateflow",
     "version": "1.0.2",
     "orientation": "portrait",
@@ -141,7 +141,7 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Use Face ID to unlock Move."
+          "faceIDPermission": "Use Face ID to unlock LocateFlow."
         }
       ],
       [
@@ -169,7 +169,7 @@
           "widgets": [
             {
               "name": "MoveWidget",
-              "label": "Move",
+              "label": "LocateFlow",
               "description": "Your move countdown, next task, and readiness at a glance.",
               "minWidth": "180dp",
               "minHeight": "110dp",

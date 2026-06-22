@@ -33,7 +33,7 @@ type FeedbackState = {
 const HELP_COPY = {
   en: {
     title: "Help Center",
-    subtitle: "Find answers and guides for using Move",
+    subtitle: "Find answers and guides for using LocateFlow",
     searchPlaceholder: "Search articles and FAQs...",
     searchLabel: "Search help articles and FAQs",
     noResultsTitle: "No matching help content",

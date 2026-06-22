@@ -1,5 +1,5 @@
 /* =========================================================================
-   Move Admin · AURORA — Phase 3 corporate retune.
+   LocateFlow Admin · AURORA — Phase 3 corporate retune.
    Primary theme: SLATE light enterprise — paper base, flat solid cards,
    1px hairlines, feather shadows, corporate-blue accent #2E5FB0.
    Secondary: the existing dark navy, accent shifted to a cool muted
@@ -377,7 +377,7 @@ html:not(.dark) .adm-aurora .au-pill.neutral { background: rgba(20,32,47,0.05); 
 }
 .adm-aurora .au-btn:hover  { background: var(--au-pane-3); border-color: var(--au-rule-2); }
 .adm-aurora .au-btn:active { transform: translateY(1px); }
-/* Primary action — flat solid Move Sapphire in both themes. */
+/* Primary action — flat solid LocateFlow Sapphire in both themes. */
 .adm-aurora .au-btn.primary {
   background: var(--au-accent);
   border-color: transparent;
@@ -520,7 +520,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --card-foreground:      214 40% 98%;
   --popover:              218 22% 19%;
   --popover-foreground:   214 40% 98%;
-  /* Primary = Move Sapphire #5B8DEF (honey is warn/premium only). */
+  /* Primary = LocateFlow Sapphire #5B8DEF (honey is warn/premium only). */
   --primary:              219.73 82.22% 64.71%;
   --primary-foreground:   215 45% 8%;
   --secondary:            215 24% 82%;
@@ -536,7 +536,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --ring:                 219.73 82.22% 64.71%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect — anything still calling --rose gets the Move Sapphire
+  /* Brand-token redirect — anything still calling --rose gets the LocateFlow Sapphire
      primary; --foil-* also resolves to the Sapphire accent. */
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
@@ -585,7 +585,7 @@ html:not(.dark) .adm-aurora {
   --card-foreground:      216 33% 15%;
   --popover:              0 0% 100%;
   --popover-foreground:   216 33% 15%;
-  --primary:              217.38 58.56% 43.53%;  /* #2E5FB0 Move Sapphire */
+  --primary:              217.38 58.56% 43.53%;  /* #2E5FB0 LocateFlow Sapphire */
   --primary-foreground:   0 0% 100%;
   --secondary:            216 14% 41%;   /* #5A6678 slate */
   --secondary-foreground: 0 0% 100%;
@@ -599,7 +599,7 @@ html:not(.dark) .adm-aurora {
   --input:                217 25% 90%;
   --ring:                 217.38 58.56% 43.53%;
 
-  /* Brand-token redirect (light) — mirror the dark scope: Move Sapphire primary. */
+  /* Brand-token redirect (light) — mirror the dark scope: LocateFlow Sapphire primary. */
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
   --rose-deep:   var(--au-cool-2);
@@ -656,7 +656,7 @@ html:not(.dark) .adm-aurora aside.bg-card {
   border-right: 1px solid var(--au-rule);
 }
 
-/* Foil text → Move Sapphire gradient. Affects sidebar wordmark + any inline
+/* Foil text → LocateFlow Sapphire gradient. Affects sidebar wordmark + any inline
    `<em>` titles via `.foil-text`, plus h1/h2/h3 `<em>` segments. */
 .adm-aurora .foil-text,
 .adm-aurora h1 em,
@@ -783,7 +783,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
 }
 
 /* Tables inside admin-panel — zebra rows + clearer header + roomier cells.
-   Zebra gives quiet row separation at rest; hover keeps the Move Sapphire tint
+   Zebra gives quiet row separation at rest; hover keeps the LocateFlow Sapphire tint
    on top. Header reads one tier brighter (ink-2) so columns scan cleanly. */
 .adm-aurora .admin-panel table tbody tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.025);
@@ -838,7 +838,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
 }
 
 /* Sidebar nav active state — already uses bg-primary/10, which now reads
-   Move Sapphire. Add a subtle inner border ring like the prototype. */
+   LocateFlow Sapphire. Add a subtle inner border ring like the prototype. */
 .adm-aurora aside a.bg-primary\/10 {
   border: 1px solid var(--au-accent-line);
 }
@@ -853,7 +853,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
    Each card gets ONE accent custom property (--plan-accent) resolved
    from the --au-* system, so the markup never carries raw hex:
      Free       → coral   (the $0 identity chip)
-     Individual → Move Sapphire
+     Individual → LocateFlow Sapphire
      Family     → teal, featured/POPULAR border
      Pro        → honey (premium — the only honey on the page)
    Card chrome stays slate-enterprise: flat solid surface, 1px hairline,
@@ -1482,7 +1482,7 @@ html:not(.dark) .adm-aurora {
    segmented range control, the x-axis label strip, and the audit feed.
    Ported from the design system's .adp-chartwrap/.adp-seg/.adp-feed
    (admin-pro.css). Everything binds to the --au-* token system — accent is
-   Move Sapphire (#2E5FB0 light / #5B8DEF dark); honey appears only via
+   LocateFlow Sapphire (#2E5FB0 light / #5B8DEF dark); honey appears only via
    the warn tone on audit dots.
    ========================================================================= */
 
