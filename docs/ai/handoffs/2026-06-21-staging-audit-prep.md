@@ -92,6 +92,11 @@ were narrowed to `RecognitionChipStorm` and `MobileMockup`, then changed to
 Sapphire/primary demo accents. Real warning/caution semantics in app/admin
 surfaces remain allowed to use warning tones.
 
+Public header follow-up: the home-page top navigation was expanded so desktop
+and mobile expose the same public entrypoints near the top of the page:
+`Features`, `Why free`, `Pricing`, `Help`, `Blog`, and `FAQ`. Sign-in and
+sign-up remain the right-side auth actions.
+
 Live verification after the follow-up cleanup:
 
 - Web and admin `build-info` both reached commit
