@@ -1,7 +1,10 @@
 # Phase 1 — Token & Brand Foundation · Implementation Plan
 
-> **Status: PLAN ONLY — no code written yet.** Awaiting approval before any change.
 > Rollout step 1 of 5 (D34). Decisions: see `DECISIONS_LOG.md`. Gap evidence: `00_GAP_REPORT.md`, `01_DESIGN_SYSTEM_DELTA.md`.
+>
+> **✅ STEP 1 DONE (2026-06-22)** — single-source token emitter merged to `feat/design-foundation` (merge of `worktree-agent-…`). **Pure refactor, zero visual change**: 664 token declarations machine-verified identical; emitter `--check` (regenerate==committed) green; shared typecheck 0 errors; drift-guard + contrast + aurora-regression tests green; web/admin build green. Steps 2–7 (value/typography/radius/brand/aurora swaps) NOT started.
+>
+> **⚠️ Architecture note to confirm:** the shadcn HSL `@layer base` block could NOT be a standalone `@import` (Turbopack rejects a bare `@layer base` without a matching `@tailwind base`). It is therefore **generated from the single model but INLINED** into each `globals.css` (where `@tailwind base` lives), preserving the cascade — still single-sourced + drift-guarded. The unlayered `:root/.dark/.light` + `--au-*` blocks ARE true `@import`s. Accept this, or revisit if we move off Turbopack.
 
 ## Objective
 Establish the **single token source-of-truth** and adopt the new visual **foundation** (palette / typography / radius / brand mark) **without changing any page layout, IA, or behavior.** Page re-skins and new features are Phases 2–5. Keep the **LocateFlow** name. Reversible; all existing tests stay green.
