@@ -30,7 +30,7 @@ export async function generateDossierReportPdf(
   dossier: PdfDossier,
   userName: string,
 ): Promise<Buffer> {
-  const location = `${dossier.address.city}, ${dossier.address.state}`;
+  const location = `${dossier?.address?.city ?? ""}, ${dossier?.address?.state ?? ""}`.replace(/^, |, $/g, "");
   const doc = new PDFDocument({
     size: "LETTER",
     margins: { top: PAGE_MARGIN, bottom: PAGE_MARGIN, left: PAGE_MARGIN, right: PAGE_MARGIN },
@@ -50,9 +50,28 @@ export async function generateDossierReportPdf(
   });
 
   // A section that didn't resolve shows "—", never a fabricated value.
-  const ok = (status: string) => status === "ok";
+  // `status` is read off a possibly-undefined section: the data route is the
+  // single source of the payload and its shape can drift (new/renamed/omitted
+  // sections, summary-vs-full branches, stale cached payloads). The PDF must
+  // NEVER throw on a missing section — it renders that section as unavailable
+  // instead. So every section access below goes through a defensive read and
+  // `ok()` treats an absent section as not-ok.
+  const ok = (status: string | null | undefined) => status === "ok";
   const dash = (value: string | number | null | undefined): string =>
     value === null || value === undefined || value === "" ? "—" : String(value);
+
+  // Defensive section accessors: a missing section degrades to an empty object
+  // so `.status` (and any field read) is `undefined` rather than a thrown
+  // "Cannot read properties of undefined". Typed loosely on purpose — the data
+  // route owns the real contract; here we only need not-to-throw + render "—".
+  const d = (dossier ?? {}) as Partial<PdfDossier>;
+  const flood = d.flood ?? ({} as Partial<NonNullable<PdfDossier["flood"]>>);
+  const school = d.school ?? ({} as Partial<NonNullable<PdfDossier["school"]>>);
+  const weather = d.weather ?? ({} as Partial<NonNullable<PdfDossier["weather"]>>);
+  const hazards = d.hazards ?? ({} as Partial<NonNullable<PdfDossier["hazards"]>>);
+  const radon = d.radon ?? ({} as Partial<NonNullable<PdfDossier["radon"]>>);
+  const water = d.water ?? ({} as Partial<NonNullable<PdfDossier["water"]>>);
+  const air = d.air ?? ({} as Partial<NonNullable<PdfDossier["air"]>>);
 
   // ── Header ──────────────────────────────────────────────────────────
   let y = drawHeader(doc, "New Home Dossier", location);
@@ -67,11 +86,11 @@ export async function generateDossierReportPdf(
   // ── Flood ───────────────────────────────────────────────────────────
   y = ensureRoom(doc, 60, y);
   y = drawSectionHeading(doc, "Flood risk (FEMA NFHL)", y);
-  y = drawKeyValueRow(doc, "Flood zone", ok(dossier.flood.status) ? dash(dossier.flood.zone) : "—", y);
+  y = drawKeyValueRow(doc, "Flood zone", ok(flood.status) ? dash(flood.zone) : "—", y);
   y = drawKeyValueRow(
     doc,
     "High-risk zone",
-    ok(dossier.flood.status) && dossier.flood.isHighRisk !== null ? (dossier.flood.isHighRisk ? "Yes" : "No") : "—",
+    ok(flood.status) && flood.isHighRisk !== null && flood.isHighRisk !== undefined ? (flood.isHighRisk ? "Yes" : "No") : "—",
     y,
   );
   y += 6;
@@ -79,17 +98,20 @@ export async function generateDossierReportPdf(
   // ── School district ─────────────────────────────────────────────────
   y = ensureRoom(doc, 50, y);
   y = drawSectionHeading(doc, "School district (NCES)", y);
-  y = drawKeyValueRow(doc, "District", ok(dossier.school.status) ? dash(dossier.school.districtName) : "—", y);
+  y = drawKeyValueRow(doc, "District", ok(school.status) ? dash(school.districtName) : "—", y);
   y += 6;
 
   // ── Move-day weather ────────────────────────────────────────────────
   y = ensureRoom(doc, 70, y);
   y = drawSectionHeading(doc, "Move-day forecast (NWS)", y);
-  if (ok(dossier.weather.status)) {
-    y = drawKeyValueRow(doc, "Forecast date", dash(dossier.weather.forecastDate), y);
-    y = drawKeyValueRow(doc, "Summary", dash(dossier.weather.summary), y);
-    const high = dossier.weather.tempHighF;
-    const low = dossier.weather.tempLowF;
+  if (ok(weather.status)) {
+    y = drawKeyValueRow(doc, "Forecast date", dash(weather.forecastDate), y);
+    y = drawKeyValueRow(doc, "Summary", dash(weather.summary), y);
+    const num = (v: number | null | undefined): number | null =>
+      typeof v === "number" && Number.isFinite(v) ? v : null;
+    const high = num(weather.tempHighF);
+    const low = num(weather.tempLowF);
+    const precip = num(weather.precipChancePct);
     y = drawKeyValueRow(
       doc,
       "High / Low",
@@ -99,7 +121,7 @@ export async function generateDossierReportPdf(
     y = drawKeyValueRow(
       doc,
       "Precip chance",
-      dossier.weather.precipChancePct === null ? "—" : `${Math.round(dossier.weather.precipChancePct)}%`,
+      precip === null ? "—" : `${Math.round(precip)}%`,
       y,
     );
   } else {
@@ -110,11 +132,12 @@ export async function generateDossierReportPdf(
   // ── Hazards ─────────────────────────────────────────────────────────
   y = ensureRoom(doc, 60, y);
   y = drawSectionHeading(doc, "Natural hazard risk (FEMA NRI)", y);
-  y = drawKeyValueRow(doc, "Overall rating", ok(dossier.hazards.status) ? dash(dossier.hazards.overallRating) : "—", y);
-  if (ok(dossier.hazards.status)) {
-    for (const risk of dossier.hazards.topRisks.slice(0, 5)) {
+  y = drawKeyValueRow(doc, "Overall rating", ok(hazards.status) ? dash(hazards.overallRating) : "—", y);
+  if (ok(hazards.status)) {
+    const topRisks = Array.isArray(hazards.topRisks) ? hazards.topRisks : [];
+    for (const risk of topRisks.slice(0, 5)) {
       y = ensureRoom(doc, 16, y);
-      y = drawKeyValueRow(doc, `  ${risk.hazard}`, dash(risk.rating), y);
+      y = drawKeyValueRow(doc, `  ${risk?.hazard ?? "—"}`, dash(risk?.rating), y);
     }
   }
   y += 6;
@@ -122,17 +145,17 @@ export async function generateDossierReportPdf(
   // ── Radon ───────────────────────────────────────────────────────────
   y = ensureRoom(doc, 40, y);
   y = drawSectionHeading(doc, "Radon zone (EPA)", y);
-  y = drawKeyValueRow(doc, "EPA radon zone", ok(dossier.radon.status) ? dash(dossier.radon.zone) : "—", y);
+  y = drawKeyValueRow(doc, "EPA radon zone", ok(radon.status) ? dash(radon.zone) : "—", y);
   y += 6;
 
   // ── Water ───────────────────────────────────────────────────────────
   y = ensureRoom(doc, 50, y);
   y = drawSectionHeading(doc, "Drinking water (EPA SDWIS)", y);
-  y = drawKeyValueRow(doc, "Water system", ok(dossier.water.status) ? dash(dossier.water.systemName) : "—", y);
+  y = drawKeyValueRow(doc, "Water system", ok(water.status) ? dash(water.systemName) : "—", y);
   y = drawKeyValueRow(
     doc,
     "Violations (5y)",
-    ok(dossier.water.status) ? dash(dossier.water.violations5y) : "—",
+    ok(water.status) ? dash(water.violations5y) : "—",
     y,
   );
   y += 6;
@@ -140,14 +163,14 @@ export async function generateDossierReportPdf(
   // ── Air quality ─────────────────────────────────────────────────────
   y = ensureRoom(doc, 50, y);
   y = drawSectionHeading(doc, "Air quality (AirNow)", y);
-  y = drawKeyValueRow(doc, "Current AQI", ok(dossier.air.status) ? dash(dossier.air.aqi) : "—", y);
-  y = drawKeyValueRow(doc, "Category", ok(dossier.air.status) ? dash(dossier.air.category) : "—", y);
+  y = drawKeyValueRow(doc, "Current AQI", ok(air.status) ? dash(air.aqi) : "—", y);
+  y = drawKeyValueRow(doc, "Category", ok(air.status) ? dash(air.category) : "—", y);
   y += 10;
 
   // ── Neighborhood (Pro: Census ACS + EPA walkability + NCES schools) ──
   // Present on Pro payloads — the only tier that reaches this PDF. Area
   // medians for the surrounding census tract, NOT a valuation of this home.
-  const neighborhood = dossier.neighborhood;
+  const neighborhood = d.neighborhood;
   if (neighborhood && ok(neighborhood.status)) {
     const usd = (v: number | null | undefined): string =>
       typeof v === "number" && Number.isFinite(v) && v > 0 ? `$${Math.round(v).toLocaleString("en-US")}` : "—";

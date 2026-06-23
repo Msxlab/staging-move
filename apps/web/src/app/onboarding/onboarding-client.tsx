@@ -85,6 +85,106 @@ const STEPS = [
 // completion so a finished flow can't pre-fill a later one on a shared device.
 const ONBOARDING_DRAFT_KEY = "locateflow.onboarding.draft";
 
+// --- Step-3 destination derivation (ROOT CAUSE of onboarding-move-validation) ---
+//
+// The Step-3 destination is captured through a Places autocomplete on the
+// Street field PLUS three discrete City / State / ZIP inputs, and
+// `validateMovingForm` only reads the three discrete fields. When a destination
+// arrives via the autocomplete (or is typed as a single full address) but the
+// discrete City/State/ZIP boxes are not separately populated — e.g. Places
+// "details" lookups are unavailable in an environment so a selection only
+// leaves a formatted address in the Street field — those three fields stay
+// empty and the form blocks with
+// "Please fill in destination city, state, ZIP, and move date." even though a
+// complete destination is visibly present.
+//
+// `deriveMovingDestinationFields` closes that gap: before validation it back-
+// fills any blank City/State/ZIP from the formatted/street address string, so
+// BOTH an autocomplete selection AND a manually typed full address resolve to
+// usable city/state/zip. Discrete values that are already present always win —
+// derivation only ADDS, never overwrites. Exported (with the parser) so the
+// behaviour is unit-testable without rendering the client component.
+
+export interface MovingDestinationInput {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  formattedAddress?: string | null;
+}
+
+export interface DerivedMovingDestination {
+  city: string;
+  state: string;
+  zip: string;
+}
+
+const US_ZIP_RE = /\b(\d{5})(?:-\d{4})?\b/;
+const US_STATE_TOKEN_RE = /\b([A-Za-z]{2})\b/;
+
+// Best-effort parse of a US address string into { city, state, zip }. Handles
+// the common shapes produced by Places / manual entry, e.g.
+//   "1600 Amphitheatre Pkwy, Mountain View, CA 94043"
+//   "Mountain View, CA 94043"
+//   "Mountain View CA 94043"
+// Only confidently-extracted parts are returned; anything ambiguous is left
+// blank so a real value is never overwritten with a guess.
+export function parseUsAddressString(input?: string | null): Partial<DerivedMovingDestination> {
+  const raw = (input || "").trim();
+  if (!raw) return {};
+
+  const out: Partial<DerivedMovingDestination> = {};
+
+  const zipMatch = raw.match(US_ZIP_RE);
+  if (zipMatch) out.zip = zipMatch[1];
+
+  const segments = raw
+    .replace(/,?\s*USA?\b\.?$/i, "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (segments.length === 0) return out;
+
+  const tail = segments[segments.length - 1];
+  const tailNoZip = tail.replace(US_ZIP_RE, "").trim();
+  const stateMatch = tailNoZip.match(US_STATE_TOKEN_RE);
+  if (stateMatch) out.state = stateMatch[1].toUpperCase();
+
+  if (segments.length >= 2) {
+    const cityCandidate = segments[segments.length - 2].trim();
+    if (cityCandidate) out.city = cityCandidate;
+  } else {
+    let cityCandidate = tail.replace(US_ZIP_RE, "");
+    if (out.state) {
+      cityCandidate = cityCandidate.replace(new RegExp(`\\b${out.state}\\b\\s*$`, "i"), "");
+    }
+    cityCandidate = cityCandidate.trim();
+    if (cityCandidate) out.city = cityCandidate;
+  }
+
+  return out;
+}
+
+export function deriveMovingDestinationFields(form: MovingDestinationInput): DerivedMovingDestination {
+  const city = form.city.trim();
+  const state = form.state.trim().toUpperCase();
+  const zip = form.zip.trim();
+
+  if (city && state && zip) {
+    return { city, state, zip };
+  }
+
+  const parsedFormatted = parseUsAddressString(form.formattedAddress);
+  const parsedStreet = parseUsAddressString(form.street);
+
+  return {
+    city: city || parsedFormatted.city || parsedStreet.city || "",
+    state: state || parsedFormatted.state || parsedStreet.state || "",
+    zip: zip || parsedFormatted.zip || parsedStreet.zip || "",
+  };
+}
+
 // --- Glass card wrapper ---
 function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -801,6 +901,10 @@ export default function OnboardingClient({
     }
     setError("");
     setSaving(true);
+    // Use the same derived destination the validation accepted, so a plan
+    // created from an autocomplete-only / full-address entry persists real
+    // city/state/zip rather than the (possibly blank) discrete inputs.
+    const destination = deriveMovingDestinationFields(movingForm);
     try {
       const planRes = await fetch("/api/moving", {
         method: "POST",
@@ -809,11 +913,11 @@ export default function OnboardingClient({
           fromAddressId: createdAddressId,
           moveDate: movingForm.moveDate,
           destinationAddress: {
-            nickname: `${movingForm.city}, ${movingForm.state}`,
-            street: movingForm.street.trim() || `${movingForm.city}, ${movingForm.state}`,
-            city: movingForm.city.trim(),
-            state: movingForm.state.trim().toUpperCase(),
-            zip: movingForm.zip.trim(),
+            nickname: `${destination.city}, ${destination.state}`,
+            street: movingForm.street.trim() || `${destination.city}, ${destination.state}`,
+            city: destination.city,
+            state: destination.state,
+            zip: destination.zip,
             country: movingForm.country || "USA",
             type: "HOME",
             ownership: "RENTER",
@@ -848,29 +952,36 @@ export default function OnboardingClient({
   // Validate the Step-3 move form (shared by the paid create path and the
   // free teaser path). Returns true when destination + date are usable.
   const validateMovingForm = (): boolean => {
-    if (!movingForm.city.trim() || !movingForm.state.trim() || !movingForm.zip.trim() || !movingForm.moveDate) {
+    // Back-fill any blank City/State/ZIP from the autocomplete-selected /
+    // typed full address before validating, so a destination supplied through
+    // the Places picker (or as a single address string) isn't rejected as
+    // "empty". Resolved values are written back so the discrete inputs and the
+    // downstream create/teaser payloads agree.
+    const { city, state, zip } = deriveMovingDestinationFields(movingForm);
+    if (city !== movingForm.city || state !== movingForm.state || zip !== movingForm.zip) {
+      setMovingForm((prev) => ({ ...prev, city, state, zip }));
+    }
+
+    if (!city || !state || !zip || !movingForm.moveDate) {
       setError("Please fill in destination city, state, ZIP, and move date.");
       return false;
     }
-    if (movingForm.state.length !== 2) {
+    if (state.length !== 2) {
       setError("State must be a 2-letter code.");
       return false;
     }
-    const mismatch = detectStateZipMismatch(movingForm.state, movingForm.zip);
+    const mismatch = detectStateZipMismatch(state, zip);
     if (mismatch) {
-      setError(`ZIP ${movingForm.zip} appears to be in ${mismatch.zipState}, but the state is ${mismatch.typedState}. Please check the destination address.`);
+      setError(`ZIP ${zip} appears to be in ${mismatch.zipState}, but the state is ${mismatch.typedState}. Please check the destination address.`);
       return false;
     }
     return true;
   };
 
-  const hasMoveDestinationAndDate = (): boolean =>
-    Boolean(
-      movingForm.city.trim() &&
-        movingForm.state.trim() &&
-        movingForm.zip.trim() &&
-        movingForm.moveDate,
-    );
+  const hasMoveDestinationAndDate = (): boolean => {
+    const { city, state, zip } = deriveMovingDestinationFields(movingForm);
+    return Boolean(city && state && zip && movingForm.moveDate);
+  };
 
   // Teaser: compute a personalized move preview from the entered
   // onboarding data using the SAME checklist engine the dashboard uses. No
@@ -897,7 +1008,7 @@ export default function OnboardingClient({
         isBusinessOwner: profile.isBusinessOwner,
         moveType: (profile.moveType as UserChecklistProfile["moveType"]) || "PERSONAL",
       };
-      const toState = movingForm.state.trim().toUpperCase();
+      const toState = deriveMovingDestinationFields(movingForm).state;
       const fromState = address.state.trim().toUpperCase();
       // Optional state-rule enrichment for richer "because your state…" notes.
       // The engine works without it, so this is best-effort and non-blocking.
