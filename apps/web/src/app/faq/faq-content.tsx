@@ -16,23 +16,28 @@ const linkedAnswers: Record<string, ReactNode> = {
       .
     </>
   ),
-  "How does billing work?": (
+  "How does LocateFlow make money if it's free?": (
     <>
-      Web subscriptions are billed through Stripe. iOS purchases may be managed by Apple App Store and Android purchases
-      by Google Play. See the{" "}
-      <Link href="/billing-policy" className="underline">
-        Billing Policy
+      LocateFlow earns referral or affiliate commissions when you choose certain providers or services through the app —
+      the partner pays us, at no extra cost to you, and it never affects the price you pay or how we rank or recommend
+      providers. There is no consumer subscription or charge. See{" "}
+      <Link href="/why-free" className="underline">
+        Why it&apos;s free
       </Link>
       .
     </>
   ),
-  "Are refunds available?": (
+  "Will I ever be charged?": (
     <>
-      Refund eligibility depends on the{" "}
+      No. LocateFlow does not charge consumers, so there is nothing to bill or refund. Our{" "}
+      <Link href="/billing-policy" className="underline">
+        Billing Policy
+      </Link>{" "}
+      and{" "}
       <Link href="/refund" className="underline">
         Refund Policy
-      </Link>
-      , the checkout offer, legal requirements, and Apple App Store or Google Play rules for store purchases.
+      </Link>{" "}
+      are retained only in case paid plans are reintroduced in the future.
     </>
   ),
   "What data does LocateFlow collect?": (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CreditCard, FileText, RotateCcw, Store } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_CONTACTS, STORE_PURCHASE_DISTINCTION, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import { AffiliateDisclosure } from "@/components/affiliate/affiliate-disclosure";
 import { createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
@@ -41,6 +42,25 @@ export default function RefundPolicyPage() {
       description="This policy explains how refund requests are handled for LocateFlow subscriptions. It does not replace the final offer terms shown at checkout or mobile store rules."
     >
       <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
+
+      {/*
+        CONSUMER_FREE / affiliate pivot (owner decision 2026-06-23).
+        LEGAL REVIEW REQUIRED: this banner and the affiliate-disclosure section
+        below were added to make the page consistent with "LocateFlow is free,
+        affiliate-funded". The subscription/refund terms underneath are kept
+        intentionally (dormant) so they remain accurate if paid plans return —
+        do NOT treat them as removed. Counsel must review this copy before it is
+        relied upon as binding.
+      */}
+      <div className="rounded-[22px] border border-primary/30 bg-primary/5 p-6">
+        <p className="text-sm leading-relaxed text-foreground">
+          <strong>LocateFlow is currently free.</strong> There are no consumer
+          subscriptions or charges, so in practice there is nothing to bill or
+          refund. The subscription refund terms below apply only if and when paid
+          plans are reintroduced. LocateFlow is supported by affiliate and referral
+          commissions — see the disclosure at the bottom of this page.
+        </p>
+      </div>
 
       <div className="grid gap-5 md:grid-cols-2">
         {highlights.map((item) => (
@@ -89,6 +109,18 @@ export default function RefundPolicyPage() {
         <p>
           See the <Link href="/billing-policy" className="underline">Billing Policy</Link> for subscription, renewal, failed payment, tax, and cancellation terms.
         </p>
+      </PublicSection>
+
+      {/* LEGAL REVIEW REQUIRED — FTC affiliate disclosure (counsel to confirm). */}
+      <PublicSection title="How LocateFlow makes money (affiliate disclosure)">
+        <p>
+          LocateFlow is free to use. We earn referral or affiliate commissions when
+          you choose certain providers or services through the app — the partner pays
+          us, at no extra cost to you. This never changes the price you pay and never
+          affects how we rank or recommend providers. See{" "}
+          <Link href="/why-free" className="underline">Why it&apos;s free</Link> for more.
+        </p>
+        <AffiliateDisclosure className="mt-2 text-xs" />
       </PublicSection>
     </PublicPageShell>
   );

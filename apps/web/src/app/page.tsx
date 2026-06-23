@@ -246,6 +246,10 @@ export default async function LandingPage() {
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-3 w-3 text-success" />
+                100% free, forever
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-3 w-3 text-success" />
                 FEMA, EPA and NWS data
               </span>
               <span className="flex items-center gap-1.5">
@@ -253,6 +257,20 @@ export default async function LandingPage() {
                 Web, iOS and Android
               </span>
             </div>
+            {/* CONSUMER_FREE: the "how we stay free" note. Every feature is free for
+                everyone; LocateFlow earns affiliate/referral commissions when a user
+                chooses a provider through us. Transparent by owner decision. */}
+            {consumerFree && (
+              <p className="measure text-sm leading-6 text-muted-foreground">
+                Every feature is free for everyone — no subscription, no credit card.
+                LocateFlow earns a commission when you choose a provider through us, at
+                no cost to you.{" "}
+                <Link href="/why-free" className="underline hover:text-foreground">
+                  Why it&apos;s free
+                </Link>
+                .
+              </p>
+            )}
           </div>
 
           {/* Interactive phone prototype ported from the theme handoff. */}
@@ -364,7 +382,8 @@ export default async function LandingPage() {
           clearly labelled) with the same data-driven ambient scenes as the
           dashboard card. Sits right after the features grid so it reads as
           the deep-dive on the dossier feature tile above; CTA goes to
-          /pricing (Pro pitch). Client component, no data fetching. */}
+          /sign-up ("Start your move — free"). Client component, no data
+          fetching. */}
       <DossierShowcase />
 
       {/* How It Works */}

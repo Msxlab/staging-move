@@ -9,7 +9,6 @@ import {
   GraduationCap,
   Home,
   Mountain,
-  Sparkles,
   Waves,
   Wind,
 } from "lucide-react";
@@ -39,8 +38,9 @@ import {
  *    product, sourced-data categories only — no invented scores;
  *  - the source line names the REAL upstream sources (FEMA · EPA · NCES ·
  *    US Census Bureau);
- *  - Sapphire foil accents are allowed here because this section pitches a
- *    premium (Pro) feature without drifting back to legacy plan palettes.
+ *  - Sapphire foil accents are allowed here as a marketing finish for the
+ *    dossier feature (which is free, like every feature) without drifting back
+ *    to legacy plan palettes.
  *
  * Motion: everything animated is inside DossierAmbient / useDossierCountUp,
  * which are transform/opacity only, pause offscreen, and fully disable under
@@ -155,15 +155,15 @@ export function DossierShowcase() {
           <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-muted-foreground">
             The card shown here is an example with sample data for a New Jersey suburb — your
             dossier is built for your own address. Neighborhood medians and PDF export are
-            part of the Pro plan.
+            included free, like every other feature.
           </p>
           <p className="mt-6 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             FEMA · EPA · NCES · US Census Bureau
           </p>
           <div className="mt-7">
             <Button asChild size="lg" className="text-base px-8">
-              <Link href="/pricing">
-                See plans and pricing
+              <Link href="/sign-up">
+                Start your move — free
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -273,9 +273,11 @@ export function DossierShowcase() {
               fine="AirNow (EPA) — a current snapshot, not a long-term average."
             />
 
-            {/* Neighborhood (Pro) — skyline + counting medians. The ref drives
+            {/* Neighborhood — skyline + counting medians. The ref drives
                 the count-up; displayed values come from the hook (finals on
-                first paint, brief 0 -> target once visible). */}
+                first paint, brief 0 -> target once visible). Badged "Included"
+                to reinforce the free model (medians ship free, like every
+                feature). */}
             <div
               ref={counts.ref}
               className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]"
@@ -296,9 +298,8 @@ export function DossierShowcase() {
                     Area medians for the surrounding census tract
                   </p>
                 </div>
-                <span className="inline-flex items-center gap-1 rounded-full border border-tone-foil-br bg-tone-foil-bg px-2 py-0.5 text-[10px] font-semibold text-tone-foil-fg shrink-0">
-                  <Sparkles className="h-3 w-3" aria-hidden="true" />
-                  Pro
+                <span className="inline-flex items-center rounded-full border border-tone-foil-br bg-tone-foil-bg px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-tone-foil-fg shrink-0">
+                  Included
                 </span>
               </div>
               <div className="mt-2 space-y-1.5">

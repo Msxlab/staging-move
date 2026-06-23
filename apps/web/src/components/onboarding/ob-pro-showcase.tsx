@@ -7,14 +7,14 @@ import { ObCta } from "./ob-cta";
 /**
  * Onboarding Pro showcase — neighborhood-pro-wave.
  *
- * A final-moment, aspirational "what Pro unlocks for YOUR move" card shown at
- * the END of onboarding (Step 3, once the user has entered an origin +
- * destination move), BEFORE the finish CTA. It is a SHOWCASE, not a paywall:
+ * A final-moment "what your move plan includes" card shown at the END of
+ * onboarding (Step 3, once the user has entered an origin + destination move),
+ * BEFORE the finish CTA. Under the free model every feature is included, so it
+ * is purely informational, never a paywall:
  *  - copy is personalized from the user's REAL entered context (origin →
  *    destination state + household) so the value is concrete, not generic;
- *  - the only outbound action is a quiet "See Pro" ghost link to /pricing —
- *    there is NO plan-purchase / payment step in onboarding (owner decision);
- *  - the page's existing primary "Finish setup" CTA stays untouched below.
+ *  - there is NO CTA / buy route by default (the optional CTA props are omitted
+ *    under the free model); the page's primary "Finish setup" CTA stays below.
  *
  * The card is purely presentational. All motion (the staggered feature-row
  * reveal) lives in globals.css under the onboarding section and is gated by
@@ -73,7 +73,7 @@ const FEATURE_ICON: Record<ProShowcaseFeatureId, typeof Truck> = {
 };
 
 export interface ObProShowcaseProps {
-  /** Mono eyebrow, e.g. "With Pro". */
+  /** Mono eyebrow, e.g. "Included free". */
   eyebrow: string;
   /** Personalized headline embedding the origin → destination move. */
   headline: ReactNode;
@@ -81,12 +81,12 @@ export interface ObProShowcaseProps {
   features: ProShowcaseFeature[];
   /** Localized label for each feature row, keyed by feature id. */
   featureLabel: (id: ProShowcaseFeatureId) => ReactNode;
-  /** "It's a showcase, not a paywall" reassurance line. */
+  /** Reassurance line: everything above is included, free. */
   footnote: ReactNode;
-  /** Label for the quiet ghost link to /pricing. */
-  seeProLabel: ReactNode;
-  /** Click handler for the See Pro link (deep-links to /pricing). */
-  onSeePro: () => void;
+  /** Optional CTA label. Omitted under the free model (no buy route). */
+  seeProLabel?: ReactNode;
+  /** Optional CTA handler. Must NOT route to a buy/pricing surface. */
+  onSeePro?: () => void;
   className?: string;
 }
 
@@ -140,14 +140,16 @@ export function ObProShowcase({
 
       <div className="mt-4 flex items-center justify-between gap-3">
         <p className="text-[11px] leading-relaxed text-foreground/45">{footnote}</p>
-        <ObCta
-          variant="skip"
-          onClick={onSeePro}
-          className="shrink-0"
-          aria-label={typeof seeProLabel === "string" ? seeProLabel : undefined}
-        >
-          {seeProLabel}
-        </ObCta>
+        {seeProLabel && onSeePro ? (
+          <ObCta
+            variant="skip"
+            onClick={onSeePro}
+            className="shrink-0"
+            aria-label={typeof seeProLabel === "string" ? seeProLabel : undefined}
+          >
+            {seeProLabel}
+          </ObCta>
+        ) : null}
       </div>
     </div>
   );

@@ -6,15 +6,17 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 
 /**
- * Onboarding Pro showcase (mobile mirror of apps/web ob-pro-showcase).
+ * Onboarding move-plan showcase (mobile mirror of apps/web ob-pro-showcase).
  *
- * A final-moment, aspirational "what Pro unlocks for YOUR move" card shown at
+ * A final-moment, aspirational "what your full move plan includes" card shown at
  * the END of onboarding (the move step) once the user has entered an origin +
  * destination, BEFORE the finish CTA. SHOWCASE, not a paywall:
  *  - copy is personalized from the user's REAL entered context (origin →
  *    destination state + household) so the value is concrete;
- *  - the only action is a quiet "See Pro" link to the upgrade surface — there
- *    is NO plan-purchase / payment step in onboarding (owner decision);
+ *  - LocateFlow is free forever, so this lists what's INCLUDED for the user's
+ *    move — there is NO plan-purchase / payment / upgrade step here;
+ *  - the only action is a neutral "Continue" that proceeds in-flow; it does NOT
+ *    route to any buy / subscription surface;
  *  - the screen's existing primary CTA proceeds normally below.
  *
  * Hermes-safe: no Intl.RelativeTimeFormat, theming via useAppTheme/makeStyles.
@@ -63,10 +65,11 @@ type Props = {
   fromLabel: string;
   /** Localized destination label (falls back to "your state"). */
   toLabel: string;
-  onSeePro: () => void;
+  /** Neutral in-flow continue. MUST NOT route to a buy/subscription surface. */
+  onContinue: () => void;
 };
 
-export function ProShowcaseCard({ context, fromLabel, toLabel, onSeePro }: Props) {
+export function ProShowcaseCard({ context, fromLabel, toLabel, onContinue }: Props) {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
@@ -78,13 +81,13 @@ export function ProShowcaseCard({ context, fromLabel, toLabel, onSeePro }: Props
       <View style={styles.eyebrowRow}>
         <Sparkles size={13} color={theme.colors.warning} />
         <Text style={styles.eyebrow}>
-          {t("onboarding.proShowcase_eyebrow", { defaultValue: "With Pro" })}
+          {t("onboarding.proShowcase_eyebrow", { defaultValue: "Included free" })}
         </Text>
       </View>
 
       <Text style={styles.headline}>
         {t("onboarding.proShowcase_headline", {
-          defaultValue: "For your {{from}} → {{to}} move, Pro goes further:",
+          defaultValue: "Your {{from}} → {{to}} move plan includes:",
           from: fromLabel,
           to: toLabel,
         })}
@@ -111,18 +114,18 @@ export function ProShowcaseCard({ context, fromLabel, toLabel, onSeePro }: Props
       <View style={styles.footerRow}>
         <Text style={styles.footnote}>
           {t("onboarding.proShowcase_footnote", {
-            defaultValue: "No payment now — finish setup free, explore Pro any time.",
+            defaultValue: "Free forever — every step above is included, no upgrade needed.",
           })}
         </Text>
         <TouchableOpacity
           style={styles.seeProBtn}
-          onPress={onSeePro}
+          onPress={onContinue}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={t("onboarding.proShowcase_cta", { defaultValue: "See Pro" })}
+          accessibilityLabel={t("onboarding.proShowcase_cta", { defaultValue: "Continue" })}
         >
           <Text style={styles.seeProText}>
-            {t("onboarding.proShowcase_cta", { defaultValue: "See Pro" })}
+            {t("onboarding.proShowcase_cta", { defaultValue: "Continue" })}
           </Text>
           <ArrowRight size={13} color={theme.colors.warning} />
         </TouchableOpacity>

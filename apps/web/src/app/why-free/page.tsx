@@ -81,7 +81,7 @@ export default function WhyFreePage() {
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link href="/features">See features</Link>
+            <Link href="/pricing">See what&apos;s included</Link>
           </Button>
         </div>
       </section>

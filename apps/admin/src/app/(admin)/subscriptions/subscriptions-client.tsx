@@ -201,7 +201,16 @@ const STATUS_COLORS: Record<string, string> = {
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
-export default function SubscriptionsClient() {
+export default function SubscriptionsClient({
+  consumerFreeEnabled = false,
+}: {
+  /**
+   * When true, the consumer app is free (affiliate-funded) and these
+   * subscriptions are legacy records. Management actions still work for the
+   * dormant billing infra; the header is reframed so the context is honest.
+   */
+  consumerFreeEnabled?: boolean;
+}) {
   const [subs, setSubs] = useState<Sub[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<any>(null);
@@ -703,9 +712,13 @@ export default function SubscriptionsClient() {
   return (
     <div className="space-y-5">
       <AdminPageHeader
-        eyebrow="Billing"
+        eyebrow={consumerFreeEnabled ? "Legacy billing" : "Billing"}
         title="<em>Subscriptions</em>"
-        subtitle={`${total} subscription${total !== 1 ? "s" : ""} found`}
+        subtitle={
+          consumerFreeEnabled
+            ? `${total} legacy subscription${total !== 1 ? "s" : ""} · dormant under the free model`
+            : `${total} subscription${total !== 1 ? "s" : ""} found`
+        }
       />
 
       {/* Top-level tabs: the day-to-day LIST vs the MRR/churn drill-down. */}

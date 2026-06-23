@@ -71,7 +71,6 @@
     "affiliate": "Affiliate",
     "leads": "Leads",
     "security": "Security",
-    "runtimeConfig": "Runtime Config",
     "settings": "Settings",
     "backups": "Backups",
     "auditLogs": "Audit Logs",
@@ -483,5 +482,21 @@
   "language": {
     "label": "Language",
     "select": "Select language"
+  },
+  "consumerFree": {
+    "statusFree": "Consumer model: Free",
+    "statusSubscription": "Consumer model: Subscription (legacy)",
+    "flagOn": "CONSUMER_FREE on",
+    "flagOff": "CONSUMER_FREE off",
+    "explainerFree": "Every feature is free for everyone, gated only by fair-use limits. Revenue comes from affiliate & referral commissions — partners pay us when a user chooses a provider through LocateFlow, at no cost to the user. Subscription / MRR figures are legacy and dormant.",
+    "explainerSubscription": "The consumer-free pivot is currently off, so subscription / MRR figures reflect the live revenue model. Affiliate commissions are tracked in parallel.",
+    "affiliateEarned": "Affiliate earned",
+    "affiliatePending": "{amount} pending",
+    "affiliateRevenueLink": "Affiliate revenue",
+    "legacyDormantTitle": "Legacy / dormant",
+    "legacyDormantBody": "The consumer app is free (affiliate-funded). These subscription & MRR figures are kept for historical data and remain reversible, but are not the live revenue model.",
+    "mrrLegacy": "MRR (legacy)",
+    "activeSubsLegacy": "Active Subs (legacy)",
+    "planDistributionLegacy": "Plan distribution (legacy)"
   }
 }

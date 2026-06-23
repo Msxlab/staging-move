@@ -1300,10 +1300,6 @@ export default function OnboardingClient({
   const proShowcaseToLabel = movingForm.state || t("aurora_yourState");
   const proShowcaseFeatureLabel = (id: ProShowcaseFeatureId) =>
     t(`proShowcase_feature_${id}`);
-  const handleSeePro = () => {
-    trackEvent("onboarding_pro_showcase_clicked", { source: "onboarding" });
-    router.push("/pricing");
-  };
 
   // --- Common input styles for glass theme ---
   const inputCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-tone-orange-br transition";
@@ -2417,13 +2413,14 @@ export default function OnboardingClient({
                 </div>
               </div>
 
-              {/* Aspirational "what Pro unlocks for YOUR move" showcase — built
-                  from the user's REAL entered context (origin → destination
-                  state + household). SHOWCASE, not a paywall: the only action is
-                  a quiet "See Pro" link to /pricing; the primary "Preview /
-                  Create plan" CTA below proceeds normally. Shown only once a
-                  destination state is typed so the copy stays concrete; never
-                  shown to users already on a paid plan. NO payment step here. */}
+              {/* "What your move plan includes" showcase — built from the user's
+                  REAL entered context (origin → destination state + household).
+                  Under the free model every feature is included, so this is a
+                  purely informational card (no CTA, no buy route); the primary
+                  "Preview / Create plan" CTA below proceeds normally. Shown only
+                  once a destination state is typed so the copy stays concrete.
+                  Under the free model isPremium is false for consumers, so this
+                  shows to everyone; flag-OFF paid users still skip it. */}
               {!isPremium && proShowcaseContext && (
                 <ObProShowcase
                   eyebrow={t("proShowcase_eyebrow")}
@@ -2435,8 +2432,6 @@ export default function OnboardingClient({
                   features={proShowcaseFeatures}
                   featureLabel={proShowcaseFeatureLabel}
                   footnote={t("proShowcase_footnote")}
-                  seeProLabel={t("proShowcase_cta")}
-                  onSeePro={handleSeePro}
                 />
               )}
 
