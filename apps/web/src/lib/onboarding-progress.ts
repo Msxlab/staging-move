@@ -41,12 +41,20 @@ export function getOnboardingProgress(input: OnboardingProgressInput): Onboardin
     return { completed: false, step: "profile", stepIndex: 0 };
   }
 
-  if (input.completedEvent) {
-    return { completed: true, step: "complete", stepIndex: 4 };
-  }
-
   if (input.addressCount <= 0) {
     return { completed: false, step: "address", stepIndex: 1 };
+  }
+
+  // The persisted COMPLETED event only fast-tracks the OPTIONAL services/moving
+  // steps — it must NOT short-circuit the hard prerequisites above (profile,
+  // legal, address). A client cannot mark onboarding complete without at least
+  // one address; the address requirement is also enforced server-side before the
+  // COMPLETED event is persisted (see api/onboarding/progress). Keeping this
+  // check after the address gate closes the bypass without changing the
+  // common-case flow, where COMPLETED is only ever written once an address
+  // exists.
+  if (input.completedEvent) {
+    return { completed: true, step: "complete", stepIndex: 4 };
   }
 
   if (input.serviceCount <= 0 && !input.servicesSkipped) {

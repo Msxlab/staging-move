@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
+import {
+  resolveWorkspaceDataScope,
+  scopedRecordWhere,
+} from "@/lib/workspace-data-scope";
 import {
   ONBOARDING_FUNNEL_STEPS,
   ONBOARDING_MOVING_SKIPPED_EVENT,
@@ -58,6 +63,32 @@ export async function POST(request: NextRequest) {
     event = onboardingStepViewedEvent(parsed.data.step);
   } else {
     event = eventMap[parsed.data.event];
+  }
+
+  // Server-side prerequisite gate for COMPLETED: a client must not be able to
+  // mark onboarding complete without satisfying the hard prerequisite (at least
+  // one address). The progress derivation (getOnboardingProgress) now also
+  // requires an address before honoring the COMPLETED event, but we reject the
+  // write here too so a stray/forged COMPLETED row is never persisted in the
+  // first place. Scoped via the same workspace-data-scope helper the rest of the
+  // onboarding surface uses, so a workspace member's shared addresses count.
+  if (parsed.data.event === "COMPLETED") {
+    try {
+      const scope = await resolveWorkspaceDataScope(request, userId);
+      const addressCount = await prisma.address.count({
+        where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
+      });
+      if (addressCount <= 0) {
+        return NextResponse.json(
+          { error: "Add an address before completing onboarding." },
+          { status: 400 },
+        );
+      }
+    } catch (error) {
+      const gateResponse = apiGateErrorResponse(error);
+      if (gateResponse) return gateResponse;
+      throw error;
+    }
   }
 
   const existing = await prisma.userEvent.findFirst({
