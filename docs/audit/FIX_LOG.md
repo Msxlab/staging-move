@@ -73,7 +73,13 @@
 
 ### S2.5 Impersonated-mutation audit rollout extended — `admin-impersonation-02`
 - **Commit:** `b4b90328`. Continued the S2.3 rollout into the two core relocation-PII mutations: `addresses/[id]` PATCH+DELETE and `moving/[id]` PATCH+DELETE. Typecheck clean; impersonation+addresses+moving suites 104/104.
-- **Still remaining (rollout):** other user-scoped mutating routes (`custom-providers/[id]`, `services/[id]`, `user/preferences`, `notifications/*`, `providers/saved`, `tickets/[id]`, `auth/password/change`) — same one-line call; lower forensic value, tracked below.
+
+### S2.6 Impersonated-mutation audit — FULL rollout — `admin-impersonation-02`
+- **Commits:** `202c3efa` (+ `fe65c58e` /api/ready fixture follow-up for S2.2). Completed the rollout across **all 51 user-scoped mutating routes** via a `classify → reconcile → wire → adversarial-verify` workflow (61 candidates analyzed). **10 routes deliberately SKIPPED** as non-user-data mutations: external Places/USPS proxies (`address-autocomplete`, `address-autocomplete/details`, `addresses/validate`), anonymous attribution counters (`affiliate/click`, `sponsored/click`, `movers`), system/cron connector dispatch (`connector-dispatch`, `workspaces/[id]/sync`), cache-only AI briefing (`onboarding/briefing`), pre-auth public (`waitlist`). 51/51 adversarially verified; web typecheck clean; **851 api route tests green**.
+- **Side-finding fixed:** the S2.2 trusted-proxy fail-closed broke the `/api/ready` valid-config test (it now requires `TRUSTED_PROXY_HEADERS`); fixture updated (`fe65c58e`).
+
+### S2.7 Impersonation BLOCK on account-control + billing — `admin-impersonation-02` (security)
+- **Commit:** `4739bb26`. The classify pass surfaced **11 routes where logging is insufficient** — an impersonating SUPER_ADMIN could take over the account or change billing. Added `blockIfImpersonating(request, {action, route})` → returns **403 `IMPERSONATION_FORBIDDEN`** (and records the blocked attempt) when impersonated, `null` for the genuine user; wired AFTER auth / BEFORE any side effect into: `auth/password/change`, `auth/mfa/{setup,confirm,disable}`, `auth/security`, `auth/resend-verification`, `acquisition/redeem`, `mobile/iap/verify`, `subscription/{actions,change-plan,switch-cycle}`. **User-approved** (block both auth + billing). 11/11 adversarially verified (placement after-auth/before-mutation); helper unit-tested; 177 tests green.
 
 ---
 
@@ -92,4 +98,4 @@
 3. After all: `tsc --noEmit` web + admin → 0 errors.
 4. ⚠️ Not run (needs broader setup / a running app): full `pnpm verify:tests`, `pnpm build`, E2E, and **runtime visual contrast** checks.
 
-_Last updated: 2026-06-22 (Sprint 2 added: S2.1–S2.5 on `fix/audit-sprint2`)._
+_Last updated: 2026-06-22 (Sprint 2: S2.1–S2.7 on `fix/audit-sprint2` — incl. full impersonation-audit rollout + block guard)._
