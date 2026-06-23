@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Fraunces, Playfair_Display, DM_Sans, DM_Mono } from "next/font/google";
+import { Geist_Mono, Playfair_Display, DM_Sans, DM_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
@@ -24,15 +24,9 @@ import {
   isNoIndexEnvironment,
 } from "@/lib/seo";
 
-// Legacy Geist/Fraunces variables stay loaded for older references while the
-// current LocateFlow design system below provides canonical CSS vars.
-const geistSans = Geist({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-geist-sans",
-  fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
-});
-
+// Geist Mono stays loaded — it is the `--font-geist-mono` source still
+// consumed by `.blog-prose figcaption` in globals.css. The unused Geist
+// (sans) + Fraunces legacy faces were removed in the Step 2 font cleanup.
 const geistMono = Geist_Mono({
   subsets: ["latin"],
   display: "swap",
@@ -40,20 +34,9 @@ const geistMono = Geist_Mono({
   fallback: ["JetBrains Mono", "Consolas", "monospace"],
 });
 
-// Fraunces remains as a compatibility display fallback. Passing `axes` keeps
-// old styles that still reference opsz/SOFT build-safe during migration.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-fraunces",
-  axes: ["opsz", "SOFT"],
-  style: ["normal", "italic"],
-  fallback: ["Didot", "Georgia", "serif"],
-});
-
 // LocateFlow design system — Playfair Display (display/serif), DM Sans (UI),
 // DM Mono (numerals/meta). Repointed via --font-display/sans/mono in
-// globals.css. Fraunces/Geist stay loaded for any not-yet-migrated refs.
+// globals.css.
 const playfair = Playfair_Display({
   subsets: ["latin"],
   display: "swap",
@@ -178,7 +161,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} ${playfair.variable} ${dmSans.variable} ${dmMono.variable}`}
+      className={`${geistMono.variable} ${playfair.variable} ${dmSans.variable} ${dmMono.variable}`}
       suppressHydrationWarning
     >
       <head>

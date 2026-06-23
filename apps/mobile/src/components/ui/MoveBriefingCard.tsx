@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Animated } from "react-native";
 import { Sparkles, X, ChevronRight, ArrowRight, Check } from "lucide-react-native";
+import { MoveRaccoon } from "@/components/move";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,6 +28,42 @@ import {
   resolveBriefingActionRoute,
   type ParsedBriefingAction,
 } from "./MoveBriefingCard.helpers";
+
+/**
+ * Three softly-blinking dots — the "thinking" / live cue next to the AI
+ * Briefing header (design parity, move-app-14). Native-driver opacity loop,
+ * staggered, so it never competes with the JS thread.
+ */
+function TypingDots({ color }: { color: string }) {
+  const d0 = useRef(new Animated.Value(0.3)).current;
+  const d1 = useRef(new Animated.Value(0.3)).current;
+  const d2 = useRef(new Animated.Value(0.3)).current;
+  useEffect(() => {
+    const dots = [d0, d1, d2];
+    const anims = dots.map((d, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 200),
+          Animated.timing(d, { toValue: 1, duration: 420, useNativeDriver: true }),
+          Animated.timing(d, { toValue: 0.3, duration: 420, useNativeDriver: true }),
+          Animated.delay((2 - i) * 200),
+        ]),
+      ),
+    );
+    anims.forEach((a) => a.start());
+    return () => anims.forEach((a) => a.stop());
+  }, [d0, d1, d2]);
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+      {[d0, d1, d2].map((d, i) => (
+        <Animated.View
+          key={i}
+          style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: color, opacity: d }}
+        />
+      ))}
+    </View>
+  );
+}
 
 interface MoveBriefingCardProps {
   /**
@@ -407,14 +444,18 @@ export function MoveBriefingCard({
   return (
     <Card variant="glow" style={{ marginBottom: 16 }}>
       <View style={styles.headerRow}>
-        <View style={styles.iconWrap}>
-          <Sparkles size={18} color={theme.colors.primary} />
+        <View style={styles.raccoonWrap}>
+          <MoveRaccoon size={30} mood="thinking" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{t("dashboard.briefingTitle", "Your move briefing")}</Text>
-          {aiGenerated && (
-            <Text style={styles.aiLabel}>{t("dashboard.briefingAiLabel", "AI-generated")}</Text>
-          )}
+          <View style={styles.briefMeta}>
+            <TypingDots color={theme.colors.primary} />
+            <Text style={styles.updatedNow}>{t("dashboard.briefingUpdatedNow", "Updated now")}</Text>
+            {aiGenerated && (
+              <Text style={styles.aiLabel}>{"· " + t("dashboard.briefingAiLabel", "AI-generated")}</Text>
+            )}
+          </View>
         </View>
         <TouchableOpacity
           onPress={handleSeen}
@@ -509,6 +550,23 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.colors.primaryFaded ?? "rgba(127,182,232,0.14)",
+    },
+    raccoonWrap: {
+      width: 34,
+      height: 34,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    briefMeta: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 3,
+    },
+    updatedNow: {
+      fontSize: 9,
+      color: theme.colors.textTertiary,
+      letterSpacing: 0.2,
     },
     title: {
       fontSize: 15,

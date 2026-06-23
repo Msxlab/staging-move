@@ -1,7 +1,10 @@
 # Phase 1 — Token & Brand Foundation · Implementation Plan
 
-> **Status: PLAN ONLY — no code written yet.** Awaiting approval before any change.
 > Rollout step 1 of 5 (D34). Decisions: see `DECISIONS_LOG.md`. Gap evidence: `00_GAP_REPORT.md`, `01_DESIGN_SYSTEM_DELTA.md`.
+>
+> **✅ STEP 1 DONE (2026-06-22)** — single-source token emitter merged to `feat/design-foundation` (merge of `worktree-agent-…`). **Pure refactor, zero visual change**: 664 token declarations machine-verified identical; emitter `--check` (regenerate==committed) green; shared typecheck 0 errors; drift-guard + contrast + aurora-regression tests green; web/admin build green. Steps 2–7 (value/typography/radius/brand/aurora swaps) NOT started.
+>
+> **⚠️ Architecture note to confirm:** the shadcn HSL `@layer base` block could NOT be a standalone `@import` (Turbopack rejects a bare `@layer base` without a matching `@tailwind base`). It is therefore **generated from the single model but INLINED** into each `globals.css` (where `@tailwind base` lives), preserving the cascade — still single-sourced + drift-guarded. The unlayered `:root/.dark/.light` + `--au-*` blocks ARE true `@import`s. Accept this, or revisit if we move off Turbopack.
 
 ## Objective
 Establish the **single token source-of-truth** and adopt the new visual **foundation** (palette / typography / radius / brand mark) **without changing any page layout, IA, or behavior.** Page re-skins and new features are Phases 2–5. Keep the **LocateFlow** name. Reversible; all existing tests stay green.
@@ -58,6 +61,22 @@ Apply the new values **in the single source** (then the emitter propagates). Mos
 - Update `aurora-theme-regression.test.ts` expectations to the new values.
 
 ---
+
+## Step 1 — surveyed token inventory (post-branch, 2026-06-22)
+Branch `feat/design-foundation` created. The real scope of the token copies (bigger/more intricate than the initial estimate — confirmed by reading the files):
+- **web `globals.css`**: `:root,.dark` block ≈ **190 vars** (brand+Gold scale, surfaces, fg ramp, borders, glass, semantic, **6 tones + 5 legacy tone-aliases** = ~60 tone vars, radii, spacing, shadows, typography, sizes, weights, line-heights, tracking, font-variation) + `.light` block ≈ **100 override vars** + a separate **shadcn HSL `@layer base`** block (`:root/.dark` + `.light`, ~40 HSL channel vars).
+- **admin `globals.css`** (456 ln) + **web `aurora.css`** (`.lf-aurora`, mirrors HSL) + **admin `aurora.css`** (`.adm-aurora`) — more copies of the same values.
+- Total ≈ **400+ token declarations** across 5 files with subtle rgba alphas + hex→HSL conversions.
+
+### Step-1 sub-steps (each verified before the next)
+1a. Model ALL current tokens in `design-tokens.ts` as a structured `{ dark, light }` per-surface object (semantic names + the legacy aliases as derived).
+1b. Write `scripts/emit-design-tokens.ts` → generates web `_tokens.generated.css` (`:root,.dark` + `.light` + the HSL `@layer base`), admin `_tokens.generated.css`, and the HSL derivation.
+1c. **Generate, then byte/value-diff** the generated CSS against the CURRENT hand-written blocks until they match **exactly** (pure refactor — zero visual change). This diff-to-green loop is the core of Step 1.
+1d. Swap `globals.css`/`aurora.css` to `@import` the generated file; delete the now-duplicated hand blocks; add the **drift-guard test** (regenerate in CI, assert committed == generated).
+1e. typecheck + build + token/contrast/aurora tests green → commit. Only AFTER this does Step 2 change any value.
+
+### Recommended SAFE execution (given the 400-token scale)
+Step 1c (the byte-exact diff-to-green loop) is best run in an **isolated git worktree** so it can iterate generate→diff→fix without risk to the main tree, then I review the byte-diff result before merging it onto `feat/design-foundation`. This avoids a fatigue-driven wrong-alpha regression in the live foundation. (Alternative: do it inline in careful verified increments — slower, same result.)
 
 ## Verification (per step + at the end)
 - `pnpm verify:typecheck` (web + admin + mobile + shared + db + connectors).

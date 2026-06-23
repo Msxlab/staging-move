@@ -76,4 +76,17 @@ Add a per-reminder done model + persistence (checkbox, strike-through, "{open} o
 ## Pending (next batches)
 Group B theme mechanics: D6 (single token source), D7 (admin navy vs graphite), D9 (warm greige canvas), D10 (radius), D11 (token emitter first), D12 (aurora layer). Group C features: D14–D22. Group D IA/rollout: D23 (web shell), D26 (admin nav), D30 (onboarding profile depth), D32 (providers layout), D33 (marketing sections), D34 (rollout order).
 
-_Last updated: 2026-06-22._
+## Phase 1 — Build outcomes (so far)
+- **Step 1 ✅ (token emitter):** single-source `design-tokens-css.ts` + emitter; 664 declarations byte-identical (zero visual change); merged `feat/design-foundation`.
+- **Step 2 ✅ (palette + radius + font cleanup):** admin→navy `#070B14` (graphite dropped), light greige `#EFEADF`, dark `surface-3 #1F2C47`, radius bump (sm8/md13/lg18/xl22/2xl26, full unchanged), removed legacy Geist+Fraunces fonts (kept Playfair/DM + Geist_Mono which is still used). Merged (`b104e364`). All green (emitter --check, drift, contrast, typecheck).
+  - **AA refinement (D9):** the design's lighter light-mode green/teal (`#1C8A63`/`#168E9C`) **fail WCAG AA on greige** (3.20/2.92). **DECISION: keep the current AA-passing `#0F6B50`/`#16666B`** (accessible, visually near-identical). The lighter design hues would need a component change (darker chip fill / larger text) — deferred to the re-skin phases, not a token-value change.
+  - **Note:** admin shadcn dark HSL triples are visually-equivalent navy but not byte-identical to web's; optional to unify later.
+- **Step 5-7 ✅ (brand mark + aliases + aurora):** `RaccoonMark.tsx` (web SVG, 5 moods, eye = Gold/Sapphire token-bound) + `Wordmark.tsx` ("LocateFlow" Playfair 900 + raccoon tile) + mobile RaccoonMark re-export; OG image "M" glyph → raccoon (Satori-safe); honest token aliases `--gold/--sapphire/--teal/--green` added (legacy aliases kept, no codemod, storage keys unchanged); aurora already navy/gold (no change). Favicons/PWA icons were ALREADY the raccoon (no replacement needed). Merged (`2c14f0bd`). All green. **New components CREATED only — existing logo usages NOT swapped (that's the rollout phases).**
+- **🎉 PHASE 1 (token & brand foundation) COMPLETE.** Steps 1–7 done + merged on `feat/design-foundation`.
+- **⚠️ Raccoon VISUAL needs human review** — preview `/opengraph-image` + `brand/RaccoonMark`+`Wordmark` in dark+light (eye should resolve Gold dark / Sapphire light; Playfair-900 wordmark).
+- **Minor deferred notes:** OG mask ellipses are upright (Satori has no per-element transform; live component keeps ±6° rotation) — acceptable; web aurora LIGHT `--au-base` still cool `#F2F4F8` (greige-align in a later re-skin phase); honest-named TS exports for mobile not added (CSS aliases only) — later if wanted.
+
+## Next: Phase 2+ (design rollout per D34)
+Foundation done → roll out the re-skin: **Phase 2 Mobile** (design's primary surface) → Phase 3 Marketing → Phase 4 Web shell → Phase 5 Admin → new features (full raccoon dossier D14, completable reminders D21, risk gauge D16, share D20, admin data-sources D18, onboarding Done step D17). Each surface swaps to the new `RaccoonMark`/`Wordmark` + the navy/greige tokens.
+
+_Last updated: 2026-06-22 (Phase 1 COMPLETE — Steps 1–7 done + merged)._

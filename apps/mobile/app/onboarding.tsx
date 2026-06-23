@@ -1606,7 +1606,7 @@ export default function OnboardingScreen() {
                       justifyContent: "center",
                     }}
                   >
-                    {sensitiveOptIn && <Check size={14} color="#fff" />}
+                    {sensitiveOptIn && <Check size={14} color={theme.colors.onAccent} />}
                   </View>
                   <Text style={{ flex: 1, color: theme.colors.text, fontSize: 13, fontWeight: "600" }}>
                     {t("onboarding.sensitive_optIn")}

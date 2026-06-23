@@ -11,6 +11,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { LanguageSelector } from "./language-selector";
 import { PulseDot } from "./aurora";
 import { filterNavGroups, type NavGroup, type NavItem } from "@/lib/admin-nav";
+import { RaccoonMark } from "@/components/brand/RaccoonMark";
 
 /**
  * Role display label + tone. Surfaced as a badge in the sidebar identity
@@ -43,10 +44,18 @@ function navLabel(t: ReturnType<typeof useTranslations>, key: string, fallback: 
   return value === `nav.${key}` ? fallback : value;
 }
 
-/** Compact shared raccoon mark for the 76px rail. */
+/** Compact raccoon brand mark for the 76px rail — parametric RaccoonMark
+ *  (accent-tracking eye, Gold dark / Sapphire light) in a fixed brand-navy tile,
+ *  replacing the static /logo-mark.svg raster. */
 function RailMark() {
   return (
-    <img src="/logo-mark.svg" alt="" className="h-9 w-9 shrink-0" aria-hidden="true" />
+    <span
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
+      style={{ background: "#0A0F1C" }}
+      aria-hidden="true"
+    >
+      <RaccoonMark size={26} />
+    </span>
   );
 }
 

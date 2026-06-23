@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Easing, StyleSheet, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { LogoBrand } from "@/components/ui/LogoBrand";
@@ -96,6 +96,14 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
         >
           <LogoBrand size="lg" />
         </Animated.View>
+        <Animated.View style={[styles.brandText, { opacity: markOpacity }]}>
+          <Text style={styles.wordmark} allowFontScaling={false}>
+            LocateFlow
+          </Text>
+          <Text style={styles.tagline} allowFontScaling={false}>
+            Relocation Intelligence
+          </Text>
+        </Animated.View>
       </View>
 
       <View style={styles.loadingBarContainer}>
@@ -155,7 +163,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "#0A0F18",
+    backgroundColor: "#0A0F1C",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 999,
@@ -163,6 +171,27 @@ const styles = StyleSheet.create({
   logoArea: {
     alignItems: "center",
     marginBottom: 28,
+  },
+  brandText: {
+    alignItems: "center",
+    marginTop: 18,
+  },
+  wordmark: {
+    fontFamily: "PlayfairDisplay_900Black",
+    fontSize: 34,
+    lineHeight: 40,
+    color: "#EFF3FA",
+    textAlign: "center",
+    letterSpacing: 0.3,
+  },
+  tagline: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 11,
+    letterSpacing: 2.6,
+    textTransform: "uppercase",
+    color: "#CBA45E",
+    textAlign: "center",
+    marginTop: 8,
   },
   markContainer: {
     width: 118,
