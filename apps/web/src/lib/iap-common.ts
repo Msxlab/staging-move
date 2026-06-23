@@ -345,9 +345,24 @@ export async function mapProductIdToPlan(
   return null;
 }
 
+/**
+ * Finding 4.2: reject Apple Family Sharing recipients. A subscription shared via
+ * Family Sharing reports inAppOwnershipType "FAMILY_SHARED" on the recipient's
+ * transaction (the purchaser sees "PURCHASED"). Granting an entitlement on a
+ * FAMILY_SHARED transaction would let any family member's device claim premium
+ * on their own LocateFlow account off a single purchase. Only "PURCHASED" (and
+ * a missing field, for forward-compat with older payloads) grants. Decline
+ * (return null) otherwise so the verify route does not grant.
+ */
+function isAppleOwnershipGranted(inAppOwnershipType: string | null | undefined): boolean {
+  return !inAppOwnershipType || inAppOwnershipType === "PURCHASED";
+}
+
 export async function normalizeAppleResult(
   result: AppleSubscriptionStatusResult,
 ): Promise<NormalizedIapState | null> {
+  if (!isAppleOwnershipGranted(result.transaction.inAppOwnershipType)) return null;
+
   const resolved = await mapProductIdToPlan("ios", result.transaction.productId);
   if (!resolved) return null;
 
@@ -417,6 +432,9 @@ export async function normalizeAppleTransactionPayload(
   if (transaction.bundleId !== expectedBundleId) {
     throw new Error("APPLE_JWS_BUNDLE_MISMATCH");
   }
+
+  // Finding 4.2: decline Family Sharing recipients (see normalizeAppleResult).
+  if (!isAppleOwnershipGranted(transaction.inAppOwnershipType)) return null;
 
   const resolved = await mapProductIdToPlan("ios", transaction.productId);
   if (!resolved) return null;

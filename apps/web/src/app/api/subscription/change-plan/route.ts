@@ -17,7 +17,7 @@ import {
 } from "@/lib/billing";
 import { isPaidBillingPlan, type PaidBillingPlan } from "@/lib/shared-billing";
 import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
-import { captureMessage } from "@/lib/sentry";
+import { captureException, captureMessage } from "@/lib/sentry";
 import {
   isMobileAppClient,
   mobileExternalBillingNotAllowedResponse,
@@ -180,8 +180,17 @@ async function applyImmediatePlanChange(input: {
     });
   }
 
-  // Upgrade widens the seat limit → restore any OVERFLOW members. Best-effort.
-  await reconcileSeatsForOwner(userId).catch(() => {});
+  // Upgrade widens the seat limit → restore any OVERFLOW members. Best-effort,
+  // but a dropped reconcile silently leaves restored members in OVERFLOW after a
+  // paid upgrade — surface it to Sentry (finding 4.3) instead of swallowing.
+  await reconcileSeatsForOwner(userId).catch((err) =>
+    captureException(err, {
+      route: "/api/subscription/change-plan",
+      op: "reconcileSeatsForOwner",
+      targetPlan,
+      targetInterval,
+    }),
+  );
 
   // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
   await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Subscription", entityId: subscription.id, route: "/api/subscription/change-plan" });

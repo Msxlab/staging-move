@@ -489,8 +489,17 @@ async function syncLocalSubscriptionFromStripe(input: {
 
   // A plan change can shrink the seat limit — reconcile the owner's workspaces
   // (best-effort; demotes the newest over-limit members to read-only OVERFLOW,
-  // restores them on upgrade). No-op for personal/solo workspaces.
-  await reconcileSeatsForOwner(local.userId).catch(() => {});
+  // restores them on upgrade). No-op for personal/solo workspaces. A dropped
+  // reconcile silently leaves members on a tier the owner no longer pays for, so
+  // surface it to Sentry rather than swallowing (finding 4.3) — still non-fatal.
+  await reconcileSeatsForOwner(local.userId).catch((err) =>
+    captureException(err, {
+      route: "/api/webhooks/stripe",
+      op: "reconcileSeatsForOwner",
+      eventType: input.eventType,
+      userHint: safeUserHint(local.userId),
+    }),
+  );
 
   logStripeSubscriptionSync({
     eventType: input.eventType,
@@ -728,7 +737,17 @@ export async function POST(request: NextRequest) {
           await cancelDuplicateActiveStripeSubscriptions(stripe, stripeCustomerId, stripeSubId);
         }
 
+        // Finding 4.1: only treat the redemption as fulfilled / send the
+        // activation email once the checkout has actually settled. Stripe sets
+        // payment_status to "paid" for a completed payment and "no_payment_required"
+        // for a legitimate $0/trial checkout (where the card is collected but not
+        // charged yet); both should activate. An "unpaid" session has NOT settled
+        // — gating on it prevents flipping a redemption to REDEEMED (and emailing
+        // "your subscription is active") for a checkout that never collected money.
+        const checkoutSettled = session.payment_status !== "unpaid";
+
         if (
+          checkoutSettled &&
           (session.metadata?.accessType === "FREE_TRIAL" || session.metadata?.accessType === "PAID") &&
           userId
         ) {
@@ -766,7 +785,11 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        const recipient = await lookupUserByStripeCustomer(stripeCustomerId);
+        // Finding 4.1: defer the "subscription activated" email until the
+        // checkout has settled (paid or no-payment-required). An unpaid session
+        // has not collected money yet; a later invoice.paid / subscription.updated
+        // event drives activation if/when it does settle.
+        const recipient = checkoutSettled ? await lookupUserByStripeCustomer(stripeCustomerId) : null;
         if (recipient) {
           fireAndLogEmail(
             sendSubscriptionActivatedEmail({
@@ -962,7 +985,15 @@ export async function POST(request: NextRequest) {
         if (recipient) {
           // Owner's access just lapsed → collapse any workspaces they own to a
           // single seat so members stop having write access to an unpaid plan.
-          await reconcileSeatsForOwner(recipient.userId).catch(() => {});
+          // Alert on a dropped reconcile (finding 4.3) — non-fatal to delivery.
+          await reconcileSeatsForOwner(recipient.userId).catch((err) =>
+            captureException(err, {
+              route: "/api/webhooks/stripe",
+              op: "reconcileSeatsForOwner",
+              eventType: event.type,
+              userHint: safeUserHint(recipient.userId),
+            }),
+          );
           fireAndLogEmail(
             sendSubscriptionCanceledEmail({
               userEmail: recipient.email,
@@ -1247,7 +1278,15 @@ export async function POST(request: NextRequest) {
           // single seat (members demoted to OVERFLOW).
           const refundRecipient = await lookupUserByStripeCustomer(stripeCustomerId);
           if (refundRecipient) {
-            await reconcileSeatsForOwner(refundRecipient.userId).catch(() => {});
+            // Alert on a dropped reconcile (finding 4.3) — non-fatal to delivery.
+            await reconcileSeatsForOwner(refundRecipient.userId).catch((err) =>
+              captureException(err, {
+                route: "/api/webhooks/stripe",
+                op: "reconcileSeatsForOwner",
+                eventType: event.type,
+                userHint: safeUserHint(refundRecipient.userId),
+              }),
+            );
           }
         }
         break;
@@ -1304,7 +1343,15 @@ export async function POST(request: NextRequest) {
           });
           const disputeRecipient = await lookupUserByStripeCustomer(disputeCustomerId);
           if (disputeRecipient) {
-            await reconcileSeatsForOwner(disputeRecipient.userId).catch(() => {});
+            // Alert on a dropped reconcile (finding 4.3) — non-fatal to delivery.
+            await reconcileSeatsForOwner(disputeRecipient.userId).catch((err) =>
+              captureException(err, {
+                route: "/api/webhooks/stripe",
+                op: "reconcileSeatsForOwner",
+                eventType: event.type,
+                userHint: safeUserHint(disputeRecipient.userId),
+              }),
+            );
           }
         }
         break;
@@ -1316,8 +1363,17 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       // Processing failed after the event was reserved — release the
       // reservation so Stripe's retry re-processes it instead of treating it
-      // as a duplicate and dropping the work.
-      await releaseProcessedWebhookEvent(event.id, "stripe").catch(() => {});
+      // as a duplicate and dropping the work. If the release itself fails, the
+      // reservation sticks and Stripe's retry would be dropped as a duplicate —
+      // alert on it (finding 4.3) rather than swallowing the dropped side-effect.
+      await releaseProcessedWebhookEvent(event.id, "stripe").catch((releaseErr) =>
+        captureException(releaseErr, {
+          route: "/api/webhooks/stripe",
+          op: "releaseProcessedWebhookEvent",
+          eventId: event.id,
+          eventType: event.type,
+        }),
+      );
       throw err;
     }
 
