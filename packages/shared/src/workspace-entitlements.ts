@@ -76,3 +76,31 @@ export function seatLimitForPlan(plan: string | null | undefined): number {
 export function overflowCount(plan: string | null | undefined, activeMembers: number): number {
   return Math.max(0, activeMembers - seatLimitForPlan(plan));
 }
+
+/**
+ * FINITE concurrent-active-moving-plan abuse ceiling for the consumer-free
+ * (CONSUMER_FREE flag ON) path (H4). Under the truly-free pivot every account
+ * resolves to PRO, whose tier `concurrentPlanLimit` is 3 — which would dead-end
+ * the whole base at the 4th active move. This raises that gate to a high but
+ * FINITE value so a real consumer is never blocked, while a pathological account
+ * (dozens of simultaneously-active moves) still trips. Single source of truth
+ * shared by the web moving-plan create gate; the flag-OFF path keeps the real
+ * per-tier `planFeatures(plan).concurrentPlanLimit` (3 for PRO, 1 otherwise)
+ * EXACTLY as today.
+ */
+export const CONSUMER_FREE_CONCURRENT_PLAN_LIMIT = 25;
+
+/**
+ * Concurrent-active-moving-plan ceiling, selecting the consumer-free finite
+ * abuse cap when the flag is ON and the real per-tier limit otherwise. Pure:
+ * callers pass the resolved flag (never read ambient env in shared code). Flag
+ * OFF (default) → identical to `planFeatures(plan).concurrentPlanLimit`.
+ */
+export function concurrentPlanLimitForPlan(
+  plan: string | null | undefined,
+  consumerFree: boolean,
+): number {
+  return consumerFree
+    ? CONSUMER_FREE_CONCURRENT_PLAN_LIMIT
+    : planFeatures(plan).concurrentPlanLimit;
+}

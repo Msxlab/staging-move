@@ -26,6 +26,11 @@ vi.mock("@/lib/db", () => ({
 }));
 
 import {
+  ABUSE_CAP_ADDRESSES,
+  ABUSE_CAP_CUSTOM_PROVIDERS,
+  ABUSE_CAP_SERVICES,
+} from "@locateflow/shared";
+import {
   ACTIVE_TRACKED_SERVICE_WHERE,
   canCreateAddress,
   canCreateCustomProvider,
@@ -58,16 +63,38 @@ describe("plan limits setup grace", () => {
     });
   });
 
-  it("CONSUMER_FREE on: a free consumer resolves to PRO with PRO limits", async () => {
+  it("CONSUMER_FREE on: a free consumer resolves to PRO with the named finite abuse caps", async () => {
     mocks.isFeatureEnabled.mockResolvedValue(true);
-    await expect(getUserPlan("user_1")).resolves.toMatchObject({
+    const plan = await getUserPlan("user_1");
+    expect(plan).toMatchObject({
       plan: "PRO",
       isActive: true,
       hasPremium: true,
-      limits: { maxAddresses: 25, maxServices: 1000, maxCustomProviders: 1000 },
+      // H6: the consumer-free UNLIMITED replacement is the named finite abuse
+      // ceilings (equal to today's PRO consumer-free values), NOT MAX_SAFE_INTEGER.
+      limits: {
+        maxAddresses: ABUSE_CAP_ADDRESSES,
+        maxServices: ABUSE_CAP_SERVICES,
+        maxCustomProviders: ABUSE_CAP_CUSTOM_PROVIDERS,
+      },
     });
+    // Caps are finite — never the giant sentinel that would leak into the UI.
+    expect(plan.limits.maxAddresses).not.toBe(Number.MAX_SAFE_INTEGER);
+    expect(plan.limits.maxServices).not.toBe(Number.MAX_SAFE_INTEGER);
+    expect(plan.limits.maxCustomProviders).not.toBe(Number.MAX_SAFE_INTEGER);
+    expect(Number.isFinite(plan.limits.maxAddresses)).toBe(true);
     // The paid-only move-plan gate now passes for the (formerly free) user.
     await expect(canCreateMovingPlan("user_1")).resolves.toMatchObject({ allowed: true });
+  });
+
+  it("CONSUMER_FREE off (default): the free ladder is unchanged (FREE_TRIAL limits)", async () => {
+    // Flag OFF is the default in beforeEach. A no-row consumer stays on the real
+    // thin-Free ladder — proves the consumer-free abuse caps never leak when off.
+    await expect(getUserPlan("user_1")).resolves.toMatchObject({
+      plan: "FREE_TRIAL",
+      hasPremium: false,
+      limits: { maxAddresses: 3, maxServices: 10, maxCustomProviders: 25 },
+    });
   });
 
   it("CONSUMER_FREE on: top-tier abuse caps do not ask users to upgrade", async () => {

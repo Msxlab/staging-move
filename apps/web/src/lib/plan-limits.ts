@@ -5,7 +5,13 @@ import { findSubscriptionForEntitlement } from "@/lib/billing";
 import { getEffectiveEntitlement } from "@/lib/shared-billing";
 import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
 import { isFeatureEnabled } from "@/lib/feature-flags";
-import { CONSUMER_FREE_FLAG, consumerFreeApplies } from "@locateflow/shared";
+import {
+  ABUSE_CAP_ADDRESSES,
+  ABUSE_CAP_CUSTOM_PROVIDERS,
+  ABUSE_CAP_SERVICES,
+  CONSUMER_FREE_FLAG,
+  consumerFreeApplies,
+} from "@locateflow/shared";
 export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
 /**
@@ -59,6 +65,24 @@ const PLAN_LIMITS: Record<string, {
     maxServices: 1000,
     maxCustomProviders: 1000,
   },
+};
+
+/**
+ * Caps applied ONLY on the consumer-free (CONSUMER_FREE flag ON) path (H6).
+ *
+ * Under the truly-free pivot every consumer resolves to PRO. Today that borrows
+ * `PLAN_LIMITS.PRO` directly; this constant names the same finite numbers as
+ * explicit ABUSE ceilings (from `@locateflow/shared`) so the consumer-free
+ * UNLIMITED replacement is an intentional, bounded, safe-to-interpolate cap
+ * rather than an incidental reuse of a tier's paywall. Values equal today's
+ * PRO consumer-free resolution, so flipping the flag ON stays byte-identical to
+ * the current flag-ON behavior. The flag-OFF ladder NEVER reads this — real
+ * Free/Individual/Family/Pro limits stay exactly as before.
+ */
+const CONSUMER_FREE_LIMITS: typeof PLAN_LIMITS[string] = {
+  maxAddresses: ABUSE_CAP_ADDRESSES,
+  maxServices: ABUSE_CAP_SERVICES,
+  maxCustomProviders: ABUSE_CAP_CUSTOM_PROVIDERS,
 };
 
 // Pre-completion (setup) caps. During onboarding/setup, services stay
@@ -125,7 +149,9 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
         isActive: true,
         hasPremium: true,
         isTrialExpired: false,
-        limits: PLAN_LIMITS.PRO,
+        // H6: finite named abuse caps for the consumer-free UNLIMITED
+        // replacement (equal to today's PRO consumer-free values).
+        limits: CONSUMER_FREE_LIMITS,
       };
     }
     return {
@@ -151,7 +177,9 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
       isActive: true,
       hasPremium: true,
       isTrialExpired: false,
-      limits: PLAN_LIMITS.PRO,
+      // H6: finite named abuse caps for the consumer-free UNLIMITED
+      // replacement (equal to today's PRO consumer-free values).
+      limits: CONSUMER_FREE_LIMITS,
     };
   }
   const accessType = (subscription as { accessType?: string | null }).accessType;
