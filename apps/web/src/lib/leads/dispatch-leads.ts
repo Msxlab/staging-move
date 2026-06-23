@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/shared-encryption";
 import { sendLoggedEmail } from "@/lib/email-service";
 import { accruePartnerLeadCharge } from "@/lib/leads/billing";
+import { hasCcpaOptOutForUser } from "@/lib/ccpa";
 
 /**
  * Lead delivery worker (R3d). Drains QUEUED LeadDispatch rows and emails each
@@ -122,6 +123,8 @@ export interface DrainResult {
   sent: number;
   failed: number;
   retried: number;
+  /** Leads skipped because the consumer set a CPRA Do-Not-Sell opt-out after capture. */
+  suppressed: number;
 }
 
 export async function drainLeadDispatches(opts: { now?: Date; batchSize?: number } = {}): Promise<DrainResult> {
@@ -147,6 +150,7 @@ export async function drainLeadDispatches(opts: { now?: Date; batchSize?: number
     include: {
       lead: {
         select: {
+          userId: true,
           category: true,
           fromZip: true,
           toZip: true,
@@ -163,6 +167,7 @@ export async function drainLeadDispatches(opts: { now?: Date; batchSize?: number
   let sent = 0;
   let failed = 0;
   let retried = 0;
+  let suppressed = 0;
 
   for (const d of due) {
     // Atomic claim: only the tick that flips QUEUED→DISPATCHING processes the
@@ -172,6 +177,21 @@ export async function drainLeadDispatches(opts: { now?: Date; batchSize?: number
       .updateMany({ where: { id: d.id, status: "QUEUED" }, data: { status: "DISPATCHING" } })
       .catch(() => ({ count: 0 }));
     if (!claim || claim.count === 0) continue;
+
+    // CPRA/CCPA Do-Not-Sell: a lead is captured with explicit, recorded sharing
+    // consent, but the right to opt out is continuing — if the consumer set
+    // DO_NOT_SELL after capture, a still-QUEUED lead is a pending future "sale"
+    // and must NOT be emailed to a partner (nor billed). Terminal, no retry.
+    if (await hasCcpaOptOutForUser(d.lead.userId)) {
+      await prisma.leadDispatch
+        .update({
+          where: { id: d.id },
+          data: { status: "FAILED", lastErrorCode: "CCPA_OPT_OUT", attemptCount: { increment: 1 } },
+        })
+        .catch(() => {});
+      suppressed++;
+      continue;
+    }
 
     try {
       // Resolve the recipient by partner kind: a mover application or a generic
@@ -271,5 +291,5 @@ export async function drainLeadDispatches(opts: { now?: Date; batchSize?: number
     }
   }
 
-  return { processed: due.length, sent, failed, retried };
+  return { processed: due.length, sent, failed, retried, suppressed };
 }

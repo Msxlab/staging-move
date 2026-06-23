@@ -228,6 +228,16 @@ export default function MovingScreen() {
 
   // Risk gauge — share of active (unsettled) moves drives the needle 0..1.
   const riskRatio = plans.length > 0 ? activeCount / plans.length : 0;
+  // Map that same ratio to a labeled band (design parity, move-app-15).
+  // Data-honest: derived from riskRatio, not a fabricated new score.
+  const riskLevel: "high" | "elevated" | "low" =
+    riskRatio >= 0.66 ? "high" : riskRatio >= 0.34 ? "elevated" : "low";
+  const riskLevelText =
+    riskLevel === "high"
+      ? t("moving.riskHigh", "High")
+      : riskLevel === "elevated"
+        ? t("moving.riskElevated", "Elevated")
+        : t("moving.riskLow", "Low");
 
   /** Left accent + status text tone: active = primary, done = success,
    *  archived (canceled / unknown) = border. Plan accents flow through
@@ -450,7 +460,21 @@ export default function MovingScreen() {
                       <Circle cx={70} cy={72} r={6} fill={theme.colors.surface3} stroke={theme.colors.text} strokeWidth={2} />
                     </Svg>
                     <View style={styles.riskText}>
-                      <Text style={styles.riskLevel}>{t("moving.statMoves").toUpperCase()}</Text>
+                      <Text style={styles.riskLevel}>
+                        {t("moving.riskLevelLabel", "Risk level").toUpperCase()}
+                        <Text
+                          style={{
+                            color:
+                              riskLevel === "high"
+                                ? theme.colors.error
+                                : riskLevel === "elevated"
+                                  ? theme.colors.warning
+                                  : theme.colors.success,
+                          }}
+                        >
+                          {"  ·  " + riskLevelText.toUpperCase()}
+                        </Text>
+                      </Text>
                       <View style={styles.riskChips}>
                         {activeCount > 0 ? (
                           <Pill label={`${activeCount} ${t("moving.statusActive")}`} tone="accent" />

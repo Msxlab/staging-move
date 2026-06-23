@@ -199,6 +199,26 @@ describe("web middleware auth boundaries", () => {
     }
   });
 
+  it("lets public partner self-service pages and the one-click unsubscribe landing render without a user session", async () => {
+    // Regression: these pages own their gate (partner-portal session / HMAC unsubscribe token);
+    // omitting them from PUBLIC_PATHS made middleware redirect logged-out visitors to /sign-in,
+    // killing partner acquisition and breaking CAN-SPAM one-click unsubscribe.
+    const publicPaths = [
+      "/partners/apply",
+      "/partners/portal",
+      "/partners/portal/enter",
+      "/unsubscribe",
+    ];
+
+    for (const path of publicPaths) {
+      const response = await middleware(request(`https://locateflow.com${path}`));
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("location")).toBeNull();
+    }
+  });
+
   it("does not noindex a production request just because the origin host is staging-named", async () => {
     const response = await middleware(
       request("https://locateflow-staging-owew7.ondigitalocean.app/about", {
@@ -257,12 +277,12 @@ describe("web middleware auth boundaries", () => {
     expect(revalidateResponse.headers.get("x-middleware-next")).toBe("1");
   });
 
-  it("lets build-info reach route-level handling without a session", async () => {
+  it("gates build-info behind a session (no anonymous version/commit recon)", async () => {
     const response = await middleware(request("https://locateflow.com/api/build-info"));
+    const body = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get("x-middleware-next")).toBe("1");
-    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
   });
 
   it("does not make unrelated /api/blog paths public by prefix accident", async () => {

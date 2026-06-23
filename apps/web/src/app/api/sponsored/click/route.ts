@@ -8,6 +8,12 @@ import { recordSponsoredClick } from "@/lib/movers";
  * lives on POST /api/movers, but generic by placementId so any sponsored surface
  * can use it. The counter bump is best-effort and never blocks the outbound link;
  * this route only authenticates and validates, then returns immediately.
+ *
+ * CCPA/CPRA note: this records ONLY an anonymous, placement-level counter
+ * (`recordSponsoredClick(placementId)`) — no user identifier is stored or shared —
+ * so it is not a "sale/share" of personal information and is intentionally NOT
+ * gated by the Do-Not-Sell opt-out (`hasCcpaOptOut`). The attributed, per-user
+ * `/api/affiliate/click` path IS gated.
  */
 export async function POST(request: NextRequest) {
   try {

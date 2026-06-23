@@ -18,8 +18,16 @@ import {
   normalizeMobileOAuthRedirectUri,
   normalizeMobileOAuthState,
 } from "@/lib/mobile-oauth";
+import { prisma } from "@/lib/db";
+import { createHash } from "crypto";
 
 export const runtime = "nodejs";
+
+// Single-use replay record TTL — kept in lockstep with the state cookie maxAge.
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+function hashOAuthValue(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 /**
  * GET /api/auth/oauth/google
@@ -64,6 +72,20 @@ export async function GET(request: NextRequest) {
   if (isMobileOAuthClient(client) && rawMobileState && !mobileState) {
     return NextResponse.json({ error: "Invalid mobile OAuth state." }, { status: 400 });
   }
+
+  // Persist a single-use, server-side record of this state (mirrors the Apple
+  // flow) so the callback can ATOMICALLY consume it. A captured state+code then
+  // cannot be replayed once the row is consumed. Bound to the PKCE verifier as a
+  // second factor (Google has no nonce); the callback holds the same verifier.
+  await prisma.oAuthState.create({
+    data: {
+      provider: "google",
+      stateHash: hashOAuthValue(state),
+      nonceHash: hashOAuthValue(pkce.verifier),
+      redirectUri,
+      expiresAt: new Date(Date.now() + OAUTH_STATE_TTL_MS),
+    },
+  });
 
   const url = googleAuthorizeUrl({
     clientId,

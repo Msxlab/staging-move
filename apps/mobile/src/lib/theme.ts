@@ -237,6 +237,39 @@ const lightColors = {
   },
 } as const;
 
+// ──────────────────────────────────────────────────────────────────────
+// Service category colors — single shared source.
+//
+// Previously this hue map was copy-pasted as `catColors` in three places
+// (`(tabs)/services.tsx`, `services/[id].tsx`, `services/[id]/edit.tsx`).
+// Centralized here and derived from the shared design tokens so a category
+// reads as the same color on the list, the detail screen and the edit form.
+//
+// Values are unchanged from the original copies (a de-duplication +
+// tokenization, NOT a recolor). They are tuned for the dark navy surface —
+// every hue stays readable on `surfaceDark`. Where a design token matches
+// the original hex exactly it is referenced; the two hues with no token
+// equivalent (a rose-pink and a slate) are kept as named constants.
+// ──────────────────────────────────────────────────────────────────────
+
+/** Rose-pink — healthcare / shopping. No palette token; kept verbatim. */
+const CATEGORY_PINK = "#F0A0B8";
+/** Slate — the neutral "OTHER" fallback. No palette token; kept verbatim. */
+const CATEGORY_SLATE = "#6E7C92";
+
+export const categoryColors: Record<string, string> = {
+  GOVERNMENT: semanticColors.danger, // #E25C5C
+  UTILITY: brandColors.rose, // #CBA45E (Gold)
+  FINANCIAL: semanticColors.success, // #54CB7E
+  HOUSING: brandColors.rose, // #CBA45E (Gold)
+  HEALTHCARE: CATEGORY_PINK, // #F0A0B8
+  TRANSPORTATION: brandColors.roseDeep, // #B0852F (Gold deep)
+  KIDS: brandColors.roseDeep, // #B0852F (Gold deep)
+  FITNESS: brandColors.rose, // #CBA45E (Gold)
+  SHOPPING: CATEGORY_PINK, // #F0A0B8
+  OTHER: CATEGORY_SLATE, // #6E7C92
+} as const;
+
 export const theme = {
   colors: darkColors,
   spacing: tokenSpacing,

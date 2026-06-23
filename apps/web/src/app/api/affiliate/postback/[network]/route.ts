@@ -9,6 +9,11 @@ import { prisma } from "@/lib/db";
 // body using a shared secret, and is idempotent on (network, externalTransactionId)
 // so a partner can safely retry or send status updates.
 //
+// CCPA/CPRA note: this is an INBOUND server-to-server conversion postback
+// (network → us). We RECEIVE conversion data here; we do not share/sell consumer
+// PII outward, so it is intentionally NOT gated by the Do-Not-Sell opt-out. The
+// outbound, attributed /api/affiliate/click + lead-dispatch paths ARE gated.
+//
 // Header: x-affiliate-signature: <hex hmac-sha256(rawBody, secret)>
 // Body:   { externalTransactionId, clickId?, providerId?, amountCents?, currency?, status?, occurredAt? }
 

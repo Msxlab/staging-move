@@ -14,6 +14,11 @@ vi.mock("@/lib/user-auth", () => ({
   shouldUseSecureSessionCookies: vi.fn(() => true),
 }));
 
+vi.mock("@/lib/db", () => ({
+  prisma: { oAuthState: { create: vi.fn(() => Promise.resolve({ id: "state-1" })) } },
+}));
+
+import { prisma } from "@/lib/db";
 import { GET } from "./route";
 
 describe("Google OAuth mobile init", () => {
@@ -25,5 +30,18 @@ describe("Google OAuth mobile init", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toContain("PKCE challenge");
+  });
+
+  it("persists a single-use OAuthState record on a web init (replay guard)", async () => {
+    const response = await GET(new NextRequest(
+      "https://app.locateflow.com/api/auth/oauth/google?redirect=/dashboard",
+    ));
+
+    expect(response.status).toBe(307); // redirect to Google
+    expect(prisma.oAuthState.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ provider: "google", stateHash: expect.any(String) }),
+      }),
+    );
   });
 });

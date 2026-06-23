@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
 import { rateLimit } from "@/lib/rate-limit";
+import { hasCcpaOptOut } from "@/lib/ccpa";
 
 // Where the click came from — constrained so the column stays a small, known
 // set for reporting. Anything else is recorded as "unknown" rather than rejected.
@@ -71,22 +72,28 @@ export async function POST(request: NextRequest) {
       if (!owned) addressId = null;
     }
 
-    // De-dup: a refresh / double-click within 30 min shouldn't inflate counts (or
-    // later corrupt EPC). Still return the URL either way so the CTA always works.
-    const recent = await prisma.affiliateClick.findFirst({
-      where: { userId, providerId: provider.id, createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) } },
-      select: { id: true },
-    });
-    if (!recent) {
-      await prisma.affiliateClick.create({
-        data: {
-          userId,
-          providerId: provider.id,
-          addressId,
-          source,
-          network: provider.affiliateNetwork,
-        },
+    // CPRA/CCPA "sale/share": recording an attributed affiliate click shares it
+    // with the affiliate network for value (EPC). Honor a Do-Not-Sell opt-out by
+    // skipping the attribution write entirely — the user still gets the URL and
+    // reaches the provider; we just never record/transfer the attributed click.
+    if (!(await hasCcpaOptOut(request, userId))) {
+      // De-dup: a refresh / double-click within 30 min shouldn't inflate counts (or
+      // later corrupt EPC). Still return the URL either way so the CTA always works.
+      const recent = await prisma.affiliateClick.findFirst({
+        where: { userId, providerId: provider.id, createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) } },
+        select: { id: true },
       });
+      if (!recent) {
+        await prisma.affiliateClick.create({
+          data: {
+            userId,
+            providerId: provider.id,
+            addressId,
+            source,
+            network: provider.affiliateNetwork,
+          },
+        });
+      }
     }
 
     return NextResponse.json({ url: provider.affiliateUrl });

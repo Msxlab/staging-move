@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, createRemoteJWKSet } from "jose";
+import { createHash } from "crypto";
 import {
   exchangeGoogleCode,
   getGoogleOAuthCredentials,
@@ -40,6 +41,10 @@ export const runtime = "nodejs";
 const GOOGLE_ISSUER = "https://accounts.google.com";
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 const LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE = "oauth_legal_acceptance";
+
+function hashOAuthValue(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 function expireOAuthCookie(response: NextResponse, name: string) {
   response.cookies.set(name, "", {
@@ -103,6 +108,24 @@ export async function GET(request: NextRequest) {
   const cookieRedirectUri = request.cookies.get("oauth_redirect_uri_google")?.value;
   const redirectPath = normalizeOAuthRedirectPath(request.cookies.get("oauth_redirect")?.value);
   if (!cookieState || !pkceVerifier || cookieState !== state) {
+    return redirectWithClearedGoogleCookies(request, "/sign-in?error=state-mismatch");
+  }
+
+  // Single-use replay guard: atomically consume the server-side state record
+  // (mirrors Apple). A replayed state+code — or one whose row was already
+  // consumed or has expired — flips the count to 0 and is rejected BEFORE the
+  // authorization code is exchanged. Bound to both the state and the PKCE verifier.
+  const consumedState = await prisma.oAuthState.updateMany({
+    where: {
+      provider: "google",
+      stateHash: hashOAuthValue(state),
+      nonceHash: hashOAuthValue(pkceVerifier),
+      consumedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    data: { consumedAt: new Date() },
+  });
+  if (consumedState.count !== 1) {
     return redirectWithClearedGoogleCookies(request, "/sign-in?error=state-mismatch");
   }
 

@@ -33,7 +33,11 @@ export function EmptyState({
   secondaryActionHref,
   onSecondaryAction,
 }: EmptyStateProps) {
-  const primaryBtn = "px-5 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition";
+  // Align to the canonical, app-wide Button "default" pairing (bg-primary +
+  // text-primary-foreground) which is contrast-safe in BOTH themes. The previous
+  // bg-tone-orange-fg + text-white failed dark-mode contrast (white on the light
+  // Gold accent ~2.33:1). (component-theme-system-02)
+  const primaryBtn = "px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition";
   const secondaryBtn = "px-5 py-2.5 rounded-xl border border-border bg-foreground/5 text-foreground text-sm font-medium hover:bg-foreground/10 transition";
   return (
     <div className="flex flex-col items-center justify-center p-12 text-center glass-card">

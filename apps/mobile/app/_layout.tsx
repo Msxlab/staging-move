@@ -17,20 +17,7 @@ import { hydrateOfflineCache } from "@/lib/offline-cache";
 import { setSessionCleanupHook } from "@/lib/session-cleanup-hook";
 import * as SplashScreen from "expo-splash-screen";
 import {
-  useFonts as useFraunces,
-  Fraunces_400Regular,
-  Fraunces_400Regular_Italic,
-  Fraunces_500Medium,
-  Fraunces_600SemiBold,
-} from "@expo-google-fonts/fraunces";
-import {
-  Geist_400Regular,
-  Geist_500Medium,
-  Geist_600SemiBold,
-  Geist_700Bold,
-} from "@expo-google-fonts/geist";
-import { GeistMono_400Regular, GeistMono_500Medium } from "@expo-google-fonts/geist-mono";
-import {
+  useFonts,
   PlayfairDisplay_600SemiBold,
   PlayfairDisplay_700Bold,
   PlayfairDisplay_700Bold_Italic,
@@ -481,22 +468,13 @@ export default function RootLayout() {
   }, [queryClient]);
 
   // LocateFlow design system. Playfair Display is the display/serif face (the
-  // "Move" wordmark, hero numerals, section titles); DM Sans is the UI face;
-  // DM Mono is for numerals/meta. Fraunces + Geist are still loaded during the
-  // reskin transition so any not-yet-migrated screen keeps its font. All are
-  // loaded on first boot and the splash is held until they resolve so no
-  // screen flashes a system fallback for the brand wordmark.
-  const [fontsLoaded] = useFraunces({
-    Fraunces_400Regular,
-    Fraunces_400Regular_Italic,
-    Fraunces_500Medium,
-    Fraunces_600SemiBold,
-    Geist_400Regular,
-    Geist_500Medium,
-    Geist_600SemiBold,
-    Geist_700Bold,
-    GeistMono_400Regular,
-    GeistMono_500Medium,
+  // wordmark, hero numerals, section titles); DM Sans is the UI face; DM Mono
+  // is for numerals/meta. These three families are the only faces the app
+  // renders (legacy Fraunces + Geist loading was removed — they were no longer
+  // referenced by any screen). All are loaded on first boot and the splash is
+  // held until they resolve so no screen flashes a system fallback for the
+  // brand wordmark.
+  const [fontsLoaded] = useFonts({
     PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold,
     PlayfairDisplay_700Bold_Italic,
@@ -522,7 +500,10 @@ export default function RootLayout() {
   // either EN copy (i18n) or system fallback (fonts) on the brand wordmark.
   const ready = i18nHydrated && fontsLoaded;
   if (!nativeSplashHidden) {
-    return <View style={{ flex: 1, backgroundColor: "#0A0F18" }} />;
+    // Pre-splash flash color = the design's mobile dark canvas (#0A0F1C).
+    // No exact token exists for this transitional bg (surface tokens are the
+    // app's #070B14 navy); the design literal is used to match the handoff.
+    return <View style={{ flex: 1, backgroundColor: "#0A0F1C" }} />;
   }
   if (showSplash || !ready) {
     return <AnimatedSplash ready={ready} onFinish={() => setShowSplash(false)} />;

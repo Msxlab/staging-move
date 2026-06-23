@@ -24,7 +24,6 @@ const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 const PUBLIC_EXACT_PATHS = new Set([
   "/login",
   "/api/auth/login",
-  "/api/build-info",
   "/api/healthz",
   "/api/ready",
   "/set-password",
