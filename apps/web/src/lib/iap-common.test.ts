@@ -52,6 +52,16 @@ vi.mock("@/lib/admin-alerts", () => ({
   sendAdminPurchaseAlert: vi.fn(() => Promise.resolve(true)),
 }));
 
+// Receipt↔account binding enforcement flag (audit fix 1.1). Default the mock to
+// OFF — the rollout-safe default — so existing tests behave unchanged; the
+// binding tests flip it per-case.
+const { isFeatureEnabledMock } = vi.hoisted(() => ({
+  isFeatureEnabledMock: vi.fn(async () => false),
+}));
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: isFeatureEnabledMock,
+}));
+
 import {
   applyIapStateToUser,
   decryptStoredPurchaseToken,
@@ -63,6 +73,7 @@ import {
   refreshGoogleSubscriptionFor,
   type NormalizedIapState,
 } from "./iap-common";
+import { deriveIapAccountToken } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { mapAppleStatus } from "@/lib/iap-apple";
 import { acknowledgeGoogleSubscription, getGoogleSubscription, mapGoogleSubscriptionState } from "@/lib/iap-google";
@@ -75,6 +86,8 @@ describe("IAP normalization", () => {
     process.env = { ...originalEnv };
     vi.clearAllMocks();
     vi.mocked(mapGoogleSubscriptionState).mockReturnValue("ACTIVE");
+    // Restore the rollout-safe default (enforcement OFF) after any per-case flip.
+    isFeatureEnabledMock.mockResolvedValue(false);
   });
 
   it("maps configured Family and Pro store product IDs to internal plans", async () => {
@@ -360,6 +373,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -388,6 +402,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -426,6 +441,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -467,6 +483,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -516,6 +533,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Production",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -564,6 +582,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -602,6 +621,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: { testPurchase: {} },
     };
 
@@ -638,6 +658,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: { testPurchase: {} },
     };
 
@@ -674,6 +695,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -710,6 +732,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -751,6 +774,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -785,6 +809,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -825,6 +850,7 @@ describe("IAP normalization", () => {
       expiresAt: new Date(Date.now() + 86_400_000),
       gracePeriodEndsAt: null,
       environment: "Sandbox",
+      boundAccountToken: null,
       raw: {},
     };
 
@@ -881,5 +907,126 @@ describe("IAP normalization", () => {
     vi.mocked(acknowledgeGoogleSubscription).mockRejectedValue(new Error("GOOGLE_ACK_503:down"));
 
     await expect(refreshGoogleSubscriptionFor("purchase-token")).rejects.toThrow("GOOGLE_ACK_503");
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Receipt↔account binding (audit fix 1.1 — mobile-iap-billing-01 /
+  // mobile-iap-purchase-01). Additive + flag-gated (default OFF). A receipt
+  // that carries an account token minted for a DIFFERENT account is rejected
+  // ONLY when the flag is on; with the flag off the SAME mismatch still grants
+  // (rollout safety); a token-LESS receipt always grants regardless of flag.
+  // ──────────────────────────────────────────────────────────────────────
+
+  function bindingState(boundAccountToken: string | null): NormalizedIapState {
+    return {
+      platform: "ios",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "APP_STORE",
+      productId: "individual.ios",
+      billingInterval: "MONTH",
+      originalTransactionId: "1000000000001",
+      latestTransactionId: "1000000000002",
+      purchaseToken: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      boundAccountToken,
+      raw: {},
+    };
+  }
+
+  it("rejects a receipt whose account token does not match the authed user WHEN the flag is ON (1.1)", async () => {
+    isFeatureEnabledMock.mockResolvedValue(true);
+    // A token derived for a DIFFERENT user → cannot match user-1.
+    const foreignToken = deriveIapAccountToken("some-other-user")!;
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null) // by originalTransactionId
+      .mockResolvedValueOnce(null); // by userId
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+
+    await expect(applyIapStateToUser({ userId: "user-1", state: bindingState(foreignToken) }))
+      .rejects
+      .toThrow("IAP_RECEIPT_ACCOUNT_MISMATCH");
+    expect(prisma.subscription.upsert).not.toHaveBeenCalled();
+  });
+
+  it("STILL grants the same token mismatch when the flag is OFF (rollout safety) (1.1)", async () => {
+    isFeatureEnabledMock.mockResolvedValue(false);
+    const foreignToken = deriveIapAccountToken("some-other-user")!;
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-1",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    await expect(applyIapStateToUser({ userId: "user-1", state: bindingState(foreignToken) }))
+      .resolves
+      .toMatchObject({ userId: "user-1" });
+    expect(prisma.subscription.upsert).toHaveBeenCalled();
+  });
+
+  it("grants a legacy token-less receipt regardless of the flag (never rejected) (1.1)", async () => {
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-1",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    for (const enforce of [false, true]) {
+      vi.clearAllMocks();
+      isFeatureEnabledMock.mockResolvedValue(enforce);
+      vi.mocked(prisma.subscription.findUnique)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+        id: "sub-1",
+        userId: "user-1",
+        status: "ACTIVE",
+      } as any);
+
+      await expect(applyIapStateToUser({ userId: "user-1", state: bindingState(null) }))
+        .resolves
+        .toMatchObject({ userId: "user-1" });
+      expect(prisma.subscription.upsert).toHaveBeenCalled();
+    }
+  });
+
+  it("grants when the receipt token MATCHES the authed user with the flag ON (1.1)", async () => {
+    isFeatureEnabledMock.mockResolvedValue(true);
+    const ownToken = deriveIapAccountToken("user-1")!;
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-1",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    await expect(applyIapStateToUser({ userId: "user-1", state: bindingState(ownToken) }))
+      .resolves
+      .toMatchObject({ userId: "user-1" });
+    expect(prisma.subscription.upsert).toHaveBeenCalled();
+  });
+
+  it("derives a stable per-user account token (deterministic UUIDv5) (1.1)", () => {
+    const a = deriveIapAccountToken("user-1");
+    const b = deriveIapAccountToken("user-1");
+    expect(a).toBe(b);
+    // Distinct users → distinct tokens.
+    expect(deriveIapAccountToken("user-1")).not.toBe(deriveIapAccountToken("user-2"));
+    // RFC 4122 v5 shape (version nibble = 5, RFC variant nibble ∈ 8/9/a/b).
+    expect(a).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    // Empty / missing userId → no token (caller must not attach one).
+    expect(deriveIapAccountToken("")).toBeNull();
+    expect(deriveIapAccountToken(null)).toBeNull();
+    expect(deriveIapAccountToken(undefined)).toBeNull();
   });
 });

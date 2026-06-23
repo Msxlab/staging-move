@@ -144,6 +144,12 @@ export async function POST(request: NextRequest) {
       if (err?.message === "IAP_TXN_OWNED_BY_ANOTHER_USER") {
         return NextResponse.json({ error: "RECEIPT_OWNED_BY_ANOTHER_ACCOUNT" }, { status: 409 });
       }
+      if (err?.message === "IAP_RECEIPT_ACCOUNT_MISMATCH") {
+        // Receipt↔account binding enforcement (audit fix 1.1, flag-gated). The
+        // verified receipt carries an account token that was minted for a
+        // DIFFERENT LocateFlow account than the one making this request.
+        return NextResponse.json({ error: "RECEIPT_OWNED_BY_ANOTHER_ACCOUNT" }, { status: 409 });
+      }
       if (err?.message === "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE") {
         return NextResponse.json({ error: "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE" }, { status: 409 });
       }
