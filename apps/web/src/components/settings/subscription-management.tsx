@@ -347,10 +347,29 @@ export default function SubscriptionManagementPage({
       autoRenew: entitlement?.autoRenew ?? subscription?.autoRenew ?? null,
     };
   }, [entitlement, subscription]);
-  const currentState = useMemo(
+  const rawCurrentState = useMemo(
     () => deriveUserSubscriptionState(displaySubscription || null),
     [displaySubscription],
   );
+  // M1 — contradictory snapshot: the unified entitlement sets `status` from the
+  // RAW record but `isActive/plan` from the consumer-free override, so a
+  // full-access free user (who falls through to the full screen because they
+  // are a real/lapsed stripe/store payer) could still derive
+  // "FREE_ACCESS_EXPIRED" and see a "Choose a plan to continue full access"
+  // banner + the annual-trial offer. Under CONSUMER_FREE, when the effective
+  // entitlement is active, normalize that one contradictory state to
+  // "FREE_ACCESS" so the copy/offers stay coherent. Flag OFF (default) →
+  // `currentState === rawCurrentState`, i.e. BYTE-IDENTICAL behavior.
+  const currentState = useMemo(() => {
+    if (
+      consumerFree &&
+      entitlement?.isActive &&
+      rawCurrentState === "FREE_ACCESS_EXPIRED"
+    ) {
+      return "FREE_ACCESS";
+    }
+    return rawCurrentState;
+  }, [consumerFree, entitlement?.isActive, rawCurrentState]);
   const currentProvider = displaySubscription?.provider || "TRIAL";
   const trialEndLabel = formatDateLabel(displaySubscription?.trialEndsAt);
   const freeAccessEndLabel = formatDateLabel(displaySubscription?.freeAccessEndsAt);
@@ -426,8 +445,14 @@ export default function SubscriptionManagementPage({
   // it while we're polling for Stripe activation so a Free Access user
   // returning from Checkout doesn't see "Start annual trial" stacked under
   // the "Activating…" banner.
+  // M1/H8 — a full-access CONSUMER_FREE user has nothing to buy, so never
+  // surface the annual-trial / monthly buy offer to them. Gated on the flag +
+  // active entitlement: with the flag OFF this term is `false` and the
+  // condition is BYTE-IDENTICAL to before.
+  const suppressBuyOffersForConsumerFree = consumerFree && Boolean(entitlement?.isActive);
   const showAnnualTrialOffer =
     !waitingForActivation &&
+    !suppressBuyOffersForConsumerFree &&
     ["FREE_ACCESS", "FREE_ACCESS_EXPIRED", "CANCELED"].includes(currentState) &&
     Boolean(publicCampaign || monthlyOffer);
 

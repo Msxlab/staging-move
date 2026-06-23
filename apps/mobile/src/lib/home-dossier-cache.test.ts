@@ -26,6 +26,7 @@ vi.mock("@/lib/api", () => ({
 }));
 
 import {
+  clearHomeDossierCacheEpochForTests,
   clearHomeDossierMemoryCacheForTests,
   fetchHomeDossier,
   peekHomeDossierMemoryCache,
@@ -67,6 +68,7 @@ describe("home-dossier-cache", () => {
     storage.clear();
     apiGet.mockReset();
     clearHomeDossierMemoryCacheForTests();
+    clearHomeDossierCacheEpochForTests();
   });
 
   it("serves a fresh summary cache without calling the API", async () => {
@@ -136,5 +138,48 @@ describe("home-dossier-cache", () => {
     expect(result.fromCache).toBe(true);
     expect(result.stale).toBe(true);
     expect(result.data?.air?.category).toBe("Good");
+  });
+
+  // ── H7: cache epoch keyed on the entitlement gate ──────────────────────────
+  describe("H7 gate-derived cache epoch", () => {
+    it("flag-OFF byte-identical: a stable gate keeps serving the same entry, no extra fetch", async () => {
+      // An entitled (full) dossier is the steady state for a paid user with the
+      // CONSUMER_FREE flag OFF. Writing then fetching must hit cache exactly as
+      // before the epoch existed — proving the default suffix ("") is inert.
+      await writeHomeDossierCache("addr_1", "full", dossier({ entitled: true }));
+
+      const result = await fetchHomeDossier("addr_1", "full");
+
+      expect(apiGet).not.toHaveBeenCalled();
+      expect(result.fromCache).toBe(true);
+      expect(result.data?.air?.aqi).toBe(42);
+    });
+
+    it("a gated teaser cached before a flip is NOT served once a full dossier re-keys the cache", async () => {
+      // Pre-flip: server returns a locked teaser → cached under the gated epoch.
+      const teaser = dossier({ entitled: false, upgradeRequired: true });
+      await writeHomeDossierCache("addr_1", "full", teaser);
+      expect((await readHomeDossierCache("addr_1", "full"))?.data.entitled).toBe(false);
+
+      // Flip ON (server now resolves the same address to the full dossier). A
+      // forced refresh writes the entitled payload, which advances the gate
+      // epoch so the old teaser key is abandoned.
+      clearHomeDossierMemoryCacheForTests();
+      apiGet.mockResolvedValueOnce({
+        data: dossier({ entitled: true, flood: { status: "ok", zone: "AE", isHighRisk: true } }),
+        error: false,
+      });
+      const refreshed = await fetchHomeDossier("addr_1", "full", { force: true });
+      expect(refreshed.data?.entitled).toBe(true);
+      expect(refreshed.data?.flood?.zone).toBe("AE");
+
+      // The teaser still physically exists under its old (gated) key, but the
+      // current (entitled) epoch never reads it — a fresh read returns the full
+      // dossier, never the stale teaser.
+      clearHomeDossierMemoryCacheForTests();
+      const afterFlip = await readHomeDossierCache("addr_1", "full");
+      expect(afterFlip?.data.entitled).toBe(true);
+      expect(afterFlip?.data.flood?.zone).toBe("AE");
+    });
   });
 });

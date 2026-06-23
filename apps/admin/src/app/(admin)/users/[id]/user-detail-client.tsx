@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle, RotateCcw, Sparkles, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle, RotateCcw, Sparkles, ChevronDown, ChevronRight, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { InfoHint } from "@/components/info-hint";
@@ -107,6 +107,15 @@ export default function UserDetailClient() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Impersonation ("Log in as this user") — SUPER_ADMIN only. The backend
+  // (/api/users/:id/impersonate) re-validates the role + step-up and returns a
+  // one-time handoff token that we POST to the web app to land in the user's
+  // session. Every impersonated mutation is attributed and account-control /
+  // billing actions are blocked server-side.
+  const [showImpersonateConfirm, setShowImpersonateConfirm] = useState(false);
+  const [impersonateBusy, setImpersonateBusy] = useState(false);
+  const [impersonateError, setImpersonateError] = useState<string | null>(null);
+  const [impersonateRequiresMfa, setImpersonateRequiresMfa] = useState(false);
   // Hard delete (irreversible, SUPER_ADMIN only) is a phased flow:
   //   phase "password"       → PasswordConfirmModal (password + MFA) → POST .../otp
   //   phase "otp"            → 6-digit code (emailed) → POST .../hard-delete
@@ -255,6 +264,67 @@ export default function UserDetailClient() {
       toast.error("Failed to delete user");
     } finally {
       setDeleteBusy(false);
+    }
+  }
+
+  // Starts an impersonation session. On success the server hands back a
+  // one-time token plus the web app's handoff URL; we POST that token via a
+  // hidden auto-submitting form so the browser navigates cross-origin to the
+  // web app, which sets the user_session cookie and redirects into /dashboard.
+  // The token is sent in a POST body (never a URL) to keep it out of history,
+  // Referer headers, and access logs — matching the handoff endpoint contract.
+  async function confirmImpersonate(_confirmPassword: string, stepUp: StepUpValues) {
+    if (!user) return;
+    setImpersonateBusy(true);
+    setImpersonateError(null);
+    try {
+      const res = await fetch(`/api/users/${params.id}/impersonate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(stepUp),
+      });
+      if (!res.ok) {
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to start impersonation.");
+        setImpersonateError(message);
+        setImpersonateRequiresMfa(requiresMfa);
+        toast.error(message);
+        return;
+      }
+      const data = (await res.json().catch(() => ({}))) as {
+        handoffUrl?: string;
+        handoffToken?: string;
+      };
+      if (!data.handoffUrl || !data.handoffToken) {
+        setImpersonateError("Impersonation started but the handoff response was incomplete.");
+        toast.error("Impersonation handoff failed. Please try again.");
+        return;
+      }
+      toast.success("Starting impersonation session...");
+      // Cross-origin handoff: the web app's handoff endpoint reads the token
+      // from a JSON POST body (never a URL) and replies with a redirect that
+      // also sets the user_session cookie on the web origin. We POST with
+      // credentials so the browser persists that cookie, then navigate the
+      // browser to the web app so the operator lands in the impersonated
+      // session. The handoff row is single-use and consumed server-side.
+      const handoffRes = await fetch(data.handoffUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ token: data.handoffToken }),
+      });
+      // The handoff endpoint always redirects (303/302). A successful exchange
+      // lands on the web app's /dashboard; any failure lands on /sign-in?err=…
+      // Following res.url gives us whichever destination the server chose,
+      // including the freshly minted impersonation cookie.
+      const destination = handoffRes.url || new URL("/dashboard", data.handoffUrl).toString();
+      setShowImpersonateConfirm(false);
+      setImpersonateRequiresMfa(false);
+      window.location.assign(destination);
+    } catch {
+      setImpersonateError("Failed to start impersonation.");
+      toast.error("Failed to start impersonation.");
+    } finally {
+      setImpersonateBusy(false);
     }
   }
 
@@ -967,6 +1037,19 @@ export default function UserDetailClient() {
             )
           ) : (
             <>
+              {currentAdminRole === "SUPER_ADMIN" && (
+                <button
+                  onClick={() => {
+                    setImpersonateError(null);
+                    setImpersonateRequiresMfa(false);
+                    setShowImpersonateConfirm(true);
+                  }}
+                  title="Start a 15-minute impersonation session as this user. Logged and audited; account-control and billing actions are blocked while impersonating."
+                  className="flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+                >
+                  <UserCog className="h-4 w-4" /> Log in as this user
+                </button>
+              )}
               <button onClick={handleDelete} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
                 <Trash2 className="h-4 w-4" /> Delete
               </button>
@@ -2221,6 +2304,23 @@ export default function UserDetailClient() {
           }
         }}
         onConfirm={confirmDelete}
+      />
+      <PasswordConfirmModal
+        open={showImpersonateConfirm}
+        title="Log in as this user"
+        description={`Start a 15-minute impersonation session as ${maskEmail(user.email)}. This is logged and audited — every action you take is attributed to you, and account-control and billing actions are blocked while impersonating. Enter your admin password and MFA code or backup code to continue.`}
+        confirmLabel="Start impersonation"
+        busy={impersonateBusy}
+        error={impersonateError}
+        requiresMfa={impersonateRequiresMfa}
+        onClose={() => {
+          if (!impersonateBusy) {
+            setShowImpersonateConfirm(false);
+            setImpersonateError(null);
+            setImpersonateRequiresMfa(false);
+          }
+        }}
+        onConfirm={confirmImpersonate}
       />
       {/* Hard delete — phase 1: password + MFA, then we email a 6-digit code. */}
       <PasswordConfirmModal

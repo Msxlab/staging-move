@@ -5,7 +5,8 @@ import { verifyUserStepUp, type UserStepUpResult } from "@/lib/user-step-up";
 export type WorkspaceSensitiveOperation =
   | "workspace_delete"
   | "workspace_restore"
-  | "workspace_transfer";
+  | "workspace_transfer"
+  | "workspace_promote_admin";
 
 export interface WorkspaceStepUpSuccess {
   ok: true;
@@ -21,6 +22,7 @@ const OPERATION_LABEL: Record<WorkspaceSensitiveOperation, string> = {
   workspace_delete: "deleting this workspace",
   workspace_restore: "restoring this workspace",
   workspace_transfer: "transferring workspace ownership",
+  workspace_promote_admin: "promoting this member to admin",
 };
 
 function stepUpStatus(code: string): number {

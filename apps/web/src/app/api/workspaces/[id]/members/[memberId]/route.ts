@@ -7,6 +7,7 @@ import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendWorkspaceMembershipEmail } from "@/lib/email-service";
 import { reconcileWorkspaceSeats } from "@/lib/workspace-ownership";
 import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
+import { requireWorkspaceStepUp } from "@/lib/workspace-step-up";
 import {
   WORKSPACE_AUDIT_ACTIONS,
   maskTargetEmail,
@@ -104,6 +105,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
   if (!can(caller.role as WorkspaceRole, "member.changeRole", { targetRole: target.role as WorkspaceRole, status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "You can't change this member's role." }, { status: 403 });
+  }
+
+  // Promoting to ADMIN is a sensitive grant — require step-up re-auth (mirrors
+  // transfer/delete). Only the ADMIN promotion is gated; other role changes are
+  // unchanged. The permission check above has already passed at this point.
+  if (newRole === "ADMIN") {
+    const stepUp = await requireWorkspaceStepUp({
+      request,
+      userId: session.userId,
+      workspaceId: id,
+      body,
+      operation: "workspace_promote_admin",
+    });
+    if (!stepUp.ok) return stepUp.response;
   }
 
   const fromRole = target.role;

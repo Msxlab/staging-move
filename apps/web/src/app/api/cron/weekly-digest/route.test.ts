@@ -11,8 +11,10 @@ const mocks = vi.hoisted(() => ({
   notificationPreferenceFindMany: vi.fn(),
   serviceFindMany: vi.fn(),
   serviceGroupBy: vi.fn(),
+  emailLogFindMany: vi.fn(),
   sendWeeklyDigestEmail: vi.fn(),
   getUserPlan: vi.fn(),
+  isFeatureEnabled: vi.fn(),
 }));
 
 vi.mock("@/lib/cron-guard", () => ({
@@ -27,7 +29,12 @@ vi.mock("@/lib/db", () => ({
       findMany: (...a: unknown[]) => mocks.serviceFindMany(...a),
       groupBy: (...a: unknown[]) => mocks.serviceGroupBy(...a),
     },
+    emailLog: { findMany: (...a: unknown[]) => mocks.emailLogFindMany(...a) },
   },
+}));
+
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: (...a: unknown[]) => mocks.isFeatureEnabled(...a),
 }));
 
 vi.mock("@/lib/email-service", () => ({
@@ -79,7 +86,10 @@ beforeEach(() => {
   mocks.notificationPreferenceFindMany.mockResolvedValue([]);
   mocks.serviceFindMany.mockResolvedValue([]);
   mocks.serviceGroupBy.mockResolvedValue([]);
+  mocks.emailLogFindMany.mockResolvedValue([]);
   mocks.sendWeeklyDigestEmail.mockResolvedValue(true);
+  // CONSUMER_FREE flag OFF by default (today's production state).
+  mocks.isFeatureEnabled.mockResolvedValue(false);
   // Default both users entitled.
   mocks.getUserPlan.mockImplementation(async (userId: string) => ({
     plan: userId === "u_free" ? "FREE_TRIAL" : "INDIVIDUAL",
@@ -134,5 +144,87 @@ describe("weekly-digest cron — weatherDigest gate", () => {
     expect(body.eligible).toBe(2);
     expect(body.sent).toBe(2);
     expect(mocks.sendWeeklyDigestEmail).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("weekly-digest cron — per-run recipient cap (Trap M4)", () => {
+  // Build N entitled, digest-day-eligible users.
+  function makeUsers(n: number) {
+    return Array.from({ length: n }, (_, i) => ({
+      id: `u_${String(i).padStart(4, "0")}`,
+      email: `user${i}@example.com`,
+      firstName: "U",
+      lastName: String(i),
+    }));
+  }
+
+  it("flag OFF: recipient count is UNCHANGED and no cap query/keys appear (byte-identical)", async () => {
+    // Large entitled base; flag OFF must NOT cap, NOT query emailLog, NOT add keys.
+    const users = makeUsers(750);
+    mocks.userFindMany.mockResolvedValue(users);
+    mocks.getUserPlan.mockResolvedValue({ plan: "PRO" });
+    mocks.isFeatureEnabled.mockResolvedValue(false);
+
+    const res = await GET(makeRequest());
+    const body = await res.json();
+
+    expect(body.eligible).toBe(750);
+    expect(body.sent).toBe(750);
+    expect(mocks.sendWeeklyDigestEmail).toHaveBeenCalledTimes(750);
+    // No cap telemetry keys when the flag is OFF.
+    expect(body).not.toHaveProperty("remaining");
+    expect(body).not.toHaveProperty("capApplied");
+    expect(body).not.toHaveProperty("maxPerRun");
+    // No emailLog rollover query when the flag is OFF.
+    expect(mocks.emailLogFindMany).not.toHaveBeenCalled();
+  });
+
+  it("flag ON: per-run recipient count is bounded by the cap; remainder rolls over", async () => {
+    const users = makeUsers(750); // > default cap of 500
+    mocks.userFindMany.mockResolvedValue(users);
+    mocks.getUserPlan.mockResolvedValue({ plan: "PRO" });
+    mocks.isFeatureEnabled.mockResolvedValue(true);
+    mocks.emailLogFindMany.mockResolvedValue([]); // none sent yet this week
+
+    const res = await GET(makeRequest());
+    const body = await res.json();
+
+    expect(body.eligible).toBe(500);
+    expect(body.sent).toBe(500);
+    expect(mocks.sendWeeklyDigestEmail).toHaveBeenCalledTimes(500);
+    expect(body.capApplied).toBe(true);
+    expect(body.maxPerRun).toBe(500);
+    expect(body.remaining).toBe(250); // 750 - 500 roll to the next run
+  });
+
+  it("flag ON: a second run skips already-sent recipients (rollover advances)", async () => {
+    const users = makeUsers(750);
+    mocks.userFindMany.mockResolvedValue(users);
+    mocks.getUserPlan.mockResolvedValue({ plan: "PRO" });
+    mocks.isFeatureEnabled.mockResolvedValue(true);
+    // Simulate the first 500 already logged for this week's digest.
+    const sorted = [...users].sort((a, b) => (a.id < b.id ? -1 : 1));
+    mocks.emailLogFindMany.mockResolvedValue(
+      // weekStart/weekEnd both resolve to "ALWAYS" via the mocked
+      // formatInUserTimeZone, so dedupeKeys mirror the route's construction.
+      sorted.slice(0, 500).map((u) => ({
+        dedupeKey: `cron:weekly-digest:${u.id}:ALWAYS:ALWAYS`,
+      })),
+    );
+
+    const res = await GET(makeRequest());
+    const body = await res.json();
+
+    // Only the remaining 250 are processed; the slice advanced.
+    expect(body.eligible).toBe(250);
+    expect(body.sent).toBe(250);
+    expect(body.capApplied).toBe(false);
+    expect(body.remaining).toBe(0);
+    const sentEmails = mocks.sendWeeklyDigestEmail.mock.calls.map(
+      (c) => (c[0] as { userEmail: string }).userEmail,
+    );
+    // None of the first-500 (already-sent) users are re-emailed.
+    const firstBatchEmails = new Set(sorted.slice(0, 500).map((u) => u.email));
+    expect(sentEmails.some((e) => firstBatchEmails.has(e))).toBe(false);
   });
 });

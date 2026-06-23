@@ -39,6 +39,7 @@ import {
   refreshGoogleSubscriptionFor,
   sendIapCancellationNotice,
 } from "@/lib/iap-common";
+import { isDeployedBillingEnvironment } from "@/lib/billing-config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -78,15 +79,10 @@ interface RtdnPayload {
 // multi-MB body.
 const PLAYSTORE_WEBHOOK_MAX_BODY_BYTES = 64 * 1024;
 
-function isProductionLikeRuntime() {
-  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
-  return (
-    process.env.NODE_ENV === "production" ||
-    appEnv === "production" ||
-    appEnv === "staging" ||
-    appEnv === "preview"
-  );
-}
+// Audit 4.4: unified with the shared deployed-environment predicate so the
+// production-like gate here can never drift from the IAP sandbox-allowlist gate
+// in iap-common (production OR staging OR preview OR NODE_ENV=production).
+const isProductionLikeRuntime = () => isDeployedBillingEnvironment();
 
 function playStoreTokenWhere(userId: string, purchaseToken: string) {
   const purchaseTokenHash = hashPurchaseToken(purchaseToken);

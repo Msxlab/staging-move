@@ -29,6 +29,7 @@ import {
   refreshAppleSubscriptionFor,
   sendIapCancellationNotice,
 } from "@/lib/iap-common";
+import { isDeployedBillingEnvironment } from "@/lib/billing-config";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { alertWebhookSignatureFailure } from "@/lib/security-alerts";
 
@@ -43,15 +44,10 @@ export const dynamic = "force-dynamic";
 // stream MB-scale junk hoping verifyAppleJws gives up.
 const APPSTORE_WEBHOOK_MAX_BODY_BYTES = 64 * 1024;
 
-function isProductionLikeRuntime() {
-  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
-  return (
-    process.env.NODE_ENV === "production" ||
-    appEnv === "production" ||
-    appEnv === "staging" ||
-    appEnv === "preview"
-  );
-}
+// Audit 4.4: unified with the shared deployed-environment predicate so the
+// production-like gate here can never drift from the IAP sandbox-allowlist gate
+// in iap-common (production OR staging OR preview OR NODE_ENV=production).
+const isProductionLikeRuntime = () => isDeployedBillingEnvironment();
 
 function emitAppstoreFailure(reason: string, context: Record<string, unknown> = {}) {
   emitSecurityEvent({

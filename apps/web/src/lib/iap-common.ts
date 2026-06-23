@@ -35,7 +35,7 @@ import {
   formatDateForEmail,
   fireAndLogEmail as fireAndLogBillingEmail,
 } from "@/lib/billing-email-utils";
-import { isBillingProductionLike } from "@/lib/billing-config";
+import { isDeployedBillingEnvironment } from "@/lib/billing-config";
 import {
   isMissingDbColumnError,
   warnSchemaCompatibilityFallback,
@@ -587,7 +587,10 @@ function isGooglePlayTestPurchaseState(state: NormalizedIapState): boolean {
 }
 
 async function assertGooglePlayTestPurchaseAllowedForUser(userId: string, state: NormalizedIapState) {
-  if (!isGooglePlayTestPurchaseState(state) || !isBillingProductionLike()) return;
+  // Audit 4.4: gate on the unified deployed-environment predicate so staging and
+  // preview enforce the test-purchase allowlist like production (previously they
+  // skipped the gate because `isBillingProductionLike` is false off-prod).
+  if (!isGooglePlayTestPurchaseState(state) || !isDeployedBillingEnvironment()) return;
 
   const [user, qaEmail, extraEmails] = await Promise.all([
     prisma.user.findUnique({
@@ -620,7 +623,10 @@ function isAppleSandboxPurchaseState(state: NormalizedIapState): boolean {
  * hole that previously existed only on the Apple side (Google already had this).
  */
 async function assertAppleSandboxPurchaseAllowedForUser(userId: string, state: NormalizedIapState) {
-  if (!isAppleSandboxPurchaseState(state) || !isBillingProductionLike()) return;
+  // Audit 4.4: gate on the unified deployed-environment predicate so staging and
+  // preview enforce the sandbox allowlist like production (previously they
+  // skipped the gate because `isBillingProductionLike` is false off-prod).
+  if (!isAppleSandboxPurchaseState(state) || !isDeployedBillingEnvironment()) return;
 
   const [user, qaEmail, extraEmails] = await Promise.all([
     prisma.user.findUnique({
