@@ -43,7 +43,11 @@ ENV NODE_ENV=production
 # etc.) skips the production-required check. The runtime image below
 # does NOT set BUILD_PHASE, so it must be supplied with the real
 # secrets at container start (via Docker compose env_file or platform
-# secret manager) or the runtime validator throws on first request.
+# secret manager). If a required secret is missing at runtime, startup
+# does not hard-fail — instrumentation.ts only logs a loud readiness
+# warning — but the dependent code paths then throw when first exercised
+# (e.g. auth fails with a 500, and encrypt()/decrypt() throw in prod
+# rather than touching plaintext PII).
 ENV BUILD_PHASE=true
 
 ARG NEXT_PUBLIC_APP_URL=https://locateflow.com
@@ -115,8 +119,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 # BUILD_PHASE is intentionally unset at runtime so the secret/runtime-
-# config validators run in strict mode. The container will refuse to
-# serve traffic until the real secrets are present in the environment.
+# config validators run in strict mode. With secrets missing, startup
+# still boots (instrumentation.ts logs a loud readiness warning) but the
+# secret-dependent request paths fail when first exercised — see the
+# builder-stage note above.
 
 WORKDIR /app
 

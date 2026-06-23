@@ -12,33 +12,6 @@
 
 import { redactLogValue } from "@/lib/logger";
 
-let sentryInitialized = false;
-
-export function initSentry(): void {
-  if (sentryInitialized) return;
-
-  const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
-  if (!dsn) {
-    console.warn("Sentry DSN not configured — error tracking disabled");
-    return;
-  }
-
-  try {
-    // Dynamic import so the app works without @sentry/nextjs installed
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Sentry = require("@sentry/nextjs");
-    Sentry.init({
-      dsn,
-      environment: process.env.NODE_ENV,
-      tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
-      debug: process.env.NODE_ENV === "development",
-    });
-    sentryInitialized = true;
-  } catch {
-    console.warn("@sentry/nextjs not installed — error tracking disabled");
-  }
-}
-
 export function captureException(error: unknown, context?: Record<string, unknown>): void {
   try {
     const Sentry = require("@sentry/nextjs");

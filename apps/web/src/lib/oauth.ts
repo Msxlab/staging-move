@@ -344,18 +344,3 @@ export async function exchangeAppleCode(opts: {
   const json = await res.json();
   return { idToken: json.id_token };
 }
-
-// ── Generic JWT payload parser (NO signature verification here — do that
-//    via jose.createRemoteJWKSet in the callback). Callbacks re-verify.
-// ────────────────────────────────────────────────────────────────
-
-export function decodeJwtPayload<T = any>(jwt: string): T | null {
-  const parts = jwt.split(".");
-  if (parts.length !== 3) return null;
-  try {
-    const json = Buffer.from(parts[1], "base64url").toString("utf-8");
-    return JSON.parse(json) as T;
-  } catch {
-    return null;
-  }
-}

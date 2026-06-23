@@ -111,7 +111,7 @@ export const EXPECTED_ENV_KEYS: readonly ExpectedEnvKey[] = [
     key: "FIELD_ENCRYPTION_KEY",
     classification: "required",
     label: "Field Encryption Key",
-    description: "AES key for encrypted PII columns. Missing silently writes un-encrypted PII.",
+    description: "AES key for encrypted PII columns. In production, encrypt()/decrypt() throw when it is missing (refusing to store/read plaintext); only in development do they fall back to plaintext.",
     apps: ["web", "admin"],
     isSecret: true,
     maskStrategy: "secret",
