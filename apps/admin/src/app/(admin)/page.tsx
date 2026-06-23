@@ -20,8 +20,10 @@ import { HealthCard } from "./health-card";
 import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
 import { ADMIN_ROLE_HIERARCHY, requirePageAdmin } from "@/lib/page-guard";
 import { getIntegrationStatuses } from "@/lib/integration-status";
+import { getConsumerFreeStatus } from "@/lib/consumer-free-status";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminPanel } from "@/components/admin-panel";
+import { ConsumerFreeBanner } from "@/components/consumer-free-banner";
 import {
   AuditFeed,
   AuroraStatCard,
@@ -413,10 +415,14 @@ export default async function DashboardPage() {
     ADMIN_ROLE_HIERARCHY[ctx.role] >= ADMIN_ROLE_HIERARCHY.ADMIN &&
     ctx.permissions.settings?.canRead === true;
 
-  const [stats, auditFeed, integrations] = await Promise.all([
+  const [stats, auditFeed, integrations, consumerFree] = await Promise.all([
     getStats(),
     canReadAuditLogs ? getAuditFeed() : Promise.resolve(null),
     canReadIntegrations ? getIntegrationStatuses() : Promise.resolve(null),
+    // Revenue-model status (free vs subscription) + the affiliate revenue line.
+    // Read straight from the CONSUMER_FREE flag + AffiliateConversion sums; the
+    // billing infra stays dormant and untouched (reversible).
+    getConsumerFreeStatus(),
   ]);
 
   // KPI mini-trends sliced from the same daily series the trend chart uses.
@@ -448,14 +454,18 @@ export default async function DashboardPage() {
       delta: stats.weeklyTrend !== 0 ? `${stats.weeklyTrend > 0 ? "+" : ""}${stats.weeklyTrend}%` : undefined,
       deltaDir: (stats.weeklyTrend >= 0 ? "up" : "down") as "up" | "down",
     },
-    { label: "Active Subscriptions", value: stats.activeSubscriptions, icon: <CreditCard className="h-5 w-5" />, href: "/subscriptions" as const, spark: paidSubsSpark, sparkColor: "var(--au-family)" },
+    { label: consumerFree.consumerFreeEnabled ? "Active Subs (legacy)" : "Active Subscriptions", value: stats.activeSubscriptions, icon: <CreditCard className="h-5 w-5" />, href: "/subscriptions" as const, spark: paidSubsSpark, sparkColor: "var(--au-family)" },
     {
-      label: "MRR",
+      // Under the free model this is legacy/dormant subscription revenue —
+      // labelled so it isn't mistaken for the live (affiliate) revenue story.
+      label: consumerFree.consumerFreeEnabled ? "MRR (legacy)" : "MRR",
       value: stats.mrrUsd,
       formatted: fmtUsd(stats.mrrUsd),
       icon: <DollarSign className="h-5 w-5" />,
       href: "/subscriptions" as const,
-      sub: `ARPU ${fmtUsd(stats.arpuUsd)} · ${stats.paidSubCount} paid`,
+      sub: consumerFree.consumerFreeEnabled
+        ? `Dormant · ${stats.paidSubCount} legacy paid`
+        : `ARPU ${fmtUsd(stats.arpuUsd)} · ${stats.paidSubCount} paid`,
       spark: mrrSpark,
       sparkColor: "var(--au-accent)",
     },
@@ -506,7 +516,11 @@ export default async function DashboardPage() {
       <AdminPageHeader
         eyebrow="Overview"
         title="<em>Today's</em> snapshot"
-        subtitle="System health, revenue, and the people moving through LocateFlow."
+        subtitle={
+          consumerFree.consumerFreeEnabled
+            ? "System health, affiliate revenue, and the people moving through LocateFlow (free, affiliate-funded)."
+            : "System health, revenue, and the people moving through LocateFlow."
+        }
         actions={
           <>
             <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
@@ -533,6 +547,15 @@ export default async function DashboardPage() {
             </div>
           </>
         }
+      />
+
+      {/* Revenue-model status — free (affiliate-funded) vs legacy subscription.
+          Surfaces the affiliate revenue line as the primary story and flags the
+          MRR/subscription panels below as dormant when CONSUMER_FREE is on. */}
+      <ConsumerFreeBanner
+        enabled={consumerFree.consumerFreeEnabled}
+        affiliateEarnedCents={consumerFree.affiliateEarnedCents}
+        affiliatePendingCents={consumerFree.affiliatePendingCents}
       />
 
       {/* KPI Cards — Aurora glass tiles with count-up + cursor-tracking
@@ -597,13 +620,19 @@ export default async function DashboardPage() {
 
       {/* Plan distribution — foil-stamped tier breakdown of paying users */}
       <AdminPanel
-        title="Plan distribution"
-        caption={`${tierTotal.toLocaleString()} paying ${tierTotal === 1 ? "user" : "users"}`}
+        title={consumerFree.consumerFreeEnabled ? "Plan distribution (legacy)" : "Plan distribution"}
+        caption={
+          consumerFree.consumerFreeEnabled
+            ? `${tierTotal.toLocaleString()} legacy paying ${tierTotal === 1 ? "user" : "users"} · dormant under the free model`
+            : `${tierTotal.toLocaleString()} paying ${tierTotal === 1 ? "user" : "users"}`
+        }
         flagship
       >
         {tierTotal === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            No paying users yet — once people upgrade, they show up here grouped by tier.
+            {consumerFree.consumerFreeEnabled
+              ? "No legacy paying users on record. The consumer app is free — revenue is tracked on the Affiliate page."
+              : "No paying users yet — they show up here grouped by tier once subscriptions exist."}
           </p>
         ) : (
           <div className="space-y-5">

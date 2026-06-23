@@ -97,12 +97,17 @@ function campaignData(body: any, adminId?: string) {
     endsAt: body.endsAt ? new Date(body.endsAt) : null,
     maxRedemptions: body.maxRedemptions ? Number(body.maxRedemptions) : null,
     internalNotes: body.internalNotes || null,
+    // Public headline default. LocateFlow is free for everyone (affiliate-
+    // funded), so when an operator leaves the headline blank we must NOT seed
+    // paywall copy ("Subscribe monthly") onto the public site. PAID is a
+    // dormant/legacy path; its default headline stays in the free voice — an
+    // operator reverting the free pivot supplies their own paid headline.
     publicHeadline: String(
       body.publicHeadline ||
         (accessType === "FREE_TRIAL"
           ? "Start with 14 days free"
           : accessType === "PAID"
-            ? "Subscribe monthly"
+            ? "Free for everyone"
             : "Free Access"),
     ).trim(),
     publicSubheadline: body.publicSubheadline || null,

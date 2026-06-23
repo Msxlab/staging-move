@@ -64,14 +64,13 @@
     "insights": "Perspectivas",
     "reports": "Reportes",
     "featureFlags": "Banderas de funciones",
-    "runtimeConfig": "Configuración en tiempo de ejecución",
+    "runtimeConfig": "Configuración de ejecución",
     "connectors": "Conectores",
     "connectorMetrics": "Métricas de Conectores",
     "connectorFallbacks": "Alternativas de Conectores",
     "affiliate": "Afiliados",
     "leads": "Prospectos",
     "security": "Seguridad",
-    "runtimeConfig": "Configuración de ejecución",
     "settings": "Configuración",
     "backups": "Respaldos",
     "auditLogs": "Registros de auditoria",
@@ -483,5 +482,21 @@
   "language": {
     "label": "Idioma",
     "select": "Seleccionar idioma"
+  },
+  "consumerFree": {
+    "statusFree": "Modelo de consumo: Gratis",
+    "statusSubscription": "Modelo de consumo: Suscripción (heredado)",
+    "flagOn": "CONSUMER_FREE activado",
+    "flagOff": "CONSUMER_FREE desactivado",
+    "explainerFree": "Todas las funciones son gratuitas para todos, limitadas solo por el uso justo. Los ingresos provienen de comisiones de afiliados y referidos: los socios nos pagan cuando un usuario elige un proveedor a través de LocateFlow, sin costo para el usuario. Las cifras de suscripción / MRR son heredadas e inactivas.",
+    "explainerSubscription": "El cambio a consumo gratuito está desactivado, por lo que las cifras de suscripción / MRR reflejan el modelo de ingresos vigente. Las comisiones de afiliados se registran en paralelo.",
+    "affiliateEarned": "Afiliados ganado",
+    "affiliatePending": "{amount} pendiente",
+    "affiliateRevenueLink": "Ingresos de afiliados",
+    "legacyDormantTitle": "Heredado / inactivo",
+    "legacyDormantBody": "La app de consumo es gratuita (financiada por afiliados). Estas cifras de suscripción y MRR se conservan como datos históricos y siguen siendo reversibles, pero no son el modelo de ingresos vigente.",
+    "mrrLegacy": "MRR (heredado)",
+    "activeSubsLegacy": "Suscripciones activas (heredado)",
+    "planDistributionLegacy": "Distribución de planes (heredado)"
   }
 }

@@ -47,7 +47,16 @@ interface BillingData {
   dailyRevenue: Record<string, number>;
 }
 
-export default function BillingClient() {
+export default function BillingClient({
+  consumerFreeEnabled = false,
+}: {
+  /**
+   * When true, the consumer app is free (affiliate-funded) and these
+   * subscription/MRR figures are legacy + dormant. Surfaced as a banner +
+   * header note; the dashboards stay intact and reversible.
+   */
+  consumerFreeEnabled?: boolean;
+}) {
   const [data, setData] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
   // Two-tab structure: "Overview" carries the day-to-day revenue/ops view,
@@ -91,10 +100,31 @@ export default function BillingClient() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        eyebrow="Revenue"
+        eyebrow={consumerFreeEnabled ? "Legacy revenue" : "Revenue"}
         title="<em>Billing</em> & Revenue"
-        subtitle="Financial overview and subscription analytics"
+        subtitle={
+          consumerFreeEnabled
+            ? "Legacy subscription analytics — dormant under the free model. Live revenue is affiliate commission."
+            : "Financial overview and subscription analytics"
+        }
       />
+
+      {consumerFreeEnabled && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-tone-honey-br bg-tone-honey-bg/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-foreground">
+            <span className="font-semibold">Legacy / dormant.</span> The consumer
+            app is free (affiliate-funded). These subscription &amp; MRR figures
+            are kept for historical data and remain reversible, but are not the
+            live revenue model.
+          </p>
+          <a
+            href="/affiliate"
+            className="shrink-0 self-start rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-accent sm:self-auto"
+          >
+            View affiliate revenue →
+          </a>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k) => (
