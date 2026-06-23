@@ -1406,6 +1406,22 @@
     "cycle_yearly": "Yearly",
     "save_yearly": "Save with yearly billing"
   },
+  "workspaceShare": {
+    "eyebrow": "Sharing",
+    "title": "Share this move",
+    "body": "Bring a household member into this shared workspace so you plan the move together. Everyone keeps their own login and private data — they just share this plan's addresses, providers, and reminders.",
+    "inviteCta": "Invite a household member",
+    "inviteHint": "Uses your existing household invitation — they join with one secure link.",
+    "summaryTitle": "Copyable move summary",
+    "summaryHint": "A quick read-only snapshot you can paste into a message or note.",
+    "summaryLine": "{name} · {plan} · {members} of {seats} members",
+    "copy": "Copy summary",
+    "copied": "Summary copied to clipboard.",
+    "copyFailed": "Couldn't copy the summary.",
+    "linkSoonTitle": "Public share link",
+    "linkSoonBadge": "Coming soon",
+    "linkSoonBody": "A read-only public link to share this move with people outside your household is on the way — it needs a security review first. For now, invite a household member above."
+  },
   "invitations": {
     "headingOne": "You have an invitation",
     "headingMany": "You have {count} invitations",

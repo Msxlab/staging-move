@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, Users, Trash2, ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Loader2, Users, Trash2, ArrowLeft, Share2, Copy } from "lucide-react";
 import { PasswordInput } from "@/components/ui/password-input";
 import {
   Dialog,
@@ -83,6 +84,8 @@ function persistWorkspaceSelection(workspaceId: string) {
 }
 
 export default function WorkspaceSettingsPage() {
+  const tShare = useTranslations("workspaceShare");
+  const inviteEmailRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [featureOff, setFeatureOff] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -407,6 +410,29 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
+  const focusInviteForm = () => {
+    const el = inviteEmailRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.focus({ preventScroll: true });
+  };
+
+  const copyMoveSummary = async () => {
+    if (!selected) return;
+    const summary = tShare("summaryLine", {
+      name: selected.name,
+      plan: selected.planLabel,
+      members: selected.memberCount,
+      seats: selected.seatLimit,
+    });
+    try {
+      await navigator.clipboard.writeText(summary);
+      toast.success(tShare("copied"));
+    } catch {
+      toast.error(tShare("copyFailed"));
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto py-16 flex justify-center">
@@ -540,6 +566,72 @@ export default function WorkspaceSettingsPage() {
               )}
             </div>
           </div>
+
+          {/* Share this move (D20 v1) — surfaces the EXISTING household invite
+              flow plus a copyable read-only summary. A tokenized public share
+              link is deferred (separate security review) and shown as
+              "Coming soon" only. Shown for shared workspaces with spare seats. */}
+          {!selected.isPersonalSolo && (
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
+              <div className="flex items-center gap-2">
+                <Share2 className="h-4 w-4 text-primary" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  {tShare("eyebrow")}
+                </span>
+              </div>
+              <h3 className="mt-1.5 text-base font-semibold text-foreground">{tShare("title")}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{tShare("body")}</p>
+
+              {iAmManager && (
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={focusInviteForm}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+                  >
+                    <Users className="h-4 w-4" />
+                    {tShare("inviteCta")}
+                  </button>
+                  <p className="mt-1.5 text-xs text-muted-foreground">{tShare("inviteHint")}</p>
+                </div>
+              )}
+
+              <div className="mt-4 rounded-xl border border-border bg-background/60 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{tShare("summaryTitle")}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {tShare("summaryLine", {
+                        name: selected.name,
+                        plan: selected.planLabel,
+                        members: selected.memberCount,
+                        seats: selected.seatLimit,
+                      })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyMoveSummary}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-foreground/5"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    {tShare("copy")}
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">{tShare("summaryHint")}</p>
+              </div>
+
+              <div className="mt-3 rounded-xl border border-dashed border-border bg-foreground/5 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">{tShare("linkSoonTitle")}</p>
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                    {tShare("linkSoonBadge")}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{tShare("linkSoonBody")}</p>
+              </div>
+            </div>
+          )}
 
           {/* Household setup — guides a new Family/Pro owner who hasn't built
               their household yet (only themselves, no pending invites). */}
@@ -682,6 +774,7 @@ export default function WorkspaceSettingsPage() {
               <div className="space-y-3 px-5 pb-5">
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <input
+                    ref={inviteEmailRef}
                     type="email"
                     placeholder="name@email.com"
                     value={inviteEmail}

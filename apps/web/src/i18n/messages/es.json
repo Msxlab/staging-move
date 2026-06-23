@@ -1406,6 +1406,22 @@
     "cycle_yearly": "Anual",
     "save_yearly": "Ahorra con facturacion anual"
   },
+  "workspaceShare": {
+    "eyebrow": "Compartir",
+    "title": "Comparte esta mudanza",
+    "body": "Suma a un miembro del hogar a este espacio compartido para planear la mudanza juntos. Cada persona conserva su propio inicio de sesión y sus datos privados — solo comparten las direcciones, los proveedores y los recordatorios de este plan.",
+    "inviteCta": "Invitar a un miembro del hogar",
+    "inviteHint": "Usa tu invitación de hogar existente — se unen con un enlace seguro.",
+    "summaryTitle": "Resumen de la mudanza para copiar",
+    "summaryHint": "Una vista rápida de solo lectura que puedes pegar en un mensaje o nota.",
+    "summaryLine": "{name} · {plan} · {members} de {seats} miembros",
+    "copy": "Copiar resumen",
+    "copied": "Resumen copiado al portapapeles.",
+    "copyFailed": "No se pudo copiar el resumen.",
+    "linkSoonTitle": "Enlace público para compartir",
+    "linkSoonBadge": "Próximamente",
+    "linkSoonBody": "Pronto habrá un enlace público de solo lectura para compartir esta mudanza con personas fuera de tu hogar — primero necesita una revisión de seguridad. Por ahora, invita a un miembro del hogar arriba."
+  },
   "invitations": {
     "headingOne": "Tienes una invitación",
     "headingMany": "Tienes {count} invitaciones",
