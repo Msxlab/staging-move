@@ -84,6 +84,9 @@
 ### S2.8 Fail-open backstop for public-by-prefix routes — `security-surface-02` (roadmap 2.8)
 - **Commit:** (this branch). `/api/{internal,cron,webhooks}/*` are public-by-omission in `middleware.ts`, so each route must self-authenticate. **Audited all 36** — none are fail-open today: cron (29) → `guardCronRequest`; internal (3) → `verifyInternalAuth` / `INTERNAL_WEBHOOK_SECRET` / `CRON_SECRET`; webhooks (4) → Apple JWS (`verifyAppleJws`), Stripe (`constructEvent`), Resend svix (`verifyResendSignature`), Google Play Pub/Sub OIDC (`verifyPubsubOidcToken`). Added a structural **regression test** (`apps/web/src/app/api/__tests__/public-prefix-auth.guard.test.ts`) that fails the build if a future route under these prefixes omits a recognized guard. 39/39 green.
 
+### S2.9 Page-level guards on client-shell admin pages — `route-map-03` (roadmap 2.6)
+- **Commit:** (this branch). Re-audit (with the full guard token set — the first pass missed `requirePermission`) found **blog pages already guarded** + **tickets pages are redirect-aliases**; the true residual was **17 `"use client"` admin pages** with no page-level guard. These leak NO server data (the admin layout already gates to an active admin, and the pages' data is fetched client-side via permission-enforced APIs) — the exposure was UI-shell fingerprinting only. Split each into a **server wrapper** (`await requirePagePermission(...)` / `requirePageAdmin()` matching the page's own admin API resource/action/role) + a `<name>-client.tsx` component, so the whole admin surface now fails closed before the bundle ships. Pages: analytics, help-center, moving, provider-governance, providers (+`[id]`, `[id]/edit`, coverage, needs-logo, new), reports, settings/health, settings/two-factor, state-rules, support, users, waitlist. 17/17 adversarially verified; **admin typecheck clean + admin production build green** (all 17 → dynamic server-rendered). Built via the `admin-page-guard-rollout` multi-agent workflow.
+
 ---
 
 ## Deferred / flagged follow-ups (not lost — tracked here)
@@ -101,4 +104,4 @@
 3. After all: `tsc --noEmit` web + admin → 0 errors.
 4. ⚠️ Not run (needs broader setup / a running app): full `pnpm verify:tests`, `pnpm build`, E2E, and **runtime visual contrast** checks.
 
-_Last updated: 2026-06-22 (Sprint 2: S2.1–S2.8 on `fix/audit-sprint2` — full impersonation-audit rollout + block guard + public-prefix fail-open backstop)._
+_Last updated: 2026-06-22 (Sprint 2: S2.1–S2.9 on `fix/audit-sprint2` — impersonation hardening + public-prefix backstop + admin page-level guards)._

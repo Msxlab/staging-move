@@ -94,7 +94,7 @@ Highest blast-radius security + compliance + data-loss items, plus the broken ac
   - **Depends on:** none.
   - **Validation:** replayed state rejected.
 
-- [ ] **2.6 Add page-level role guards to privileged admin pages** (`route-map-03`)
+- [x] **2.6 Add page-level role guards to privileged admin pages** (`route-map-03`) — DONE `fix/audit-sprint2` (S2.9). Re-audit found blog pages already guarded (`requirePermission`) + tickets pages are redirect-aliases; the true residual was 17 **client-shell** pages (no server data leak — API-enforced — just shell fingerprinting). Split all 17 into guarded server wrappers + client components. Admin build green.
   - **Why:** Several privileged admin pages rely only on layout `requirePageAdmin()` + API 403 → VIEWER loads chrome / pre-API data.
   - **Files:** `apps/admin/src/app/(admin)/{users,waitlist,providers,reports,settings/health,...}/page.tsx`; `apps/admin/src/lib/page-guard.ts`.
   - **Risk:** Low.
