@@ -150,27 +150,36 @@ export async function POST(request: NextRequest) {
 
     const isCurrentMonth = month.getTime() === currentMonthStartUtc().getTime();
 
+    // 4.5: the cost-log write and the legacy current-month scalar mirror are
+    // wrapped in one interactive transaction so the per-month log row and
+    // Service.actualMonthlyCost can never diverge if the second write fails.
     let loggedActual: number | null;
     if (amount === null) {
       // Clear the actual for this month → estimate-only again.
-      await prisma.serviceCostLog.deleteMany({ where: { serviceId, month } });
-      // Keep the legacy scalar mirror in sync only for the current month.
-      if (isCurrentMonth) {
-        await prisma.service.update({ where: { id: serviceId }, data: { actualMonthlyCost: null } });
-      }
+      await prisma.$transaction(async (tx) => {
+        await tx.serviceCostLog.deleteMany({ where: { serviceId, month } });
+        // Keep the legacy scalar mirror in sync only for the current month.
+        if (isCurrentMonth) {
+          await tx.service.update({ where: { id: serviceId }, data: { actualMonthlyCost: null } });
+        }
+      });
       loggedActual = null;
     } else {
-      const log = await prisma.serviceCostLog.upsert({
-        where: { serviceId_month: { serviceId, month } },
-        update: { amount },
-        create: { serviceId, month, amount },
+      const log = await prisma.$transaction(async (tx) => {
+        const upserted = await tx.serviceCostLog.upsert({
+          where: { serviceId_month: { serviceId, month } },
+          update: { amount },
+          create: { serviceId, month, amount },
+        });
+        // Mirror into the legacy single scalar ONLY when logging the current
+        // month, so existing readers of Service.actualMonthlyCost stay
+        // consistent without letting a past-month edit overwrite the "current"
+        // number.
+        if (isCurrentMonth) {
+          await tx.service.update({ where: { id: serviceId }, data: { actualMonthlyCost: amount } });
+        }
+        return upserted;
       });
-      // Mirror into the legacy single scalar ONLY when logging the current month,
-      // so existing readers of Service.actualMonthlyCost stay consistent without
-      // letting a past-month edit overwrite the "current" number.
-      if (isCurrentMonth) {
-        await prisma.service.update({ where: { id: serviceId }, data: { actualMonthlyCost: amount } });
-      }
       loggedActual = Number(log.amount);
     }
 
