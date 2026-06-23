@@ -1,0 +1,57 @@
+{
+  "account": "mobile.qa@locateflow.com",
+  "tokenSaved": false,
+  "passwordSaved": false,
+  "mobileLogin": {
+    "status": 200,
+    "ok": true,
+    "hasToken": true,
+    "emailVerified": true
+  },
+  "profilePost": {
+    "status": 200,
+    "ok": true,
+    "code": null
+  },
+  "addressCreate": {
+    "status": 201,
+    "ok": true,
+    "code": null
+  },
+  "serviceCreate": {
+    "status": 201,
+    "ok": true,
+    "code": null,
+    "entitlementCode": null
+  },
+  "movingCreate": {
+    "status": 201,
+    "ok": true,
+    "code": null,
+    "upgradeRequired": null
+  },
+  "progressEvents": {
+    "servicesSkipped": 200,
+    "movingSkipped": 200,
+    "completed": 200
+  },
+  "finalProfile": {
+    "status": 200,
+    "onboardingCompleted": true,
+    "step": "complete",
+    "stepIndex": 4,
+    "entitlementPlan": "PRO",
+    "entitlementActive": true
+  },
+  "counts": {
+    "addresses": 2,
+    "services": 1,
+    "movingPlans": 1
+  },
+  "primaryAddress": {
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78701",
+    "hasCoordinates": true
+  }
+}

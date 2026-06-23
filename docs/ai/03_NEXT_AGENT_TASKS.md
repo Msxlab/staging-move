@@ -13,14 +13,18 @@ Latest QA report: [[audits/2026-06-23-full-qa-audit]]
 Completion matrix: [[audits/2026-06-23-full-qa-completion-matrix]]
 Free-pivot verification: [[audits/2026-06-23-free-pivot-verification]]
 Latest free-pivot handoff: [[handoffs/2026-06-23-free-pivot-verification]]
+Free-pivot runtime follow-up: [[audits/2026-06-23-free-pivot-followup]]
+Latest free-pivot runtime handoff: [[handoffs/2026-06-23-free-pivot-followup]]
 
-Immediate follow-up from the free-pivot verification:
+Immediate follow-up from the free-pivot verification and runtime follow-up:
 
-1. Install or publish a current Android `preview` / `staging-preview` build that embeds `EXPO_PUBLIC_API_URL=https://staging.locateflow.com/api`; the installed emulator APK still contains the production API and no staging API string.
-2. Confirm the staging deploy branch. `origin/main` contains the free-pivot and QA P1 fixes, but `origin/staging` is 15 commits behind `origin/main`.
-3. Fix the admin `CONSUMER_FREE` missing-row default so admin status matches the web product default.
-4. Add visible "free / no credit card / affiliate-funded" reassurance to sign-up and sign-in.
-5. Get legal review for the billing/refund free-pivot disclosure language.
+1. Redeploy staging from the intended branch/commit and verify authenticated `/api/build-info`; live staging web currently reports `feat/design-foundation` commit `38cb3718abf1958f6fd1c6cd731abd3974047b23`, not the latest `origin/staging` or `origin/main`.
+2. Build or provide an official signed Android `preview` / `staging-preview` artifact, install it, and rerun the mobile QA matrix. A local debug APK was installed with staging env and tested successfully, but this is not the signed preview artifact.
+3. Fix public mobile web horizontal overflow on staging home, pricing, and why-free at 390px.
+4. Fix the admin `CONSUMER_FREE` missing-row default so admin status matches the web product default.
+5. Add visible "free / no credit card / affiliate-funded" reassurance to sign-up and sign-in, and remove stale "checkout terms" wording from the free account creation surface.
+6. Provide approved admin QA credentials or an approved admin test account before authenticated admin runtime screenshots.
+7. Get legal review for the billing/refund free-pivot disclosure language.
 
 Immediate QA blockers found 2026-06-23:
 
@@ -40,7 +44,7 @@ Additional QA evidence added 2026-06-23:
 - Authenticated web QA for `mobile.qa@locateflow.com` completed after user approval: signup, auto-ready account state, legal/profile/address/services/moving onboarding, dashboard, address detail/edit, custom provider/service create, service detail/edit, budget, settings/support/help route batch, logout self-reset.
 - Live authenticated Dossier payload returned HTTP 200 with flood, school, weather, hazards, radon, water, air, housing, EV charging, neighborhood, and `dossierPdf`; summary mode returned air/housing only; PDF export returned HTTP 500.
 - Authenticated internal link crawl checked 27 logged-in links; only the Dossier PDF endpoint failed.
-- Android `mobile.qa@locateflow.com` login was blocked by installed APK config: embedded app config has no `extra.apiUrl`, no staging host/API string, and source fallback returns `https://locateflow.com/api` when no public API URL is present.
+- Android `mobile.qa@locateflow.com` login was previously blocked by an installed production-targeted APK. Follow-up runtime QA installed a local debug APK with staging env, proved `https://staging.locateflow.com/api` in logcat, completed mobile login/seed/screenshots/delete, and saved artifacts under [[audits/2026-06-23-free-pivot-followup]]. Official signed `staging-preview` APK QA remains pending.
 - Web logout self-reset was verified: after logout, the same email/password stayed on `/sign-in` with `Invalid email or password`.
 - In-app Browser desktop health check covered `/`, `/pricing`, `/account/delete`, `/sign-in`, `/movers/portal`, and `/partners/portal`: no blank page, framework overlay, relevant console warning/error, or desktop horizontal overflow.
 - Mobile source route inventory was saved: 50 Expo routes total, 37 static, 13 dynamic. Use it as the authenticated mobile screenshot matrix after a staging/preview Android build is installed.
@@ -91,12 +95,12 @@ dark-Gold/light-Sapphire split, and keeps warning amber only for warning
 semantics. Local typecheck/tests/build passed, commit `8fb63c5b` was deployed to
 Dokploy staging, and Chrome confirmed the homepage dark Gold + light Sapphire
 views. Remaining staging work: authenticated
-admin dashboard QA after the user handles credentials/password manager, and
-completed logged-in Android/mobile runtime visual QA after a staging/preview APK is installed. Public web,
+admin dashboard QA after the user handles credentials/password manager, official signed
+Android `staging-preview` artifact QA, and redeploy verification because live staging web build-info is stale. Public web,
 source-inventoried protected-route auth gates, admin unauthenticated static
 routes, authenticated web routes, web self-reset, and Android auth-surface/config screenshots were captured on 2026-06-23. All 58
 static web page routes and all 53 static admin page routes now have saved
-unauthenticated screenshot artifacts. Dynamic web pages with QA IDs now have address/service evidence; native Android logged-in pages are pending a staging-targeted build.
+unauthenticated screenshot artifacts. Dynamic web pages with QA IDs now have address/service evidence; native Android logged-in pages have local debug staging evidence, but signed preview artifact evidence is still pending.
 
 Use this note as the Obsidian task queue for the next Codex, Claude Product Explorer, or Claude Product Judge pass.
 

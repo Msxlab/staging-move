@@ -236,3 +236,14 @@ Warnings observed:
 3. Fix admin consumer-free missing-row default.
 4. Add free/no-card/affiliate reassurance to sign-up and sign-in.
 5. Get legal approval for the free/affiliate-funded billing and refund language.
+
+## Follow-up Update
+
+Follow-up runtime QA was saved in `docs/ai/audits/2026-06-23-free-pivot-followup.md`.
+
+Key update:
+
+- Mobile runtime was re-run with a local debug Android APK configured for staging APIs, and `mobile.qa@locateflow.com` was registered, seeded, screenshoted, and deleted.
+- The official signed EAS `staging-preview` APK was still not installed.
+- Authenticated staging web `/api/build-info` reported `sourceBranch: feat/design-foundation`, commit `38cb3718abf1958f6fd1c6cd731abd3974047b23`, built `2026-06-23T16:16:25.779Z`, which is behind both `origin/staging` and `origin/main`.
+- Public staging mobile web still has 390px horizontal overflow on home, pricing, and why-free.

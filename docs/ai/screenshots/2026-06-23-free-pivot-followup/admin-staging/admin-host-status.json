@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://admin-staging.locateflow.com/login",
+    "status": 200,
+    "ok": true,
+    "location": null,
+    "note": "candidate staging admin host"
+  },
+  {
+    "url": "https://staging-admin.locateflow.com/login",
+    "error": "fetch failed",
+    "note": "candidate staging admin host"
+  },
+  {
+    "url": "https://admin.staging.locateflow.com/login",
+    "error": "fetch failed",
+    "note": "candidate staging admin host"
+  },
+  {
+    "url": "https://admin.locateflow.com/login",
+    "status": 200,
+    "ok": true,
+    "location": null,
+    "note": "production admin host only; not logged in"
+  }
+]
