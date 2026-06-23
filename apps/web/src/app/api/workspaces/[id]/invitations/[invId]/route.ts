@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { can, type WorkspaceRole, type WorkspaceMemberStatus } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import {
   WORKSPACE_AUDIT_ACTIONS,
@@ -57,6 +58,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       targetEmail: maskTargetEmail(inv.invitedEmail),
     },
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "REVOKE", entityType: "WorkspaceInvitation", entityId: invId, route: "/api/workspaces/[id]/invitations/[invId]" });
 
   return NextResponse.json({ revoked: true });
 }

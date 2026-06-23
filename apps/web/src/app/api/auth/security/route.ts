@@ -7,6 +7,7 @@ import {
 } from "@/lib/user-auth";
 import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { sendPasswordResetEmail } from "@/lib/email-service";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -164,6 +165,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const blocked = await blockIfImpersonating(request, { action: "ACCT_SECURITY", route: "/api/auth/security" });
+  if (blocked) return blocked;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -254,6 +258,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "SET_PWD_REQ", entityType: "PasswordResetToken", entityId: session.userId, route: "/api/auth/security" });
+
     await sendPasswordResetEmail({
       userEmail: user.email,
       userName: user.firstName || "there",
@@ -295,6 +302,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "REVOKE_SESSION", entityType: "UserLoginSession", entityId: parsed.data.sessionId, route: "/api/auth/security" });
+
     return NextResponse.json({
       success: true,
       revoked: result.count,
@@ -322,6 +332,9 @@ export async function POST(request: NextRequest) {
       userAgent,
     },
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "REVOKE_OTHERS", entityType: "User", entityId: session.userId, route: "/api/auth/security" });
 
   const state = await loadSecurityState(session.userId, session.sessionId);
   return NextResponse.json({ success: true, revoked: result.count, ...state });

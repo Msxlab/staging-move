@@ -48,8 +48,25 @@ describe("getOnboardingProgress", () => {
     });
   });
 
-  it("honors the explicit completion event", () => {
-    expect(getOnboardingProgress({ ...base, addressCount: 0, completedEvent: true }).completed).toBe(true);
+  it("honors the explicit completion event once prerequisites are met", () => {
+    // COMPLETED fast-tracks the OPTIONAL services/moving steps, so a user with an
+    // address but no services/moving plan is complete via the event.
+    expect(
+      getOnboardingProgress({
+        ...base,
+        serviceCount: 0,
+        movingPlanCount: 0,
+        completedEvent: true,
+      }).completed,
+    ).toBe(true);
+  });
+
+  it("does not let a completion event bypass the address prerequisite", () => {
+    // Regression (3.2): the COMPLETED short-circuit must sit AFTER the address
+    // check so a client cannot mark onboarding complete without an address.
+    expect(
+      getOnboardingProgress({ ...base, addressCount: 0, completedEvent: true }),
+    ).toEqual({ completed: false, step: "address", stepIndex: 1 });
   });
 
   it("does not let a completion event bypass the legal gate", () => {

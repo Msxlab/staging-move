@@ -16,6 +16,7 @@ import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingE
 import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 function parseStoredLegalConsents(metadata: string | null | undefined) {
   if (!metadata) return null;
@@ -232,51 +233,70 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Step 4: Update user name
+  // Steps 4 + 5: persist the user name and the profile atomically.
+  //
+  // 4.5: the user.update and profile.upsert are wrapped in one interactive
+  // transaction so a failure on the profile upsert can no longer leave a
+  // half-applied write (e.g. a renamed user with a stale/absent profile). The
+  // two distinct 500 messages are preserved by tagging which step threw.
+  const profileData = {
+    ageRange: validated.ageRange || null,
+    familyStatus: validated.familyStatus,
+    hasChildren: validated.hasChildren,
+    childrenCount: validated.childrenCount,
+    hasPets: validated.hasPets,
+    petTypes: JSON.stringify(validated.petTypes),
+    carCount: validated.carCount,
+    hasMotorcycle: validated.hasMotorcycle,
+    hasBoatRV: validated.hasBoatRV,
+    needsStorage: validated.needsStorage,
+    hasSenior: validated.hasSenior,
+    hasDisability: validated.hasDisability,
+    isMilitary: validated.isMilitary,
+    moveType: validated.moveType || "PERSONAL",
+    isBusinessOwner: validated.moveType === "BUSINESS" ? validated.isBusinessOwner : false,
+    isImmigrant: validated.isImmigrant,
+    immigrationStatus: validated.immigrationStatus || null,
+  };
+
+  let profile: Awaited<ReturnType<typeof prisma.profile.upsert>>;
   try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        firstName: validated.firstName,
-        lastName: validated.lastName,
-      },
+    profile = await prisma.$transaction(async (tx) => {
+      let step: "user" | "profile" = "user";
+      try {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            firstName: validated.firstName,
+            lastName: validated.lastName,
+          },
+        });
+        step = "profile";
+        return await tx.profile.upsert({
+          where: { userId },
+          create: { userId, ...profileData },
+          update: profileData,
+        });
+      } catch (err: any) {
+        // Re-throw with a tag so the outer handler can keep the original,
+        // step-specific 500 message while the transaction rolls back.
+        err.__profileStep = step;
+        throw err;
+      }
     });
   } catch (err: any) {
-    console.error("[PROFILE POST] User update failed:", err?.message);
-    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
-  }
-
-  // Step 5: Upsert profile
-  try {
-    const profileData = {
-      ageRange: validated.ageRange || null,
-      familyStatus: validated.familyStatus,
-      hasChildren: validated.hasChildren,
-      childrenCount: validated.childrenCount,
-      hasPets: validated.hasPets,
-      petTypes: JSON.stringify(validated.petTypes),
-      carCount: validated.carCount,
-      hasMotorcycle: validated.hasMotorcycle,
-      hasBoatRV: validated.hasBoatRV,
-      needsStorage: validated.needsStorage,
-      hasSenior: validated.hasSenior,
-      hasDisability: validated.hasDisability,
-      isMilitary: validated.isMilitary,
-      moveType: validated.moveType || "PERSONAL",
-      isBusinessOwner: validated.moveType === "BUSINESS" ? validated.isBusinessOwner : false,
-      isImmigrant: validated.isImmigrant,
-      immigrationStatus: validated.immigrationStatus || null,
-    };
-
-    const profile = await prisma.profile.upsert({
-      where: { userId },
-      create: { userId, ...profileData },
-      update: profileData,
-    });
-
-    return NextResponse.json({ profile, legalConsents: existingLegalConsents }, { status: 200 });
-  } catch (err: any) {
+    if (err?.__profileStep === "user") {
+      console.error("[PROFILE POST] User update failed:", err?.message);
+      return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+    }
     console.error("[PROFILE POST] Profile upsert failed:", err?.message);
     return NextResponse.json({ error: "Failed to save profile" }, { status: 500 });
   }
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  // Kept outside the transaction: it is a best-effort audit write that ran after
+  // the upsert previously, and must not hold the transaction open.
+  await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Profile", entityId: userId, route: "/api/profile" });
+
+  return NextResponse.json({ profile, legalConsents: existingLegalConsents }, { status: 200 });
 }

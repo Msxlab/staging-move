@@ -33,7 +33,9 @@ export function isEncrypted(value: string | null | undefined): boolean {
 /**
  * Encrypt a plaintext string using AES-256-GCM.
  * Returns the encrypted string in `enc_v1:<iv>:<ciphertext>:<tag>` format.
- * If encryption key is not configured, returns the plaintext unchanged.
+ * If the encryption key is not configured: throws in production (refusing to
+ * store plaintext in PII columns), and returns the plaintext unchanged only in
+ * development.
  */
 export function encrypt(plaintext: string): string {
   if (!plaintext) return plaintext;

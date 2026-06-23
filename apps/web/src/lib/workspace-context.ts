@@ -6,9 +6,10 @@
  * and loads the owner-resolved entitlement. Route-level (not middleware) because
  * Prisma can't run on the edge.
  *
- * Gated by WORKSPACE_MODEL_ENABLED — until the dual-read window opens, routes
- * keep their legacy userId path and never call this. Building it now (tested,
- * unused) is the Sprint-1 deliverable; route retrofit comes later.
+ * Gated by WORKSPACE_MODEL_ENABLED (default OFF): callers reach this only after
+ * passing isWorkspaceModelEnabled()/workspaceFeatureGate(), so with the flag off
+ * routes keep their legacy userId path. The helper is wired into the workspace
+ * routes but stays inert until the flag is turned on.
  */
 
 import { NextResponse } from "next/server";
@@ -114,7 +115,6 @@ function readCookie(request: Request, name: string): string | null {
 /**
  * Pure precedence resolution: X-Workspace-Id header → lf_workspace_id cookie.
  * Returns null when neither is present (caller falls back to the DB default).
- * The `?workspace=` query override is admin-only and handled separately.
  */
 export function resolveWorkspaceSelectionFromRequest(
   request: Request,

@@ -49,6 +49,9 @@ const validEnv: Record<string, string> = {
   GOOGLE_PLAY_PACKAGE_NAME: "com.locateflow.mobile",
   GOOGLE_PLAY_RTDN_AUDIENCE: "https://locateflow.com/api/webhooks/playstore",
   TRUSTED_PROXY_HEADERS: "cloudflare",
+  // Legal-entity boot guard (audit S3.3/1.6): a valid prod config declares these.
+  NEXT_PUBLIC_LEGAL_ENTITY_NAME: "LocateFlow Inc.",
+  NEXT_PUBLIC_COMPANY_ADDRESS: "123 Example St, Austin, TX 78701",
 };
 
 describe("/api/health", () => {

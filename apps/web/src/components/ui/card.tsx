@@ -36,10 +36,22 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardHeader.displayName = "CardHeader";
 
-const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
-  ({ className, ...props }, ref) => (
-    <h3 ref={ref} className={cn("text-2xl font-semibold leading-none", className)} {...props} />
-  )
+export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  /** Render as a different heading level so the document outline stays correct
+      where a card sits under an existing h1/h2 — purely the element/role, the
+      visual size is unchanged. Defaults to "h3" to preserve existing output. */
+  as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  /** Convenience alias for `as` as a numeric level (e.g. level={2} → "h2"). */
+  level?: 1 | 2 | 3 | 4 | 5 | 6;
+}
+
+const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
+  ({ className, as, level, ...props }, ref) => {
+    const Heading = (as ?? (level ? (`h${level}` as const) : "h3")) as "h3";
+    return (
+      <Heading ref={ref} className={cn("text-2xl font-semibold leading-none", className)} {...props} />
+    );
+  }
 );
 CardTitle.displayName = "CardTitle";
 

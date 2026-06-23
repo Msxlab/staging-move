@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { can, type WorkspaceRole, type WorkspaceMemberStatus } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { reconcileWorkspaceSeats } from "@/lib/workspace-ownership";
 import {
@@ -42,6 +43,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const leaverRole = caller.role;
   const leaver = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true } });
   await prisma.workspaceMember.delete({ where: { id: caller.id } });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "WORKSPACE_MEMBER_LEAVE", entityType: "WorkspaceMember", entityId: caller.id, route: "/api/workspaces/[id]/members/leave" });
 
   await writeWorkspaceAudit({
     request,

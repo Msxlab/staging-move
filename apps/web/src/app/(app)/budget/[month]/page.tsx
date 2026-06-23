@@ -1,13 +1,15 @@
 ﻿import { ArrowLeft, BarChart3, Calendar, DollarSign, Target, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { calculateBudgetPlan, parseBudgetCategoryLimits } from "@/lib/budget-planning";
-import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
+import { resolveWorkspaceDataScope } from "@/lib/workspace-data-scope";
 import { formatCurrency } from "@/lib/utils";
 
 function monthKeyFromDate(date: Date) {
@@ -22,14 +24,32 @@ export default async function BudgetMonthPage({ params }: { params: Promise<{ mo
     return notFound();
   }
 
+  // Resolve the workspace data scope (legacy single-user scope when the
+  // workspace model is off) so a member can open a shared budget instead of
+  // 404ing, and a soft-deleted shared budget never resurfaces.
+  const request = new Request("http://locateflow.local", { headers: await headers() });
+  const dataScope = await resolveWorkspaceDataScope(request, userId);
+
   const { month } = await params;
   const start = new Date(`${month}-01`);
   if (!Number.isFinite(start.getTime())) return notFound();
   const end = new Date(start);
   end.setUTCMonth(end.getUTCMonth() + 1);
 
+  // Mirror the /api/budget GET scoping: in a workspace, surface the shared
+  // budget (workspaceId) plus the member's own pre-workspace legacy budget
+  // (userId + workspaceId:null); single-user resolves to { userId }. deletedAt:
+  // null keeps soft-deleted budgets hidden.
+  const budgetWhere = dataScope.workspaceId
+    ? {
+        OR: [{ workspaceId: dataScope.workspaceId }, { userId, workspaceId: null }],
+        deletedAt: null,
+        month: { gte: start, lt: end },
+      }
+    : { userId, deletedAt: null, month: { gte: start, lt: end } };
+
   const budget = await prisma.budget.findFirst({
-    where: { userId, month: { gte: start, lt: end } },
+    where: budgetWhere,
     include: { address: { select: { nickname: true, city: true, state: true } } },
   });
 
@@ -39,8 +59,10 @@ export default async function BudgetMonthPage({ params }: { params: Promise<{ mo
     // Match the active-tracked filter every other budget surface uses so this
     // drill-in snapshot can't include canceled / migrated services (which would
     // overstate the projected total vs. the budget list + summary endpoints).
-    where: activeTrackedServiceWhere(
-      userId,
+    // Scope by the resolved workspace/owner (not the raw actor) so the snapshot
+    // reflects the same shared services the budget list + summary endpoints use.
+    where: activeTrackedServiceWhereForScope(
+      { userId, workspaceId: dataScope.workspaceId },
       budget.addressId ? { addressId: budget.addressId } : {},
     ),
     select: {

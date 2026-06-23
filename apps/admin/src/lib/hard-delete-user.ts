@@ -315,6 +315,12 @@ export async function hardDeleteUser(
     await tx.notificationQueue.deleteMany({ where: { userId } });
     await tx.emailLog.deleteMany({ where: { to: user.email } });
 
+    // 4c. Lead has a loose ref (no FK) to User, so the User cascade won't touch it
+    //     — leaving the user's encrypted name/contact/notes payload behind. Purge
+    //     their Leads explicitly; LeadDispatch cascades from Lead (onDelete:
+    //     Cascade), so deleting Lead first clears its dispatches too.
+    await tx.lead.deleteMany({ where: { userId } });
+
     // 5. Delete the user — cascades all remaining direct children.
     await tx.user.delete({ where: { id: userId } });
   });

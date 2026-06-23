@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 // channel:type must match what the reminder crons read (see
 // notification-preferences.ts WEB_NOTIFICATION_PREFERENCE_DEFINITIONS) so a
@@ -68,6 +69,9 @@ export async function PUT(req: NextRequest) {
       })
     );
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(req, { action: "NOTIFICATION_PREFERENCES_UPDATE", entityType: "NotificationPreference", entityId: userId, route: "/api/notifications/preferences" });
+
     const preferences = await prisma.notificationPreference.findMany({ where: { userId } });
     return NextResponse.json({ preferences: buildPreferencesObject(preferences) });
   }
@@ -87,6 +91,9 @@ export async function PUT(req: NextRequest) {
     update: { enabled, frequency },
     create: { userId, channel, type, enabled, frequency: frequency || "IMMEDIATE" },
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(req, { action: "NOTIFICATION_PREFERENCES_UPDATE", entityType: "NotificationPreference", entityId: pref.id, route: "/api/notifications/preferences" });
 
   return NextResponse.json(pref);
 }

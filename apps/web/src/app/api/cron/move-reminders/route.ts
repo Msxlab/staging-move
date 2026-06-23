@@ -8,8 +8,45 @@ import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPus
 import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 import { isDailyDigestEnabled } from "@/lib/daily-digest-config";
 import { formatDateOnlyUtc } from "@locateflow/shared";
+import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 
 export const runtime = "nodejs";
+
+/**
+ * 4.8b: build the set of userIds that currently have an active entitlement, so
+ * we don't keep sending move reminders to LAPSED users. Read-only: one batched
+ * Subscription read + the canonical resolver.
+ *
+ * Uses `resolveConsumerEntitlement`, which applies the H3-safe CONSUMER_FREE
+ * override — so in the everything-free pivot a free / campaign / no-row
+ * consumer still resolves to access and is NOT skipped. Only a genuinely lapsed
+ * payer (expired stripe/trial with CONSUMER_FREE off) is dropped. Fail-open on
+ * any read/resolve error so a transient hiccup never silences a paying user.
+ */
+async function buildEntitledUserIds(userIds: string[]): Promise<Set<string>> {
+  const entitled = new Set<string>(userIds);
+  if (userIds.length === 0) return entitled;
+  let subscriptions: Array<{ userId: string } & Record<string, unknown>>;
+  try {
+    subscriptions = (await prisma.subscription.findMany({
+      where: { userId: { in: userIds } },
+    })) as Array<{ userId: string } & Record<string, unknown>>;
+  } catch {
+    return entitled;
+  }
+  const subByUser = new Map(subscriptions.map((sub) => [sub.userId, sub]));
+  for (const userId of userIds) {
+    try {
+      const { entitlement } = await resolveConsumerEntitlement(
+        (subByUser.get(userId) ?? null) as never,
+      );
+      if (!entitlement.hasAccess) entitled.delete(userId);
+    } catch {
+      // Fail-open on resolver error.
+    }
+  }
+  return entitled;
+}
 
 // Cron handler for move reminders — Send reminders 7, 3, 1 days before move
 async function handleCron(request: NextRequest) {
@@ -52,6 +89,8 @@ async function handleCron(request: NextRequest) {
         })
       : [];
     const preferencesByUser = groupNotificationPreferencesByUser(preferenceRecords);
+    // 4.8b: only remind users with an active entitlement — skip lapsed users.
+    const entitledUserIds = await buildEntitledUserIds(candidateUserIds);
     // When the daily rollup owns the email/push send, suppress this cron's
     // per-item email + push (the digest cron emails/pushes these same items
     // once, bundled). The in-app feed entry below is STILL written so the feed
@@ -64,6 +103,7 @@ async function handleCron(request: NextRequest) {
 
     {
       for (const plan of plans) {
+        if (!entitledUserIds.has(plan.userId)) continue; // 4.8b: skip lapsed users
         const userTimeZone = resolveReminderTimeZone(plan.user.profile?.timezone);
         // Local-time delivery gate: only act on users whose resolved local hour
         // is ~8am this run. The batch fires at several UTC hours covering 8am

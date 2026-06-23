@@ -8,6 +8,8 @@
 
 import { prisma } from "@/lib/db";
 import { createHash } from "node:crypto";
+import { classifyIapAccountToken } from "@locateflow/shared";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import {
@@ -56,6 +58,14 @@ export interface NormalizedIapState {
   expiresAt: Date | null;
   gracePeriodEndsAt: Date | null;
   environment: string | null;
+  /**
+   * Receipt↔account binding token carried by the verified receipt (audit fix
+   * 1.1). Apple: `appAccountToken` from the verified JWS transaction. Google:
+   * `externalAccountIdentifiers.obfuscatedExternalAccountId` from the v2
+   * subscription purchase. `null` for legacy receipts / older clients that did
+   * not attach one — those MUST still grant (see applyIapStateToUser).
+   */
+  boundAccountToken: string | null;
   raw: unknown;
 }
 
@@ -86,6 +96,49 @@ const IAP_PAYMENT_ATTENTION_STATUSES = new Set<SubscriptionStatus>([
   "GRACE_PERIOD",
   "UNPAID",
 ]);
+
+/**
+ * Feature flag gating receipt↔account binding ENFORCEMENT (audit fix 1.1 —
+ * mobile-iap-billing-01 / mobile-iap-purchase-01). DEFAULT OFF.
+ *
+ * Rollout safety: this is a HIGH-RISK BILLING change. The mobile clients that
+ * attach the per-user account token must be in the field BEFORE an operator
+ * flips this flag — otherwise legacy/in-flight receipts (which carry no token)
+ * would be unaffected anyway, but a too-early flip buys no protection and adds
+ * risk. When OFF, behavior is UNCHANGED: a token mismatch is logged (best
+ * effort) but still grants to the resolving owner. When ON, a receipt that
+ * CARRIES a token NOT matching the authed user is rejected. A token-LESS
+ * receipt ALWAYS grants, flag on or off — never rejected.
+ */
+export const IAP_RECEIPT_BINDING_ENFORCE_FLAG = "iap_receipt_binding_enforce";
+
+/**
+ * Decide whether a verified receipt's carried account token blocks the grant
+ * for `userId`. Throws IAP_RECEIPT_ACCOUNT_MISMATCH only when ALL hold:
+ *   1. the receipt carries a token,
+ *   2. that token does NOT match the token derived from the authed userId, AND
+ *   3. the enforcement flag is enabled.
+ * A token-less receipt (classify -> "absent") returns without throwing under
+ * every flag state, so legacy receipts and older clients are never rejected.
+ */
+async function assertReceiptAccountBinding(userId: string, state: NormalizedIapState): Promise<void> {
+  const classification = classifyIapAccountToken({
+    userId,
+    receiptToken: state.boundAccountToken,
+  });
+  if (classification !== "mismatch") return; // "absent" | "match" → never block.
+
+  const enforce = await isFeatureEnabled(IAP_RECEIPT_BINDING_ENFORCE_FLAG, { userId });
+  if (!enforce) {
+    // Rollout-safety window: flag OFF → DO NOT block. Surface for telemetry so
+    // operators can size the mismatch rate before flipping the flag on.
+    console.warn(
+      `[IAP] receipt account-token mismatch (enforcement OFF, granting) provider=${state.provider} userId=${userId}`,
+    );
+    return;
+  }
+  throw new Error("IAP_RECEIPT_ACCOUNT_MISMATCH");
+}
 
 export function hashPurchaseToken(purchaseToken: string | null | undefined): string | null {
   const normalized = purchaseToken?.trim();
@@ -345,9 +398,24 @@ export async function mapProductIdToPlan(
   return null;
 }
 
+/**
+ * Finding 4.2: reject Apple Family Sharing recipients. A subscription shared via
+ * Family Sharing reports inAppOwnershipType "FAMILY_SHARED" on the recipient's
+ * transaction (the purchaser sees "PURCHASED"). Granting an entitlement on a
+ * FAMILY_SHARED transaction would let any family member's device claim premium
+ * on their own LocateFlow account off a single purchase. Only "PURCHASED" (and
+ * a missing field, for forward-compat with older payloads) grants. Decline
+ * (return null) otherwise so the verify route does not grant.
+ */
+function isAppleOwnershipGranted(inAppOwnershipType: string | null | undefined): boolean {
+  return !inAppOwnershipType || inAppOwnershipType === "PURCHASED";
+}
+
 export async function normalizeAppleResult(
   result: AppleSubscriptionStatusResult,
 ): Promise<NormalizedIapState | null> {
+  if (!isAppleOwnershipGranted(result.transaction.inAppOwnershipType)) return null;
+
   const resolved = await mapProductIdToPlan("ios", result.transaction.productId);
   if (!resolved) return null;
 
@@ -403,6 +471,7 @@ export async function normalizeAppleResult(
     expiresAt,
     gracePeriodEndsAt,
     environment: result.environment,
+    boundAccountToken: result.transaction.appAccountToken ?? null,
     raw: { transaction: result.transaction, renewal: result.renewal, rawStatus: result.rawStatus },
   };
 }
@@ -417,6 +486,9 @@ export async function normalizeAppleTransactionPayload(
   if (transaction.bundleId !== expectedBundleId) {
     throw new Error("APPLE_JWS_BUNDLE_MISMATCH");
   }
+
+  // Finding 4.2: decline Family Sharing recipients (see normalizeAppleResult).
+  if (!isAppleOwnershipGranted(transaction.inAppOwnershipType)) return null;
 
   const resolved = await mapProductIdToPlan("ios", transaction.productId);
   if (!resolved) return null;
@@ -446,6 +518,7 @@ export async function normalizeAppleTransactionPayload(
     expiresAt,
     gracePeriodEndsAt: null,
     environment: transaction.environment,
+    boundAccountToken: transaction.appAccountToken ?? null,
     raw: { transaction, source: "signedTransactionFallback" },
   };
 }
@@ -488,6 +561,8 @@ export async function normalizeGoogleResult(
     expiresAt,
     gracePeriodEndsAt,
     environment: result.response.testPurchase ? "Sandbox" : "Production",
+    boundAccountToken:
+      result.response.externalAccountIdentifiers?.obfuscatedExternalAccountId ?? null,
     raw: result.response,
   };
 }
@@ -621,6 +696,10 @@ export async function applyIapStateToUser(opts: {
   }
   await assertGooglePlayTestPurchaseAllowedForUser(userId, state);
   await assertAppleSandboxPurchaseAllowedForUser(userId, state);
+  // Receipt↔account binding (audit fix 1.1). Flag-gated, default OFF; token-less
+  // receipts are never rejected. Runs before any write so a mismatch grants
+  // nothing.
+  await assertReceiptAccountBinding(userId, state);
 
   const now = new Date();
   // accessType is "PAID" once a real store transaction has cleared. Trial and

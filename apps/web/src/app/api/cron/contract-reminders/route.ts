@@ -36,36 +36,47 @@ async function handleCron(request: NextRequest) {
     const windowEnd = new Date(now);
     windowEnd.setDate(windowEnd.getDate() + Math.max(...reminderDays) + 2);
 
-    const services = await prisma.service.findMany({
-      where: {
-        isActive: true,
-        contractEndDate: { gte: windowStart, lt: windowEnd },
-        // Soft-delete scopes the service row but not the included user —
-        // skip services whose owner was deleted (mirrors task-reminders).
-        user: { deletedAt: null },
-      },
-      include: {
-        user: { select: { id: true, email: true, firstName: true, lastName: true, profile: { select: { timezone: true } } } },
-      },
-      orderBy: { contractEndDate: "asc" },
-      take: 1000,
-    });
-
-    const userIds = [...new Set(services.map((service) => service.user?.id).filter(Boolean))] as string[];
-    const preferenceRecords = userIds.length > 0
-      ? await prisma.notificationPreference.findMany({
-          where: { userId: { in: userIds } },
-          select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
-        })
-      : [];
-    const preferencesByUser = groupNotificationPreferencesByUser(preferenceRecords);
+    const serviceWhere = {
+      isActive: true,
+      contractEndDate: { gte: windowStart, lt: windowEnd },
+      // Soft-delete scopes the service row but not the included user —
+      // skip services whose owner was deleted (mirrors task-reminders).
+      user: { deletedAt: null },
+    };
 
     // When the daily rollup owns the email/push send, suppress this cron's
     // per-item email + push (the digest sends them once, bundled). The in-app
     // feed entry is STILL written so the feed stays granular. Read once per run.
     const digestOwnsSend = await isDailyDigestEnabled();
 
-    {
+    // 4.10a: cursor-paginate the candidate services (was a single bounded
+    // take:1000 read) so all expiring contracts are processed without ever
+    // loading everything at once. The id cursor advances until a short page.
+    const PAGE_SIZE = 500;
+    let cursor: string | undefined;
+
+    for (;;) {
+      const services = await prisma.service.findMany({
+        where: serviceWhere,
+        include: {
+          user: { select: { id: true, email: true, firstName: true, lastName: true, profile: { select: { timezone: true } } } },
+        },
+        orderBy: { id: "asc" },
+        take: PAGE_SIZE,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      });
+      if (services.length === 0) break;
+      cursor = services[services.length - 1].id;
+
+      const userIds = [...new Set(services.map((service) => service.user?.id).filter(Boolean))] as string[];
+      const preferenceRecords = userIds.length > 0
+        ? await prisma.notificationPreference.findMany({
+            where: { userId: { in: userIds } },
+            select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
+          })
+        : [];
+      const preferencesByUser = groupNotificationPreferencesByUser(preferenceRecords);
+
       for (const service of services) {
         if (!service.user?.email || !service.contractEndDate) continue;
         const userTimeZone = resolveReminderTimeZone(service.user.profile?.timezone);
@@ -139,6 +150,8 @@ async function handleCron(request: NextRequest) {
           errors.push(`Failed for ${service.providerName}: ${err}`);
         }
       }
+
+      if (services.length < PAGE_SIZE) break;
     }
 
     return NextResponse.json({ success: true, sent, mirrored, pushSent, errors: errors.length > 0 ? errors : undefined });

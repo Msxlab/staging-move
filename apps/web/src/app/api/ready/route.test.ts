@@ -51,6 +51,13 @@ const validEnv: Record<string, string> = {
   STRIPE_PRICE_PRO_MONTHLY: "price_promonthly123",
   STRIPE_PRICE_PRO_YEARLY: "price_proyearly123",
   GOOGLE_MAPS_API_KEY: "AIzaSyProductionMapsKey",
+  // Required in production since the trusted-proxy fail-closed hardening
+  // (audit S2.2): a valid prod config must declare which proxy headers to trust.
+  TRUSTED_PROXY_HEADERS: "cloudflare",
+  // Required since the legal-entity boot guard (audit S3.3/1.6): a valid prod
+  // config must declare the finalized legal entity name + mailing address.
+  NEXT_PUBLIC_LEGAL_ENTITY_NAME: "LocateFlow Inc.",
+  NEXT_PUBLIC_COMPANY_ADDRESS: "123 Example St, Austin, TX 78701",
 };
 
 describe("/api/ready", () => {

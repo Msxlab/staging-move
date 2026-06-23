@@ -72,7 +72,7 @@ describe("NLR EV charging lookup", () => {
 
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
     const url = new URL(String(fetchMock.mock.calls[0][0]));
-    expect(url.origin + url.pathname).toBe("https://developer.nlr.gov/api/alt-fuel-stations/v1/nearest.json");
+    expect(url.origin + url.pathname).toBe("https://developer.nrel.gov/api/alt-fuel-stations/v1/nearest.json");
     expect(url.searchParams.get("api_key")).toBe("test-key");
     expect(url.searchParams.get("latitude")).toBe("30.2672");
     expect(url.searchParams.get("longitude")).toBe("-97.7431");

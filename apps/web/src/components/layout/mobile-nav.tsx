@@ -32,19 +32,28 @@ export function MobileNav() {
       <div className="flex h-16 items-center justify-around gap-1 px-1.5">
         {mobileNavItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
+          const label = t(item.key);
           return (
             <Link
               key={item.key}
               href={item.href}
+              aria-label={label}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex h-12 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-2 transition-colors",
+                "relative flex h-12 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-2 transition-colors",
                 isActive
                   ? "bg-tone-orange-bg text-tone-orange-fg"
                   : "text-foreground/40"
               )}
             >
+              {isActive && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-1 h-1 w-5 rounded-full bg-current"
+                />
+              )}
               <item.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{t(item.key)}</span>
+              <span className="text-[10px] font-medium">{label}</span>
             </Link>
           );
         })}

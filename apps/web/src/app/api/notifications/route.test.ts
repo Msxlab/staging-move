@@ -83,3 +83,58 @@ describe("notification prefs POST config normalization", () => {
     expect(mockPref.findMany).not.toHaveBeenCalled();
   });
 });
+
+describe("notification prefs web PUSH opt-out", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireDbUserId.mockResolvedValue("user-1");
+    mockPref.upsert.mockResolvedValue({});
+    mockPref.findMany.mockResolvedValue([]);
+  });
+
+  function pushUpsertFor(type: string) {
+    return mockPref.upsert.mock.calls.find(
+      ([arg]) =>
+        arg?.where?.userId_channel_type?.channel === "PUSH" &&
+        arg?.where?.userId_channel_type?.type === type,
+    )?.[0];
+  }
+
+  it("writes a PUSH opt-out row when a pushXxx key is sent", async () => {
+    const response = await postConfig({ pushBillReminder: false });
+
+    expect(response.status).toBe(200);
+    const call = pushUpsertFor("BILL_REMINDER");
+    expect(call).toBeTruthy();
+    expect(call.create.channel).toBe("PUSH");
+    expect(call.create.enabled).toBe(false);
+    expect(call.update.enabled).toBe(false);
+  });
+
+  it("does not touch any PUSH row when no pushXxx key is sent", async () => {
+    const response = await postConfig({ billReminder: true });
+
+    expect(response.status).toBe(200);
+    const anyPush = mockPref.upsert.mock.calls.some(
+      ([arg]) => arg?.where?.userId_channel_type?.channel === "PUSH",
+    );
+    expect(anyPush).toBe(false);
+  });
+
+  it("reports push prefs default-on, and off after an explicit opt-out row", async () => {
+    // No stored rows → every push toggle resolves on (default-on).
+    let response = await GET();
+    let body = await response.json();
+    expect(response.status).toBe(200);
+    expect(body.push.pushBillReminder).toBe(true);
+
+    // Explicit disabled PUSH row → that type resolves off.
+    mockPref.findMany.mockResolvedValueOnce([
+      { channel: "PUSH", type: "BILL_REMINDER", enabled: false, frequency: "IMMEDIATE" },
+    ]);
+    response = await GET();
+    body = await response.json();
+    expect(body.push.pushBillReminder).toBe(false);
+    expect(body.push.pushMoveUpdate).toBe(true);
+  });
+});

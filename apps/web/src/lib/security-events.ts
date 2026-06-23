@@ -33,7 +33,8 @@ export type SecurityEventType =
   | "WEBHOOK_SIG_FAILURE"
   | "CRON_SECRET_MISUSE"
   | "INTERNAL_SECRET_MISUSE"
-  | "LIMITER_DEGRADED";
+  | "LIMITER_DEGRADED"
+  | "INTEGRATION_DEGRADED";
 
 export type SecurityEventSeverity = "info" | "warn" | "error";
 

@@ -12,20 +12,24 @@ type MarketingHeaderProps = {
   userId?: string | null;
 };
 
-const navLinks = [
-  { href: "/features", label: "Features" },
-  { href: "/why-free", label: "Why free" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/help", label: "Help" },
-  { href: "/blog", label: "Blog" },
-  { href: "/faq", label: "FAQ" },
-];
+const navLinkDefs = [
+  { href: "/features", key: "features" },
+  { href: "/why-free", key: "whyFree" },
+  { href: "/pricing", key: "pricing" },
+  { href: "/help", key: "help" },
+  { href: "/blog", key: "blog" },
+  { href: "/faq", key: "faq" },
+] as const;
 
 export async function MarketingHeader({ userId: providedUserId }: MarketingHeaderProps = {}) {
   const session = providedUserId === undefined ? await getUserSession() : null;
   const userId = providedUserId === undefined ? session?.userId ?? null : providedUserId;
   const tCommon = await getTranslations("common");
   const tLanding = await getTranslations("landing");
+  const tNav = await getTranslations("marketingNav");
+  const tAppNav = await getTranslations("nav");
+
+  const navLinks = navLinkDefs.map((link) => ({ href: link.href, label: tNav(link.key) }));
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -48,7 +52,7 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
             userId={userId}
             signInLabel={tCommon("signIn")}
             signUpLabel={tLanding("heroCta")}
-            menuLabel="Menu"
+            menuLabel={tAppNav("menu")}
           />
           <LanguageSelector variant="icon" />
           <LandingThemeToggle variant="compact" />

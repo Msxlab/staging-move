@@ -192,7 +192,19 @@
     "system": "System",
     "light_full": "Theme: Light. Click to use Dark mode.",
     "dark_full": "Theme: Dark. Click to follow system.",
-    "system_full": "Theme: follows system. Click to use Light mode."
+    "system_full": "Theme: follows system. Click to use Light mode.",
+    "preference": "Theme preference",
+    "match_system": "Match system",
+    "light_mode": "Light mode",
+    "dark_mode": "Dark mode"
+  },
+  "marketingNav": {
+    "features": "Features",
+    "whyFree": "Why free",
+    "pricing": "Pricing",
+    "help": "Help",
+    "blog": "Blog",
+    "faq": "FAQ"
   },
   "language": {
     "label": "Language",

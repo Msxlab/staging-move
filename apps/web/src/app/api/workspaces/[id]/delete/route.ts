@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { can, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { auditWorkspaceSensitiveAction, requireWorkspaceStepUp } from "@/lib/workspace-step-up";
@@ -48,6 +49,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     data: { deletedAt: now, deletionGraceUntil },
   });
   if (res.count === 0) return NextResponse.json({ error: "Already deleted" }, { status: 409 });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "WORKSPACE_DELETE", entityType: "Workspace", entityId: id, route: "/api/workspaces/[id]/delete" });
 
   await auditWorkspaceSensitiveAction({
     request,

@@ -4,6 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { sendSupportTicketCreatedEmail } from "@/lib/email-service";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { z } from "zod";
 
 const createTicketSchema = z.object({
@@ -106,6 +107,9 @@ export async function POST(request: NextRequest) {
         user: { select: { email: true, firstName: true, preferredLocale: true, deletedAt: true } },
       },
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "CREATE", entityType: "SupportTicket", entityId: ticket.id, route: "/api/tickets" });
 
     if (ticket.user?.email && !ticket.user.deletedAt) {
       await sendSupportTicketCreatedEmail({

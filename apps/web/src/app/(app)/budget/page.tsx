@@ -613,7 +613,14 @@ export default function BudgetPage() {
                 </p>
               </div>
             </div>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-foreground/5">
+            <div
+              className="mt-4 h-2 overflow-hidden rounded-full bg-foreground/5"
+              role="progressbar"
+              aria-label={copy.projectedThisMonth}
+              aria-valuenow={Math.round(budgetLimit > 0 ? budgetUsedPercent : 0)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
               <div
                 className={`h-full rounded-full transition-all ${budgetDelta !== null && budgetDelta < 0 ? "bg-destructive" : "bg-tone-emerald-fg"}`}
                 style={{ width: `${budgetLimit > 0 ? budgetUsedPercent : 0}%` }}
@@ -788,7 +795,14 @@ export default function BudgetPage() {
                         {limit > 0 ? ` / ${formatCurrency(limit)}` : ""}
                       </span>
                     </div>
-                    <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-2 bg-foreground/5 rounded-full overflow-hidden"
+                      role="progressbar"
+                      aria-label={row.category}
+                      aria-valuenow={Math.round(pct)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
                       <div className={`h-full rounded-full transition-all ${categoryColors[row.category]}`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
@@ -811,7 +825,14 @@ export default function BudgetPage() {
                 <span className="text-muted-foreground">Projected this month</span>
                 <span className="font-semibold text-foreground">{formatCurrency(budgetSummary.projectedThisMonth)}</span>
               </div>
-              <div className="h-3 bg-foreground/5 rounded-full overflow-hidden">
+              <div
+                className="h-3 bg-foreground/5 rounded-full overflow-hidden"
+                role="progressbar"
+                aria-label={copy.projected}
+                aria-valuenow={Math.round(budgetUsedPercent)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
                 <div className={`h-full rounded-full ${budgetSummary.projectedThisMonth > budgetLimit ? "bg-destructive" : "bg-tone-emerald-fg"}`} style={{ width: `${budgetUsedPercent}%` }} />
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">

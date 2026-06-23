@@ -23,6 +23,7 @@ import {
   sendSubscriptionResumedEmail,
 } from "@/lib/email-service";
 import { getStripeSubscriptionCurrentPeriodEndDate } from "@/lib/stripe-subscription-period";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 
 type SubscriptionAction = "cancel_trial" | "cancel_renewal" | "resume_renewal";
 
@@ -55,6 +56,8 @@ function fireAndLogEmail(promise: Promise<unknown>, context: string) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const blocked = await blockIfImpersonating(request, { action: "SUB_ACTION", route: "/api/subscription/actions" });
+    if (blocked) return blocked;
     // Fail closed only when a CONFIGURED Redis limiter is mid-outage; an
     // unconfigured limiter falls back to in-memory rather than 429ing every
     // subscription action during a Redis outage (audit round-2 billing #5).
@@ -136,6 +139,8 @@ export async function POST(request: NextRequest) {
           `resume_renewal userId=${userId}`,
         );
       }
+      // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+      await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Subscription", entityId: subscription.id, route: "/api/subscription/actions" });
       return NextResponse.json({ status: nextStatus, autoRenew: true, currentPeriodEndsAt: periodEnd });
     }
 
@@ -217,6 +222,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Subscription", entityId: subscription.id, route: "/api/subscription/actions" });
     return NextResponse.json({
       status: nextStatus,
       autoRenew: false,

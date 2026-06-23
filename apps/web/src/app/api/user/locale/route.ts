@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import {
   LOCALE_COOKIE,
   LOCALE_COOKIE_MAX_AGE,
@@ -61,6 +62,9 @@ export async function POST(request: NextRequest) {
         data: { preferredLocale: locale },
       })
       .catch(() => null);
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "User", entityId: session.userId, route: "/api/user/locale" });
   }
 
   const response = NextResponse.json({ success: true, locale });

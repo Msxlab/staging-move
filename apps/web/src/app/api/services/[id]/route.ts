@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth";
 import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
 import {
   decryptServiceSensitiveFields,
@@ -226,6 +227,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const meta = extractRequestMeta(request);
     await createAuditLog({ userId, action: "UPDATE", entityType: "Service", entityId: id, changes: validated, ...meta });
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Service", entityId: id, route: "/api/services/[id]" });
+
     const addressIdsToSync = [
       existing.addressId,
       validated.addressId,
@@ -278,6 +282,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const meta = extractRequestMeta(request);
     await createAuditLog({ userId, action: "DELETE", entityType: "Service", entityId: id, changes: { provider: existing.providerName }, ...meta });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "DELETE", entityType: "Service", entityId: id, route: "/api/services/[id]" });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

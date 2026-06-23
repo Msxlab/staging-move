@@ -4,6 +4,7 @@ import { Prisma } from "@locateflow/db";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 const registerSchema = z.object({
   token: z.string().min(10).max(255),
@@ -47,6 +48,9 @@ export async function POST(req: NextRequest) {
       create: { userId, token, platform, deviceName },
     });
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(req, { action: "PUSH_DEVICE_REGISTER", entityType: "PushDevice", entityId: device.id, route: "/api/push/register" });
+
     return NextResponse.json({ id: device.id });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -81,5 +85,9 @@ export async function DELETE(req: NextRequest) {
   }
 
   await prisma.pushDevice.deleteMany({ where: { userId, token } });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(req, { action: "PUSH_DEVICE_UNREGISTER", entityType: "PushDevice", entityId: token, route: "/api/push/register" });
+
   return NextResponse.json({ ok: true });
 }

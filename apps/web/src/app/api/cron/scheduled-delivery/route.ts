@@ -47,6 +47,68 @@ import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { pingIndexNow } from "@/lib/blog/indexnow";
+import {
+  WEB_NOTIFICATION_PREFERENCE_DEFINITIONS,
+  isPushTypeEnabled,
+  isWebNotificationEnabled,
+} from "@/lib/notification-preferences";
+
+// Promotional types are the only ones the admin broadcast path lets users
+// opt out of (mirrors OPT_OUT_RESPECTING_TYPES in apps/admin/src/lib/
+// notify-dispatch.ts). Operational/transactional broadcast types
+// (SYSTEM / ANNOUNCEMENT / MAINTENANCE / BILLING / SUPPORT) and every
+// security/transactional type bypass opt-out: a maintenance ping or a
+// security alert must reach everyone. We therefore gate ONLY when the row's
+// type is promotional OR maps to a known per-type web reminder preference;
+// anything else (unknown/operational/transactional) fails OPEN and delivers.
+const OPT_OUT_RESPECTING_TYPES = new Set(["MARKETING", "PROMO"]);
+
+// Per-type reminder/notification preference types surfaced on the web
+// settings screen. These have explicit user toggles, so a queue row of one of
+// these types must honor the toggle on EMAIL/PUSH fan-out. Built from the
+// canonical definitions so it can never drift.
+const WEB_PREFERENCE_TYPES = new Set(
+  WEB_NOTIFICATION_PREFERENCE_DEFINITIONS.map((d) => d.type),
+);
+const WEB_PREFERENCE_KEY_BY_TYPE = new Map(
+  WEB_NOTIFICATION_PREFERENCE_DEFINITIONS.map((d) => [d.type, d.key]),
+);
+
+/**
+ * Decide whether a single EMAIL/PUSH fan-out for one user should be SKIPPED
+ * because the user has opted out of this notification type on this channel.
+ *
+ * Behavior-preserving / fail-open by design:
+ *   - Transactional + security + operational broadcast types (anything not
+ *     promotional and not a known per-type web preference) are NEVER gated.
+ *   - Promotional types (MARKETING/PROMO) are skipped only on an explicit
+ *     `enabled: false` row for that channel+type (mirrors fetchOptOutSet).
+ *   - Known per-type web reminder types honor the user's web toggle:
+ *     EMAIL via isWebNotificationEnabled (respects the master email switch),
+ *     PUSH via isPushTypeEnabled (default-on until an explicit opt-out).
+ * Returns true when the channel should be suppressed for this user.
+ */
+function shouldSuppressChannel(
+  prefs: { channel: string; type: string; enabled: boolean; frequency?: string | null }[],
+  channel: "EMAIL" | "PUSH",
+  type: string,
+): boolean {
+  if (OPT_OUT_RESPECTING_TYPES.has(type)) {
+    // Promotional: suppress only on an explicit opt-out row for this channel.
+    return prefs.some(
+      (p) => p.channel === channel && p.type === type && p.enabled === false,
+    );
+  }
+
+  if (WEB_PREFERENCE_TYPES.has(type)) {
+    if (channel === "PUSH") return !isPushTypeEnabled(prefs, type);
+    const key = WEB_PREFERENCE_KEY_BY_TYPE.get(type);
+    return key ? !isWebNotificationEnabled(prefs, key) : false;
+  }
+
+  // Unknown / operational / transactional / security: never suppress.
+  return false;
+}
 
 // Bounded batches per tick.
 const QUEUE_BATCH = 200;
@@ -122,6 +184,29 @@ async function deliverToUser(userId: string, channel: string, row: QueueRow): Pr
   });
 
   if (channel === "EMAIL" || channel === "PUSH" || channel === "SMS") {
+    // Gate EMAIL/PUSH on the user's notification preferences before fan-out,
+    // mirroring the admin broadcast path (notify-dispatch.ts) and the per-item
+    // reminder crons. The IN_APP feed row above always delivers regardless, so
+    // an opted-out user still SEES the message in-app; only the extra
+    // email/push channel is suppressed. SMS is left ungated here (it fails
+    // closed inside sendNotification until a provider is configured) and is
+    // never a promotional channel in this app. Transactional/security and
+    // operational broadcast types are never suppressed (see
+    // shouldSuppressChannel).
+    if (channel === "EMAIL" || channel === "PUSH") {
+      const prefs = await prisma.notificationPreference.findMany({
+        where: { userId },
+        select: { channel: true, type: true, enabled: true, frequency: true },
+      });
+      if (shouldSuppressChannel(prefs, channel, row.type)) {
+        // Suppressed by an explicit user opt-out; the IN_APP row already
+        // delivered. Treat as a successful delivery so the worker does not
+        // record a spurious "No channel delivered" failure for an intentional
+        // skip.
+        return inApp;
+      }
+    }
+
     const extra = await sendNotification({
       userId,
       type: channel,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { can, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 
@@ -28,5 +29,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const res = await prisma.workspace.updateMany({ where: { id, deletedAt: null }, data: { name } });
   if (res.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "RENAME", entityType: "Workspace", entityId: id, route: "/api/workspaces/[id]/rename" });
   return NextResponse.json({ id, name });
 }

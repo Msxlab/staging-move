@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { requireDbUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import {
@@ -90,8 +91,10 @@ type LocalSubscriptionForSwitch = {
 };
 
 async function applyImmediateCycleSwap(input: {
+  request: NextRequest;
   stripe: Stripe;
   userId: string;
+  subscriptionId: string;
   subscription: LocalSubscriptionForSwitch;
   stripeSub: Stripe.Subscription;
   primaryItemId: string;
@@ -100,8 +103,10 @@ async function applyImmediateCycleSwap(input: {
   now: Date;
 }) {
   const {
+    request,
     stripe,
     userId,
+    subscriptionId,
     subscription,
     stripeSub,
     primaryItemId,
@@ -179,6 +184,9 @@ async function applyImmediateCycleSwap(input: {
     });
   }
 
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Subscription", entityId: subscriptionId, route: "/api/subscription/switch-cycle" });
+
   return NextResponse.json({
     status: "ACTIVE",
     billingInterval: targetInterval,
@@ -194,6 +202,9 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = await requireDbUserId();
+
+    const blocked = await blockIfImpersonating(request, { action: "SUB_SWITCH_CYCLE", route: "/api/subscription/switch-cycle" });
+    if (blocked) return blocked;
 
     // Fail closed only when a CONFIGURED Redis limiter is mid-outage; an
     // unconfigured limiter falls back to in-memory rather than 429ing every
@@ -311,8 +322,10 @@ export async function POST(request: NextRequest) {
           subscription.stripeSubscriptionScheduleId,
         );
         return await applyImmediateCycleSwap({
+          request,
           stripe,
           userId,
+          subscriptionId: subscription.id,
           subscription,
           stripeSub,
           primaryItemId: primaryItem.id,
@@ -426,6 +439,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+      await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Subscription", entityId: subscription.id, route: "/api/subscription/switch-cycle" });
+
       return NextResponse.json({
         status: "ACTIVE",
         billingInterval: "YEAR",
@@ -440,8 +456,10 @@ export async function POST(request: NextRequest) {
     await releaseAttachedSchedule(stripe, stripeSub, subscription.stripeSubscriptionScheduleId);
 
     return await applyImmediateCycleSwap({
+      request,
       stripe,
       userId,
+      subscriptionId: subscription.id,
       subscription,
       stripeSub,
       primaryItemId: primaryItem.id,

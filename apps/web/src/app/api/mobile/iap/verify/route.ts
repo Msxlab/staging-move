@@ -26,6 +26,7 @@ import {
 } from "@/lib/iap-common";
 import { verifyAppleJws, type AppleTransactionPayload } from "@/lib/iap-apple";
 import { buildUnifiedEntitlementSnapshot } from "@/lib/billing";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
     // activating a real store purchase (audit round-2 billing #5). Receipt
     // ownership + store verification still gate the grant either way.
     const userId = await requireDbUserId();
+    const blocked = await blockIfImpersonating(request, { action: "IAP_VERIFY", route: "/api/mobile/iap/verify" });
+    if (blocked) return blocked;
     const [ipRl, userRl] = await Promise.all([
       rateLimit(getRateLimitKey(request, "iap-verify"), {
         limit: 30,
@@ -141,11 +144,20 @@ export async function POST(request: NextRequest) {
       if (err?.message === "IAP_TXN_OWNED_BY_ANOTHER_USER") {
         return NextResponse.json({ error: "RECEIPT_OWNED_BY_ANOTHER_ACCOUNT" }, { status: 409 });
       }
+      if (err?.message === "IAP_RECEIPT_ACCOUNT_MISMATCH") {
+        // Receipt↔account binding enforcement (audit fix 1.1, flag-gated). The
+        // verified receipt carries an account token that was minted for a
+        // DIFFERENT LocateFlow account than the one making this request.
+        return NextResponse.json({ error: "RECEIPT_OWNED_BY_ANOTHER_ACCOUNT" }, { status: 409 });
+      }
       if (err?.message === "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE") {
         return NextResponse.json({ error: "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE" }, { status: 409 });
       }
       throw err;
     }
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "VERIFY", entityType: "Subscription", entityId: userId, route: "/api/mobile/iap/verify" });
 
     return NextResponse.json({
       success: true,

@@ -159,21 +159,51 @@ export async function POST(request: NextRequest) {
   );
 
   const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      firstName: firstName ?? null,
-      lastName: lastName ?? null,
-      preferredLocale: locale,
-      ...(autoVerifyTestAccount ? { emailVerifiedAt: new Date() } : {}),
-    },
+
+  // Verification-token material is generated up-front (cheap, sync) so the
+  // token row can be created INSIDE the same transaction as the user, while
+  // the actual email send stays OUTSIDE it (network I/O must not hold a DB
+  // transaction open, and a failed send must not roll back the account).
+  const verification = autoVerifyTestAccount ? null : generateOpaqueToken();
+
+  // 4.5 atomic signup: user + subscription defaults + workspace defaults +
+  // verification-token creation are wrapped in one interactive transaction so a
+  // mid-sequence failure leaves NO partial account (e.g. a user row with no
+  // subscription, or no verification token). Side effects that are best-effort
+  // or non-DB (QA persona plan, admin alert, legal acceptance, store-review
+  // provisioning, the verification email) stay OUTSIDE the transaction and are
+  // unchanged.
+  const user = await prisma.$transaction(async (tx) => {
+    const created = await tx.user.create({
+      data: {
+        email,
+        passwordHash,
+        firstName: firstName ?? null,
+        lastName: lastName ?? null,
+        preferredLocale: locale,
+        ...(autoVerifyTestAccount ? { emailVerifiedAt: new Date() } : {}),
+      },
+    });
+    await ensureSubscriptionDefaults(created.id, {}, tx);
+    await ensureWorkspaceDefaults(created.id, tx);
+
+    if (verification) {
+      await tx.emailVerificationToken.create({
+        data: {
+          userId: created.id,
+          email,
+          tokenHash: verification.hash,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+
+    return created;
   });
-  await ensureSubscriptionDefaults(user.id);
+
   if (isAllowlistedQaEmail(email)) {
     await applyQaPersonaSubscriptionForUser({ userId: user.id, email });
   }
-  await ensureWorkspaceDefaults(user.id);
 
   // Owner alert: instant new-signup notification. Fire-and-forget — the
   // helper never throws, so this can never break registration. Controlled
@@ -201,24 +231,16 @@ export async function POST(request: NextRequest) {
     await provisionStoreReviewAccount({ userId: user.id, request });
   }
 
-  if (!autoVerifyTestAccount) {
-    // Email verification token (24h).
-    const { token, hash } = generateOpaqueToken();
-    await prisma.emailVerificationToken.create({
-      data: {
-        userId: user.id,
-        email,
-        tokenHash: hash,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      },
-    });
-
+  if (verification) {
+    // The verification token row was created inside the transaction above; here
+    // we only send the email (network I/O, kept out of the DB transaction). A
+    // failed send is logged and does not roll back the account.
     await sendEmailVerificationEmail({
       userEmail: email,
       userName: firstName || "there",
-      verifyToken: token,
+      verifyToken: verification.token,
       locale,
-      dedupeKey: `verify:${user.id}:${hash}`,
+      dedupeKey: `verify:${user.id}:${verification.hash}`,
     }).catch((err) => console.error("[EMAIL] verification send failed:", err));
   }
 

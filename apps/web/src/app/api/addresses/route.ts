@@ -6,6 +6,7 @@ import { addressSchema } from "@/lib/validators";
 import { canCreateAddress } from "@/lib/plan-limits";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { encrypt, decrypt } from "@/lib/shared-encryption";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { geocodeFallbackForPersist } from "@/lib/census-geocoder";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
@@ -127,6 +128,9 @@ export async function POST(request: NextRequest) {
         },
       });
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "CREATE", entityType: "Address", entityId: address.id, route: "/api/addresses" });
 
     return NextResponse.json({
       address: {

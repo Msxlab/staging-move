@@ -22,6 +22,10 @@
  */
 
 import { validateRuntimeConfigValueShape } from "@/lib/shared-runtime-config";
+import {
+  LEGAL_ENTITY_PLACEHOLDER,
+  COMPANY_ADDRESS_PLACEHOLDER,
+} from "@/lib/legal-info";
 
 const PROD_ENVS = new Set(["production", "staging"]);
 export const READINESS_CONFIG_KEYS = [
@@ -30,6 +34,8 @@ export const READINESS_CONFIG_KEYS = [
   "APP_URL",
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_ADMIN_URL",
+  "NEXT_PUBLIC_LEGAL_ENTITY_NAME",
+  "NEXT_PUBLIC_COMPANY_ADDRESS",
   "DATABASE_URL",
   "USER_JWT_SECRET",
   "ADMIN_JWT_SECRET",
@@ -450,9 +456,9 @@ export function buildReadinessReport(
   if (productionLike) {
     const trustedProxyHeaders = (readConfig("TRUSTED_PROXY_HEADERS") || "").trim().toLowerCase();
     if (!trustedProxyHeaders || trustedProxyHeaders === "auto" || trustedProxyHeaders === "compat") {
-      warn(
+      fail(
         "TRUSTED_PROXY_HEADERS",
-        "TRUSTED_PROXY_HEADERS is unset/compat in production; set cloudflare, vercel, standard, or none explicitly so rate-limit and audit IPs use the intended edge header.",
+        "TRUSTED_PROXY_HEADERS must be set explicitly in production (cloudflare, vercel, standard, or none). Unset/compat trusts client-supplied cf-connecting-ip/x-real-ip/x-forwarded-for, letting clients spoof their source IP and defeat IP rules, per-IP login lockout, and audit accuracy.",
       );
     } else if (
       ![
@@ -469,9 +475,9 @@ export function buildReadinessReport(
         "on",
       ].includes(trustedProxyHeaders)
     ) {
-      warn(
+      fail(
         "TRUSTED_PROXY_HEADERS",
-        "TRUSTED_PROXY_HEADERS has an unknown value and will fall back to compat header precedence.",
+        "TRUSTED_PROXY_HEADERS has an unknown value (would fall back to compat header precedence). Set one of: cloudflare, vercel, standard, none.",
       );
     }
 
@@ -533,6 +539,32 @@ export function buildReadinessReport(
     warn(
       "CENSUS_API_KEY",
       "CENSUS_API_KEY is unset; Pro neighborhood economics will return not_configured while the rest of the dossier continues.",
+    );
+  }
+
+  // ── Legal entity identity (FTC / consumer-protection hygiene) ─
+  // Policy pages, billing receipts, and store-required legal disclosures
+  // need a real legal entity name and mailing address. Shipping the
+  // placeholders to production-like environments means users see unfinished
+  // "[... to be finalized]" text where binding legal identity is expected.
+  // These values come from the business; fail readiness rather than launch
+  // with placeholders. (legal-info.ts resolves these from
+  // NEXT_PUBLIC_LEGAL_ENTITY_NAME / NEXT_PUBLIC_COMPANY_ADDRESS.)
+  // Read from the report's `env` argument (not the module-frozen LEGAL_INFO),
+  // so readiness reflects the environment under inspection — mirrors how
+  // legal-info.ts resolves these (trim + fall back to the placeholder).
+  const legalEntityName = env.NEXT_PUBLIC_LEGAL_ENTITY_NAME?.trim() || LEGAL_ENTITY_PLACEHOLDER;
+  const companyAddress = env.NEXT_PUBLIC_COMPANY_ADDRESS?.trim() || COMPANY_ADDRESS_PLACEHOLDER;
+  if (legalEntityName === LEGAL_ENTITY_PLACEHOLDER) {
+    fail(
+      "NEXT_PUBLIC_LEGAL_ENTITY_NAME",
+      "NEXT_PUBLIC_LEGAL_ENTITY_NAME is unset, so the legal entity name still shows the placeholder on policy and billing pages. Set the finalized legal entity name before production launch.",
+    );
+  }
+  if (companyAddress === COMPANY_ADDRESS_PLACEHOLDER) {
+    fail(
+      "NEXT_PUBLIC_COMPANY_ADDRESS",
+      "NEXT_PUBLIC_COMPANY_ADDRESS is unset, so the company mailing address still shows the placeholder on policy and billing pages. Set the finalized mailing address before production launch.",
     );
   }
 

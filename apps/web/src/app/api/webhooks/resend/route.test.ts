@@ -14,6 +14,9 @@ vi.mock("@/lib/db", () => ({
     auditLog: {
       create: vi.fn(() => Promise.resolve({})),
     },
+    emailLog: {
+      updateMany: vi.fn(() => Promise.resolve({ count: 0 })),
+    },
   },
 }));
 
@@ -35,6 +38,7 @@ import { POST } from "./route";
 
 const userMock = prisma.user as unknown as { findUnique: Mock; findFirst: Mock };
 const prefMock = prisma.notificationPreference as unknown as { upsert: Mock };
+const emailLogMock = prisma.emailLog as unknown as { updateMany: Mock };
 const getRuntimeConfigValueMock = getRuntimeConfigValue as unknown as Mock;
 
 const SECRET_BASE64 = Buffer.from("a".repeat(32)).toString("base64");
@@ -90,6 +94,41 @@ describe("POST /api/webhooks/resend", () => {
     });
     // upsert called for MARKETING, REMINDER, and LIFECYCLE (kind: "all" — a dead
     // address should stop receiving every email category, not just promos).
+    expect(prefMock.upsert).toHaveBeenCalledTimes(3);
+  });
+
+  it("does NOT opt out on a transient (soft) bounce", async () => {
+    const id = "msg_soft";
+    const ts = String(Math.floor(Date.now() / 1000));
+    const body = JSON.stringify({
+      type: "email.bounced",
+      data: { email: "user@example.com", email_id: "abc", bounce: { type: "Transient" } },
+    });
+    const sig = sign(id, ts, body);
+    const response = await POST(makeRequest(body, sig, id, ts));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ softBounce: true, suppressed: false });
+    // No opt-out for soft bounces — preferences are left untouched.
+    expect(prefMock.upsert).not.toHaveBeenCalled();
+    // Still records the bounce on the matching EmailLog row.
+    expect(emailLogMock.updateMany).toHaveBeenCalledWith({
+      where: { providerMessageId: "abc" },
+      data: { status: "BOUNCED" },
+    });
+  });
+
+  it("opts out on a permanent (hard) bounce", async () => {
+    const id = "msg_hard";
+    const ts = String(Math.floor(Date.now() / 1000));
+    const body = JSON.stringify({
+      type: "email.bounced",
+      data: { email: "user@example.com", email_id: "abc", bounce: { type: "Permanent" } },
+    });
+    const sig = sign(id, ts, body);
+    const response = await POST(makeRequest(body, sig, id, ts));
+
+    expect(response.status).toBe(200);
     expect(prefMock.upsert).toHaveBeenCalledTimes(3);
   });
 

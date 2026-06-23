@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { generateOpaqueToken, getUserSession } from "@/lib/user-auth";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,9 @@ export async function POST(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await blockIfImpersonating(request, { action: "RESEND_VERIFY", route: "/api/auth/resend-verification" });
+  if (blocked) return blocked;
 
   const userLimit = await rateLimit(`auth:resend-verification:user:${session.userId}`, {
     limit: 3,
@@ -57,7 +61,7 @@ export async function POST(request: NextRequest) {
     where: { userId: user.id, consumedAt: null },
     data: { consumedAt: new Date() },
   });
-  await prisma.emailVerificationToken.create({
+  const verificationToken = await prisma.emailVerificationToken.create({
     data: {
       userId: user.id,
       email: user.email,
@@ -65,6 +69,8 @@ export async function POST(request: NextRequest) {
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     },
   });
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "CREATE", entityType: "EmailVerificationToken", entityId: verificationToken.id, route: "/api/auth/resend-verification" });
 
   await sendEmailVerificationEmail({
     userEmail: user.email,

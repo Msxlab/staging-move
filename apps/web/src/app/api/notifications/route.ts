@@ -2,13 +2,43 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import {
   buildWebNotificationSettings,
+  isPushTypeEnabled,
   normalizeDigestDay,
   normalizeReminderDays,
+  type StoredNotificationPreference,
   WEB_NOTIFICATION_CONFIG_DEFINITIONS,
   WEB_NOTIFICATION_PREFERENCE_DEFINITIONS,
 } from "@/lib/notification-preferences";
+
+// Web-facing PUSH preference definitions. Previously web users had no way to
+// mute push from the web UI (only EMAIL toggles existed), so a web-registered
+// device kept receiving task/move/bill pushes — see audit notifications-push-07.
+// Each web preference type gets an opt-out switch on the PUSH channel; the body
+// key is the email key prefixed with "push" (e.g. `pushBillReminder`). Writing
+// a PUSH row with `enabled: false` makes isPushTypeEnabled() suppress that type
+// (it is default-on until an explicit opt-out row exists), so reminder crons,
+// the daily digest, and the scheduled-delivery worker all honor the mute.
+const WEB_PUSH_PREFERENCE_DEFINITIONS = WEB_NOTIFICATION_PREFERENCE_DEFINITIONS.map(
+  (definition) => ({
+    key: `push${definition.key.charAt(0).toUpperCase()}${definition.key.slice(1)}`,
+    channel: "PUSH" as const,
+    type: definition.type,
+    frequency: definition.frequency,
+  })
+);
+
+// Resolve each web PUSH toggle from stored rows, reusing isPushTypeEnabled so
+// the read path matches the gating semantics exactly (default-on until an
+// explicit `enabled: false` PUSH row). Returns a `pushXxx`→boolean map.
+function buildWebPushPrefs(records: StoredNotificationPreference[]): Record<string, boolean> {
+  return WEB_PUSH_PREFERENCE_DEFINITIONS.reduce<Record<string, boolean>>((acc, definition) => {
+    acc[definition.key] = isPushTypeEnabled(records, definition.type);
+    return acc;
+  }, {});
+}
 
 // GET /api/notifications
 export async function GET() {
@@ -18,7 +48,7 @@ export async function GET() {
     const stored = await prisma.notificationPreference.findMany({ where: { userId } });
     const settings = buildWebNotificationSettings(stored);
 
-    return NextResponse.json({ prefs: settings.prefs, config: settings.config });
+    return NextResponse.json({ prefs: settings.prefs, push: buildWebPushPrefs(stored), config: settings.config });
   } catch (error) {
     const gateResponse = apiGateErrorResponse(error);
     if (gateResponse) return gateResponse;
@@ -33,8 +63,8 @@ export async function POST(request: NextRequest) {
     const userId = await requireDbUserId();
     const body = await request.json();
 
-    await Promise.all(
-      WEB_NOTIFICATION_PREFERENCE_DEFINITIONS.map((definition) => {
+    await Promise.all([
+      ...WEB_NOTIFICATION_PREFERENCE_DEFINITIONS.map((definition) => {
         if (typeof body[definition.key] !== "boolean") return Promise.resolve(null);
 
         return prisma.notificationPreference.upsert({
@@ -48,8 +78,27 @@ export async function POST(request: NextRequest) {
             frequency: definition.frequency,
           },
         });
-      })
-    );
+      }),
+      // Web PUSH opt-out toggles (audit notifications-push-07). Only written
+      // when the caller sends the boolean key; absent keys leave the row (and
+      // thus the default-on behavior) untouched, so existing clients that never
+      // send push keys keep their current behavior unchanged.
+      ...WEB_PUSH_PREFERENCE_DEFINITIONS.map((definition) => {
+        if (typeof body[definition.key] !== "boolean") return Promise.resolve(null);
+
+        return prisma.notificationPreference.upsert({
+          where: { userId_channel_type: { userId, channel: definition.channel, type: definition.type } },
+          update: { enabled: body[definition.key], frequency: definition.frequency },
+          create: {
+            userId,
+            channel: definition.channel,
+            type: definition.type,
+            enabled: body[definition.key],
+            frequency: definition.frequency,
+          },
+        });
+      }),
+    ]);
 
     const emailEnabled = typeof body.emailEnabled === "boolean"
       ? body.emailEnabled
@@ -125,10 +174,13 @@ export async function POST(request: NextRequest) {
 
     await Promise.all(configWrites);
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "NotificationPreference", entityId: userId, route: "/api/notifications" });
+
     const stored = await prisma.notificationPreference.findMany({ where: { userId } });
     const settings = buildWebNotificationSettings(stored);
 
-    return NextResponse.json({ prefs: settings.prefs, config: settings.config, success: true });
+    return NextResponse.json({ prefs: settings.prefs, push: buildWebPushPrefs(stored), config: settings.config, success: true });
   } catch (error) {
     const gateResponse = apiGateErrorResponse(error);
     if (gateResponse) return gateResponse;

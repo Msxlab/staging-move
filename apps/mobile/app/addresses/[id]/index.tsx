@@ -142,7 +142,11 @@ export default function AddressDetailScreen() {
   // Status chip (recreates the design's .ad-st).
   const isVacation = address.type === "VACATION";
   const isPast = !!address.endDate && new Date(address.endDate).getTime() < Date.now();
-  const statusLabel = isVacation ? "Seasonal" : isPast ? "Past" : "Active";
+  const statusLabel = isVacation
+    ? t("addresses.statusSeasonal")
+    : isPast
+      ? t("addresses.statusPast")
+      : t("addresses.statusActive");
   const tone = isVacation ? theme.colors.sky : isPast ? theme.colors.amber : theme.colors.emerald;
 
   // "Needs attention" = services renewing within 14 days (real contractEndDate).
@@ -238,7 +242,7 @@ export default function AddressDetailScreen() {
         {/* Needs attention */}
         {attentionItems.length > 0 && (
           <>
-            <SectionHeader label="Needs attention" style={styles.section} />
+            <SectionHeader label={t("addresses.needsAttention")} style={styles.section} />
             {attentionItems.map(({ s, days }: any) => (
               <TouchableOpacity
                 key={s.id}

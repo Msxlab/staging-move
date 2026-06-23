@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 /**
  * POST /api/providers/recommendations/feedback
@@ -53,6 +54,15 @@ export async function POST(request: NextRequest) {
     where: { userId_providerId: { userId, providerId } },
     create: { userId, providerId, action, until },
     update: { action, until },
+  });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, {
+    action: "UPSERT",
+    entityType: "RecommendationFeedback",
+    entityId: providerId,
+    route: "/api/providers/recommendations/feedback",
+    details: { action },
   });
 
   return NextResponse.json({ ok: true });
