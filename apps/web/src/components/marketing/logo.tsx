@@ -1,7 +1,14 @@
 import Link from "next/link";
+import { RaccoonMark } from "@/components/brand/RaccoonMark";
 
 /**
- * Brand mark shared by launcher, favicon, PWA, and admin.
+ * Brand mark — the parametric RaccoonMark (D4) inside a dark brand tile.
+ *
+ * Replaces the former static `/logo-mark.svg` raster: the eye now tracks the
+ * live theme accent (Gold in dark, Sapphire in light — D5), and the mark shares
+ * a single source of truth with the OG card / wordmark. The tile is kept a fixed
+ * brand navy in BOTH themes (the design's logo lockup is dark-on-navy), so the
+ * mark reads consistently and the accent eye pops in light mode too.
  */
 export function LogoMark({
   size = 32,
@@ -11,15 +18,20 @@ export function LogoMark({
   animated?: boolean;
   className?: string;
 }) {
+  const pad = Math.round(size * 0.15);
   return (
-    <img
-      src="/logo-mark.svg"
-      alt=""
-      width={size}
-      height={size}
+    <span
+      className={`inline-flex items-center justify-center ${className}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "var(--radius-lg, 15px)",
+        background: "#0A0F1C",
+      }}
       aria-hidden="true"
-      className={className}
-    />
+    >
+      <RaccoonMark size={size - pad * 2} />
+    </span>
   );
 }
 

@@ -27,7 +27,7 @@ import {
   Edit,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, fonts, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme, categoryColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -50,17 +50,12 @@ function getServiceCategoryLabel(category: string): string {
   return getMergedDisplayCategoryLabel(category) || getCategoryLabel(category) || category.replace(/_/g, " ");
 }
 
-// Aurora categorical palette — the same hue map the Services tab hero uses, so
-// a category reads as the same color on the list and on its detail screen.
-const catColors: Record<string, string> = {
-  GOVERNMENT: "#E25C5C", UTILITY: "#CBA45E", FINANCIAL: "#54CB7E",
-  HOUSING: "#CBA45E", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#B0852F",
-  KIDS: "#B0852F", FITNESS: "#CBA45E", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
-};
-
+// Categorical palette shared via `@/lib/theme` (`categoryColors`) — the same
+// hue map the Services tab hero uses, so a category reads as the same color on
+// the list and on its detail screen.
 function getServiceCategoryColor(category: string): string {
-  if (!category) return catColors.OTHER;
-  return catColors[category] || catColors[category.split("_")[0] || "OTHER"] || catColors.OTHER;
+  if (!category) return categoryColors.OTHER;
+  return categoryColors[category] || categoryColors[category.split("_")[0] || "OTHER"] || categoryColors.OTHER;
 }
 
 function getServiceFallbackIcon(category: string): string {

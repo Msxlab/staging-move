@@ -97,14 +97,14 @@ export const surfaceDark = {
   background: "#070B14",
   surface: "#121B2D",
   card: "#18233A",
-  cardHover: "#16203A",
+  cardHover: "#1F2C47", // surface-3 — Step 2 navy lift (#16203A → #1F2C47)
   elevated: "#1D2943",
 } as const;
 
 export const surfaceLight = {
-  background: "#F2F4F8", // au-base
+  background: "#EFEADF", // warm greige canvas (Step 2, D9 — was cool #F2F4F8)
   surface: "#FFFFFF",
-  card: "#EAEEF4", // au-base-2
+  card: "#F5F0E7", // surface-2 warm paper (Step 2 — was #EAEEF4)
   cardHover: "#E2E7EE", // au-base-3
   elevated: "#FFFFFF",
 } as const;
@@ -329,18 +329,19 @@ export const gradients = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Radii — LocateFlow UI scale (6 / 10 / 14 / 20 / 28).
+// Radii — LocateFlow rounder UI scale (Step 2, D10): 8 / 13 / 18 / 22 / 26.
+// Design intent: chips 7–8px, buttons 11–14px, cards 18–26px, pills 99px.
 // Mobile/web naming kept (`sm/md/lg/xl/2xl`) so call sites don't need
-// updating; the actual pixel values shifted to the new scale.
+// updating; the actual pixel values shifted to the new rounder scale.
 // ────────────────────────────────────────────────────────────────────
 
 export const radii = {
-  sm: 6,
-  md: 10, // default --radius
-  lg: 14,
-  xl: 20,
-  "2xl": 28,
-  full: 9999,
+  sm: 8, // chips
+  md: 13, // buttons / default control
+  lg: 18, // cards (low)
+  xl: 22,
+  "2xl": 26, // cards (high)
+  full: 9999, // pills
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
@@ -514,3 +515,13 @@ export const tokens = {
 } as const;
 
 export type DesignTokens = typeof tokens;
+
+// ────────────────────────────────────────────────────────────────────
+// CSS custom-property source of truth + emitter (Step 1 of the
+// design-system foundation). The structured CSS-var model and the
+// `emitCssVars()` / `renderTarget()` helpers live in a sibling module so
+// the runtime token model above stays focused on the values the mobile
+// app consumes. Re-exported here so `@locateflow/shared` exposes a single
+// design-token surface.
+// ────────────────────────────────────────────────────────────────────
+export * from "./design-tokens-css";
