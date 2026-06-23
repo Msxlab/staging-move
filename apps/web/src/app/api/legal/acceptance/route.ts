@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireDbUserId } from "@/lib/auth";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
@@ -60,6 +61,9 @@ export async function POST(request: NextRequest) {
     source: "onboarding_legal_gate",
     consents: acceptedLegalConsents,
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "ACCEPT_LEGAL", entityType: "User", entityId: userId, route: "/api/legal/acceptance" });
 
   return NextResponse.json({ success: true, legalConsents: acceptedLegalConsents });
 }

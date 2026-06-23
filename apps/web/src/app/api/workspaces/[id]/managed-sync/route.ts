@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveManagedSyncEnabled, statusAllowsMutation, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 
@@ -55,6 +56,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     where: { id: member.id },
     data: { managedSyncEnabled: body.enabled },
   });
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "MANAGED_SYNC_CONSENT_UPDATE", entityType: "WorkspaceMember", entityId: member.id, route: "/api/workspaces/[id]/managed-sync" });
   return NextResponse.json({
     enabled: resolveManagedSyncEnabled(updated.role as WorkspaceRole, updated.managedSyncEnabled),
     explicit: updated.managedSyncEnabled,

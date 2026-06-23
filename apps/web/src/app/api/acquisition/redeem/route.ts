@@ -15,6 +15,7 @@ import {
   TERMS_VERSION,
 } from "@/lib/shared-billing";
 import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 // Statuses that mean "a paid subscription is live / mid-lifecycle". Kept in sync
 // with MANAGED_SUBSCRIPTION_BLOCKING_STATUSES in /api/stripe/checkout — a user
@@ -242,6 +243,9 @@ export async function POST(request: NextRequest) {
     // their seats must collapse to the new plan — reconcile best-effort, never
     // blocking the redemption response. Mirrors the IAP path's reconcile call.
     await reconcileSeatsForOwner(userId).catch(() => {});
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "REDEEM", entityType: "Subscription", entityId: result.subscription.id, route: "/api/acquisition/redeem" });
 
     return NextResponse.json({
       accessType: "FREE_ACCESS",

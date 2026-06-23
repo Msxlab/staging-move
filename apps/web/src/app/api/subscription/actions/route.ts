@@ -23,6 +23,7 @@ import {
   sendSubscriptionResumedEmail,
 } from "@/lib/email-service";
 import { getStripeSubscriptionCurrentPeriodEndDate } from "@/lib/stripe-subscription-period";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 type SubscriptionAction = "cancel_trial" | "cancel_renewal" | "resume_renewal";
 
@@ -136,6 +137,8 @@ export async function POST(request: NextRequest) {
           `resume_renewal userId=${userId}`,
         );
       }
+      // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+      await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Subscription", entityId: subscription.id, route: "/api/subscription/actions" });
       return NextResponse.json({ status: nextStatus, autoRenew: true, currentPeriodEndsAt: periodEnd });
     }
 
@@ -217,6 +220,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Subscription", entityId: subscription.id, route: "/api/subscription/actions" });
     return NextResponse.json({
       status: nextStatus,
       autoRenew: false,

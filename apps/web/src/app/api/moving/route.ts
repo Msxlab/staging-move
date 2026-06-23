@@ -8,6 +8,7 @@ import { canCreateMovingDestinationAddress, canCreateMovingPlan, getPlanForLimit
 import { encrypt } from "@/lib/shared-encryption";
 import { geocodeFallbackForPersist } from "@/lib/census-geocoder";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { MOVING_PLAN_STATUS, normalizeMovingPlanStatus, planFeatures, CONSUMER_FREE_FLAG } from "@locateflow/shared";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import {
@@ -251,6 +252,9 @@ export async function POST(request: NextRequest) {
     const moveTaskSync = scope.workspaceId
       ? await syncMoveTasksForPlans(userId, [plan.id], { workspaceId: scope.workspaceId })
       : await syncMoveTasksForPlans(userId, [plan.id]);
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "CREATE", entityType: "MovingPlan", entityId: plan.id, route: "/api/moving" });
 
     return NextResponse.json({ plan, destinationAddressId, moveTaskSync }, { status: 201 });
   } catch (error: any) {

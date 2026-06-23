@@ -8,6 +8,7 @@ import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
 import { extractRequestMeta } from "@/lib/audit";
 import { recordUserSecurityAudit } from "@/lib/user-security-audit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -142,6 +143,9 @@ export async function POST(request: NextRequest) {
     changes: { status: "success" },
     ...extractRequestMeta(request),
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "MFA_DISABLED", entityType: "User", entityId: userId, route: "/api/auth/mfa/disable" });
 
   void sendSecurityNoticeEmail({
     userEmail: user.email,

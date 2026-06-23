@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import {
   buildWebNotificationSettings,
   normalizeDigestDay,
@@ -124,6 +125,9 @@ export async function POST(request: NextRequest) {
     }
 
     await Promise.all(configWrites);
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "NotificationPreference", entityId: userId, route: "/api/notifications" });
 
     const stored = await prisma.notificationPreference.findMany({ where: { userId } });
     const settings = buildWebNotificationSettings(stored);

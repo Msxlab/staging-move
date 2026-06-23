@@ -16,6 +16,7 @@ import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingE
 import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 function parseStoredLegalConsents(metadata: string | null | undefined) {
   if (!metadata) return null;
@@ -273,6 +274,9 @@ export async function POST(request: NextRequest) {
       create: { userId, ...profileData },
       update: profileData,
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Profile", entityId: userId, route: "/api/profile" });
 
     return NextResponse.json({ profile, legalConsents: existingLegalConsents }, { status: 200 });
   } catch (err: any) {

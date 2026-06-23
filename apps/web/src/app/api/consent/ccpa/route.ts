@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/auth";
 import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -101,6 +102,9 @@ export async function POST(request: NextRequest) {
         userAgent: userAgent?.slice(0, 500) ?? null,
       },
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE_CONSENT", entityType: "DataConsent", entityId: session.userId, route: "/api/consent/ccpa" });
   }
 
   // Always mirror the decision into the cookie so:

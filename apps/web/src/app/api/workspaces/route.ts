@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 import { getUserSession } from "@/lib/user-auth";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { planSummaryForOwner, workspaceFeatureGate, workspacePlanLabel } from "@/lib/workspace-routes";
 
 export const runtime = "nodejs";
@@ -155,6 +156,9 @@ export async function POST(request: NextRequest) {
     ]);
     return ws;
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "WORKSPACE_CREATE", entityType: "Workspace", entityId: workspace.id, route: "/api/workspaces" });
 
   const response = NextResponse.json({ ...workspace, planLabel: workspacePlanLabel(plan) });
   response.cookies.set("lf_workspace_id", workspace.id, {

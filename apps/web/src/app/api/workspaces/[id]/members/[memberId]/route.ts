@@ -6,6 +6,7 @@ import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendWorkspaceMembershipEmail } from "@/lib/email-service";
 import { reconcileWorkspaceSeats } from "@/lib/workspace-ownership";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import {
   WORKSPACE_AUDIT_ACTIONS,
   maskTargetEmail,
@@ -132,6 +133,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     },
   });
 
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "WorkspaceMember", entityId: memberId, route: "/api/workspaces/[id]/members/[memberId]" });
+
   // Notify the OWNER of the role change (suppressed when the owner performed it).
   const wsName = await workspaceDisplayName(id);
   await notifyWorkspaceOwnerOfRosterChange({
@@ -228,6 +232,9 @@ async function patchStatus(args: {
     },
   });
 
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "WorkspaceMember", entityId: memberId, route: "/api/workspaces/[id]/members/[memberId]" });
+
   // Notify the OWNER of the status change (suppressed when the owner performed it).
   const wsName = await workspaceDisplayName(id);
   await notifyWorkspaceOwnerOfRosterChange({
@@ -296,6 +303,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       removedRole,
     },
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "DELETE", entityType: "WorkspaceMember", entityId: memberId, route: "/api/workspaces/[id]/members/[memberId]" });
 
   // Notify the OWNER that a member was removed (suppressed when the owner did it).
   const wsName = await workspaceDisplayName(id);

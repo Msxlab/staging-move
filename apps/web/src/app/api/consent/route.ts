@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { resolveClientIpFromHeaders } from "@/lib/client-ip";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -137,6 +138,9 @@ export async function POST(request: NextRequest) {
       : consentWrites;
 
     await prisma.$transaction(operations);
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE_CONSENT", entityType: "DataConsent", entityId: userId, route: "/api/consent" });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

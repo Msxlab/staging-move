@@ -5,6 +5,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { customProviderSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import {
   findDuplicateCustomProvider,
@@ -148,6 +149,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       ...meta,
     });
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "UserCustomProvider", entityId: provider.id, route: "/api/custom-providers/[id]" });
+
     return NextResponse.json({ provider: presentCustomProvider(provider) });
   } catch (error: any) {
     const gateResponse = apiGateErrorResponse(error);
@@ -210,6 +214,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       },
       ...meta,
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "DELETE", entityType: "UserCustomProvider", entityId: id, route: "/api/custom-providers/[id]" });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

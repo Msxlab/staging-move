@@ -8,6 +8,7 @@ import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { getRequestHashSnapshot, hashForSnapshot } from "@/lib/acquisition-campaigns";
 import { createLead } from "@/lib/leads/create-lead";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +116,9 @@ export async function POST(request: NextRequest) {
       termsVersion: TERMS_VERSION,
       idempotencyKey,
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "CREATE", entityType: "Lead", entityId: result.leadId, route: "/api/leads" });
 
     return NextResponse.json({
       ok: true,

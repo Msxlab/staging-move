@@ -3,6 +3,7 @@ import { buildMoveTaskLifecyclePatch } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { canGenerateMoveTasks } from "@/lib/plan-limits";
 import { syncSuggestedMoveTasks } from "@/lib/move-task-generation";
@@ -193,6 +194,8 @@ export async function POST(request: NextRequest) {
       changes: { generated: result.generated.length, skipped: result.skipped.length },
       ...meta,
     });
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "MOVE_TASKS_GENERATE", entityType: "MovingPlan", entityId: movingPlanId, route: "/api/move-tasks" });
     await recordMoveTaskEvent(userId, "MOVE_TASK_GENERATED", {
       movingPlanId,
       generated: result.generated.length,
@@ -382,6 +385,8 @@ export async function PATCH(request: NextRequest) {
       },
       ...meta,
     });
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "MOVE_TASK_UPDATE", entityType: "MoveTask", entityId: id, route: "/api/move-tasks" });
     await recordMoveTaskEvent(userId, hasEvent ? `MOVE_TASK_${event}` : "MOVE_TASK_ASSIGN", {
       moveTaskId: id,
       status: task.status,

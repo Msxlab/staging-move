@@ -7,6 +7,7 @@ import {
 } from "@/lib/user-auth";
 import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { sendPasswordResetEmail } from "@/lib/email-service";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -254,6 +255,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "SET_PWD_REQ", entityType: "PasswordResetToken", entityId: session.userId, route: "/api/auth/security" });
+
     await sendPasswordResetEmail({
       userEmail: user.email,
       userName: user.firstName || "there",
@@ -295,6 +299,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "REVOKE_SESSION", entityType: "UserLoginSession", entityId: parsed.data.sessionId, route: "/api/auth/security" });
+
     return NextResponse.json({
       success: true,
       revoked: result.count,
@@ -322,6 +329,9 @@ export async function POST(request: NextRequest) {
       userAgent,
     },
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "REVOKE_OTHERS", entityType: "User", entityId: session.userId, route: "/api/auth/security" });
 
   const state = await loadSecurityState(session.userId, session.sessionId);
   return NextResponse.json({ success: true, revoked: result.count, ...state });

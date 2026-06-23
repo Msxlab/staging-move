@@ -16,6 +16,7 @@ import {
   toBudgetServiceInput,
 } from "@/lib/budget-actuals-snapshot";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import {
   assertWorkspaceAction,
   planLimitScopeForDataScope,
@@ -222,6 +223,9 @@ export async function POST(request: NextRequest) {
         },
       });
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPSERT", entityType: "Budget", entityId: budget.id, route: "/api/budget" });
 
     return NextResponse.json({ budget }, { status: 201 });
   } catch (error: any) {

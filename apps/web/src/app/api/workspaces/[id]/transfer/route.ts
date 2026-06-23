@@ -7,6 +7,7 @@ import { transferWorkspaceOwnership } from "@/lib/workspace-ownership";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendWorkspaceOwnershipEmail } from "@/lib/email-service";
 import { auditWorkspaceSensitiveAction, requireWorkspaceStepUp } from "@/lib/workspace-step-up";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -58,6 +59,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     stepUpMethod: stepUp.method,
     changes: { toUserId },
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "WORKSPACE_TRANSFER", entityType: "Workspace", entityId: id, route: "/api/workspaces/[id]/transfer" });
 
   // Notify both parties — previously this transfer was completely silent.
   // Best-effort: a notification/email failure must not fail the transfer.

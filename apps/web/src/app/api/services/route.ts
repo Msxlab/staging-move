@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId, requireVerifiedUser } from "@/lib/auth";
 import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { canCreateService } from "@/lib/plan-limits";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
@@ -300,6 +301,9 @@ export async function POST(request: NextRequest) {
       },
       ...meta,
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "CREATE", entityType: "Service", entityId: service.id, route: "/api/services" });
 
     // ── Update ServiceProvider stats (atomic increment, non-blocking) ──
     if (validated.providerId) {

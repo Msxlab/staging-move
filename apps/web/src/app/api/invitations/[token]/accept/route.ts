@@ -5,6 +5,7 @@ import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { hashInvitationToken } from "@/lib/workspace-invitations";
 import { AcceptInviteError, acceptWorkspaceInvitation } from "@/lib/workspace-invite-accept";
 import { rateLimit } from "@/lib/rate-limit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -60,6 +61,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
     throw e;
   }
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "ACCEPT_INVITATION", entityType: "WorkspaceInvitation", entityId: inv.id, route: "/api/invitations/[token]/accept" });
 
   const response = NextResponse.json({ workspaceId: result.workspaceId, role: result.role });
   response.cookies.set("lf_workspace_id", result.workspaceId, {

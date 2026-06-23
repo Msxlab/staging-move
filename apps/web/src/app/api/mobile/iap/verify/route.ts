@@ -26,6 +26,7 @@ import {
 } from "@/lib/iap-common";
 import { verifyAppleJws, type AppleTransactionPayload } from "@/lib/iap-apple";
 import { buildUnifiedEntitlementSnapshot } from "@/lib/billing";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -146,6 +147,9 @@ export async function POST(request: NextRequest) {
       }
       throw err;
     }
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "VERIFY", entityType: "Subscription", entityId: userId, route: "/api/mobile/iap/verify" });
 
     return NextResponse.json({
       success: true,

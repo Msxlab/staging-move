@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import {
   loadUserPreferences,
   saveDashboardWidgetPrefs,
@@ -76,7 +77,10 @@ export async function PATCH(request: NextRequest) {
 
   try {
     if (typeof parsed.data.showBudget === "boolean") {
-      return NextResponse.json(await saveShowBudgetPreference(userId, parsed.data.showBudget));
+      const result = await saveShowBudgetPreference(userId, parsed.data.showBudget);
+      // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+      await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "User", entityId: userId, route: "/api/user/preferences" });
+      return NextResponse.json(result);
     }
     return NextResponse.json({ ok: true });
   } catch (error: any) {
@@ -111,7 +115,10 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    return NextResponse.json(await saveDashboardWidgetPrefs(userId, parsed.data));
+    const result = await saveDashboardWidgetPrefs(userId, parsed.data);
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "User", entityId: userId, route: "/api/user/preferences" });
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error("[USER_PREFERENCES PUT] Failed:", error?.message);
     return NextResponse.json({ error: "Failed to save preferences" }, { status: 500 });
