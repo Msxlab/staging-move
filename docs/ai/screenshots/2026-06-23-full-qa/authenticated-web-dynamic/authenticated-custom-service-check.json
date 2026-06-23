@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-06-23T16:13:13.171Z",
+  "account": "mobile.qa@locateflow.com",
+  "records": [
+    {
+      "name": "007-custom-service-filled-before-submit",
+      "url": "https://staging.locateflow.com/services/new",
+      "h1": "Add Services",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAddressesServicesProvidersBudgetMovingAccountNotificationsSupportHelpSettingsSearch...Ctrl KMQBackAdd ",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\007-custom-service-filled-before-submit.png"
+    },
+    {
+      "name": "008-after-custom-service-submit",
+      "url": "https://staging.locateflow.com/services",
+      "h1": "Services, sorted",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAddressesServicesProvidersBudgetMovingAccountNotificationsSupportHelpSettingsSearch...Ctrl KMQAccounts",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\008-after-custom-service-submit.png"
+    },
+    {
+      "name": "009-services-list-after-custom-service",
+      "url": "https://staging.locateflow.com/services",
+      "h1": "Services, sorted",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAddressesServicesProvidersBudgetMovingAccountNotificationsSupportHelpSettingsSearch...Ctrl KAccounts &",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\009-services-list-after-custom-service.png"
+    },
+    {
+      "name": "010-budget-after-custom-service",
+      "url": "https://staging.locateflow.com/budget",
+      "h1": "Budget",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAddressesServicesProvidersBudgetMovingAccountNotificationsSupportHelpSettingsSearch...Ctrl KDashboardA",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\010-budget-after-custom-service.png"
+    }
+  ]
+}

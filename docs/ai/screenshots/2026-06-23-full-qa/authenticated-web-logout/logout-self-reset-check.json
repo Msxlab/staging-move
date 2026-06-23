@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-06-23T16:17:56.434Z",
+  "account": "mobile.qa@locateflow.com",
+  "initialLoginOk": true,
+  "logoutClicked": true,
+  "reloginOk": false,
+  "selfResetVerified": true,
+  "reloginBodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"da",
+  "records": [
+    {
+      "name": "001-before-logout-dashboard",
+      "url": "https://staging.locateflow.com/dashboard",
+      "h1": "Your dashboard",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((e,t,a,n,s,r,i,o)=>{let l=document.documentElement,u=[\"light\",\"dark\"];function d(t){var a;(Array.isArray(e)?e:[e]).forEach(e=>{let a=\"class\"===e,n=a&&r?s.map(e=>r[e]||e):s;a?(l.classList.remove(...n),l.classList.add(r&&r[t]?r[t]:t)):l.setAttribute(e,t)}),a=t,o&&u.includes(a)&&(l.style.colorScheme=a)}if(n)d(n);else try{let e=localStorage.getItem(t)||a,n=i&&\"system\"===e?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":e;d(n)}catch(e){}})(\"class\",\"locateflow-theme\",\"da",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-logout\\001-before-logout-dashboard.png"
+    },
+    {
+      "name": "002-user-menu-open",
+      "url": "https://staging.locateflow.com/dashboard",
+      "h1": "Your dashboard",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((e,t,a,n,s,r,i,o)=>{let l=document.documentElement,u=[\"light\",\"dark\"];function d(t){var a;(Array.isArray(e)?e:[e]).forEach(e=>{let a=\"class\"===e,n=a&&r?s.map(e=>r[e]||e):s;a?(l.classList.remove(...n),l.classList.add(r&&r[t]?r[t]:t)):l.setAttribute(e,t)}),a=t,o&&u.includes(a)&&(l.style.colorScheme=a)}if(n)d(n);else try{let e=localStorage.getItem(t)||a,n=i&&\"system\"===e?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":e;d(n)}catch(e){}})(\"class\",\"locateflow-theme\",\"da",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-logout\\002-user-menu-open.png"
+    },
+    {
+      "name": "003-after-logout",
+      "url": "https://staging.locateflow.com/",
+      "h1": "Your entire move, handled.",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"da",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-logout\\003-after-logout.png"
+    },
+    {
+      "name": "004-relogin-after-logout-attempt",
+      "url": "https://staging.locateflow.com/sign-in",
+      "h1": "Welcome back",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"da",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-logout\\004-relogin-after-logout-attempt.png"
+    }
+  ]
+}

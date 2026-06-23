@@ -1,0 +1,585 @@
+{
+  "generatedAt": "2026-06-23T16:13:50.547Z",
+  "account": "mobile.qa@locateflow.com",
+  "records": [
+    {
+      "name": "011-services-list-before-detail-click",
+      "url": "https://staging.locateflow.com/services",
+      "h1": "Services, sorted",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAddressesServicesProvidersBudgetMovingAccountNotificationsSupportHelpSettingsSearch...Ctrl KAccounts &",
+      "controls": [
+        {
+          "tag": "A",
+          "text": "Skip to main content",
+          "href": "#main-content",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Locateflow",
+          "href": "/dashboard",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Dashboard",
+          "href": "/dashboard",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Addresses",
+          "href": "/addresses",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Services",
+          "href": "/services",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Providers",
+          "href": "/providers",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Budget",
+          "href": "/budget",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Moving",
+          "href": "/moving",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Notifications",
+          "href": "/notifications",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Support",
+          "href": "/support",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Help",
+          "href": "/help",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Settings",
+          "href": "/settings",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Menu"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Search...Ctrl K",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Open search"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Notifications"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Theme: Dark. Click to follow system."
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Language: English"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "User menu"
+        },
+        {
+          "tag": "A",
+          "text": "Add Service",
+          "href": "/services/new",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "All",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "QA Home1",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "All1",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Utilities1",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "QA Electric UtilityElectricQA Home",
+          "href": "/services/cmqqufmw10032buyqbutrjkd7",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Dashboard",
+          "href": "/dashboard",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Addresses",
+          "href": "/addresses",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Moving",
+          "href": "/moving",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Services",
+          "href": "/services",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Settings",
+          "href": "/settings",
+          "aria": null
+        }
+      ],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\011-services-list-before-detail-click.png"
+    },
+    {
+      "name": "012-service-detail-or-card-after-click",
+      "url": "https://staging.locateflow.com/services/cmqqufmw10032buyqbutrjkd7",
+      "h1": "QA Electric Utility",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAddressesServicesProvidersBudgetMovingAccountNotificationsSupportHelpSettingsSearch...Ctrl KMQBackQA E",
+      "controls": [
+        {
+          "tag": "A",
+          "text": "Skip to main content",
+          "href": "#main-content",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Locateflow",
+          "href": "/dashboard",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Dashboard",
+          "href": "/dashboard",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Addresses",
+          "href": "/addresses",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Services",
+          "href": "/services",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Providers",
+          "href": "/providers",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Budget",
+          "href": "/budget",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Moving",
+          "href": "/moving",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Notifications",
+          "href": "/notifications",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Support",
+          "href": "/support",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Help",
+          "href": "/help",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Settings",
+          "href": "/settings",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Menu"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Search...Ctrl K",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Open search"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Notifications"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Theme: Dark. Click to follow system."
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Language: English"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "MQ",
+          "href": null,
+          "aria": "User menu"
+        },
+        {
+          "tag": "A",
+          "text": "Back",
+          "href": "/services",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Edit",
+          "href": "/services/cmqqufmw10032buyqbutrjkd7/edit",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Remove from my services",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Dashboard",
+          "href": "/dashboard",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Addresses",
+          "href": "/addresses",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Moving",
+          "href": "/moving",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Services",
+          "href": "/services",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Settings",
+          "href": "/settings",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Learn more",
+          "href": "/cookie-policy",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Dismiss cookie banner"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Decline",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Accept All",
+          "href": null,
+          "aria": null
+        }
+      ],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\012-service-detail-or-card-after-click.png"
+    },
+    {
+      "name": "013-service-edit-after-click",
+      "url": "https://staging.locateflow.com/services/cmqqufmw10032buyqbutrjkd7/edit",
+      "h1": "Edit Service",
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAddressesServicesProvidersBudgetMovingAccountNotificationsSupportHelpSettingsSearch...Ctrl KMQBackEdit",
+      "controls": [
+        {
+          "tag": "A",
+          "text": "Skip to main content",
+          "href": "#main-content",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Locateflow",
+          "href": "/dashboard",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Dashboard",
+          "href": "/dashboard",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Addresses",
+          "href": "/addresses",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Services",
+          "href": "/services",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Providers",
+          "href": "/providers",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Budget",
+          "href": "/budget",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Moving",
+          "href": "/moving",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Notifications",
+          "href": "/notifications",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Support",
+          "href": "/support",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Help",
+          "href": "/help",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Settings",
+          "href": "/settings",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Menu"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Search...Ctrl K",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Open search"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Notifications"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Theme: Dark. Click to follow system."
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Language: English"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "MQ",
+          "href": null,
+          "aria": "User menu"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Back",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Cancel",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save Changes",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Dashboard",
+          "href": "/dashboard",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Addresses",
+          "href": "/addresses",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Moving",
+          "href": "/moving",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Services",
+          "href": "/services",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Settings",
+          "href": "/settings",
+          "aria": null
+        },
+        {
+          "tag": "A",
+          "text": "Learn more",
+          "href": "/cookie-policy",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "href": null,
+          "aria": "Dismiss cookie banner"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Decline",
+          "href": null,
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Accept All",
+          "href": null,
+          "aria": null
+        }
+      ],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\013-service-edit-after-click.png"
+    }
+  ]
+}

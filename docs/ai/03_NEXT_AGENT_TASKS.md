@@ -1,12 +1,39 @@
 # Next Agent Tasks
 
-Updated: 2026-06-22
+Updated: 2026-06-23
 
 ## Current Staging Thread Note
 
-Use [[handoffs/2026-06-22-theme-source-integration-pass]] as the active staging
-memory, with [[handoffs/2026-06-21-staging-audit-prep]] as the security/runtime
+Use [[handoffs/2026-06-23-full-qa-audit]] as the active staging QA memory, with
+[[handoffs/2026-06-22-theme-source-integration-pass]] as the theme/runtime
+baseline and [[handoffs/2026-06-21-staging-audit-prep]] as the security/runtime
 baseline.
+
+Latest QA report: [[audits/2026-06-23-full-qa-audit]]
+Completion matrix: [[audits/2026-06-23-full-qa-completion-matrix]]
+
+Immediate QA blockers found 2026-06-23:
+
+1. Fix public mobile header overflow on staging/web.
+2. Fix portal magic-link invalid-token redirects that point to `https://0.0.0.0:3000/...`.
+3. Fix authenticated Dossier PDF export returning HTTP 500 with `Failed to build dossier PDF`.
+4. Fix onboarding moving-plan creation validation rejecting a visibly filled destination/date form.
+5. Install or publish a current Android `preview` / `staging-preview` build that embeds `EXPO_PUBLIC_API_URL=https://staging.locateflow.com/api`; the installed APK has no staging API config and falls back toward production.
+6. Decide Dossier consumer-free/pricing copy contract and update the failing web test.
+7. Update stale admin static tests after page/client split.
+
+Additional QA evidence added 2026-06-23:
+
+- Public/protected web internal link check found 18 unique staging links and 0 404/5xx/bad redirects.
+- Portal enter sentinel check still reproduces 2 bad `0.0.0.0:3000` invalid-token redirects.
+- Dossier source contract was reviewed: Free preview, Individual+ full Dossier, Pro PDF/neighborhood unless the `CONSUMER_FREE` feature flag intentionally promotes consumer read paths to Pro.
+- Authenticated web QA for `mobile.qa@locateflow.com` completed after user approval: signup, auto-ready account state, legal/profile/address/services/moving onboarding, dashboard, address detail/edit, custom provider/service create, service detail/edit, budget, settings/support/help route batch, logout self-reset.
+- Live authenticated Dossier payload returned HTTP 200 with flood, school, weather, hazards, radon, water, air, housing, EV charging, neighborhood, and `dossierPdf`; summary mode returned air/housing only; PDF export returned HTTP 500.
+- Authenticated internal link crawl checked 27 logged-in links; only the Dossier PDF endpoint failed.
+- Android `mobile.qa@locateflow.com` login was blocked by installed APK config: embedded app config has no `extra.apiUrl`, no staging host/API string, and source fallback returns `https://locateflow.com/api` when no public API URL is present.
+- Web logout self-reset was verified: after logout, the same email/password stayed on `/sign-in` with `Invalid email or password`.
+- In-app Browser desktop health check covered `/`, `/pricing`, `/account/delete`, `/sign-in`, `/movers/portal`, and `/partners/portal`: no blank page, framework overlay, relevant console warning/error, or desktop horizontal overflow.
+- Mobile source route inventory was saved: 50 Expo routes total, 37 static, 13 dynamic. Use it as the authenticated mobile screenshot matrix after a staging/preview Android build is installed.
 
 ## Current Audit Package Note
 
@@ -53,9 +80,13 @@ theme sources, remaps web/admin/mobile/shared premium and plan accents to the
 dark-Gold/light-Sapphire split, and keeps warning amber only for warning
 semantics. Local typecheck/tests/build passed, commit `8fb63c5b` was deployed to
 Dokploy staging, and Chrome confirmed the homepage dark Gold + light Sapphire
-views. Remaining staging work: authenticated web dashboard QA, authenticated
-admin dashboard QA after the user handles credentials/password manager, and real
-mobile/emulator runtime visual QA.
+views. Remaining staging work: authenticated
+admin dashboard QA after the user handles credentials/password manager, and
+completed logged-in Android/mobile runtime visual QA after a staging/preview APK is installed. Public web,
+source-inventoried protected-route auth gates, admin unauthenticated static
+routes, authenticated web routes, web self-reset, and Android auth-surface/config screenshots were captured on 2026-06-23. All 58
+static web page routes and all 53 static admin page routes now have saved
+unauthenticated screenshot artifacts. Dynamic web pages with QA IDs now have address/service evidence; native Android logged-in pages are pending a staging-targeted build.
 
 Use this note as the Obsidian task queue for the next Codex, Claude Product Explorer, or Claude Product Judge pass.
 
