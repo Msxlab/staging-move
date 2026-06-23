@@ -37,6 +37,8 @@ const validProdEnv = {
   OPENEI_API_KEY: "openei-production-token",
   AIRNOW_API_KEY: "airnow-production-token",
   CENSUS_API_KEY: "census-production-token",
+  NEXT_PUBLIC_LEGAL_ENTITY_NAME: "LocateFlow Inc.",
+  NEXT_PUBLIC_COMPANY_ADDRESS: "123 Example St, Austin, TX 78701",
 } as unknown as NodeJS.ProcessEnv;
 
 describe("buildReadinessReport", () => {

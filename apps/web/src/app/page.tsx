@@ -246,10 +246,6 @@ export default async function LandingPage() {
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-3 w-3 text-success" />
-                4.9 on the App Store
-              </span>
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3 w-3 text-success" />
                 FEMA, EPA and NWS data
               </span>
               <span className="flex items-center gap-1.5">
