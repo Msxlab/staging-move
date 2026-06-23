@@ -107,6 +107,11 @@ export default function WorkspaceSettingsPage() {
   const [transferMfaCode, setTransferMfaCode] = useState("");
   const [transferBackupCode, setTransferBackupCode] = useState("");
   const [transferring, setTransferring] = useState(false);
+  const [promoteTarget, setPromoteTarget] = useState<Member | null>(null);
+  const [promotePassword, setPromotePassword] = useState("");
+  const [promoteMfaCode, setPromoteMfaCode] = useState("");
+  const [promoteBackupCode, setPromoteBackupCode] = useState("");
+  const [promoting, setPromoting] = useState(false);
 
   const selected = workspaces.find((w) => w.id === selectedId) ?? null;
   const iAmManager = selected ? isManagerRole(selected.role) : false;
@@ -193,26 +198,81 @@ export default function WorkspaceSettingsPage() {
     if (selectedId) loadDetail(selectedId, iAmManager);
   };
 
-  const changeRole = async (member: Member, role: string) => {
+  const changeRole = async (
+    member: Member,
+    role: string,
+    stepUp?: { confirmPassword?: string; mfaCode?: string; backupCode?: string },
+  ) => {
     if (!selectedId) return;
     setBusyMember(member.id);
     try {
       const res = await fetch(`/api/workspaces/${selectedId}/members/${member.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role }),
+        body: JSON.stringify({
+          role,
+          ...(stepUp?.confirmPassword ? { confirmPassword: stepUp.confirmPassword } : {}),
+          ...(stepUp?.mfaCode ? { mfaCode: stepUp.mfaCode } : {}),
+          ...(stepUp?.backupCode ? { backupCode: stepUp.backupCode } : {}),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        // Promoting to ADMIN requires step-up re-auth: on the first (un-verified)
+        // attempt the server replies requiresStepUp — open the password/MFA dialog
+        // and retry from there (same flow as transfer ownership).
+        if (data?.requiresStepUp && role === "ADMIN") {
+          if (!promoteTarget) {
+            openPromoteToAdmin(member);
+          } else {
+            toast.error(data.error || "Verification failed. Please try again.");
+          }
+          return;
+        }
         toast.error(data.error || "Couldn't change the role.");
         return;
       }
       toast.success("Role updated.");
+      // Dismiss the step-up dialog directly (the guarded closePromoteDialog
+      // would no-op while `promoting` is still true).
+      setPromoteTarget(null);
+      setPromotePassword("");
+      setPromoteMfaCode("");
+      setPromoteBackupCode("");
       refreshDetail();
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyMember(null);
+    }
+  };
+
+  const openPromoteToAdmin = (member: Member) => {
+    setPromoteTarget(member);
+    setPromotePassword("");
+    setPromoteMfaCode("");
+    setPromoteBackupCode("");
+  };
+
+  const closePromoteDialog = () => {
+    if (promoting) return;
+    setPromoteTarget(null);
+    setPromotePassword("");
+    setPromoteMfaCode("");
+    setPromoteBackupCode("");
+  };
+
+  const confirmPromoteToAdmin = async () => {
+    if (!promoteTarget) return;
+    setPromoting(true);
+    try {
+      await changeRole(promoteTarget, "ADMIN", {
+        confirmPassword: promotePassword.trim() || undefined,
+        mfaCode: promoteMfaCode.trim() || undefined,
+        backupCode: promoteBackupCode.trim() || undefined,
+      });
+    } finally {
+      setPromoting(false);
     }
   };
 
@@ -829,6 +889,98 @@ export default function WorkspaceSettingsPage() {
                 </>
               ) : (
                 "Transfer ownership"
+              )}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(promoteTarget)} onOpenChange={(open) => {
+        if (!open) closePromoteDialog();
+      }}>
+        <DialogContent className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Promote to admin</DialogTitle>
+            <DialogDescription>
+              Make {promoteTarget?.displayName || promoteTarget?.email || "this member"} an admin of this
+              workspace. Admins can manage members and invitations. Confirm with your password or MFA.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label htmlFor="workspace-promote-password" className="text-xs font-medium text-muted-foreground">
+                Password
+              </label>
+              <PasswordInput
+                id="workspace-promote-password"
+                autoComplete="current-password"
+                value={promotePassword}
+                onChange={(event) => setPromotePassword(event.target.value)}
+                disabled={promoting}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Current password"
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label htmlFor="workspace-promote-mfa" className="text-xs font-medium text-muted-foreground">
+                  MFA code
+                </label>
+                <input
+                  id="workspace-promote-mfa"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={promoteMfaCode}
+                  onChange={(event) => setPromoteMfaCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                  disabled={promoting}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="123456"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="workspace-promote-backup" className="text-xs font-medium text-muted-foreground">
+                  Backup code
+                </label>
+                <input
+                  id="workspace-promote-backup"
+                  type="password"
+                  autoComplete="one-time-code"
+                  value={promoteBackupCode}
+                  onChange={(event) => setPromoteBackupCode(event.target.value)}
+                  disabled={promoting}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Recovery code"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={closePromoteDialog}
+              disabled={promoting}
+              className="rounded-xl px-4 py-2 text-sm text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmPromoteToAdmin}
+              disabled={
+                promoting ||
+                (!promotePassword.trim() && !promoteMfaCode.trim() && !promoteBackupCode.trim())
+              }
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+            >
+              {promoting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Promoting...
+                </>
+              ) : (
+                "Promote to admin"
               )}
             </button>
           </div>
