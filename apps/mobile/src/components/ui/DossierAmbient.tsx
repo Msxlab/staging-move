@@ -15,6 +15,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { useAppTheme } from "@/lib/theme";
 import type { AmbientIntensity, AmbientKind, AmbientVariant } from "@/lib/home-dossier";
+import { dossierRaccoonFor } from "@/lib/dossier-raccoon";
+import { MoveRaccoon } from "@/components/move/MoveRaccoon";
 
 /**
  * DOSSIER AMBIENT (mobile) — Aurora decorative scene layer for the
@@ -1403,6 +1405,14 @@ export function DossierAmbient({
   // host row is collapsed / display:none-then-revealed / measured late.
   const [size, setSize] = useState({ w: 240, h: 64 });
   const level = clampIntensity(intensity);
+  // The raccoon character REACTS to the data on top of the data-derived scene:
+  // ambientForSection stays the source of truth for the scene, dossierRaccoonFor
+  // only picks the mood that honestly mirrors this reading (good -> happy/approved,
+  // mid -> calm/thinking, bad -> alert). Purely additive — the scene is unchanged.
+  const raccoonMood = useMemo(
+    () => dossierRaccoonFor({ kind, intensity: level, variant }),
+    [kind, level, variant],
+  );
   const palette = useMemo<Palette>(
     () => ({
       ink: theme.colors.text,
@@ -1444,6 +1454,18 @@ export function DossierAmbient({
         end={{ x: 1, y: 0.5 }}
         style={styles.fade}
       />
+      {/*
+       * The mood-driven raccoon character, anchored in the bottom-right
+       * foreground so it reads as "standing in" the scene without covering the
+       * existing data art (which fills from the right). Eye tinted with the
+       * accent token to tie it to the brand. No new motion: it is a static SVG
+       * that respects whatever the underlying scene does for reduced-motion.
+       */}
+      {size.w > 0 && size.h > 0 && (
+        <View pointerEvents="none" style={styles.raccoon}>
+          <MoveRaccoon size={44} mood={raccoonMood} eye={theme.colors.accent} />
+        </View>
+      )}
     </View>
   );
 }
@@ -1464,5 +1486,11 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: "44%",
+  },
+  // The raccoon character sits in the bottom-right foreground of the scene.
+  raccoon: {
+    position: "absolute",
+    right: 6,
+    bottom: -2,
   },
 });
