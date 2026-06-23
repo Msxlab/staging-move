@@ -8,6 +8,38 @@ export function isBillingProductionLike(env: NodeJS.ProcessEnv = process.env) {
   return appEnv === "production" || (!appEnv && env.NODE_ENV === "production");
 }
 
+/**
+ * Audit 4.4 — single source of truth for the "is this a deployed, non-local
+ * environment?" decision that gates the IAP sandbox allowlist.
+ *
+ * This is DELIBERATELY broader than `isBillingProductionLike`:
+ *   - `isBillingProductionLike` is about whether LIVE billing CREDENTIALS are in
+ *     play (Stripe live keys, required Apple env). Staging/preview legitimately
+ *     run TEST credentials there, so it returns FALSE for staging/preview.
+ *   - `isDeployedBillingEnvironment` is about whether SANDBOX/TEST PURCHASES must
+ *     be allowlist-gated. Staging and preview are publicly reachable deploys, so
+ *     an un-gated sandbox receipt there is just as exploitable ("buy a $0
+ *     TestFlight sub → real premium") as in production. It therefore returns TRUE
+ *     for production OR staging OR preview, MATCHING the webhook handlers'
+ *     `isProductionLikeRuntime` and production-readiness' `isProductionLike`.
+ *
+ * BEHAVIOR CHANGE (audit 4.4): consumers of THIS predicate now enforce the
+ * sandbox allowlist on STAGING and PREVIEW, not just production. This is
+ * intentionally STRICTER and SAFER; it does NOT change production behavior
+ * (production already returned true under every prior detector) and it does NOT
+ * touch Stripe key validation or Apple-env requirements (those still key off
+ * `isBillingProductionLike`).
+ */
+export function isDeployedBillingEnvironment(env: NodeJS.ProcessEnv = process.env): boolean {
+  const appEnv = (env.APP_ENV || env.VERCEL_ENV || "").toLowerCase();
+  return (
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    env.NODE_ENV === "production"
+  );
+}
+
 export function validateStripeSecretKeyForEnv(
   key: string | null | undefined,
   env: NodeJS.ProcessEnv = process.env,

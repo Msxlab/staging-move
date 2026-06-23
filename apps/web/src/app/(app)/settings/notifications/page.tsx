@@ -25,6 +25,9 @@ const NOTIFICATION_COPY = {
     before: (days: string) => `${days} day${days === "1" ? "" : "s"} before`,
     enableEmail: "Enable Email Notifications",
     enableEmailDescription: "Send enabled notifications via email",
+    email: "Email",
+    push: "Push",
+    pushToggle: (label: string) => `Push notifications for ${label}`,
     saving: "Saving...",
     save: "Save Preferences",
     saved: "Notification preferences saved!",
@@ -87,6 +90,9 @@ const NOTIFICATION_COPY = {
     before: (days: string) => `${days} dia${days === "1" ? "" : "s"} antes`,
     enableEmail: "Activar notificaciones por email",
     enableEmailDescription: "Enviar por email las notificaciones activadas",
+    email: "Email",
+    push: "Push",
+    pushToggle: (label: string) => `Notificaciones push para ${label}`,
     saving: "Guardando...",
     save: "Guardar preferencias",
     saved: "Preferencias de notificacion guardadas",
@@ -145,9 +151,23 @@ function copyForLocale(locale: string) {
   return locale.toLowerCase().startsWith("es") ? NOTIFICATION_COPY.es : NOTIFICATION_COPY.en;
 }
 
+// Body key for a per-type web PUSH toggle: the email key with a "push" prefix
+// and capitalized first char (e.g. billReminder -> pushBillReminder). Mirrors
+// WEB_PUSH_PREFERENCE_DEFINITIONS in app/api/notifications/route.ts so the GET
+// `push` map and POST keys line up exactly.
+function pushKeyFor(key: string) {
+  return `push${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+}
+
 const allKeys = NOTIFICATION_COPY.en.groups.flatMap((g) => g.items.map((i) => i.key));
 const DEFAULT_SETTINGS = Object.fromEntries(
   WEB_NOTIFICATION_PREFERENCE_DEFINITIONS.map((definition) => [definition.key, definition.defaultEnabled])
+) as Record<string, boolean>;
+// Push channel is default-on until an explicit opt-out is stored (see
+// isPushTypeEnabled), so seed every per-type push toggle to true before GET
+// resolves.
+const DEFAULT_PUSH = Object.fromEntries(
+  WEB_NOTIFICATION_PREFERENCE_DEFINITIONS.map((definition) => [pushKeyFor(definition.key), true])
 ) as Record<string, boolean>;
 
 export default function NotificationsPage() {
@@ -156,6 +176,7 @@ export default function NotificationsPage() {
   const [settings, setSettings] = useState<Record<string, boolean>>(
     DEFAULT_SETTINGS
   );
+  const [push, setPush] = useState<Record<string, boolean>>(DEFAULT_PUSH);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [digestDay, setDigestDay] = useState("Monday");
@@ -167,6 +188,7 @@ export default function NotificationsPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.prefs) setSettings((prev) => ({ ...prev, ...data.prefs }));
+        if (data.push) setPush((prev) => ({ ...prev, ...data.push }));
         if (data.config) {
           if (typeof data.config.emailEnabled === "boolean") setEmailEnabled(data.config.emailEnabled);
           if (typeof data.config.digestDay === "string") setDigestDay(data.config.digestDay);
@@ -178,6 +200,10 @@ export default function NotificationsPage() {
   }, []);
 
   const toggle = (key: string) => setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  const togglePush = (key: string) => {
+    const pushKey = pushKeyFor(key);
+    setPush((prev) => ({ ...prev, [pushKey]: !prev[pushKey] }));
+  };
 
   const enabledCount = Object.values(settings).filter(Boolean).length;
 
@@ -189,6 +215,7 @@ export default function NotificationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...settings,
+          ...push,
           digestDay,
           reminderDays,
           emailEnabled,
@@ -221,33 +248,58 @@ export default function NotificationsPage() {
         const Icon = group.icon;
         return (
           <div key={group.title} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-              <Icon className={`h-4 w-4 ${group.iconColor}`} />
-              <h3 className="text-sm font-semibold text-foreground">{group.title}</h3>
+            <div className="flex items-center justify-between gap-2 px-5 pt-5 pb-3">
+              <div className="flex items-center gap-2">
+                <Icon className={`h-4 w-4 ${group.iconColor}`} />
+                <h3 className="text-sm font-semibold text-foreground">{group.title}</h3>
+              </div>
+              <div className="flex items-center gap-3 text-[10px] font-medium uppercase tracking-wide text-foreground/40">
+                <span className="w-11 text-center">{copy.email}</span>
+                <span className="w-11 text-center">{copy.push}</span>
+              </div>
             </div>
             <div className="px-5 pb-4 space-y-0.5">
-              {group.items.map((item) => (
-                <div key={item.key} className="flex items-center justify-between py-3 border-b border-foreground/[0.03] last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-foreground/80">{item.label}</p>
-                    <p className="text-[11px] text-foreground/40">{item.description}</p>
+              {group.items.map((item) => {
+                const pushKey = pushKeyFor(item.key);
+                return (
+                  <div key={item.key} className="flex items-center justify-between gap-3 py-3 border-b border-foreground/[0.03] last:border-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground/80">{item.label}</p>
+                      <p className="text-[11px] text-foreground/40">{item.description}</p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={settings[item.key]}
+                        aria-label={item.label}
+                        onClick={() => toggle(item.key)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
+                          settings[item.key] ? "bg-tone-orange-fg" : "bg-foreground/10"
+                        }`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                          settings[item.key] ? "translate-x-6" : "translate-x-1"
+                        }`} />
+                      </button>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={push[pushKey]}
+                        aria-label={copy.pushToggle(item.label)}
+                        onClick={() => togglePush(item.key)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
+                          push[pushKey] ? "bg-tone-orange-fg" : "bg-foreground/10"
+                        }`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                          push[pushKey] ? "translate-x-6" : "translate-x-1"
+                        }`} />
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={settings[item.key]}
-                    aria-label={item.label}
-                    onClick={() => toggle(item.key)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
-                      settings[item.key] ? "bg-tone-orange-fg" : "bg-foreground/10"
-                    }`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
-                      settings[item.key] ? "translate-x-6" : "translate-x-1"
-                    }`} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

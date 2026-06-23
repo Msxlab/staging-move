@@ -52,6 +52,11 @@ const EXPORT_COPY = {
     subtitle: "Download reports and export your data",
     confirmPassword: "Confirm password",
     passwordPlaceholder: "Password",
+    twoFactorCode: "Two-factor code",
+    twoFactorPlaceholder: "123456",
+    oauthVerified: "Your Google or Apple sign-in session is already verified. No password is required.",
+    stepUpRequired: "Enter your password or a valid two-factor code before exporting.",
+    verifyToExport: "Verify with your password or two-factor code to enable exports.",
     monthlyReports: "Monthly Expense Reports (PDF)",
     monthlyReportsBody: "Pick the address you want a monthly report for. Each PDF is generated on the server with branding, category breakdown, and full service details — no print dialog needed.",
     noAddresses: "No addresses to generate reports for",
@@ -87,6 +92,11 @@ const EXPORT_COPY = {
     subtitle: "Descarga informes y exporta tus datos",
     confirmPassword: "Confirmar contrasena",
     passwordPlaceholder: "Contrasena",
+    twoFactorCode: "Codigo de dos factores",
+    twoFactorPlaceholder: "123456",
+    oauthVerified: "Tu sesion con Google o Apple ya esta verificada. No necesitas contrasena.",
+    stepUpRequired: "Ingresa tu contrasena o un codigo de dos factores valido antes de exportar.",
+    verifyToExport: "Verifica con tu contrasena o codigo de dos factores para habilitar las exportaciones.",
     monthlyReports: "Informes mensuales de gastos (PDF)",
     monthlyReportsBody: "Elige la direccion para generar un informe mensual. Cada PDF se crea en el servidor con branding, desglose por categoria y detalles completos de servicios, sin dialogo de impresion.",
     noAddresses: "No hay direcciones para generar informes",
@@ -163,6 +173,11 @@ export default function ExportPage() {
   const [generatingFullPdf, setGeneratingFullPdf] = useState(false);
   const [generatingTaxPdf, setGeneratingTaxPdf] = useState(false);
   const [exportPassword, setExportPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  // null until the security state loads; false means an OAuth-only account that
+  // has no password set, mirroring the delete-account dialog's step-up handling.
+  const [hasPasswordLogin, setHasPasswordLogin] = useState<boolean | null>(null);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
 
   useEffect(() => {
     fetch("/api/addresses")
@@ -171,6 +186,43 @@ export default function ExportPage() {
       .catch(() => {})
       .finally(() => setLoadingAddresses(false));
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/security", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (cancelled) return;
+        setHasPasswordLogin(data.account?.hasPasswordLogin === true);
+        setMfaEnabled(data.account?.mfaEnabled === true);
+      })
+      .catch(() => {
+        if (!cancelled) setHasPasswordLogin(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // hasPasswordLogin === false with no MFA is an OAuth-only account: /api/export
+  // verifies step-up via password/MFA only, so such a user must set a password
+  // or enable MFA first. We surface that path rather than dead-ending on a
+  // password-only field they can never fill.
+  const oauthOnly = hasPasswordLogin === false && !mfaEnabled;
+  const trimmedMfaCode = mfaCode.trim();
+  // MFA users prove step-up with a code; OAuth-only users may also have MFA. Show
+  // the code field whenever a code is (or may be) the only available factor.
+  const showMfaInput = mfaEnabled || hasPasswordLogin === false;
+  // Gate the export buttons on a usable step-up factor instead of password-only,
+  // mirroring DeleteAccountDialog's canSubmit logic.
+  const stepUpReady = exportPassword.length > 0 || trimmedMfaCode.length > 0;
+
+  // Step-up payload for /api/export: password and/or MFA code. Mirrors the
+  // dialog's body shape (the export route reads confirmPassword/mfaCode).
+  const stepUpBody = (): Record<string, unknown> => ({
+    ...(exportPassword ? { confirmPassword: exportPassword } : {}),
+    ...(trimmedMfaCode ? { mfaCode: trimmedMfaCode } : {}),
+  });
 
   const handleExport = async (type: string, format: string) => {
     const key = `${type}-${format}`;
@@ -185,7 +237,7 @@ export default function ExportPage() {
           body: JSON.stringify({
             type,
             format: format.toLowerCase(),
-            confirmPassword: exportPassword,
+            ...stepUpBody(),
           }),
         },
       );
@@ -210,7 +262,7 @@ export default function ExportPage() {
           body: JSON.stringify({
             type: "address",
             addressId: address.id,
-            confirmPassword: exportPassword,
+            ...stepUpBody(),
           }),
         },
       );
@@ -234,7 +286,7 @@ export default function ExportPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             type: "full",
-            confirmPassword: exportPassword,
+            ...stepUpBody(),
           }),
         },
       );
@@ -256,7 +308,7 @@ export default function ExportPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "tax", confirmPassword: exportPassword }),
+          body: JSON.stringify({ type: "tax", ...stepUpBody() }),
         },
       );
       toast.success(copy.taxPdfDownloaded);
@@ -281,19 +333,45 @@ export default function ExportPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl px-5 py-4">
-        <label htmlFor="export-password" className="mb-1 block text-xs font-medium text-muted-foreground">
-          {copy.confirmPassword}
-        </label>
-        <input
-          id="export-password"
-          type="password"
-          autoComplete="current-password"
-          value={exportPassword}
-          onChange={(event) => setExportPassword(event.target.value)}
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
-          placeholder={copy.passwordPlaceholder}
-        />
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl px-5 py-4 space-y-3">
+        {oauthOnly && (
+          <p className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-xs text-tone-honey-fg/80">
+            {copy.oauthVerified}
+          </p>
+        )}
+        <div>
+          <label htmlFor="export-password" className="mb-1 block text-xs font-medium text-muted-foreground">
+            {copy.confirmPassword}
+          </label>
+          <input
+            id="export-password"
+            type="password"
+            autoComplete="current-password"
+            value={exportPassword}
+            onChange={(event) => setExportPassword(event.target.value)}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            placeholder={copy.passwordPlaceholder}
+          />
+        </div>
+        {showMfaInput && (
+          <div>
+            <label htmlFor="export-mfa" className="mb-1 block text-xs font-medium text-muted-foreground">
+              {copy.twoFactorCode}
+            </label>
+            <input
+              id="export-mfa"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={mfaCode}
+              onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm tracking-widest text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              placeholder={copy.twoFactorPlaceholder}
+            />
+          </div>
+        )}
+        {!stepUpReady && (
+          <p className="text-xs text-muted-foreground/80">{copy.verifyToExport}</p>
+        )}
       </div>
 
       {/* Per-address PDF reports */}
@@ -332,7 +410,7 @@ export default function ExportPage() {
                   </div>
                   <button
                     onClick={() => handlePdfReport(addr)}
-                    disabled={isGenerating || !exportPassword}
+                    disabled={isGenerating || !stepUpReady}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50 shrink-0"
                   >
                     {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
@@ -359,7 +437,7 @@ export default function ExportPage() {
           </div>
           <button
             onClick={handleFullAccountPdf}
-            disabled={generatingFullPdf || !exportPassword}
+            disabled={generatingFullPdf || !stepUpReady}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition disabled:opacity-50 shrink-0"
           >
             {generatingFullPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
@@ -382,7 +460,7 @@ export default function ExportPage() {
           </div>
           <button
             onClick={handleTaxPdf}
-            disabled={generatingTaxPdf || !exportPassword}
+            disabled={generatingTaxPdf || !stepUpReady}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition disabled:opacity-50 shrink-0"
           >
             {generatingTaxPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
@@ -397,19 +475,42 @@ export default function ExportPage() {
           <Download className="h-4 w-4 text-tone-cyan-fg" />
           <h3 className="text-sm font-semibold text-foreground">{copy.dataExports}</h3>
         </div>
-        <div className="px-5 pb-3">
-          <label htmlFor="data-export-password" className="mb-1 block text-xs font-medium text-muted-foreground">
-            {copy.confirmPassword}
-          </label>
-          <input
-            id="data-export-password"
-            type="password"
-            autoComplete="current-password"
-            value={exportPassword}
-            onChange={(event) => setExportPassword(event.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
-            placeholder={copy.passwordPlaceholder}
-          />
+        <div className="px-5 pb-3 space-y-3">
+          {oauthOnly && (
+            <p className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-xs text-tone-honey-fg/80">
+              {copy.oauthVerified}
+            </p>
+          )}
+          <div>
+            <label htmlFor="data-export-password" className="mb-1 block text-xs font-medium text-muted-foreground">
+              {copy.confirmPassword}
+            </label>
+            <input
+              id="data-export-password"
+              type="password"
+              autoComplete="current-password"
+              value={exportPassword}
+              onChange={(event) => setExportPassword(event.target.value)}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              placeholder={copy.passwordPlaceholder}
+            />
+          </div>
+          {showMfaInput && (
+            <div>
+              <label htmlFor="data-export-mfa" className="mb-1 block text-xs font-medium text-muted-foreground">
+                {copy.twoFactorCode}
+              </label>
+              <input
+                id="data-export-mfa"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={mfaCode}
+                onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm tracking-widest text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                placeholder={copy.twoFactorPlaceholder}
+              />
+            </div>
+          )}
         </div>
         <div className="px-5 pb-5 space-y-2">
           {copy.options.map((opt) => {
@@ -430,7 +531,7 @@ export default function ExportPage() {
                     return (
                       <button
                         key={fmt}
-                        disabled={isLoading || !exportPassword}
+                        disabled={isLoading || !stepUpReady}
                         onClick={() => handleExport(opt.type, fmt)}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition disabled:opacity-50"
                       >

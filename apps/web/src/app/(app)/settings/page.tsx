@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import type { ElementType } from "react";
-import { User, Bell, CreditCard, Download, Shield, DollarSign, Link2, MapPin, Users, Loader2, ChevronRight, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { User, Bell, CreditCard, Download, Shield, DollarSign, Link2, MapPin, Users, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { AppearanceCard } from "@/components/settings/appearance-card";
 import { UIPreferencesCard } from "@/components/settings/ui-preferences-card";
-import { PasswordInput } from "@/components/ui/password-input";
+import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 
 const SETTINGS_COPY = {
   en: {
@@ -134,11 +133,11 @@ function SectionList({ items }: { items: readonly SettingsSection[] }) {
 export default function SettingsPage() {
   const locale = useLocale();
   const copy = copyForLocale(locale);
-  const [deleteStep, setDeleteStep] = useState<"idle" | "confirm" | "deleting">("idle");
-  const [confirmText, setConfirmText] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [showBudget, setShowBudget] = useState<boolean | null>(null);
   const [hasPasswordLogin, setHasPasswordLogin] = useState<boolean | null>(null);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -160,7 +159,11 @@ export default function SettingsPage() {
     fetch("/api/auth/security", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
-        if (!cancelled) setHasPasswordLogin(data.account?.hasPasswordLogin === true);
+        if (!cancelled) {
+          setHasPasswordLogin(data.account?.hasPasswordLogin === true);
+          setMfaEnabled(data.account?.mfaEnabled === true);
+          setUserEmail(typeof data.account?.email === "string" ? data.account.email : null);
+        }
       })
       .catch(() => {
         if (!cancelled) setHasPasswordLogin(null);
@@ -169,45 +172,6 @@ export default function SettingsPage() {
       cancelled = true;
     };
   }, []);
-
-  const resetDeleteFlow = () => {
-    setDeleteStep("idle");
-    setConfirmText("");
-    setConfirmPassword("");
-  };
-
-  const handleDeleteAccount = async () => {
-    const oauthOnly = hasPasswordLogin === false;
-    if (confirmText !== "DELETE" || (!oauthOnly && !confirmPassword)) return;
-    setDeleteStep("deleting");
-    try {
-      const res = await fetch("/api/account/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          confirmText,
-          ...(oauthOnly ? { confirmAccountDeletion: true } : { confirmPassword }),
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        await fetch("/api/auth/logout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
-          body: "{}",
-          cache: "no-store",
-        }).catch(() => {});
-        toast.success(data.message || copy.danger.success);
-        setTimeout(() => { window.location.href = "/"; }, 1500);
-      } else {
-        toast.error(data.error || copy.danger.failure);
-        setDeleteStep("confirm");
-      }
-    } catch {
-      toast.error(copy.danger.failure);
-      setDeleteStep("confirm");
-    }
-  };
 
   const budgetFeature = {
     title: copy.budget.title,
@@ -283,68 +247,23 @@ export default function SettingsPage() {
               <p className="text-sm font-medium text-foreground/80">{copy.danger.deleteAccount}</p>
               <p className="text-xs text-foreground/40">{copy.danger.deleteBody}</p>
             </div>
-            {deleteStep === "idle" && (
-              <button
-                onClick={() => setDeleteStep("confirm")}
-                className="self-start rounded-xl border border-destructive bg-destructive/10 px-3 py-1.5 text-sm font-medium text-destructive transition hover:bg-destructive sm:self-auto"
-              >
-                {copy.danger.deleteAccount}
-              </button>
-            )}
+            <button
+              onClick={() => setDeleteOpen(true)}
+              className="self-start rounded-xl border border-destructive bg-destructive/10 px-3 py-1.5 text-sm font-medium text-destructive transition hover:bg-destructive sm:self-auto"
+            >
+              {copy.danger.deleteAccount}
+            </button>
           </div>
-          {deleteStep !== "idle" && (
-            <div className="rounded-xl border border-destructive bg-destructive/5 p-4 space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {copy.danger.confirmIntro} <span className="font-semibold text-destructive">{copy.danger.irreversible}</span>. {copy.danger.confirmBody}
-              </p>
-              {hasPasswordLogin === false && (
-                <p className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-xs text-tone-honey-fg/80">
-                  {copy.danger.oauthOnly}
-                </p>
-              )}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">{copy.danger.typeDelete}</label>
-                <input
-                  className="w-full rounded-xl border border-destructive bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-destructive/30"
-                  placeholder="DELETE"
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  disabled={deleteStep === "deleting"}
-                />
-              </div>
-              {hasPasswordLogin !== false && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">{copy.danger.password}</label>
-                  <PasswordInput
-                    className="w-full rounded-xl border border-destructive bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-destructive/30"
-                    autoComplete="current-password"
-                    placeholder={copy.danger.passwordPlaceholder}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={deleteStep === "deleting"}
-                  />
-                </div>
-              )}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={confirmText !== "DELETE" || (hasPasswordLogin !== false && !confirmPassword) || deleteStep === "deleting"}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-white transition hover:bg-destructive/80 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {deleteStep === "deleting" ? <><Loader2 className="h-4 w-4 animate-spin" />{copy.danger.deleting}</> : copy.danger.finalDelete}
-                </button>
-                <button
-                  onClick={resetDeleteFlow}
-                  disabled={deleteStep === "deleting"}
-                  className="rounded-xl px-4 py-2 text-sm text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
-                >
-                  {copy.danger.cancel}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      <DeleteAccountDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        userEmail={userEmail}
+        hasPasswordLogin={hasPasswordLogin ?? true}
+        mfaEnabled={mfaEnabled}
+      />
     </div>
   );
 }
