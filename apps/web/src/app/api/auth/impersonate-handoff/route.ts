@@ -186,7 +186,24 @@ async function exchangeImpersonationToken(request: NextRequest, token: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const parsed = handoffSchema.safeParse(await request.json().catch(() => ({})));
+  // Accept the token from a JSON body (same-origin/programmatic) OR a form POST.
+  // The form path is what the admin app uses: admin + web are separate origins, so
+  // a credentialed cross-origin fetch can't persist the SameSite=Lax user_session
+  // cookie (a Set-Cookie on a cross-origin subresponse is dropped). A TOP-LEVEL
+  // form POST is a first-party navigation on the web origin, so the cookie sticks.
+  // Either way the token rides in the request BODY, never the URL (no leak via
+  // history/referrer/logs) — same property the JSON path already guaranteed.
+  const contentType = request.headers.get("content-type") || "";
+  let rawToken: unknown;
+  if (contentType.includes("application/json")) {
+    const body = await request.json().catch(() => null);
+    rawToken = body && typeof body === "object" ? (body as { token?: unknown }).token : undefined;
+  } else {
+    const form = await request.formData().catch(() => null);
+    const v = form?.get("token");
+    rawToken = typeof v === "string" ? v : undefined;
+  }
+  const parsed = handoffSchema.safeParse({ token: rawToken });
   if (!parsed.success) {
     return NextResponse.redirect(
       new URL("/sign-in?err=impersonation-missing-token", request.url),
