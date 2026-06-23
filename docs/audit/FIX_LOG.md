@@ -89,6 +89,24 @@
 
 ---
 
+## Sprint 3 — roadmap re-verify + autonomous-safe batch (branch `fix/audit-sprint3`)
+
+Started by a **re-verify workflow** over the 26 remaining roadmap items (Phases 1–5) against the CURRENT code — confirming the roadmap is heavily stale: **1 already-DONE** (4.6 Redis fail-closed — fully satisfied), 13 PARTIAL, 12 OPEN. Then implemented the **autonomous-safe** items in two disjoint-bucket workflows (implement → adversarially verify), each bucket committed separately. Excluded (flagged below): items needing a product decision, schema migration, client-side coupling, or a dependency/lockfile change.
+
+- **S3.1 Billing webhook correctness + observability** (`4.1/4.3/4.2`, `4ecf9b80`): gate activation-email + acquisition-redemption flip behind `payment_status !== "unpaid"` (trials/paid still activate); swap empty `.catch(()=>{})` on release/reconcile for `captureException`; reject Apple FAMILY_SHARED receipts (missing field still grants). +tests.
+- **S3.2 GDPR Lead PII purge** (`1.3`, `38ce812a`): `lead.deleteMany` added to BOTH erasure paths (self-service + admin hard-delete) before user delete (LeadDispatch cascades). +tests.
+- **S3.3 Legal hygiene** (`1.6`, `f0175e51`): remove unsourced "4.9" rating; readiness FAILs in prod on legal-entity/address placeholders (read from the report env arg); `.env.example` documented.
+- **S3.4 Email/cron reliability** (`4.7/4.8/4.10`, `0b93b80b`): resend opts out only on PERMANENT bounces; new guarded crons `email-reconcile` (stale-PENDING→FAILED) + `integration-health` (error-ratio alert); entitlement-gate task/move reminders; cursor-paginate unbounded reminder loops.
+- **S3.5 Notification opt-out + error surfacing** (`3.5/3.4`, `18129b8b`): scheduled-delivery skips EMAIL/PUSH for opted-out users (transactional/IN_APP always deliver, fail-open); web PUSH mute (`pushXxx` keys); notification-center shows error+retry vs empty. +tests.
+- **S3.6 a11y + i18n/meta** (`5.2/5.3`, `6549ae7e`): progressbar/aria-current/StatusBadge/CardTitle/Input-aria; light-mode theme-color meta + colorScheme; marketing-nav/theme-toggle + mobile strings → i18n (en+es). (Dialog asChild deliberately deferred.)
+- **S3.7 Dead code + stale comments** (`5.4/5.5`, `44bd2b28`): delete grep-confirmed-dead testimonial-quote + legacy SQLite-migration artifacts + unused exports (initSentry/decodeJwtPayload/getAllFlags/verifyAndLookupSignedTransaction); fix stale comments/docstrings. No dependency/schema change.
+
+**All green:** web/admin/shared/mobile typecheck 0; touched suites + cron (75) + mobile (326) pass. `4.6` ticked DONE.
+
+**Sprint-3 deferred (NOT autonomous — need a decision / migration / client coupling):** `1.1` IAP receipt binding (client+server + flag), `2.4` promote-to-ADMIN step-up (no client step-up modal for workspace member ops), `2.7B` custom-provider/AddressChangeEvent encryption (schema migration), `3.1` account-delete/export step-up unification (client UX), `3.2` onboarding server-validate + scope (redirect-loop risk), `3.3` export-scope (product decision; the migration/budget workspace-scope part is autonomous-safe — candidate for a later batch), `4.1` optional amount/currency re-check (needs price coupling), `4.2` IAP event-ordering (schema), `4.4` staging sandbox-gating (behavior decision), `4.5` multi-step transactions (med risk; account-deletion path careful — candidate for a later batch), `4.9` hot-path query reduction (perf, low value), `5.1` badge contrast (theme-renewal track), recharts dep removal (lockfile), impersonation-endpoint disposition (product decision), notification-push settings-UI toggle (follow-up).
+
+---
+
 ## Deferred / flagged follow-ups (not lost — tracked here)
 
 | Item | Why deferred | Where it belongs |
@@ -104,4 +122,4 @@
 3. After all: `tsc --noEmit` web + admin → 0 errors.
 4. ⚠️ Not run (needs broader setup / a running app): full `pnpm verify:tests`, `pnpm build`, E2E, and **runtime visual contrast** checks.
 
-_Last updated: 2026-06-22 (Sprint 2: S2.1–S2.9 on `fix/audit-sprint2` — impersonation hardening + public-prefix backstop + admin page-level guards)._
+_Last updated: 2026-06-22 (Sprint 3: S3.1–S3.7 on `fix/audit-sprint3` — roadmap re-verify + autonomous-safe batch: billing/GDPR/legal/cron/notifications/a11y-i18n/dead-code)._

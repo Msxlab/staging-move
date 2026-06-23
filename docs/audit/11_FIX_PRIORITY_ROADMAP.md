@@ -203,7 +203,7 @@ Highest blast-radius security + compliance + data-loss items, plus the broken ac
   - **Depends on:** none.
   - **Validation:** mid-sequence failure leaves no partial state; concurrent generate yields one row set.
 
-- [ ] **4.6 Require Redis / fail-closed for limiters & lockout in prod** (`security-platform-02/03`, `security-surface-03`, `signup-login-04`, `repo-overview-04`)
+- [x] **4.6 Require Redis / fail-closed for limiters & lockout in prod** (`security-platform-02/03`, `security-surface-03`, `signup-login-04`, `repo-overview-04`)
   - **Files:** `lib/rate-limit.ts`, `rate-limit-policy.ts`; `login-lockout.ts`; admin middleware; readiness checks.
   - **Risk:** Med — fail-closed could deny if Redis flaps; alert + scope to auth/abuse policies.
   - **Depends on:** Redis provisioned.
