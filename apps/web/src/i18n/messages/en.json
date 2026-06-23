@@ -1377,7 +1377,11 @@
     "proShowcase_feature_dossier": "A PDF home dossier you can save or share",
     "proShowcase_feature_ai": "AI guidance tailored to your move",
     "proShowcase_footnote": "No payment now — finish setup free, explore Pro any time.",
-    "proShowcase_cta": "See Pro"
+    "proShowcase_cta": "See Pro",
+    "done_eyebrow": "Setup complete",
+    "done_title": "You're <em>all set</em>",
+    "done_subtitle": "Your LocateFlow home is ready. Everything you just set up is waiting for you — let's dive in.",
+    "done_cta": "Enter LocateFlow"
   },
   "legal": {
     "privacy_title": "Privacy Policy",
