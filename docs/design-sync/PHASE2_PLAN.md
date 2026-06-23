@@ -39,6 +39,15 @@
 - **✅ Increment A DONE (merged `feat/design-foundation`):** CATEGORY_COLORS de-duped to a single `theme.ts categoryColors` (identical values); `#fff`→`onAccent` on the 3 unambiguous on-accent sites (correctly LEFT the green-fill checkmarks + gradient-button icons where white is right); pre-splash `#0A0F18`→`#0A0F1C`; removed legacy Geist/Fraunces fonts + deps + lockfile; raccoon eye already accent-bound. Mobile-only, 9 files, mobile typecheck 0 + **326 tests green**.
   - **Follow-up flag:** `apps/mobile/src/components/ui/Button.tsx` hardcodes `#fff` for `text_primary`/`text_gradient`/spinner (on accent fills) — tokenize in a dedicated Button pass (app-wide regression surface).
   - **⚠️ Emulator/visual check still required:** dark+light — category chips, on-accent contrast, pre-splash flash, raccoon eye Gold(dark)/Sapphire(light).
-- **Next:** Increment B (fidelity verification) → Increment C (risk gauge D16, raccoon-truck, completable reminders D21).
+- **✅ Increment B DONE (verification):** audited mobile vs the handoff — mobile is already faithful, **no token/parity code changes needed** (no literal "Move" wordmark to fix; More footer already "LocateFlow"; OSM attribution baked into the Geoapify image). Flagged partials handled below.
+- **✅ Phase 2B partials DONE (best-guess, design-matched + data-honest):**
+  - **Splash** (`move-app-23`): added "LocateFlow" Playfair-900 wordmark + "Relocation Intelligence" gold eyebrow + bg `#0A0F18`→`#0A0F1C`. No PRO pill (D3). (`a249f835`)
+  - **AI Briefing** (`move-app-14`): content-state header → MoveRaccoon `thinking` + 3 staggered blinking typing dots + "Updated now". (`3a3e16cc`)
+  - **Risk gauge** (`move-app-15`): "MOVES" → "RISK LEVEL · {High|Elevated|Low}", band derived from the existing `riskRatio`, severity-colored; portfolio chips kept. (`3a3e16cc`)
+  - **Monthly cost old→new** (`move-app-16`): **kept current-spend (NO change)** — the app has no projected new-home cost; current spend is the data-honest signal (decision).
+  - New i18n strings use `t()` fallbacks → **add es translations** (briefingUpdatedNow, riskLevelLabel, riskHigh/Elevated/Low) as a minor follow-up.
+- **🎉 PHASE 2 (mobile) effectively COMPLETE** for the re-skin/parity scope. ⚠️ All mobile visuals still need an **emulator/human preview** (foundation raccoon + splash + briefing + gauge in dark+light).
+- **Deferred → Increment C / features track:** raccoon-truck travel marker (`move-app-11`), animated route map (`move-app-10`), full dossier 7-metric swipe matrix (`move-app-12`, D14), completable reminders (D21). Larger feature builds — schedule with D14/D16/D17/D20/D21/D22.
+- **Next in D34 order:** Phase 3 (marketing re-skin) → Phase 4 (web shell) → Phase 5 (admin theme).
 
-_Plan authored 2026-06-22 — Increment A done; B/C remaining._
+_Plan authored 2026-06-22 — Increment A+B + Phase 2B partials done; Increment C (features) + Phases 3–5 remaining._
