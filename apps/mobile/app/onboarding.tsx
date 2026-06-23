@@ -2256,13 +2256,14 @@ export default function OnboardingScreen() {
                       />
                     ) : null}
                   </View>
-                  {/* Aspirational "what Pro unlocks for YOUR move" showcase —
+                  {/* Personalized "what your full move plan includes" showcase —
                       built from the REAL entered context (origin → destination
-                      state + household). SHOWCASE, not a paywall: the only
-                      action is a quiet "See Pro" link to the upgrade surface;
-                      the primary CTA below proceeds normally. Only once a
-                      destination state is typed, never for paid users. NO
-                      payment step here. */}
+                      state + household). LocateFlow is free forever, so this is
+                      a value showcase, NOT a paywall: it lists what's INCLUDED
+                      and the only action is a neutral in-flow "Continue" that
+                      does NOT route to any buy / subscription surface. The
+                      primary CTA below proceeds normally. Only once a
+                      destination state is typed. */}
                   {!isPremium &&
                     hasProShowcaseContext({
                       fromState: address.state || null,
@@ -2279,7 +2280,7 @@ export default function OnboardingScreen() {
                         }}
                         fromLabel={address.state || t("onboarding.proShowcase_yourState", { defaultValue: "your state" })}
                         toLabel={movingForm.state || t("onboarding.proShowcase_yourState", { defaultValue: "your state" })}
-                        onSeePro={() => completeWithoutPlan("subscription")}
+                        onContinue={() => completeWithoutPlan("dashboard")}
                       />
                     )}
                   <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
