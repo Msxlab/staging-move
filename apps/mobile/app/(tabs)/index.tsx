@@ -32,6 +32,7 @@ import {
   Sun,
   Moon,
   Check,
+  RotateCcw,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
@@ -81,6 +82,7 @@ import { HomeDossierCard } from "@/components/ui/HomeDossierCard";
 import { HomeInsightCard } from "@/components/ui/HomeInsightCard";
 import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
 import { UpNext } from "@/components/ui/UpNext";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { SavingsInsightsCard } from "@/components/ui/SavingsInsightsCard";
 import { computeSavingsInsights, type ServiceLike } from "@/lib/service-insights";
 import { getCategoryIcon, getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
@@ -1626,6 +1628,16 @@ export default function DashboardScreen() {
               onAction={() => router.push("/notifications")}
               style={{ marginTop: 18, marginBottom: 10 }}
             />
+            {/* D21 — "{open} open · {done} done" sub-header + the completable
+                (strike-through, tap-to-reopen) DONE rows. Additive: UpNext below
+                still owns the OPEN one-tap-complete rows. */}
+            <RemindersThisWeek
+              planId={stats?.activePlan?.id ?? null}
+              locale={(i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US"}
+              onChanged={async () => {
+                await fetchDashboard();
+              }}
+            />
             {/* Actionable next checklist task (deep-links to Services) + overdue
                 count — restored into the design's reminders section so the one-
                 tap "next task" + overdue alerts aren't lost in the simplify. */}
@@ -2001,6 +2013,257 @@ export default function DashboardScreen() {
     </SafeAreaView>
   );
 }
+
+// ──────────────────────────────────────────────────────────────────────
+// D21 — completable "Reminders · this week" enrichment.
+// ──────────────────────────────────────────────────────────────────────
+
+/** Open lifecycle states (matches UpNext) — everything else that isn't an
+ *  open state and isn't dismissed counts as "done" for the header tally. */
+const REMINDER_OPEN_STATUSES = new Set([
+  "SUGGESTED",
+  "ACCEPTED",
+  "IN_PROGRESS",
+  "REOPENED",
+]);
+// Cap on the visible recently-done rows so the section can't grow unbounded.
+const REMINDER_DONE_VISIBLE = 4;
+
+interface ReminderTaskLite {
+  id: string;
+  title: string;
+  status: string;
+  dueDate?: string | null;
+}
+
+/**
+ * RemindersThisWeek — the D21 completable-reminders layer that sits with the
+ * dashboard "Reminders · this week" section. It is purely ADDITIVE: UpNext
+ * still owns the OPEN one-tap-complete rows; this component adds
+ *   1. a "{open} open · {done} done" sub-header counting the same plan's tasks,
+ *   2. the recently-DONE rows rendered with a strike-through + filled checkbox
+ *      that, when tapped, REOPENs the task (PATCH /api/move-tasks { id,
+ *      event:"REOPEN" } — the SAME endpoint UpNext/the plan screen use).
+ *
+ * No new model or endpoint: tasks come from the existing GET /api/move-tasks,
+ * and the checkbox PATCHes status via the existing lifecycle events. Reopen is
+ * optimistic (the row un-strikes/leaves the done list immediately) and reverts
+ * on error. onChanged() best-effort refreshes the dashboard so the readiness
+ * ring + UpNext re-sync. Renders nothing until its first fetch resolves and
+ * shows nothing extra when there are no done rows beyond the count line.
+ */
+function RemindersThisWeek({
+  planId,
+  locale,
+  onChanged,
+}: {
+  planId: string | null | undefined;
+  locale: string;
+  onChanged?: () => void | Promise<void>;
+}) {
+  const theme = useAppTheme();
+  const { t } = useTranslation();
+  const [tasks, setTasks] = useState<ReminderTaskLite[] | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [errorId, setErrorId] = useState<string | null>(null);
+
+  const fetchTasks = useCallback(async () => {
+    if (!planId) {
+      setTasks(null);
+      return;
+    }
+    const res = await api.get<any>("/api/move-tasks", { movingPlanId: planId });
+    if (res.error || !res.data?.tasks) {
+      setTasks([]);
+      return;
+    }
+    const all: ReminderTaskLite[] = (res.data.tasks as any[])
+      // Dismissed tasks aren't reminders at all — drop them from both tallies.
+      .filter((tk) => tk?.status !== "DISMISSED")
+      .map((tk) => ({
+        id: tk.id,
+        title: tk.title,
+        status: tk.status,
+        dueDate: tk.dueDate ?? null,
+      }));
+    setTasks(all);
+  }, [planId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!planId) {
+        if (!cancelled) setTasks(null);
+        return;
+      }
+      await fetchTasks();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [planId, fetchTasks]);
+
+  // Reopen a done task via the SAME lifecycle event UpNext uses. Optimistic:
+  // flip the local status to REOPENED so the row leaves the done list at once;
+  // revert + surface a quiet inline error if the PATCH fails.
+  const handleReopen = useCallback(
+    async (task: ReminderTaskLite) => {
+      if (busyId) return;
+      setBusyId(task.id);
+      setErrorId(null);
+      setTasks((curr) =>
+        (curr ?? []).map((tk) =>
+          tk.id === task.id ? { ...tk, status: "REOPENED" } : tk,
+        ),
+      );
+      const res = await api.patch<any>("/api/move-tasks", {
+        id: task.id,
+        event: "REOPEN",
+      });
+      if (res.error) {
+        hapticLight();
+        setErrorId(task.id);
+        setTasks((curr) =>
+          (curr ?? []).map((tk) =>
+            tk.id === task.id ? { ...tk, status: task.status } : tk,
+          ),
+        );
+        setBusyId(null);
+        return;
+      }
+      hapticSuccess();
+      setBusyId(null);
+      try {
+        await onChanged?.();
+      } catch {
+        /* non-blocking */
+      }
+    },
+    [busyId, onChanged],
+  );
+
+  if (!planId || tasks === null) return null;
+
+  const openCount = tasks.filter((tk) => REMINDER_OPEN_STATUSES.has(tk.status)).length;
+  const doneTasks = tasks.filter((tk) => !REMINDER_OPEN_STATUSES.has(tk.status));
+  const doneCount = doneTasks.length;
+  // Nothing to count and nothing done → don't add an empty line to the section.
+  if (openCount === 0 && doneCount === 0) return null;
+
+  const styles = makeReminderStyles(theme);
+  const visibleDone = doneTasks.slice(0, REMINDER_DONE_VISIBLE);
+
+  return (
+    <View>
+      <Text style={styles.countLine} accessibilityRole="text">
+        {t("dashboard.remindersCount", { open: openCount, done: doneCount })}
+      </Text>
+
+      {visibleDone.length > 0 ? (
+        <View style={styles.doneCard}>
+          <Text style={styles.doneHeader}>
+            {t("dashboard.remindersDoneHeader", { defaultValue: "Done this week" })}
+          </Text>
+          {visibleDone.map((task, index) => {
+            const busy = busyId === task.id;
+            const failed = errorId === task.id;
+            return (
+              <View
+                key={task.id}
+                style={[styles.doneRow, index > 0 && styles.doneRowDivider]}
+              >
+                <PressableScale
+                  onPress={() => handleReopen(task)}
+                  disabled={busy}
+                  min={0.88}
+                  style={styles.doneCheckbox}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={t("dashboard.remindersReopenLabel", {
+                    title: task.title,
+                    defaultValue: 'Reopen "{{title}}"',
+                  })}
+                >
+                  {busy ? (
+                    <ActivityIndicator size="small" color={theme.colors.success} />
+                  ) : (
+                    <Check size={15} color={theme.colors.onAccent} />
+                  )}
+                </PressableScale>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.doneTitle} numberOfLines={1}>
+                    {task.title}
+                  </Text>
+                  {failed ? (
+                    <Text style={styles.doneError} numberOfLines={1}>
+                      {t("dashboard.remindersReopenFailed", {
+                        defaultValue: "Couldn't reopen that task. Please try again.",
+                      })}
+                    </Text>
+                  ) : null}
+                </View>
+                <RotateCcw size={14} color={theme.colors.dim} />
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+const makeReminderStyles = (t: Theme) =>
+  StyleSheet.create({
+    countLine: {
+      fontSize: 12,
+      fontFamily: fonts.sansSemibold,
+      color: t.colors.dim,
+      marginTop: -2,
+      marginBottom: 10,
+    },
+    doneCard: {
+      padding: 14,
+      borderRadius: 16,
+      marginBottom: 9,
+      backgroundColor: t.colors.surface,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+    },
+    doneHeader: {
+      fontSize: 9,
+      fontFamily: fonts.sansBold,
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      color: t.colors.faint,
+      marginBottom: 8,
+    },
+    doneRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingVertical: 9,
+    },
+    doneRowDivider: { borderTopWidth: 1, borderTopColor: t.colors.border },
+    doneCheckbox: {
+      width: 26,
+      height: 26,
+      borderRadius: 8,
+      backgroundColor: t.colors.success,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    doneTitle: {
+      fontSize: 13.5,
+      fontFamily: fonts.sansMedium,
+      color: t.colors.dim,
+      textDecorationLine: "line-through",
+    },
+    doneError: {
+      fontSize: 11,
+      color: t.colors.error,
+      fontFamily: fonts.sansSemibold,
+      marginTop: 3,
+    },
+  });
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
