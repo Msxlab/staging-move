@@ -7,7 +7,7 @@ import {
 } from "@/lib/user-auth";
 import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { sendPasswordResetEmail } from "@/lib/email-service";
-import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -164,6 +164,9 @@ export async function POST(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await blockIfImpersonating(request, { action: "ACCT_SECURITY", route: "/api/auth/security" });
+  if (blocked) return blocked;
 
   let body: unknown;
   try {

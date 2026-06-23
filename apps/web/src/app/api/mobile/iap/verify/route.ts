@@ -26,7 +26,7 @@ import {
 } from "@/lib/iap-common";
 import { verifyAppleJws, type AppleTransactionPayload } from "@/lib/iap-apple";
 import { buildUnifiedEntitlementSnapshot } from "@/lib/billing";
-import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
     // activating a real store purchase (audit round-2 billing #5). Receipt
     // ownership + store verification still gate the grant either way.
     const userId = await requireDbUserId();
+    const blocked = await blockIfImpersonating(request, { action: "IAP_VERIFY", route: "/api/mobile/iap/verify" });
+    if (blocked) return blocked;
     const [ipRl, userRl] = await Promise.all([
       rateLimit(getRateLimitKey(request, "iap-verify"), {
         limit: 30,

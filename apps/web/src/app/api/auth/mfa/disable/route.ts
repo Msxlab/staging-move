@@ -8,7 +8,7 @@ import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
 import { extractRequestMeta } from "@/lib/audit";
 import { recordUserSecurityAudit } from "@/lib/user-security-audit";
-import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -33,6 +33,9 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await blockIfImpersonating(request, { action: "MFA_DISABLE", route: "/api/auth/mfa/disable" });
+  if (blocked) return blocked;
 
   const rl = await enforceRateLimitPolicy(request, "mfa_verify", {
     userId,

@@ -14,7 +14,7 @@ import { resolveClientIP } from "@/lib/rate-limit";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
 import { extractRequestMeta } from "@/lib/audit";
 import { recordUserSecurityAudit } from "@/lib/user-security-audit";
-import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -30,6 +30,9 @@ export async function PATCH(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await blockIfImpersonating(request, { action: "PASSWORD_CHANGE", route: "/api/auth/password/change" });
+  if (blocked) return blocked;
 
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }

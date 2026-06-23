@@ -15,7 +15,7 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/user-auth", () => ({ getUserSession: (...a: any[]) => mocks.getUserSession(...a) }));
 vi.mock("@/lib/rate-limit", () => ({ resolveClientIP: () => "198.51.100.7" }));
 
-import { recordImpersonatedMutation, auditImpersonatedMutation } from "./impersonation-audit";
+import { recordImpersonatedMutation, auditImpersonatedMutation, blockIfImpersonating } from "./impersonation-audit";
 
 describe("recordImpersonatedMutation", () => {
   beforeEach(() => {
@@ -118,5 +118,39 @@ describe("auditImpersonatedMutation (route helper)", () => {
       auditImpersonatedMutation(req, { action: "account_delete", entityType: "User", entityId: "user_1" }),
     ).resolves.toBeUndefined();
     expect(mocks.adminAuditLogCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe("blockIfImpersonating", () => {
+  const req = new Request("https://locateflow.com/api/auth/password/change", { method: "PATCH" });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns a 403 IMPERSONATION_FORBIDDEN and records the blocked attempt when impersonating", async () => {
+    mocks.getUserSession.mockResolvedValue({ userId: "user_1", sessionId: "s1", impersonatedByAdminId: "admin_9" });
+    const res = await blockIfImpersonating(req, { action: "MFA_DISABLE", route: "/api/auth/mfa/disable" });
+    expect(res).not.toBeNull();
+    expect(res!.status).toBe(403);
+    const body = await res!.json();
+    expect(body.code).toBe("IMPERSONATION_FORBIDDEN");
+    // the blocked attempt itself is audited
+    expect(mocks.adminAuditLogCreate).toHaveBeenCalledTimes(1);
+    const data = mocks.adminAuditLogCreate.mock.calls[0][0].data;
+    expect(data.adminUserId).toBe("admin_9");
+    expect(data.action).toBe("BLOCK_MFA_DISABLE");
+  });
+
+  it("returns null (allows the action) for a genuine, non-impersonated session", async () => {
+    mocks.getUserSession.mockResolvedValue({ userId: "user_1", sessionId: "s1", impersonatedByAdminId: null });
+    const res = await blockIfImpersonating(req, { action: "MFA_DISABLE" });
+    expect(res).toBeNull();
+    expect(mocks.adminAuditLogCreate).not.toHaveBeenCalled();
+  });
+
+  it("returns null (fails open) when there is no session", async () => {
+    mocks.getUserSession.mockResolvedValue(null);
+    const res = await blockIfImpersonating(req, { action: "MFA_DISABLE" });
+    expect(res).toBeNull();
   });
 });
