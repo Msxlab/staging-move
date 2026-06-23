@@ -35,6 +35,7 @@ import {
   MoveProgressBar,
   Pill,
 } from "@/components/move";
+import { MoveRouteMap } from "@/components/move/MoveRouteMap";
 import { peekOfflineCache, readOfflineCache, writeOfflineCache, asArray } from "@/lib/offline-cache";
 import {
   normalizeMovingPlanStatus,
@@ -55,6 +56,25 @@ const MOVING_CACHE = "moving";
 /** Live = a move that is still underway (the design's "Active" moves). */
 function isLiveStatus(status: string): boolean {
   return status === "PLANNING" || status === "IN_PROGRESS";
+}
+
+/** Real great-circle distance in miles between two geocoded addresses, or null
+ *  when either side lacks finite coordinates. Pure haversine; the move list
+ *  endpoint already returns lat/lng on from/toAddress, so this fabricates
+ *  nothing — when coordinates are absent the route preview omits mileage. */
+function routeDistanceMiles(from: any, to: any): number | null {
+  const lat1 = from?.latitude, lon1 = from?.longitude;
+  const lat2 = to?.latitude, lon2 = to?.longitude;
+  if (![lat1, lon1, lat2, lon2].every((v) => typeof v === "number" && Number.isFinite(v))) return null;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 3958.7613; // mean Earth radius, miles
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const miles = 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+  return miles >= 1 ? miles : null;
 }
 
 /** Honest, derivable progress for a live move: fraction of the runway between
@@ -218,6 +238,10 @@ export default function MovingScreen() {
       )
     : "";
   const featuredProgress = featured ? timeProgress(featured) : null;
+  // Real route mileage when both endpoints are geocoded; null → preview omits it.
+  const featuredDistanceMiles = featured
+    ? routeDistanceMiles(featured.fromAddress, featured.toAddress)
+    : null;
   const routeSubline =
     featured && featuredDateLabel
       ? `${featuredDateLabel} · ${featuredFromCity} → ${featuredToCity}`
@@ -373,63 +397,29 @@ export default function MovingScreen() {
                     <MoveRaccoon size={34} mood={featuredLive ? "alert" : "calm"} />
                   </View>
 
-                  {/* Route map */}
-                  <View style={styles.map}>
-                    <Svg
-                      viewBox="0 0 300 158"
-                      preserveAspectRatio="none"
-                      style={StyleSheet.absoluteFill}
-                      width="100%"
-                      height="100%"
-                    >
-                      <G stroke={theme.colors.mapGrid} strokeWidth={1}>
-                        <Path d="M-10 40 C60 28 110 56 180 40 C240 26 280 44 320 32" fill="none" />
-                        <Path d="M-10 96 C60 80 120 104 190 88 C250 74 290 96 320 78" fill="none" />
-                        <Path d="M40 -10 C52 50 36 110 50 168" fill="none" />
-                        <Path d="M150 -10 C140 50 160 110 150 168" fill="none" />
-                        <Path d="M250 -10 C258 50 244 110 256 168" fill="none" />
-                      </G>
-                      <Path
-                        d="M44 124 C92 92 120 108 156 78 C196 46 226 60 262 36"
-                        stroke={theme.colors.mapRouteBase}
-                        strokeWidth={11}
-                        strokeLinecap="round"
-                        fill="none"
-                      />
-                      <Path
-                        d="M44 124 C92 92 120 108 156 78 C196 46 226 60 262 36"
-                        stroke={theme.colors.primary}
-                        strokeWidth={3.2}
-                        strokeLinecap="round"
-                        strokeDasharray="9 9"
-                        fill="none"
-                      />
-                      <Circle cx={44} cy={124} r={5} fill={theme.colors.background} stroke={theme.colors.info} strokeWidth={2.4} />
-                      <Circle cx={262} cy={36} r={5} fill={theme.colors.background} stroke={theme.colors.primary} strokeWidth={2.4} />
-                    </Svg>
-                    <View style={[styles.mapTag, styles.mapTagFrom]}>
-                      <Text style={styles.mapTagTitleInfo} numberOfLines={1}>
-                        {featuredFromCity}{featuredFromState ? `, ${featuredFromState}` : ""}
-                      </Text>
-                      <Text style={styles.mapTagSub}>{t("moving.from")}</Text>
-                    </View>
-                    <View style={[styles.mapTag, styles.mapTagTo]}>
-                      <Text style={styles.mapTagTitleAccent} numberOfLines={1}>
-                        {featuredToCity}{featuredToState ? `, ${featuredToState}` : ""}
-                      </Text>
-                      <Text style={styles.mapTagSub}>{t("moving.to")}</Text>
-                    </View>
-                    <View style={styles.mapFoot}>
-                      <Text style={styles.mapFootTitle} numberOfLines={1}>{featuredDateLabel}</Text>
-                      {featuredDays != null && featuredDays > 0 ? (
-                        <Text style={styles.mapFootSub}>{t("moving.daysLeft", { count: featuredDays })}</Text>
-                      ) : (
-                        <Text style={styles.mapFootSub}>
-                          {t(`moving.status_${featuredStatus}`, { defaultValue: featuredStatus.replace("_", " ") })}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
+                  {/* Live move intelligence — animated route (D16): marching gold
+                      dashes + a raccoon-as-truck marker traveling origin→dest,
+                      with a real-mileage / arrival-in-N-days glass label. */}
+                  <MoveRouteMap
+                    fromCity={featuredFromCity}
+                    fromState={featuredFromState}
+                    toCity={featuredToCity}
+                    toState={featuredToState}
+                    dateLabel={featuredDateLabel}
+                    days={featuredDays}
+                    distanceMiles={featuredDistanceMiles}
+                    routePreviewLabel={t("moving.routePreview", "mi route preview")}
+                    arrivalLabel={
+                      featuredDays != null && featuredDays > 0
+                        ? t("moving.arrivalInDays", { count: featuredDays, defaultValue: `arrival in ${featuredDays} days` })
+                        : null
+                    }
+                    statusFallback={t(`moving.status_${featuredStatus}`, {
+                      defaultValue: featuredStatus.replace("_", " "),
+                    })}
+                    fromLabel={t("moving.from")}
+                    toLabel={t("moving.to")}
+                  />
 
                   {/* Ops signals */}
                   <View style={styles.opsRow}>
@@ -762,46 +752,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.primary,
   },
   heroSub: { fontSize: 10, color: theme.colors.dim, marginTop: 3 },
-  map: {
-    position: "relative",
-    height: 158,
-    borderRadius: 18,
-    overflow: "hidden",
-    backgroundColor: theme.colors.mapBg[1],
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  mapTag: {
-    position: "absolute",
-    top: 10,
-    borderRadius: 12,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    backgroundColor: theme.colors.glassPane,
-    borderWidth: 1,
-  },
-  mapTagFrom: { left: 10, borderColor: theme.colors.border },
-  mapTagTo: { right: 10, borderColor: theme.colors.accentBorder, alignItems: "flex-end" },
-  mapTagTitleInfo: { color: theme.colors.info, fontSize: 8, fontFamily: fonts.sansBold, letterSpacing: 0.6, textTransform: "uppercase" },
-  mapTagTitleAccent: { color: theme.colors.primary, fontSize: 8, fontFamily: fonts.sansBold, letterSpacing: 0.6, textTransform: "uppercase" },
-  mapTagSub: { color: theme.colors.faint, fontSize: 8, marginTop: 1 },
-  mapFoot: {
-    position: "absolute",
-    left: 10,
-    right: 10,
-    bottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderRadius: 13,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: theme.colors.glassPane,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  mapFootTitle: { color: theme.colors.text, fontSize: 10, fontFamily: fonts.sansBold, flexShrink: 1 },
-  mapFootSub: { color: theme.colors.faint, fontSize: 8, marginLeft: 8 },
   opsRow: { flexDirection: "row", gap: 9, marginTop: 13 },
   opsTile: {
     flex: 1,
