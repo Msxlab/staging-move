@@ -242,6 +242,60 @@ function serviceCategoryEmoji(category: string | null | undefined): string {
   return getMergedDisplayCategoryIcon(key) || getCategoryIcon(key);
 }
 
+/**
+ * Home-Dossier address chip-row — lets the user switch which of their homes the
+ * Dossier shows (current home by default; the active move's destination is marked
+ * with "→"). Mirrors the Addresses-tab location toggle. Only rendered when there
+ * is more than one selectable home.
+ */
+function DossierAddressChips({
+  chips,
+  selectedId,
+  onSelect,
+}: {
+  chips: { id: string; label: string }[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const theme = useAppTheme();
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ gap: 8, paddingVertical: 4, paddingRight: 16 }}
+      style={{ marginBottom: 8 }}
+    >
+      {chips.map((c) => {
+        const active = c.id === selectedId;
+        return (
+          <TouchableOpacity
+            key={c.id}
+            onPress={() => onSelect(c.id)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            style={{
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+              borderRadius: 999,
+              backgroundColor: active ? theme.colors.primary : theme.colors.surface3,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12.5,
+                fontWeight: "600",
+                color: active ? theme.colors.onAccent : theme.colors.text,
+              }}
+            >
+              {c.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
 export default function DashboardScreen() {
 
   // theme: hook-injected styles
@@ -275,6 +329,11 @@ export default function DashboardScreen() {
   // Primary address state → tz-correct move countdown (US-only zone mapping).
   const [primaryState, setPrimaryState] = useState<string | null>(null);
   const [primaryHomeInsight, setPrimaryHomeInsight] = useState<{ id: string; label: string | null } | null>(null);
+  // Home-Dossier address selector: the user can view the dossier of ANY of their
+  // homes, so the Dossier is useful BEFORE/WITHOUT a move (default = the active
+  // move's destination, else the primary home; a manual chip pick wins).
+  const [dossierAddresses, setDossierAddresses] = useState<{ id: string; label: string; isPrimary: boolean }[]>([]);
+  const [selectedDossierAddressId, setSelectedDossierAddressId] = useState<string | null>(null);
   // COLD-START momentum: true when the active plan has BOTH a real origin and a
   // real destination address. That is genuine, user-completed setup, so the
   // Move Command Center readiness ring starts at a low non-zero instead of 0%.
@@ -469,6 +528,19 @@ export default function DashboardScreen() {
               label: primaryAddress.nickname || [primaryAddress.city, primaryAddress.state].filter(Boolean).join(", ") || null,
             }
           : null,
+      );
+      // Selectable Home-Dossier addresses (primary first) for the chip-row.
+      setDossierAddresses(
+        addresses
+          .filter((a: any) => a?.id)
+          .map((a: any) => ({
+            id: a.id as string,
+            label: a.nickname || [a.city, a.state].filter(Boolean).join(", ") || "Home",
+            isPrimary: !!a.isPrimary,
+          }))
+          .sort((a: { isPrimary: boolean }, b: { isPrimary: boolean }) =>
+            a.isPrimary === b.isPrimary ? 0 : a.isPrimary ? -1 : 1,
+          ),
       );
       const plans = movingRes.data?.plans || [];
       const totalServices = addresses.reduce(
@@ -1106,6 +1178,31 @@ export default function DashboardScreen() {
     return t(`categories.${key}`, { defaultValue: key.replace(/_/g, " ") });
   };
 
+  // ── Home-Dossier address selection ── show the dossier of the user's CURRENT
+  // home by default (the active move's destination wins when moving); a chip-row
+  // lets them switch between / compare their homes. A manual pick (state) wins.
+  const activeDestAddressId = stats?.activePlan?.toAddressId ?? null;
+  const dossierAddressId =
+    selectedDossierAddressId ?? activeDestAddressId ?? primaryHomeInsight?.id ?? null;
+  const dossierChips: { id: string; label: string }[] = dossierAddresses.map((a) => ({
+    id: a.id,
+    label: a.id === activeDestAddressId ? `→ ${a.label}` : a.label,
+  }));
+  if (activeDestAddressId && !dossierAddresses.some((a) => a.id === activeDestAddressId)) {
+    dossierChips.unshift({
+      id: activeDestAddressId,
+      label: t("dashboard.dossierDestinationChip", { defaultValue: "→ Destination" }),
+    });
+  }
+  const renderDossierSelector = () =>
+    dossierChips.length > 1 ? (
+      <DossierAddressChips
+        chips={dossierChips}
+        selectedId={dossierAddressId}
+        onSelect={setSelectedDossierAddressId}
+      />
+    ) : null;
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header */}
@@ -1621,7 +1718,8 @@ export default function DashboardScreen() {
               label={t("dashboard.homeDossierKicker", { defaultValue: "Home Dossier" })}
               style={{ marginTop: 20, marginBottom: 4 }}
             />
-            <HomeDossierCard addressId={stats?.activePlan?.toAddressId ?? null} />
+            {renderDossierSelector()}
+            <HomeDossierCard addressId={dossierAddressId} />
 
             {/* (f) MOVING GUIDES — featured guide card. */}
             <SectionHeader
@@ -1670,7 +1768,8 @@ export default function DashboardScreen() {
               label={primaryHomeInsight?.label ?? null}
             />
 
-            <HomeDossierCard addressId={stats?.activePlan?.toAddressId ?? null} />
+            {renderDossierSelector()}
+            <HomeDossierCard addressId={dossierAddressId} />
 
             {/* CONNECTED UTILITIES + BUDGET TRACKER — rendered entirely from the
                 services list this screen already fetched. */}
