@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useRef, useState, type ElementType } from "react";
-import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle, Calendar, Info, Megaphone, Users, Plug } from "lucide-react";
+import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle, Calendar, Info, Megaphone, Users, Plug, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { notificationPatchRequestInit } from "@/lib/notification-feed-client";
@@ -76,11 +76,17 @@ function formatNotificationTime(
 export function NotificationCenter() {
   const t = useTranslations("notifications");
   const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
   const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<FeedNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  // Distinguishes a real fetch failure from a genuinely-empty feed: previously
+  // any error reset to [] and showed the "all caught up" empty state, hiding
+  // failures from the user (audit notifications-push-05). On error we keep the
+  // existing notifications (no destructive reset) and surface a retry block.
+  const [error, setError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const fetchFeed = useCallback(async () => {
@@ -90,9 +96,11 @@ export function NotificationCenter() {
       const data = await response.json();
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
+      setError(false);
     } catch {
-      setNotifications([]);
-      setUnreadCount(0);
+      // Do not wipe any already-loaded notifications; just flag the failure so
+      // the UI can show an error + retry instead of a false "all caught up".
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -183,8 +191,41 @@ export function NotificationCenter() {
 
           {/* List */}
           <div className="overflow-y-auto flex-1">
+            {/* A refresh failed but we still have a previously-loaded list:
+                show a thin inline banner + retry so the failure isn't silent,
+                while keeping the stale-but-useful list visible below. */}
+            {error && !loading && notifications.length > 0 && (
+              <div className="flex items-center justify-between gap-2 px-4 py-2 bg-destructive/10 border-b border-destructive/20">
+                <span className="flex items-center gap-1.5 text-[10px] text-destructive">
+                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                  {tErrors("serverError")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setLoading(true); void fetchFeed(); }}
+                  className="inline-flex items-center gap-1 text-[10px] text-destructive hover:underline shrink-0"
+                >
+                  <RotateCw className="h-2.5 w-2.5" />
+                  {tErrors("tryAgain")}
+                </button>
+              </div>
+            )}
             {loading ? (
               <p className="text-sm text-foreground/40 text-center py-8">{t("loading")}</p>
+            ) : error && notifications.length === 0 ? (
+              <div className="text-center py-8 px-4">
+                <AlertTriangle className="h-8 w-8 text-destructive/70 mx-auto mb-2" />
+                <p className="text-xs text-foreground/60">{tErrors("serverError")}</p>
+                <p className="text-[10px] text-foreground/40 mt-0.5">{tErrors("unexpectedShort")}</p>
+                <button
+                  type="button"
+                  onClick={() => { setLoading(true); void fetchFeed(); }}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-[11px] text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition"
+                >
+                  <RotateCw className="h-3 w-3" />
+                  {tErrors("tryAgain")}
+                </button>
+              </div>
             ) : notifications.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle2 className="h-8 w-8 text-foreground/20 mx-auto mb-2" />
