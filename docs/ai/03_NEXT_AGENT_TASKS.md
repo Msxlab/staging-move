@@ -8,6 +8,40 @@ Use [[handoffs/2026-06-22-theme-source-integration-pass]] as the active staging
 memory, with [[handoffs/2026-06-21-staging-audit-prep]] as the security/runtime
 baseline.
 
+## Current Audit Package Note
+
+Docs-only audit package work is active under `docs/audit/`.
+
+Latest audit handoffs:
+
+- [[handoffs/2026-06-22-audit-package-phase1]]
+- [[handoffs/2026-06-22-route-auth-matrix-pass]]
+- [[handoffs/2026-06-22-billing-connectors-matrix-pass]]
+- [[handoffs/2026-06-22-privacy-backup-matrix-pass]]
+
+Current audit outputs include first-pass source/config findings, module maps,
+flow maps, route guard summary, a route auth matrix scaffold, a billing/IAP
+route matrix, a connectors/address-change route matrix, a privacy/export/account
+deletion matrix, and an admin backup/import matrix. Application source code has
+not been modified for this audit package.
+
+Audit P1 queue:
+
+1. Verify and clean credential-like markdown content without printing values.
+2. Pin mutable third-party production-like compose image tags.
+3. Add or explicitly waive workspace member-administration step-up.
+4. Replace generic tracking metadata storage with event-specific allowlists.
+5. Finish the manual one-row-per-route web/admin API auth matrix.
+6. Rerun dependency audit with approved longer timeout or inspect trusted CI output.
+
+Audit P2 queue:
+
+1. Decide whether connector fallback action POST/DELETE should require password/MFA step-up (`SEC-CONNECTOR-001`).
+2. Add billing/IAP transition tests for purchase, renew, cancel, refund, expire, revoke, duplicate, sandbox/test, and out-of-order cases.
+3. Complete connector retention/export/delete and user-notification proof.
+4. Build the model-by-model privacy export/delete policy table.
+5. Run an approved disposable backup restore drill and backup route test suite.
+
 The current product/theme decision is `LocateFlow`: dark mode follows the new
 theme bundle's Gold (`#CBA45E`, `#DCBC7C`, `#B0852F`), while light mode follows
 Sapphire/blue (`#2E5FB0`, `#3D74C8`, `#244C90`). Older memory that says
