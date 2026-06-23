@@ -11,6 +11,16 @@ baseline.
 
 Latest QA report: [[audits/2026-06-23-full-qa-audit]]
 Completion matrix: [[audits/2026-06-23-full-qa-completion-matrix]]
+Free-pivot verification: [[audits/2026-06-23-free-pivot-verification]]
+Latest free-pivot handoff: [[handoffs/2026-06-23-free-pivot-verification]]
+
+Immediate follow-up from the free-pivot verification:
+
+1. Install or publish a current Android `preview` / `staging-preview` build that embeds `EXPO_PUBLIC_API_URL=https://staging.locateflow.com/api`; the installed emulator APK still contains the production API and no staging API string.
+2. Confirm the staging deploy branch. `origin/main` contains the free-pivot and QA P1 fixes, but `origin/staging` is 15 commits behind `origin/main`.
+3. Fix the admin `CONSUMER_FREE` missing-row default so admin status matches the web product default.
+4. Add visible "free / no credit card / affiliate-funded" reassurance to sign-up and sign-in.
+5. Get legal review for the billing/refund free-pivot disclosure language.
 
 Immediate QA blockers found 2026-06-23:
 
