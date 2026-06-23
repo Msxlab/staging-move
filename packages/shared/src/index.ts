@@ -7,6 +7,7 @@ export * from "./intl-helpers";
 export * from "./timezone";
 export * from "./address-autocomplete";
 export * from "./billing";
+export * from "./iap-account-token";
 export * from "./acquisition";
 export * from "./entitlement";
 export * from "./consumer-free";

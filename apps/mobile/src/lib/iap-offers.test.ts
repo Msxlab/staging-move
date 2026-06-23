@@ -84,5 +84,60 @@ describe("Android subscription offer handling", () => {
       type: "subs",
     });
   });
+
+  // Receipt↔account binding (audit fix 1.1). Additive: a token is attached only
+  // when supplied, otherwise the request is exactly as before.
+  it("attaches appAccountToken on iOS when an account token is supplied", () => {
+    expect(
+      buildSubscriptionPurchaseRequest({
+        platform: "ios",
+        productId: "locateflow_individual_ios",
+        accountToken: "5606be2d-3b1c-5ae1-afc4-d33c05382f45",
+      }),
+    ).toEqual({
+      request: {
+        ios: {
+          sku: "locateflow_individual_ios",
+          appAccountToken: "5606be2d-3b1c-5ae1-afc4-d33c05382f45",
+        },
+      },
+      type: "subs",
+    });
+  });
+
+  it("attaches obfuscatedAccountIdAndroid on Android when an account token is supplied", () => {
+    expect(
+      buildSubscriptionPurchaseRequest({
+        platform: "android",
+        productId: "locateflow_individual_monthly",
+        offerToken: "monthly-token",
+        accountToken: "5606be2d-3b1c-5ae1-afc4-d33c05382f45",
+      }),
+    ).toEqual({
+      request: {
+        android: {
+          skus: ["locateflow_individual_monthly"],
+          subscriptionOffers: [
+            { sku: "locateflow_individual_monthly", offerToken: "monthly-token" },
+          ],
+          obfuscatedAccountIdAndroid: "5606be2d-3b1c-5ae1-afc4-d33c05382f45",
+        },
+      },
+      type: "subs",
+    });
+  });
+
+  it("omits the account token fields entirely when none is supplied (unchanged request)", () => {
+    expect(
+      buildSubscriptionPurchaseRequest({
+        platform: "ios",
+        productId: "locateflow_individual_ios",
+        accountToken: null,
+      }),
+    ).toEqual({
+      request: { ios: { sku: "locateflow_individual_ios" } },
+      type: "subs",
+    });
+  });
 });
 

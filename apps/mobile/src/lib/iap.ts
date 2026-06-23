@@ -17,6 +17,7 @@ import Constants from "expo-constants";
 import { api } from "@/lib/api";
 import { isMobileStorePurchasesEnabledForPlatform } from "@/lib/billing-flags";
 import { captureException } from "@/lib/sentry";
+import { deriveIapAccountToken } from "@locateflow/shared";
 import {
   buildSubscriptionPurchaseRequest,
   IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE,
@@ -58,6 +59,26 @@ function getIapModule(): ExpoIapModule | null {
   }
 
   return iapModule;
+}
+
+/**
+ * Lazily read the authed userId from the zustand auth store.
+ *
+ * Loaded via `require` (not a top-level import) on purpose: the auth store
+ * transitively pulls in `expo-secure-store`, a native module that cannot be
+ * evaluated in the node test env. A static import would drag that into this
+ * module's graph and break the (native-free) IAP unit tests; a lazy require
+ * keeps it out until an actual purchase runs. Defensive — any failure yields a
+ * null userId, in which case no account token is attached (request unchanged).
+ */
+function getAuthedUserId(): string | null {
+  try {
+    const mod = require("@/lib/auth-store") as typeof import("@/lib/auth-store");
+    return mod.useAuthStore.getState().user?.id ?? null;
+  } catch (err) {
+    reportIapIssue("[IAP] auth-store unavailable for account-token binding", err);
+    return null;
+  }
 }
 
 async function ensureConnection(): Promise<boolean> {
@@ -194,6 +215,13 @@ export async function purchaseSubscription(opts: {
   const IAP = getIapModule();
   if (!IAP) return { status: "error", message: IAP_STORE_UNAVAILABLE_MESSAGE };
 
+  // Receipt↔account binding (audit fix 1.1): derive a stable per-user token
+  // from the authed userId and attach it to the purchase request. Additive —
+  // if no user is resolvable (should not happen on this authed screen) we
+  // simply omit it and the request is unchanged. The server recomputes the
+  // same value and matches it against the verified receipt.
+  const accountToken = deriveIapAccountToken(getAuthedUserId());
+
   return new Promise<PurchaseResult>((resolve) => {
     let settled = false;
     let handlingPurchase = false;
@@ -293,6 +321,7 @@ export async function purchaseSubscription(opts: {
             platform: Platform.OS === "ios" ? "ios" : "android",
             productId: opts.productId,
             offerToken: opts.offerToken,
+            accountToken,
           }),
         );
         const directPurchases = Array.isArray(directResult)

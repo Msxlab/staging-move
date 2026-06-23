@@ -105,10 +105,24 @@ export function buildSubscriptionPurchaseRequest(opts: {
   platform: "ios" | "android";
   productId: string;
   offerToken?: string | null;
+  /**
+   * Per-user IAP account token (audit fix 1.1 — receipt↔account binding).
+   * Derived deterministically from the authed userId via
+   * `deriveIapAccountToken` (iOS, a UUID) / `deriveObfuscatedAccountId`
+   * (Android). ADDITIVE: when absent the request is byte-for-byte the same as
+   * before, so older flows and any unauthenticated edge case are unaffected.
+   * The store echoes this back inside the verified receipt and the server
+   * recomputes + matches it.
+   */
+  accountToken?: string | null;
 }) {
   if (opts.platform === "ios") {
+    // StoreKit2 requires appAccountToken to be a UUID; deriveIapAccountToken
+    // already returns one. Only attach when present.
+    const ios: Record<string, unknown> = { sku: opts.productId };
+    if (opts.accountToken) ios.appAccountToken = opts.accountToken;
     return {
-      request: { ios: { sku: opts.productId } },
+      request: { ios },
       type: "subs" as const,
     };
   }
@@ -117,13 +131,14 @@ export function buildSubscriptionPurchaseRequest(opts: {
     throw new Error(IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE);
   }
 
+  const android: Record<string, unknown> = {
+    skus: [opts.productId],
+    subscriptionOffers: [{ sku: opts.productId, offerToken: opts.offerToken }],
+  };
+  if (opts.accountToken) android.obfuscatedAccountIdAndroid = opts.accountToken;
+
   return {
-    request: {
-      android: {
-        skus: [opts.productId],
-        subscriptionOffers: [{ sku: opts.productId, offerToken: opts.offerToken }],
-      },
-    },
+    request: { android },
     type: "subs" as const,
   };
 }
