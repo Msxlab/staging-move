@@ -372,6 +372,11 @@ export async function processAccountDeletionRequest(requestId: string) {
       if (deletedUserEmail) {
         await rawPrisma.emailLog.deleteMany({ where: { to: deletedUserEmail } });
       }
+      // Lead has a loose ref (no FK) to User, so the User cascade won't touch it —
+      // leaving the user's encrypted name/contact/notes payload behind after an
+      // Art. 17 erasure. Purge their Leads explicitly; LeadDispatch cascades from
+      // Lead (onDelete: Cascade), so deleting Lead first clears its dispatches too.
+      await rawPrisma.lead.deleteMany({ where: { userId: request.userId } });
       await rawPrisma.user.delete({ where: { id: request.userId } });
       userDeleted = true;
     } catch (error) {

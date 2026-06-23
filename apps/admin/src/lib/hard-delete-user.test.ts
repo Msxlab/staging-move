@@ -42,6 +42,7 @@ function makeTx(order: string[]) {
     waitlistSignup: { deleteMany: vi.fn() },
     notificationQueue: { deleteMany: vi.fn() },
     emailLog: { deleteMany: vi.fn() },
+    lead: { deleteMany: vi.fn() },
     user: { delete: vi.fn(() => order.push("db.delete")) },
   };
 }
@@ -143,6 +144,33 @@ describe("hardDeleteUser", () => {
       expect(result.stripeCanceled).toBe(true);
     }
     expect(order).toContain("db.delete");
+  });
+
+  it("purges the user's Leads (GDPR Art. 17) BEFORE deleting the user", async () => {
+    const order: string[] = [];
+    const calls: string[] = [];
+    let capturedTx: ReturnType<typeof makeTx> | undefined;
+    mocks.rawTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+      const tx = makeTx(order);
+      // Record the relative order of the Lead purge vs the user delete without
+      // perturbing the shared `order` array other tests assert on exactly.
+      tx.lead.deleteMany.mockImplementation(() => calls.push("lead.purge"));
+      tx.user.delete.mockImplementation(() => {
+        calls.push("user.delete");
+        return order.push("db.delete");
+      });
+      capturedTx = tx;
+      await fn(tx);
+    });
+
+    const result = await hardDeleteUser("user_1");
+
+    expect(result.success).toBe(true);
+    // Lead has no FK to User, so it must be purged explicitly (LeadDispatch
+    // cascades from Lead) — and before the user row is deleted.
+    expect(capturedTx?.lead.deleteMany).toHaveBeenCalledWith({ where: { userId: "user_1" } });
+    expect(calls.indexOf("lead.purge")).toBeGreaterThanOrEqual(0);
+    expect(calls.indexOf("lead.purge")).toBeLessThan(calls.indexOf("user.delete"));
   });
 
   it("deletes cleanly for a user with NO subscription (Stripe untouched)", async () => {
