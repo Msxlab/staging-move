@@ -81,6 +81,9 @@
 ### S2.7 Impersonation BLOCK on account-control + billing — `admin-impersonation-02` (security)
 - **Commit:** `4739bb26`. The classify pass surfaced **11 routes where logging is insufficient** — an impersonating SUPER_ADMIN could take over the account or change billing. Added `blockIfImpersonating(request, {action, route})` → returns **403 `IMPERSONATION_FORBIDDEN`** (and records the blocked attempt) when impersonated, `null` for the genuine user; wired AFTER auth / BEFORE any side effect into: `auth/password/change`, `auth/mfa/{setup,confirm,disable}`, `auth/security`, `auth/resend-verification`, `acquisition/redeem`, `mobile/iap/verify`, `subscription/{actions,change-plan,switch-cycle}`. **User-approved** (block both auth + billing). 11/11 adversarially verified (placement after-auth/before-mutation); helper unit-tested; 177 tests green.
 
+### S2.8 Fail-open backstop for public-by-prefix routes — `security-surface-02` (roadmap 2.8)
+- **Commit:** (this branch). `/api/{internal,cron,webhooks}/*` are public-by-omission in `middleware.ts`, so each route must self-authenticate. **Audited all 36** — none are fail-open today: cron (29) → `guardCronRequest`; internal (3) → `verifyInternalAuth` / `INTERNAL_WEBHOOK_SECRET` / `CRON_SECRET`; webhooks (4) → Apple JWS (`verifyAppleJws`), Stripe (`constructEvent`), Resend svix (`verifyResendSignature`), Google Play Pub/Sub OIDC (`verifyPubsubOidcToken`). Added a structural **regression test** (`apps/web/src/app/api/__tests__/public-prefix-auth.guard.test.ts`) that fails the build if a future route under these prefixes omits a recognized guard. 39/39 green.
+
 ---
 
 ## Deferred / flagged follow-ups (not lost — tracked here)
@@ -98,4 +101,4 @@
 3. After all: `tsc --noEmit` web + admin → 0 errors.
 4. ⚠️ Not run (needs broader setup / a running app): full `pnpm verify:tests`, `pnpm build`, E2E, and **runtime visual contrast** checks.
 
-_Last updated: 2026-06-22 (Sprint 2: S2.1–S2.7 on `fix/audit-sprint2` — incl. full impersonation-audit rollout + block guard)._
+_Last updated: 2026-06-22 (Sprint 2: S2.1–S2.8 on `fix/audit-sprint2` — full impersonation-audit rollout + block guard + public-prefix fail-open backstop)._

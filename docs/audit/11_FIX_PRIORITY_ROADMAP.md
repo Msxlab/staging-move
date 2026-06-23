@@ -108,7 +108,7 @@ Highest blast-radius security + compliance + data-loss items, plus the broken ac
   - **Depends on:** dedicated `EMAIL_UNSUBSCRIBE_SECRET`, `FIELD_ENCRYPTION_KEY`.
   - **Validation:** expired token rejected; `purchaseToken` plaintext count → 0; no PII keys in plaintext storage.
 
-- [ ] **2.8 Add CI/lint backstop for public-by-prefix routes** (`security-surface-02`, `security-platform-04`)
+- [x] **2.8 Add CI/lint backstop for public-by-prefix routes** (`security-surface-02`, `security-platform-04`) — DONE `fix/audit-sprint2` (S2.8). Audited all 36 routes: none fail-open today; added a structural regression test.
   - **Why:** `/api/internal|cron|webhooks` are fail-open by omission.
   - **Files:** `apps/web/src/middleware.ts`; test asserting each route file calls its guard.
   - **Risk:** Low.
