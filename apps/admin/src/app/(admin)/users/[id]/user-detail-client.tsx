@@ -300,26 +300,25 @@ export default function UserDetailClient() {
         return;
       }
       toast.success("Starting impersonation session...");
-      // Cross-origin handoff: the web app's handoff endpoint reads the token
-      // from a JSON POST body (never a URL) and replies with a redirect that
-      // also sets the user_session cookie on the web origin. We POST with
-      // credentials so the browser persists that cookie, then navigate the
-      // browser to the web app so the operator lands in the impersonated
-      // session. The handoff row is single-use and consumed server-side.
-      const handoffRes = await fetch(data.handoffUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ token: data.handoffToken }),
-      });
-      // The handoff endpoint always redirects (303/302). A successful exchange
-      // lands on the web app's /dashboard; any failure lands on /sign-in?err=…
-      // Following res.url gives us whichever destination the server chose,
-      // including the freshly minted impersonation cookie.
-      const destination = handoffRes.url || new URL("/dashboard", data.handoffUrl).toString();
       setShowImpersonateConfirm(false);
       setImpersonateRequiresMfa(false);
-      window.location.assign(destination);
+      // Cross-origin handoff: admin + web are SEPARATE origins, so a credentialed
+      // cross-origin fetch can't persist the web app's SameSite=Lax user_session
+      // cookie (the Set-Cookie on a cross-origin subresponse is dropped by the
+      // browser). Instead submit a TOP-LEVEL form POST to the handoff URL — a
+      // first-party navigation on the web origin — so the cookie sticks and the
+      // server's 303 lands the operator on /dashboard. The single-use token rides
+      // in the POST body, never the URL (no history/referrer leak).
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.handoffUrl;
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "token";
+      input.value = data.handoffToken;
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
     } catch {
       setImpersonateError("Failed to start impersonation.");
       toast.error("Failed to start impersonation.");
