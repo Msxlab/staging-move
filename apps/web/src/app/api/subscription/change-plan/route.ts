@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { requireDbUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import {
@@ -97,6 +98,7 @@ async function retrieveOrCreateSchedule(
 }
 
 interface LocalSub {
+  id: string;
   userId: string;
   version?: number | null;
   currentPeriodEndsAt: Date | null;
@@ -104,6 +106,7 @@ interface LocalSub {
 }
 
 async function applyImmediatePlanChange(input: {
+  request: NextRequest;
   stripe: Stripe;
   userId: string;
   subscription: LocalSub;
@@ -114,7 +117,7 @@ async function applyImmediatePlanChange(input: {
   targetInterval: StripeBillingInterval;
   now: Date;
 }): Promise<NextResponse> {
-  const { stripe, userId, subscription, stripeSub, primaryItemId, newPriceId, targetPlan, targetInterval, now } = input;
+  const { request, stripe, userId, subscription, stripeSub, primaryItemId, newPriceId, targetPlan, targetInterval, now } = input;
 
   const updated = await stripe.subscriptions.update(
     stripeSub.id,
@@ -180,6 +183,9 @@ async function applyImmediatePlanChange(input: {
   // Upgrade widens the seat limit → restore any OVERFLOW members. Best-effort.
   await reconcileSeatsForOwner(userId).catch(() => {});
 
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Subscription", entityId: subscription.id, route: "/api/subscription/change-plan" });
+
   return NextResponse.json({
     status: "ACTIVE",
     plan: targetPlan,
@@ -197,6 +203,9 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = await requireDbUserId();
+
+    const blocked = await blockIfImpersonating(request, { action: "SUB_CHANGE_PLAN", route: "/api/subscription/change-plan" });
+    if (blocked) return blocked;
 
     // Fail closed only when a CONFIGURED Redis limiter is mid-outage; an
     // unconfigured limiter falls back to in-memory rather than 429ing every
@@ -291,7 +300,7 @@ export async function POST(request: NextRequest) {
       if (!periodEndUnix || !periodEnd || periodEnd.getTime() <= now.getTime()) {
         await releaseAttachedSchedule(stripe, stripeSub, subscription.stripeSubscriptionScheduleId);
         return await applyImmediatePlanChange({
-          stripe, userId, subscription, stripeSub,
+          request, stripe, userId, subscription, stripeSub,
           primaryItemId: primaryItem.id, newPriceId, targetPlan, targetInterval, now,
         });
       }
@@ -386,6 +395,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+      await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "Subscription", entityId: subscription.id, route: "/api/subscription/change-plan" });
+
       return NextResponse.json({
         status: "ACTIVE",
         plan: currentPlan,
@@ -400,7 +412,7 @@ export async function POST(request: NextRequest) {
     // Upgrade (or month->year on the same tier): apply immediately with proration.
     await releaseAttachedSchedule(stripe, stripeSub, subscription.stripeSubscriptionScheduleId);
     return await applyImmediatePlanChange({
-      stripe, userId, subscription, stripeSub,
+      request, stripe, userId, subscription, stripeSub,
       primaryItemId: primaryItem.id, newPriceId, targetPlan, targetInterval, now,
     });
   } catch (error: any) {

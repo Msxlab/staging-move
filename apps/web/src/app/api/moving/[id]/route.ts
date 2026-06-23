@@ -5,6 +5,7 @@ import { apiGateErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { z } from "zod";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
 import {
   assertScopedRecordAction,
@@ -96,6 +97,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         ...(validated.estimatedDuration !== undefined && { estimatedDuration: validated.estimatedDuration }),
       },
     });
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "MovingPlan", entityId: id, route: `/api/moving/${id}` });
 
     // Keep move tasks consistent with the plan's lifecycle. The global
     // move-task feed (GET /api/move-tasks with no movingPlanId filter) is NOT
@@ -182,6 +185,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       changes: { moveTasksDeleted: moveTasksResult.count },
       ...meta,
     });
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "DELETE", entityType: "MovingPlan", entityId: id, route: `/api/moving/${id}` });
 
     return NextResponse.json({ success: true });
   } catch (error) {

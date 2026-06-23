@@ -56,6 +56,39 @@
 
 ---
 
+## Sprint 2 — additional remediation (branch `fix/audit-sprint2`)
+
+### S2.1 EV-charging upstream host corrected — `nlr.gov → NREL nrel.gov`
+- **Commit:** `a143482a`. Replaced the wrong `developer.nlr.gov` host with `developer.nrel.gov` (the real NREL Alt-Fuel Stations API) in `lib/nlr-alt-fuel-stations.ts` (+test). Dead/incorrect upstream → working data source.
+
+### S2.2 `TRUSTED_PROXY_HEADERS` required in prod (fail-closed) — `app-bootstrap-config`
+- **Commit:** `8d5e8107`. `production-readiness.ts` now **fails** (was `warn`) when `TRUSTED_PROXY_HEADERS` is unset/compat/unknown in prod, so client-IP spoofing via forged proxy headers can't slip through a soft warning. Added `TRUSTED_PROXY_HEADERS="cloudflare"` to `.env.example` + `.env.production.example`.
+
+### S2.3 Impersonated-mutation audit helper + initial wiring — `admin-impersonation-02`
+- **Commit:** `f3b0d50d`. Added `auditImpersonatedMutation(request, {action, entityType, entityId, route?, details?})` (best-effort, no-op for normal sessions) and wired it into `account/delete` + `export`. Forensic `AdminAuditLog` attribution for actions taken while a SUPER_ADMIN impersonates a user.
+
+### S2.4 Affiliate postback + leads hardening — `partners-affiliate-movers-01/04`, `api-map-02`
+- **Commit:** `c17a6c94`. (a) postback no longer **cross-attributes** a conversion to a different provider — a resolvable `clickId` whose owner disagrees with an explicit `providerId` now 400s, and the click's owner is authoritative; (b) **IP-keyed rate limit** added BEFORE the HMAC/DB work so unsigned floods can't burn CPU/DB (fail-open — a Redis outage must not drop real network postbacks); (c) `/api/leads` limiter is now **`failClosed:true`** (no lead-cap bypass / PII fan-out / CPL over-charge under a Redis outage). +2 cross-attribution tests. 12/12.
+- **Files:** `api/affiliate/postback/[network]/route.ts` (+test), `api/leads/route.ts`.
+
+### S2.5 Impersonated-mutation audit rollout extended — `admin-impersonation-02`
+- **Commit:** `b4b90328`. Continued the S2.3 rollout into the two core relocation-PII mutations: `addresses/[id]` PATCH+DELETE and `moving/[id]` PATCH+DELETE. Typecheck clean; impersonation+addresses+moving suites 104/104.
+
+### S2.6 Impersonated-mutation audit — FULL rollout — `admin-impersonation-02`
+- **Commits:** `202c3efa` (+ `fe65c58e` /api/ready fixture follow-up for S2.2). Completed the rollout across **all 51 user-scoped mutating routes** via a `classify → reconcile → wire → adversarial-verify` workflow (61 candidates analyzed). **10 routes deliberately SKIPPED** as non-user-data mutations: external Places/USPS proxies (`address-autocomplete`, `address-autocomplete/details`, `addresses/validate`), anonymous attribution counters (`affiliate/click`, `sponsored/click`, `movers`), system/cron connector dispatch (`connector-dispatch`, `workspaces/[id]/sync`), cache-only AI briefing (`onboarding/briefing`), pre-auth public (`waitlist`). 51/51 adversarially verified; web typecheck clean; **851 api route tests green**.
+- **Side-finding fixed:** the S2.2 trusted-proxy fail-closed broke the `/api/ready` valid-config test (it now requires `TRUSTED_PROXY_HEADERS`); fixture updated (`fe65c58e`).
+
+### S2.7 Impersonation BLOCK on account-control + billing — `admin-impersonation-02` (security)
+- **Commit:** `4739bb26`. The classify pass surfaced **11 routes where logging is insufficient** — an impersonating SUPER_ADMIN could take over the account or change billing. Added `blockIfImpersonating(request, {action, route})` → returns **403 `IMPERSONATION_FORBIDDEN`** (and records the blocked attempt) when impersonated, `null` for the genuine user; wired AFTER auth / BEFORE any side effect into: `auth/password/change`, `auth/mfa/{setup,confirm,disable}`, `auth/security`, `auth/resend-verification`, `acquisition/redeem`, `mobile/iap/verify`, `subscription/{actions,change-plan,switch-cycle}`. **User-approved** (block both auth + billing). 11/11 adversarially verified (placement after-auth/before-mutation); helper unit-tested; 177 tests green.
+
+### S2.8 Fail-open backstop for public-by-prefix routes — `security-surface-02` (roadmap 2.8)
+- **Commit:** (this branch). `/api/{internal,cron,webhooks}/*` are public-by-omission in `middleware.ts`, so each route must self-authenticate. **Audited all 36** — none are fail-open today: cron (29) → `guardCronRequest`; internal (3) → `verifyInternalAuth` / `INTERNAL_WEBHOOK_SECRET` / `CRON_SECRET`; webhooks (4) → Apple JWS (`verifyAppleJws`), Stripe (`constructEvent`), Resend svix (`verifyResendSignature`), Google Play Pub/Sub OIDC (`verifyPubsubOidcToken`). Added a structural **regression test** (`apps/web/src/app/api/__tests__/public-prefix-auth.guard.test.ts`) that fails the build if a future route under these prefixes omits a recognized guard. 39/39 green.
+
+### S2.9 Page-level guards on client-shell admin pages — `route-map-03` (roadmap 2.6)
+- **Commit:** (this branch). Re-audit (with the full guard token set — the first pass missed `requirePermission`) found **blog pages already guarded** + **tickets pages are redirect-aliases**; the true residual was **17 `"use client"` admin pages** with no page-level guard. These leak NO server data (the admin layout already gates to an active admin, and the pages' data is fetched client-side via permission-enforced APIs) — the exposure was UI-shell fingerprinting only. Split each into a **server wrapper** (`await requirePagePermission(...)` / `requirePageAdmin()` matching the page's own admin API resource/action/role) + a `<name>-client.tsx` component, so the whole admin surface now fails closed before the bundle ships. Pages: analytics, help-center, moving, provider-governance, providers (+`[id]`, `[id]/edit`, coverage, needs-logo, new), reports, settings/health, settings/two-factor, state-rules, support, users, waitlist. 17/17 adversarially verified; **admin typecheck clean + admin production build green** (all 17 → dynamic server-rendered). Built via the `admin-page-guard-rollout` multi-agent workflow.
+
+---
+
 ## Deferred / flagged follow-ups (not lost — tracked here)
 
 | Item | Why deferred | Where it belongs |
@@ -71,4 +104,4 @@
 3. After all: `tsc --noEmit` web + admin → 0 errors.
 4. ⚠️ Not run (needs broader setup / a running app): full `pnpm verify:tests`, `pnpm build`, E2E, and **runtime visual contrast** checks.
 
-_Last updated: 2026-06-22._
+_Last updated: 2026-06-22 (Sprint 2: S2.1–S2.9 on `fix/audit-sprint2` — impersonation hardening + public-prefix backstop + admin page-level guards)._

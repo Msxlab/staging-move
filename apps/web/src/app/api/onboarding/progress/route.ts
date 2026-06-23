@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 import {
@@ -72,6 +73,15 @@ export async function POST(request: NextRequest) {
         page: request.nextUrl.pathname,
         metadata: JSON.stringify({ source: "onboarding", ...(parsed.data.step ? { step: parsed.data.step } : {}) }),
       },
+    });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, {
+      action: "CREATE",
+      entityType: "UserEvent",
+      entityId: userId,
+      route: "/api/onboarding/progress",
+      details: { event },
     });
   }
 

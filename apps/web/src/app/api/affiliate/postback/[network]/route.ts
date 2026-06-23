@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/db";
+import { rateLimit, resolveClientIP } from "@/lib/rate-limit";
 
 // POST /api/affiliate/postback/[network]
 //
@@ -44,6 +45,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ net
       return NextResponse.json({ error: "Unknown network" }, { status: 404 });
     }
 
+    // Throttle BEFORE the HMAC/DB work so unsigned floods can't burn CPU/DB
+    // (the signature gate prevents write-abuse, not resource cost). Fail open —
+    // a Redis outage must not drop legitimate network postbacks. (api-map-02)
+    const rl = await rateLimit(`affiliate:postback:${network}:${resolveClientIP(req)}`, {
+      limit: 120,
+      windowSeconds: 60,
+    });
+    if (!rl.success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const secret = getNetworkSecret(network);
     if (!secret) {
       return NextResponse.json({ error: "Postback is not configured for this network." }, { status: 503 });
@@ -78,8 +90,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ net
         select: { id: true, providerId: true },
       });
       if (click) {
+        // Integrity: never cross-attribute a resolvable click to a different
+        // provider. If an explicit providerId disagrees with the click's owner,
+        // reject rather than link this conversion to another provider's click.
+        // (partners-affiliate-movers-01)
+        if (providerId && providerId !== click.providerId) {
+          return NextResponse.json({ error: "clickId/providerId mismatch" }, { status: 400 });
+        }
         affiliateClickId = click.id;
-        if (!providerId) providerId = click.providerId;
+        providerId = click.providerId;
       }
     }
     if (!providerId) {

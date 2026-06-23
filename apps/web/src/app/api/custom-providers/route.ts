@@ -5,6 +5,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse, entitlementErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { customProviderSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { canCreateCustomProvider } from "@/lib/plan-limits";
 import {
@@ -246,6 +247,8 @@ export async function POST(request: NextRequest) {
       },
       ...meta,
     });
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "CREATE", entityType: "UserCustomProvider", entityId: provider.id, route: "/api/custom-providers" });
     await recordCustomProviderEvent(
       userId,
       submitForGlobalReview ? "CUSTOM_PROVIDER_SUBMITTED_FOR_REVIEW" : "CUSTOM_PROVIDER_CREATED",

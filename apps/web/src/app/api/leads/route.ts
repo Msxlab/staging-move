@@ -8,6 +8,7 @@ import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { getRequestHashSnapshot, hashForSnapshot } from "@/lib/acquisition-campaigns";
 import { createLead } from "@/lib/leads/create-lead";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,10 @@ export async function POST(request: NextRequest) {
     const rl = await rateLimit(getRateLimitKey(request, "leads", { userId }), {
       limit: 10,
       windowSeconds: 60 * 60,
+      // Fail closed (match affiliate/click + acquisition/redeem): under a Redis
+      // outage a user must not exceed the lead cap and fan PII to partners or
+      // accrue CPL charges. (partners-affiliate-movers-04)
+      failClosed: true,
     });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
@@ -111,6 +116,9 @@ export async function POST(request: NextRequest) {
       termsVersion: TERMS_VERSION,
       idempotencyKey,
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "CREATE", entityType: "Lead", entityId: result.leadId, route: "/api/leads" });
 
     return NextResponse.json({
       ok: true,

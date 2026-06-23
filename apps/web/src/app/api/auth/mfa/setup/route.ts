@@ -5,6 +5,7 @@ import { requireDbUserId, verifyPassword } from "@/lib/user-auth";
 import { generateSecret, generateProvisioningURI, generateBackupCodes } from "@/lib/totp";
 import { encrypt } from "@/lib/shared-encryption";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -28,6 +29,9 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await blockIfImpersonating(request, { action: "MFA_SETUP", route: "/api/auth/mfa/setup" });
+  if (blocked) return blocked;
 
   const rl = await enforceRateLimitPolicy(request, "mfa_verify", {
     userId,
@@ -73,6 +77,9 @@ export async function POST(request: NextRequest) {
       mfaBackupCodes: JSON.stringify(hashes),
     },
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "User", entityId: userId, route: "/api/auth/mfa/setup" });
 
   const uri = generateProvisioningURI(secret, user.email);
   const qrDataUrl = await QRCode.toDataURL(uri, {

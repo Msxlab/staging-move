@@ -14,6 +14,7 @@ import { emitSecurityEvent } from "@/lib/security-events";
 import { verifyUserStepUp } from "@/lib/user-step-up";
 import { getRequestEntitlement } from "@/lib/request-entitlements";
 import { contentDispositionAttachment } from "@/lib/http-download";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 /**
  * GET /api/export/pdf?type=address&addressId=xxx
@@ -132,12 +133,16 @@ export async function POST(request: NextRequest) {
         return noStoreJson({ error: "Address not found" }, 404);
       }
       await auditSuccessfulPdfExport({ userId, type, meta, stepUpMethod: stepUp.method, entityId: addressId });
+      // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+      await auditImpersonatedMutation(request, { action: "EXPORT_PDF", entityType: "User", entityId: addressId, route: "/api/export/pdf" });
       return pdfResponse(buffer, `locateflow-address-report.pdf`);
     }
 
     if (type === "full") {
       const buffer = await buildFullAccountPdf(userId);
       await auditSuccessfulPdfExport({ userId, type, meta, stepUpMethod: stepUp.method, entityId: userId });
+      // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+      await auditImpersonatedMutation(request, { action: "EXPORT_PDF", entityType: "User", entityId: userId, route: "/api/export/pdf" });
       return pdfResponse(buffer, `locateflow-account-snapshot.pdf`);
     }
 
@@ -161,6 +166,8 @@ export async function POST(request: NextRequest) {
       }
       const buffer = await buildTaxPdf(userId);
       await auditSuccessfulPdfExport({ userId, type, meta, stepUpMethod: stepUp.method, entityId: userId });
+      // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+      await auditImpersonatedMutation(request, { action: "EXPORT_PDF", entityType: "User", entityId: userId, route: "/api/export/pdf" });
       return pdfResponse(buffer, `locateflow-tax-property-report.pdf`);
     }
 

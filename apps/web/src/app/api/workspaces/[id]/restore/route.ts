@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { auditWorkspaceSensitiveAction, requireWorkspaceStepUp } from "@/lib/workspace-step-up";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -50,6 +51,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     action: "WORKSPACE_RESTORE",
     stepUpMethod: stepUp.method,
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "WORKSPACE_RESTORE", entityType: "Workspace", entityId: id, route: "/api/workspaces/[id]/restore" });
 
   return NextResponse.json({ id, restored: true });
 }

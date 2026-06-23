@@ -127,11 +127,11 @@ describe("buildReadinessReport", () => {
     expect(report.issues.find((i) => i.key === "ALLOW_PRODUCTION_REPLACE_RESTORE")?.severity).toBe("warn");
   });
 
-  it("warns without blocking when production proxy header mode is implicit", () => {
+  it("blocks readiness when production proxy header mode is unset/compat (spoofable source IP)", () => {
     const env = { ...validProdEnv, TRUSTED_PROXY_HEADERS: undefined };
     const report = buildReadinessReport(env, true);
-    expect(report.ready).toBe(true);
-    expect(report.issues.find((i) => i.key === "TRUSTED_PROXY_HEADERS")?.severity).toBe("warn");
+    expect(report.ready).toBe(false);
+    expect(report.issues.find((i) => i.key === "TRUSTED_PROXY_HEADERS")?.severity).toBe("fail");
   });
 
   it("warns without blocking when FCC serviceability is enabled without the documented credential pair", () => {

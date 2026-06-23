@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,6 +46,8 @@ export async function PATCH(request: NextRequest) {
         where: { userId, read: false },
         data: { read: true, readAt: new Date() },
       });
+      // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+      await auditImpersonatedMutation(request, { action: "MARK_ALL_READ", entityType: "Notification", entityId: userId, route: "/api/notifications/feed" });
       return NextResponse.json({ success: true });
     }
 

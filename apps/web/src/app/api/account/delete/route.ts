@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
@@ -28,6 +29,8 @@ function isAccountDeletionConfirmationValid(value: unknown, email: string): bool
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId({ distinguishDeleted: true });
+    // Forensic attribution if this runs inside a SUPER_ADMIN impersonation session (no-op otherwise).
+    await auditImpersonatedMutation(request, { action: "account_delete", entityType: "User", entityId: userId, route: "/api/account/delete" });
     const meta = extractRequestMeta(request);
     // Always emit the attempt — independent of whether the limit fires
     // or step-up succeeds. This is the audit trail an investigator

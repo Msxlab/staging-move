@@ -7,6 +7,7 @@ import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { refreshBudgetSnapshotsForServiceMonth } from "@/lib/budget-actuals-snapshot";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import {
   assertScopedRecordAction,
   assertWorkspaceAction,
@@ -181,6 +182,9 @@ export async function POST(request: NextRequest) {
       serviceAddressId: service.addressId ?? null,
       month,
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "UPDATE", entityType: "ServiceCostLog", entityId: serviceId, route: "/api/budget/actuals" });
 
     return NextResponse.json({ ok: true, serviceId, month: month.toISOString(), loggedActual });
   } catch (error: any) {

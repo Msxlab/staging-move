@@ -8,6 +8,10 @@ vi.mock("@/lib/db", () => ({
     affiliateConversion: { upsert: vi.fn() },
   },
 }));
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimit: vi.fn(() => Promise.resolve({ success: true })),
+  resolveClientIP: () => "203.0.113.9",
+}));
 
 import { prisma } from "@/lib/db";
 import { POST } from "./route";
@@ -91,6 +95,27 @@ describe("affiliate postback route", () => {
     const response = await POST(makeRequest("impact", { providerId: "prov-1" }), params("impact"));
     expect(response.status).toBe(400);
     expect(mockPrisma.affiliateConversion.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects when a resolvable clickId is owned by a different provider (no cross-attribution)", async () => {
+    mockPrisma.affiliateClick.findUnique.mockResolvedValue({ id: "click-1", providerId: "prov-A" });
+    const response = await POST(
+      makeRequest("impact", { externalTransactionId: "tx-x", clickId: "click-1", providerId: "prov-B" }),
+      params("impact"),
+    );
+    expect(response.status).toBe(400);
+    expect(mockPrisma.affiliateConversion.upsert).not.toHaveBeenCalled();
+  });
+
+  it("attributes to the click's owner provider when only a clickId is given", async () => {
+    mockPrisma.affiliateClick.findUnique.mockResolvedValue({ id: "click-1", providerId: "prov-A" });
+    await POST(
+      makeRequest("impact", { externalTransactionId: "tx-y", clickId: "click-1" }),
+      params("impact"),
+    );
+    const arg = mockPrisma.affiliateConversion.upsert.mock.calls[0][0];
+    expect(arg.create.providerId).toBe("prov-A");
+    expect(arg.create.affiliateClickId).toBe("click-1");
   });
 
   it("resolves the provider (and links the click) from an echoed clickId", async () => {

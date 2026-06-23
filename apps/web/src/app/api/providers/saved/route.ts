@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 /**
  * Server-side provider shortlist (replaces the client-only localStorage list so
@@ -55,6 +56,8 @@ export async function POST(request: NextRequest) {
     create: { userId, providerId: parsed.data.providerId },
     update: {},
   });
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "SAVED_PROVIDER_ADD", entityType: "SavedProvider", entityId: parsed.data.providerId, route: "/api/providers/saved" });
   return NextResponse.json({ ok: true });
 }
 
@@ -71,5 +74,7 @@ export async function DELETE(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 
   await prisma.savedProvider.deleteMany({ where: { userId, providerId: parsed.data.providerId } });
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "SAVED_PROVIDER_REMOVE", entityType: "SavedProvider", entityId: parsed.data.providerId, route: "/api/providers/saved" });
   return NextResponse.json({ ok: true });
 }

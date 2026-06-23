@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { z } from "zod";
 
 const replySchema = z.object({
@@ -100,6 +101,9 @@ export async function POST(
       });
     }
 
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "TICKET_REPLY", entityType: "SupportTicket", entityId: id, route: "/api/tickets/[id]" });
+
     return NextResponse.json({ message }, { status: 201 });
   } catch (error: any) {
     const gateResponse = apiGateErrorResponse(error);
@@ -114,7 +118,7 @@ export async function POST(
 
 // PATCH /api/tickets/:id — close a ticket (user can close their own)
 export async function PATCH(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -144,6 +148,9 @@ export async function PATCH(
         content: "Ticket closed by user.",
       },
     });
+
+    // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+    await auditImpersonatedMutation(request, { action: "TICKET_CLOSE", entityType: "SupportTicket", entityId: id, route: "/api/tickets/[id]" });
 
     return NextResponse.json({ success: true });
   } catch (error) {

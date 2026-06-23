@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 import { decrypt } from "@/lib/shared-encryption";
 import { LEGAL_CONSENT_EVENT } from "@/lib/legal";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
@@ -56,6 +57,8 @@ const ADVANCED_EXPORT_TYPES = new Set(["tax"]);
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    // Forensic attribution if this runs inside a SUPER_ADMIN impersonation session (no-op otherwise).
+    await auditImpersonatedMutation(request, { action: "data_export", entityType: "User", entityId: userId, route: "/api/export" });
     const body = await request.json().catch(() => ({}));
     const type = typeof body?.type === "string" && ALLOWED_TYPES.has(body.type) ? body.type : "full";
     const rawFormat = typeof body?.format === "string" ? body.format.toLowerCase() : "json";

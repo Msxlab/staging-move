@@ -14,6 +14,7 @@ import { resolveClientIP } from "@/lib/rate-limit";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
 import { extractRequestMeta } from "@/lib/audit";
 import { recordUserSecurityAudit } from "@/lib/user-security-audit";
+import { auditImpersonatedMutation, blockIfImpersonating } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,9 @@ export async function PATCH(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await blockIfImpersonating(request, { action: "PASSWORD_CHANGE", route: "/api/auth/password/change" });
+  if (blocked) return blocked;
 
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
@@ -72,6 +76,9 @@ export async function PATCH(request: NextRequest) {
     changes: { status: "success" },
     ...extractRequestMeta(request),
   });
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "PASSWORD_CHANGE", entityType: "User", entityId: userId, route: "/api/auth/password/change" });
 
   void sendSecurityNoticeEmail({
     userEmail: user.email,

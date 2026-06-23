@@ -12,6 +12,7 @@ import {
   seatLimitForPlan,
 } from "@/lib/workspace-invitations";
 import { sendWorkspaceInvitationEmail } from "@/lib/email-service";
+import { auditImpersonatedMutation } from "@/lib/impersonation-audit";
 
 export const runtime = "nodejs";
 
@@ -163,6 +164,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
     throw error;
   }
+
+  // Forensic attribution if an admin is impersonating (no-op otherwise). (admin-impersonation-02)
+  await auditImpersonatedMutation(request, { action: "WS_INVITATION_CREATE", entityType: "WorkspaceInvitation", entityId: invitation.id, route: "/api/workspaces/[id]/invitations" });
 
   // Send the invitation email (doc 66). Transactional + inert when the feature
   // is off (this route 404s before reaching here). In dev with no email provider
