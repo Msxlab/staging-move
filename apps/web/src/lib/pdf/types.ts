@@ -36,9 +36,18 @@ export type PdfAddress = {
  */
 export type PdfDossier = {
   address: { id: string; city: string; state: string };
-  flood: { status: string; zone: string | null; isHighRisk: boolean | null };
-  school: { status: string; districtName: string | null; ncesId: string | null };
-  weather: {
+  /**
+   * Every section is OPTIONAL on purpose. The dossier data route is the single
+   * source of this payload and its shape can drift over time — sections get
+   * added/renamed, the summary branch omits most of them, and stale cached
+   * payloads may predate newer fields. The PDF generator must never throw on a
+   * missing section (it renders "—" instead), so the type does not pretend they
+   * are guaranteed. The route still emits the full shape; this only loosens the
+   * contract the generator defends against.
+   */
+  flood?: { status: string; zone: string | null; isHighRisk: boolean | null };
+  school?: { status: string; districtName: string | null; ncesId: string | null };
+  weather?: {
     status: string;
     forecastDate: string | null;
     summary: string | null;
@@ -46,10 +55,10 @@ export type PdfDossier = {
     tempLowF: number | null;
     precipChancePct: number | null;
   };
-  hazards: { status: string; topRisks: Array<{ hazard: string; rating: string }>; overallRating: string | null };
-  radon: { status: string; zone: string | null };
-  water: { status: string; systemName: string | null; violations5y: number | null };
-  air: { status: string; aqi: number | null; category: string | null };
+  hazards?: { status: string; topRisks: Array<{ hazard: string; rating: string }>; overallRating: string | null };
+  radon?: { status: string; zone: string | null };
+  water?: { status: string; systemName: string | null; violations5y: number | null };
+  air?: { status: string; aqi: number | null; category: string | null };
   /**
    * Pro "Neighborhood Intelligence" (Census ACS area medians). Present on Pro
    * payloads — the only tier that reaches this PDF (dossierPdf gate). Optional
