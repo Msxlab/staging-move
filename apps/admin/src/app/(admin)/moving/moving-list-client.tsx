@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -23,6 +23,12 @@ import {
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import {
+  deriveMoveRisk,
+  RISK_LEVEL_CLASS,
+  RISK_LEVEL_LABEL,
+  type MoveRisk,
+} from "./moving-risk";
 
 interface Plan {
   id: string;
@@ -139,7 +145,7 @@ const US_STATES = [
   "DC",
 ];
 
-export default function MovingClient() {
+export default function MovingListClient() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [stats, setStats] = useState<Stats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
@@ -186,6 +192,22 @@ export default function MovingClient() {
     fetchPlans();
   }, [fetchPlans]);
 
+  // Per-move risk banding, mirroring the dedicated At-Risk board derivation.
+  // Read-only: computed from data the list already holds, nothing is fetched.
+  const riskByPlan = useMemo(() => {
+    const now = new Date();
+    const map = new Map<string, MoveRisk>();
+    for (const plan of plans) {
+      map.set(plan.id, deriveMoveRisk(plan, now));
+    }
+    return map;
+  }, [plans]);
+
+  const atRiskCount = useMemo(
+    () => Array.from(riskByPlan.values()).filter((r) => r.level !== "none").length,
+    [riskByPlan],
+  );
+
   function clearFilters() {
     setFilterStatus("");
     setFromState("");
@@ -218,7 +240,7 @@ export default function MovingClient() {
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
         {[
           {
             label: "Total",
@@ -286,6 +308,23 @@ export default function MovingClient() {
             <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${s.color}`}>{s.value}</p>
           </button>
         ))}
+
+        {/* At-risk ministat — derived in-page, links to the At-Risk board. */}
+        <Link
+          href="/moving/at-risk"
+          className="rounded-2xl border border-tone-rose-br bg-tone-rose-bg p-4 text-left transition-shadow hover:shadow-md"
+          title="Moves on this page that carry a risk signal — open the At-Risk board"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              At Risk
+            </p>
+            <ShieldAlert className="h-4 w-4 text-tone-rose-fg" />
+          </div>
+          <p className="mt-1.5 font-display text-3xl font-extrabold leading-none text-tone-rose-fg">
+            {atRiskCount}
+          </p>
+        </Link>
       </div>
 
       {/* Search + Filters */}
@@ -422,6 +461,7 @@ export default function MovingClient() {
             const days = daysUntilMove(plan);
             const isExpanded = expandedPlan === plan.id;
             const StatusIcon = STATUS_ICONS[plan.status] || Clock;
+            const risk = riskByPlan.get(plan.id) ?? { level: "none" as const, reasons: [] };
             const originServiceCount = plan.fromAddress._count?.services || 0;
             const destinationServiceCount = plan.toAddress._count?.services || 0;
             const moveTaskCount = plan._count?.moveTasks || plan.moveTasks?.length || 0;
@@ -463,6 +503,21 @@ export default function MovingClient() {
                         {plan.user.email}
                       </span>
                     </div>
+                  </div>
+
+                  {/* Risk */}
+                  <div className="flex-shrink-0 w-20 text-right">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${RISK_LEVEL_CLASS[risk.level]}`}
+                      title={
+                        risk.level === "none"
+                          ? "No risk signals on this move"
+                          : `${risk.reasons.length} risk signal${risk.reasons.length === 1 ? "" : "s"}`
+                      }
+                    >
+                      {risk.level !== "none" && <ShieldAlert className="h-3 w-3" />}
+                      {RISK_LEVEL_LABEL[risk.level]}
+                    </span>
                   </div>
 
                   {/* Date */}

@@ -25,6 +25,7 @@ import {
   type ProShowcaseFeatureId,
 } from "@/components/onboarding/ob-pro-showcase";
 import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
+import { RaccoonMark } from "@/components/illustrations/RaccoonMark";
 import {
   generateChecklist,
   type UserChecklistProfile,
@@ -443,6 +444,19 @@ export default function OnboardingClient({
   // Paid users keep the normal create flow. `isPremium` decides which path the
   // Step-3 submit takes.
   const [isPremium, setIsPremium] = useState(false);
+  // Terminal "done" celebration (Increment-C / D17). Onboarding completion is
+  // unchanged: every existing path still records progress + verifies completion
+  // server-side. Instead of navigating away immediately, a finished path stores
+  // its post-onboarding target here, and the celebratory confirmation surface
+  // (raccoon `approved` + "You're all set") shows once. Its primary CTA then
+  // performs the SAME router.push that used to fire automatically. NOT a
+  // required data step — it never gates completion, only the final hop.
+  const [doneRedirect, setDoneRedirect] = useState<string | null>(null);
+  const showOnboardingDone = useCallback((target: string) => {
+    setSaving(false);
+    setError("");
+    setDoneRedirect(target);
+  }, []);
   const [teaser, setTeaser] = useState<{
     checklist: RelocationChecklist;
     fromState: string;
@@ -990,7 +1004,7 @@ export default function OnboardingClient({
     await recordOnboardingProgress("COMPLETED");
     await ensureOnboardingCompleted();
     trackEvent("onboarding_completed", { created_moving_plan: true });
-    router.push(`/moving/plan/${planId}`);
+    showOnboardingDone(`/moving/plan/${planId}`);
   };
 
   const finishOnboarding = async () => {
@@ -1025,7 +1039,7 @@ export default function OnboardingClient({
       await recordOnboardingProgress("COMPLETED");
       await ensureOnboardingCompleted();
       trackEvent("onboarding_completed", { created_moving_plan: false });
-      router.push("/dashboard");
+      showOnboardingDone("/dashboard");
     } catch (e: any) {
       const message = e.message || "Failed to complete onboarding";
       setError(message);
@@ -1069,9 +1083,11 @@ export default function OnboardingClient({
           }),
         );
         trackEvent("move_teaser_upgrade_clicked", { source: "onboarding" });
+        // Upgrade is its own intentional upsell hop — keep it immediate so the
+        // user lands on subscription without an interstitial.
         router.push("/settings/subscription?returnTo=%2Fdashboard");
       } else {
-        router.push("/dashboard");
+        showOnboardingDone("/dashboard");
       }
     } catch (e: any) {
       const message = e.message || "Failed to complete onboarding";
@@ -1430,6 +1446,37 @@ export default function OnboardingClient({
             </p>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // ── DONE / CELEBRATION takeover (Increment-C / D17) ────────────────────────
+  // Shown once onboarding is already complete server-side. Purely a
+  // confirmation surface: it adds NO required data step and never blocks
+  // completion. Its primary CTA performs the post-onboarding redirect the
+  // finishing path captured (dashboard or the freshly created moving plan).
+  if (doneRedirect) {
+    const goToApp = () => {
+      router.push(doneRedirect);
+    };
+    return (
+      <div className="space-y-6 pb-24">
+        <GlassCard className="p-8 text-center">
+          <div className="mx-auto mb-5 flex h-28 w-28 items-center justify-center rounded-full border border-tone-emerald-br bg-tone-emerald-bg">
+            <RaccoonMark size={88} mood="approved" />
+          </div>
+          <p className="mb-2 inline-flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-tone-emerald-fg">
+            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+            {t("done_eyebrow")}
+          </p>
+          <h2 className="h2 text-3xl text-foreground">{t.rich("done_title", richEm)}</h2>
+          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+            {t("done_subtitle")}
+          </p>
+          <ObCta className="mt-7 w-full sm:w-auto sm:mx-auto" onClick={goToApp}>
+            {t("done_cta")}
+          </ObCta>
+        </GlassCard>
       </div>
     );
   }

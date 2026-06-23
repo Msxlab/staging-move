@@ -1377,7 +1377,11 @@
     "proShowcase_feature_dossier": "Un expediente del hogar en PDF para guardar o compartir",
     "proShowcase_feature_ai": "Orientación con IA adaptada a tu mudanza",
     "proShowcase_footnote": "Sin pago ahora — termina gratis y explora Pro cuando quieras.",
-    "proShowcase_cta": "Ver Pro"
+    "proShowcase_cta": "Ver Pro",
+    "done_eyebrow": "Configuración completa",
+    "done_title": "Ya está <em>todo listo</em>",
+    "done_subtitle": "Tu espacio en LocateFlow está listo. Todo lo que acabas de configurar te espera — vamos a empezar.",
+    "done_cta": "Entrar a LocateFlow"
   },
   "legal": {
     "privacy_title": "Política de privacidad",
