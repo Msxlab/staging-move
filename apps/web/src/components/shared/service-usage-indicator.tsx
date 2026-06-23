@@ -1,17 +1,42 @@
-﻿"use client";
+"use client";
+
+// CONSUMER_FREE / M2 guard: the entitlement layer uses
+// `Number.MAX_SAFE_INTEGER` as the UNLIMITED sentinel for an unlimited cap.
+// Rendering that raw would show "3 / 9007199254740991" to a full-access free
+// user. Treat any limit at/above the sentinel (and any non-finite limit) as
+// unlimited. This is value-based, so it holds with the CONSUMER_FREE flag both
+// ON and OFF — a paid plan with finite limits is unaffected (byte-identical).
+const UNLIMITED_SENTINEL = Number.MAX_SAFE_INTEGER;
+
+export function isUnlimited(limit: number | null | undefined): boolean {
+  if (limit == null) return false;
+  if (!Number.isFinite(limit)) return true;
+  return limit >= UNLIMITED_SENTINEL;
+}
 
 interface ServiceUsageIndicatorProps {
   current: number;
   limit: number;
   className?: string;
+  /**
+   * CONSUMER_FREE pivot: full-access free users have no meaningful "X / limit"
+   * count to surface. Defaults to `false` so flag-OFF callers render exactly as
+   * before. When `true`, the indicator is suppressed entirely.
+   */
+  consumerFree?: boolean;
 }
 
 export function ServiceUsageIndicator({
   current,
   limit,
   className = "",
+  consumerFree = false,
 }: ServiceUsageIndicatorProps) {
   if (!limit || limit <= 0) return null;
+  // Suppress when free (nothing to upsell) or when the cap is the UNLIMITED
+  // sentinel (never show "9007199254740991"). Flag OFF + finite limit → falls
+  // through to the unchanged render.
+  if (consumerFree || isUnlimited(limit)) return null;
   const ratio = Math.min(1, Math.max(0, current / limit));
   const isWarn = current >= limit - 2 && current < limit;
   const isFull = current >= limit;

@@ -30,12 +30,58 @@ export interface HomeDossierFetchResult {
 
 const memoryCache = new Map<string, MemoryEntry>();
 
+/**
+ * H7 — cache epoch. The home dossier is an ENTITLEMENT-gated payload: the server
+ * returns `entitled:false` / `upgradeRequired` (a locked teaser) for non-entitled
+ * plans and the full sections for entitled ones. When the server-side
+ * CONSUMER_FREE flag flips, the same address that used to resolve to a teaser
+ * starts resolving to the full dossier (every consumer → PRO), so a dossier
+ * cached from BEFORE the flip must not be served afterward.
+ *
+ * The epoch is a single string folded into every cache key (disk name + memory
+ * key). It is DERIVED FROM THE GATE BOUNDARY of the dossiers this client has
+ * actually seen (`entitled:false | upgradeRequired` ⇒ "gated", else "entitled").
+ * When that boundary flips — exactly what a CONSUMER_FREE flip does, turning a
+ * teaser into a full dossier — the epoch changes, so prior-boundary entries are
+ * bypassed (and age out by TTL). No flag plumbing reaches the client; the gate
+ * the server already stamps on the payload is the trigger.
+ *
+ * FLAG-NEUTRAL / DEFAULT-IDENTICAL: the epoch starts "" and is only ever a
+ * non-empty SUFFIX. A user's gate boundary does NOT change while the flag stays
+ * OFF (a free user keeps getting teasers, a paid user keeps getting full data),
+ * so the epoch is a stable constant and every key is byte-identical to before
+ * this change. It only diverges once the server's gate flips for this user —
+ * i.e. on a real CONSUMER_FREE flip, which is the trap we are closing.
+ */
+let cacheEpoch = "";
+
+/**
+ * Update the gate epoch from a freshly-resolved dossier. Records the latest gate
+ * boundary the server returned; when it transitions (teaser ⇄ full) the epoch
+ * changes so the previous boundary's cached entries are no longer served. Called
+ * on every successful fetch. A non-configured / shapeless payload leaves the
+ * epoch untouched (no boundary signal).
+ */
+function updateCacheEpochFromDossier(dossier: HomeDossierResponse): void {
+  // Only the gate signal matters. `entitled === false` or any truthy
+  // `upgradeRequired` ⇒ teaser; anything else (including older servers that omit
+  // the field) ⇒ entitled. We ignore `configured:false` placeholders.
+  if (dossier.configured !== true) return;
+  const gated = dossier.entitled === false || Boolean(dossier.upgradeRequired);
+  cacheEpoch = gated ? ".@g" : "";
+}
+
+/** Test hook: reset the gate epoch to the default ("" — today's keying). */
+export function clearHomeDossierCacheEpochForTests(): void {
+  cacheEpoch = "";
+}
+
 function cacheName(mode: HomeDossierCacheMode, addressId: string): string {
-  return `${CACHE_PREFIX}.${mode}.${addressId}`;
+  return `${CACHE_PREFIX}.${mode}.${addressId}${cacheEpoch}`;
 }
 
 function memoryKey(mode: HomeDossierCacheMode, addressId: string): string {
-  return `${mode}:${addressId}`;
+  return `${mode}:${addressId}${cacheEpoch}`;
 }
 
 function readDossierCache(raw: unknown): HomeDossierResponse | null {
@@ -51,18 +97,27 @@ function ageMs(updatedAt: string, nowMs: number): number {
 }
 
 function cacheNamesForRead(mode: HomeDossierCacheMode, addressId: string): string[] {
+  // Legacy (un-epoched) entries predate the cache epoch. When an epoch is active
+  // (post-flag-flip) we must NOT fall back to them — they may be pre-flip gated
+  // teasers. With no epoch (today) `cacheEpoch === ""`, so they are included
+  // exactly as before. (H7)
+  const legacy = cacheEpoch === "";
   if (mode === "full") {
     return [
       cacheName("full", addressId),
-      `${LEGACY_FULL_CACHE_PREFIX}.${addressId}`,
+      ...(legacy ? [`${LEGACY_FULL_CACHE_PREFIX}.${addressId}`] : []),
     ];
   }
 
   return [
     cacheName("summary", addressId),
     cacheName("full", addressId),
-    `${LEGACY_INSIGHT_CACHE_PREFIX}.${addressId}`,
-    `${LEGACY_FULL_CACHE_PREFIX}.${addressId}`,
+    ...(legacy
+      ? [
+          `${LEGACY_INSIGHT_CACHE_PREFIX}.${addressId}`,
+          `${LEGACY_FULL_CACHE_PREFIX}.${addressId}`,
+        ]
+      : []),
   ];
 }
 
@@ -154,6 +209,11 @@ export async function writeHomeDossierCache(
   now: Date = new Date(),
 ): Promise<void> {
   if (!addressId) return;
+  // H7 — refresh the gate epoch from this fresh payload BEFORE keys are derived,
+  // so a dossier whose gate boundary just flipped (teaser ⇄ full, e.g. after a
+  // CONSUMER_FREE flip) is written under the new-boundary key and the old entry
+  // is left to expire. Flag OFF: the boundary is stable → epoch unchanged.
+  updateCacheEpochFromDossier(dossier);
   const entry: MemoryEntry = { data: dossier, updatedAt: now.toISOString() };
   memoryCache.set(memoryKey(mode, addressId), entry);
   await writeOfflineCache(cacheName(mode, addressId), dossier, now);

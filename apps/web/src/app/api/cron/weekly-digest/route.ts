@@ -9,7 +9,23 @@ import {
   groupNotificationPreferencesByUser,
 } from "@/lib/notification-preferences";
 import { getUserPlanForDefaultWorkspace } from "@/lib/plan-limits";
-import { DEFAULT_US_TIME_ZONE, formatDateOnlyUtc, formatInUserTimeZone, planFeatures } from "@locateflow/shared";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { CONSUMER_FREE_FLAG, DEFAULT_US_TIME_ZONE, formatDateOnlyUtc, formatInUserTimeZone, planFeatures } from "@locateflow/shared";
+
+// Trap M4 (truly-free): under CONSUMER_FREE everyone resolves to PRO, so the
+// weatherDigest gate would no longer thin the recipient set — the ENTIRE base
+// would be emailed (and trigger an NWS lookup) in a single run. To bound the
+// per-run fan-out we slice the gated recipients to a finite cap and let the
+// remainder roll to the next run. Default sized well above the realistic PRO
+// count so it is irrelevant today; overridable via env for staging tuning.
+const DEFAULT_WEEKLY_DIGEST_MAX_PER_RUN = 500;
+
+function resolveMaxPerRun(): number {
+  const raw = process.env.WEEKLY_DIGEST_MAX_PER_RUN;
+  if (raw == null) return DEFAULT_WEEKLY_DIGEST_MAX_PER_RUN;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_WEEKLY_DIGEST_MAX_PER_RUN;
+}
 
 // A local-midnight date (new Date(y, m, d)) reprojected onto its UTC calendar
 // day so it formats in a tz-stable way (never leaks the server's process tz).
@@ -86,12 +102,52 @@ export async function GET(req: Request) {
     const entitledFlags = await Promise.all(
       eligibleUsers.map((user) => getUserPlanForDefaultWorkspace(user.id).then((p) => planFeatures(p.plan).weatherDigest)),
     );
-    const gatedEligibleUsers = eligibleUsers.filter((_, i) => entitledFlags[i]);
-    if (gatedEligibleUsers.length === 0) {
+    const allGatedEligibleUsers = eligibleUsers.filter((_, i) => entitledFlags[i]);
+    if (allGatedEligibleUsers.length === 0) {
       return NextResponse.json({
         ok: true, users: users.length, eligible: 0, sent: 0, timestamp: now.toISOString(),
       });
     }
+
+    // ── STEP 2c: Per-run recipient cap (Trap M4) ──
+    // FLAG-GATED so flag-OFF behavior is BYTE-IDENTICAL to today: when
+    // CONSUMER_FREE is OFF the recipient set is only real PRO (small) and we do
+    // NOT touch it — no extra query, no slice, same `gatedEligibleUsers`,
+    // `remaining: 0`. When the flag is ON, everyone resolves PRO so the gated
+    // set can be the entire base; we then (a) drop recipients already emailed
+    // for THIS week's digest (so the slice advances across runs instead of
+    // re-picking the same head), (b) sort by id for a stable window, and
+    // (c) slice to `maxPerRun`. The dedupeKey here mirrors the one passed to
+    // sendWeeklyDigestEmail, so the remainder safely rolls to the next run.
+    const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG);
+    const maxPerRun = resolveMaxPerRun();
+    let gatedEligibleUsers = allGatedEligibleUsers;
+    let remaining = 0;
+    let capApplied = false;
+
+    if (consumerFree) {
+      const dedupeKeyFor = (userId: string) => `cron:weekly-digest:${userId}:${weekStart}:${weekEnd}`;
+      const alreadyLogged = await prisma.emailLog.findMany({
+        where: { dedupeKey: { in: allGatedEligibleUsers.map((u) => dedupeKeyFor(u.id)) } },
+        select: { dedupeKey: true },
+      });
+      const sentKeys = new Set(alreadyLogged.map((l) => l.dedupeKey));
+      const pending = allGatedEligibleUsers
+        .filter((u) => !sentKeys.has(dedupeKeyFor(u.id)))
+        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+      gatedEligibleUsers = pending.slice(0, maxPerRun);
+      remaining = Math.max(0, pending.length - gatedEligibleUsers.length);
+      capApplied = pending.length > maxPerRun;
+
+      if (gatedEligibleUsers.length === 0) {
+        return NextResponse.json({
+          ok: true, users: users.length, eligible: 0, sent: 0, remaining: 0,
+          capApplied, maxPerRun, timestamp: now.toISOString(),
+        });
+      }
+    }
+
     const eligibleUserIds = gatedEligibleUsers.map((u) => u.id);
 
     // ── STEP 3: Bulk-fetch all per-user data in parallel ──
@@ -170,6 +226,9 @@ export async function GET(req: Request) {
       eligible: gatedEligibleUsers.length,
       sent: sentCount,
       errors: errors.length > 0 ? errors : undefined,
+      // Cap telemetry only when the flag is ON; OFF keeps the response shape
+      // byte-identical to today (no extra keys).
+      ...(consumerFree ? { remaining, capApplied, maxPerRun } : {}),
       timestamp: now.toISOString(),
     });
   } catch (error) {

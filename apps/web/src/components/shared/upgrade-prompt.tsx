@@ -7,9 +7,26 @@ interface UpgradePromptProps {
   feature: string;
   message?: string;
   compact?: boolean;
+  /**
+   * CONSUMER_FREE pivot: when on, the user already has full access to every
+   * feature, so there is nothing to upgrade to — an "upgrade" prompt would be a
+   * contradiction. Gated and defaulted to `false` so that with the flag OFF this
+   * component renders BYTE-IDENTICALLY to before (callers that never pass the
+   * prop are unaffected). When `true`, render nothing.
+   */
+  consumerFree?: boolean;
 }
 
-export default function UpgradePrompt({ feature, message, compact = false }: UpgradePromptProps) {
+export default function UpgradePrompt({
+  feature,
+  message,
+  compact = false,
+  consumerFree = false,
+}: UpgradePromptProps) {
+  // Full-access free user: suppress the upgrade/upsell surface entirely. Flag
+  // OFF (default) falls through to the unchanged render below.
+  if (consumerFree) return null;
+
   const defaultMessage = `${feature} should be included with full-access staging. Review access if this appears.`;
 
   if (compact) {

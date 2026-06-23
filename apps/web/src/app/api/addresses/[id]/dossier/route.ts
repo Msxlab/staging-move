@@ -29,7 +29,8 @@ import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { getOrFetchSection, type DossierSection, type SectionDataStatus } from "@/lib/address-data-cache";
 import { checkGlobalBudget } from "@/lib/global-spend-guard";
-import { planFeatures } from "@locateflow/shared";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { CONSUMER_FREE_FLAG, planFeatures } from "@locateflow/shared";
 
 // GET /api/addresses/:id/dossier — the New Home Dossier data endpoint.
 //
@@ -91,6 +92,31 @@ function setDossierCache(key: string, payload: unknown, ttlMs: number) {
     if (oldest) dossierCache.delete(oldest);
   }
   dossierCache.set(key, { expiresAt: Date.now() + ttlMs, payload });
+}
+
+/**
+ * H7 — cache epoch. The in-process dossier cache serves PLAN/ENTITLEMENT-gated
+ * payloads (preview vs full vs summary; teaser vs real sections). When the
+ * CONSUMER_FREE flag flips, every consumer's effective plan changes (→ PRO),
+ * which both changes the branch taken AND the payload content. Entries written
+ * before the flip are keyed identically to fresh ones for the
+ * summary/preview families (which don't carry plan in their key), so a flip
+ * could serve a stale gated payload for up to a TTL.
+ *
+ * The fix is a single epoch segment derived from the flag state, prepended to
+ * EVERY dossier cache key. Flipping the flag changes the epoch → every key
+ * changes → pre-flip entries are bypassed (and naturally expire by TTL).
+ *
+ * FLAG-NEUTRAL: with CONSUMER_FREE OFF (today's default), this resolves to a
+ * single CONSTANT suffix ("cf0"), so every key is byte-identical to before this
+ * change and cache behavior is unchanged. The only effect manifests on a FUTURE
+ * flip, which is exactly the trap we are closing.
+ */
+async function dossierCacheEpoch(): Promise<string> {
+  // Read identically to getUserPlan's own flag read so the epoch tracks the
+  // same state that drives the gated branch + payload (env-global, not per-user).
+  const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG).catch(() => false);
+  return consumerFree ? "cf1" : "cf0";
 }
 
 function dossierJson(payload: unknown, cacheState: "HIT" | "MISS" | "BYPASS", ttlMs?: number) {
@@ -505,6 +531,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const planInfo = await getPlanForLimitScope(userId, planLimitScopeForDataScope(scope));
     const features = planFeatures(planInfo.plan);
 
+    // H7 cache epoch — flips with the CONSUMER_FREE flag so a flag flip changes
+    // every dossier cache key and pre-flip gated payloads are never served.
+    // Flag OFF (today) → constant "cf0" → keys byte-identical to before.
+    const cacheEpoch = await dossierCacheEpoch();
+
     const addressPayload = { id: address.id, city: address.city, state: address.state, zip: address.zip };
     const scopeKey = `${scope.workspaceId || "personal"}:${scope.memberRole || "owner"}`;
     const addressCacheVersion = addressVersion(address);
@@ -520,6 +551,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // remains intact and the route avoids FEMA/NCES/NWS/NRI/water/EV/Census.
     if (new URL(request.url).searchParams.get("summary") === "1") {
       const summaryCacheKey = [
+        cacheEpoch,
         "summary",
         userId,
         scopeKey,
@@ -626,6 +658,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           plan !== null && plan.moveDate.getTime() - now.getTime() <= WEATHER_WINDOW_DAYS * MS_PER_DAY;
         const weatherTargetDate = withinWindow ? plan.moveDate.toISOString().slice(0, 10) : null;
         const previewCacheKey = [
+          cacheEpoch,
           "preview",
           userId,
           scopeKey,
@@ -686,6 +719,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // "no coordinates = zero external calls" guarantee simple and true.)
     if (!hasLocation) {
       const noLocationCacheKey = [
+        cacheEpoch,
         "full",
         userId,
         scopeKey,
@@ -757,6 +791,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       plan !== null && plan.moveDate.getTime() - now.getTime() <= WEATHER_WINDOW_DAYS * MS_PER_DAY;
     const weatherTargetDate = withinWindow ? plan.moveDate.toISOString().slice(0, 10) : null;
     const fullCacheKey = [
+      cacheEpoch,
       "full",
       userId,
       scopeKey,

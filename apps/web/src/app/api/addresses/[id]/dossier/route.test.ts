@@ -66,6 +66,13 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(() => Promise.resolve({ success: true, resetAt: Date.now() + 60_000 })),
 }));
 
+// H7 cache epoch: the route folds the CONSUMER_FREE flag state into the dossier
+// cache key. Default OFF (false) ⇒ a constant epoch ⇒ keying identical to today;
+// the gate-flip test flips this to true to prove pre-flip entries are bypassed.
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn(() => Promise.resolve(false)),
+}));
+
 // Durable area cache → pass-through in route tests: always run the fetcher (the
 // lib mocks above supply the data), so section assembly stays identical.
 vi.mock("@/lib/address-data-cache", () => ({
@@ -97,10 +104,12 @@ import { lookupNearbySchools } from "@/lib/nces-schools";
 import { lookupHudHousing } from "@/lib/hud-housing";
 import { lookupEvCharging } from "@/lib/nlr-alt-fuel-stations";
 import { checkGlobalBudget } from "@/lib/global-spend-guard";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { GET, clearDossierCacheForTests } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
 const mockGetPlanForLimitScope = getPlanForLimitScope as unknown as Mock;
+const mockIsFeatureEnabled = isFeatureEnabled as unknown as Mock;
 const mockAddressFindUnique = prisma.address.findUnique as unknown as Mock;
 const mockPlanFindFirst = prisma.movingPlan.findFirst as unknown as Mock;
 const mockLookupFloodZone = lookupFloodZone as unknown as Mock;
@@ -298,6 +307,7 @@ describe("address dossier route", () => {
     mockLookupWalkability.mockResolvedValue(WALKABILITY_OK);
     mockLookupNearbySchools.mockResolvedValue(SCHOOLS_OK);
     mockCheckGlobalBudget.mockResolvedValue({ allowed: true, cap: null }); // breaker off
+    mockIsFeatureEnabled.mockResolvedValue(false); // CONSUMER_FREE OFF (default) → constant epoch
   });
 
   it("returns a structured 401 when the DB-backed session is invalid", async () => {
@@ -468,6 +478,29 @@ describe("address dossier route", () => {
     expect(body.air).toEqual({ status: "ok", aqi: 52, category: "Moderate" });
     expect(mockLookupAirQuality).not.toHaveBeenCalled();
     expect(mockLookupHudHousing).not.toHaveBeenCalled();
+  });
+
+  it("H7: flipping CONSUMER_FREE bypasses a pre-flip cached summary (epoch in the key)", async () => {
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+    mockIsFeatureEnabled.mockResolvedValue(false); // flag OFF when the entry is written
+
+    const first = await GET(dossierSummaryRequest(), addressParams() as any);
+    expect(first.headers.get("X-Dossier-Cache")).toBe("MISS");
+    await first.json();
+
+    // A repeat under the SAME flag state is a HIT — epoch is a constant suffix,
+    // so flag-OFF keying is unchanged from before the epoch existed.
+    const repeat = await GET(dossierSummaryRequest(), addressParams() as any);
+    expect(repeat.headers.get("X-Dossier-Cache")).toBe("HIT");
+    await repeat.json();
+
+    // Now the flag flips ON. The epoch segment changes, so the pre-flip entry is
+    // no longer addressable — the request MISSES and recomputes instead of
+    // serving a stale gated payload.
+    mockIsFeatureEnabled.mockResolvedValue(true);
+    const afterFlip = await GET(dossierSummaryRequest(), addressParams() as any);
+    expect(afterFlip.headers.get("X-Dossier-Cache")).toBe("MISS");
+    await afterFlip.json();
   });
 
   it("404 still wins over the teaser for a free user's foreign address id", async () => {

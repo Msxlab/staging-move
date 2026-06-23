@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { getEffectiveEntitlement } from "../entitlement";
+import {
+  ABUSE_CAP_ADDRESSES,
+  ABUSE_CAP_CUSTOM_PROVIDERS,
+  ABUSE_CAP_SERVICES,
+  UNLIMITED_SENTINEL,
+  getEffectiveEntitlement,
+  isUnlimited,
+} from "../entitlement";
 
 const NOW = new Date("2026-05-08T12:00:00Z");
 const PAST = new Date("2026-04-01T00:00:00Z");
@@ -429,5 +436,49 @@ describe("getEffectiveEntitlement", () => {
     // provider=TRIAL → treated as default free access; no provider-paid trial path.
     expect(e.hasAccess).toBe(true);
     expect(e.hasPremium).toBe(false);
+  });
+});
+
+describe("isUnlimited (M2 sentinel guard)", () => {
+  it("treats the legacy MAX_SAFE_INTEGER sentinel as unlimited", () => {
+    expect(isUnlimited(UNLIMITED_SENTINEL)).toBe(true);
+    expect(isUnlimited(Number.MAX_SAFE_INTEGER)).toBe(true);
+  });
+
+  it("treats Infinity and non-finite values as unlimited", () => {
+    expect(isUnlimited(Infinity)).toBe(true);
+    expect(isUnlimited(Number.POSITIVE_INFINITY)).toBe(true);
+    expect(isUnlimited(NaN)).toBe(true);
+  });
+
+  it("treats a missing cap (null/undefined) as unlimited (nothing to render)", () => {
+    expect(isUnlimited(null)).toBe(true);
+    expect(isUnlimited(undefined)).toBe(true);
+  });
+
+  it("treats real finite caps — including the named abuse ceilings — as bounded", () => {
+    expect(isUnlimited(0)).toBe(false);
+    expect(isUnlimited(3)).toBe(false);
+    expect(isUnlimited(25)).toBe(false);
+    expect(isUnlimited(1000)).toBe(false);
+    expect(isUnlimited(ABUSE_CAP_ADDRESSES)).toBe(false);
+    expect(isUnlimited(ABUSE_CAP_SERVICES)).toBe(false);
+    expect(isUnlimited(ABUSE_CAP_CUSTOM_PROVIDERS)).toBe(false);
+  });
+});
+
+describe("abuse-cap constants (H6 finite ceilings)", () => {
+  it("are finite, positive, and never the unlimited sentinel", () => {
+    for (const cap of [ABUSE_CAP_ADDRESSES, ABUSE_CAP_SERVICES, ABUSE_CAP_CUSTOM_PROVIDERS]) {
+      expect(Number.isFinite(cap)).toBe(true);
+      expect(cap).toBeGreaterThan(0);
+      expect(cap).toBeLessThan(UNLIMITED_SENTINEL);
+    }
+  });
+
+  it("match today's PRO consumer-free resolution so flipping the flag ON is byte-identical", () => {
+    expect(ABUSE_CAP_ADDRESSES).toBe(25);
+    expect(ABUSE_CAP_SERVICES).toBe(1000);
+    expect(ABUSE_CAP_CUSTOM_PROVIDERS).toBe(1000);
   });
 });

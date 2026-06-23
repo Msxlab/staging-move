@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { overflowCount, planFeatures, seatLimitForPlan } from "./workspace-entitlements";
+import {
+  CONSUMER_FREE_CONCURRENT_PLAN_LIMIT,
+  concurrentPlanLimitForPlan,
+  overflowCount,
+  planFeatures,
+  seatLimitForPlan,
+} from "./workspace-entitlements";
 
 describe("planFeatures", () => {
   it("Pro unlocks everything with 10 seats", () => {
@@ -92,5 +98,29 @@ describe("overflowCount", () => {
     expect(overflowCount("FAMILY", 8)).toBe(2);
     expect(overflowCount("PRO", 5)).toBe(0);
     expect(overflowCount("INDIVIDUAL", 1)).toBe(0);
+  });
+});
+
+describe("concurrentPlanLimitForPlan (H4 consumer-free abuse ceiling)", () => {
+  it("flag OFF: returns the real per-tier limit, byte-identical to planFeatures()", () => {
+    expect(concurrentPlanLimitForPlan("PRO", false)).toBe(3);
+    expect(concurrentPlanLimitForPlan("FAMILY", false)).toBe(1);
+    expect(concurrentPlanLimitForPlan("INDIVIDUAL", false)).toBe(1);
+    expect(concurrentPlanLimitForPlan("FREE_TRIAL", false)).toBe(1);
+    expect(concurrentPlanLimitForPlan(null, false)).toBe(1);
+    // Same as reading the tier matrix directly.
+    expect(concurrentPlanLimitForPlan("PRO", false)).toBe(planFeatures("PRO").concurrentPlanLimit);
+  });
+
+  it("flag ON: raises every plan to the finite consumer-free abuse ceiling (not 3)", () => {
+    expect(concurrentPlanLimitForPlan("PRO", true)).toBe(CONSUMER_FREE_CONCURRENT_PLAN_LIMIT);
+    expect(concurrentPlanLimitForPlan("PRO", true)).not.toBe(3);
+    expect(concurrentPlanLimitForPlan(null, true)).toBe(CONSUMER_FREE_CONCURRENT_PLAN_LIMIT);
+  });
+
+  it("the consumer-free ceiling is finite and well above the per-tier limit", () => {
+    expect(Number.isFinite(CONSUMER_FREE_CONCURRENT_PLAN_LIMIT)).toBe(true);
+    expect(CONSUMER_FREE_CONCURRENT_PLAN_LIMIT).toBe(25);
+    expect(CONSUMER_FREE_CONCURRENT_PLAN_LIMIT).toBeGreaterThan(planFeatures("PRO").concurrentPlanLimit);
   });
 });

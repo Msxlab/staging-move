@@ -685,3 +685,45 @@ export function accessSourceLabel(source: AccessSource): string {
     default: return "Unknown";
   }
 }
+
+/**
+ * The legacy "unlimited" sentinel. Mirrors `UNLIMITED` in
+ * apps/web/src/lib/plan-limits.ts: a large finite integer (NOT `Infinity`) so a
+ * count check (`count >= limit`) can never trip and JSON serialization keeps a
+ * real number. Centralized here so the shared `isUnlimited` guard and the web
+ * cap module agree on the exact sentinel value.
+ */
+export const UNLIMITED_SENTINEL = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Shared guard so UI never renders the raw "unlimited" sentinel (M2). Any
+ * surface that interpolates a cap (service-usage-indicator, service-limit-upsell,
+ * mobile mirrors) should branch on this before showing `current / limit` — at an
+ * unlimited cap, hide the count/bar or show a neutral "N tracked" instead of a
+ * giant number. Treats `Infinity` and any value at/above the sentinel as
+ * unlimited; a missing/non-finite cap is also treated as unlimited (nothing
+ * meaningful to render).
+ */
+export function isUnlimited(limit: number | null | undefined): boolean {
+  if (limit === null || limit === undefined) return true;
+  if (!Number.isFinite(limit)) return true;
+  return limit >= UNLIMITED_SENTINEL;
+}
+
+/**
+ * Named FINITE abuse ceilings used to REPLACE the `UNLIMITED` sentinel on the
+ * consumer-free (CONSUMER_FREE flag ON) path (H6). Under the truly-free pivot
+ * every consumer resolves to PRO, so an `UNLIMITED` cap would be no abuse ceiling
+ * at all — a single account could create unbounded rows. These are high enough
+ * that no real consumer ever trips them, low enough to bound cost/abuse, and
+ * finite so they are always safe to interpolate into a user-facing reason string
+ * (never the giant sentinel).
+ *
+ * Values intentionally match today's consumer-free resolution (PRO caps), so
+ * turning the flag ON is byte-identical to the current flag-ON behavior — this
+ * change only NAMES the caps and routes the consumer-free path through them
+ * instead of borrowing `PLAN_LIMITS.PRO`. Flag OFF is wholly unaffected.
+ */
+export const ABUSE_CAP_ADDRESSES = 25;
+export const ABUSE_CAP_SERVICES = 1000;
+export const ABUSE_CAP_CUSTOM_PROVIDERS = 1000;
