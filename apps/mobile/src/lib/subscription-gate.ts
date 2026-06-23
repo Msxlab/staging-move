@@ -18,3 +18,24 @@ export const UPSELL_GATE_CODES: string[] = [
   // refuses plan creation; surface access review instead of a dead-end retry.
   "MOVING_PLAN_UPGRADE_REQUIRED",
 ];
+
+/**
+ * CONSUMER_FREE / H8 guard. Under consumer-free the user has full, unlimited
+ * access, so the server will not emit these limit/subscription gate codes — but
+ * a stale client (or a cached payload from before the flip) could still receive
+ * one. When that happens we must NOT route the user to an un-buyable "Upgrade"
+ * CTA. This predicate lets a create flow recognise the contradiction and fall
+ * back to a neutral message instead.
+ *
+ * Pass the same consumer-free signal the subscription screen uses
+ * (`isMobileConsumerFreeEntitlement`). With the flag OFF `consumerFree` is
+ * false and this always returns false, so existing gate handling is
+ * BYTE-IDENTICAL to today.
+ */
+export function shouldSuppressUpsellGate(
+  code: string | null | undefined,
+  consumerFree: boolean,
+): boolean {
+  if (!consumerFree) return false;
+  return Boolean(code && UPSELL_GATE_CODES.includes(code));
+}

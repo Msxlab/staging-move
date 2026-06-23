@@ -1,9 +1,47 @@
 import { describe, expect, it } from "vitest";
 import {
+  isMobileConsumerFreeEntitlement,
   shouldShowMobileConsumerFreePanel,
   shouldRenderMobileSubscriptionPlanCard,
   shouldShowMobileSubscriptionPlan,
 } from "./subscription-visible-plans";
+
+describe("isMobileConsumerFreeEntitlement", () => {
+  it("is true for an active full-access consumer without billing management", () => {
+    expect(isMobileConsumerFreeEntitlement({
+      managementKind: "none",
+      effectivePlanKey: "PRO",
+      effectiveActive: true,
+    })).toBe(true);
+    expect(isMobileConsumerFreeEntitlement({
+      managementKind: "none",
+      effectivePlanKey: "FREE_TRIAL",
+      effectiveStatus: "FREE_ACCESS",
+      effectiveActive: true,
+    })).toBe(true);
+  });
+
+  it("is false for real stripe/store payers and inactive entitlements (flag-off parity)", () => {
+    for (const managementKind of ["stripe", "store"]) {
+      expect(isMobileConsumerFreeEntitlement({
+        managementKind,
+        effectivePlanKey: "PRO",
+        effectiveActive: true,
+      })).toBe(false);
+    }
+    // managementKind == null is the flag-OFF / not-loaded shape → never free.
+    expect(isMobileConsumerFreeEntitlement({
+      managementKind: null,
+      effectivePlanKey: "PRO",
+      effectiveActive: true,
+    })).toBe(false);
+    expect(isMobileConsumerFreeEntitlement({
+      managementKind: "none",
+      effectivePlanKey: "PRO",
+      effectiveActive: false,
+    })).toBe(false);
+  });
+});
 
 describe("shouldShowMobileConsumerFreePanel", () => {
   it("shows the included-access panel for an active paid entitlement without billing management", () => {

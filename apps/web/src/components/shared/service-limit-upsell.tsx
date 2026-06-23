@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, X, ArrowRight } from "lucide-react";
+import { isUnlimited } from "@/components/shared/service-usage-indicator";
 
 export interface ServiceLimitDetails {
   code?: string | null;
@@ -44,6 +45,13 @@ interface ServiceLimitUpsellProps {
    * preserve it so the user lands back on the same screen after sign-up.
    */
   returnTo?: string | null;
+  /**
+   * CONSUMER_FREE pivot: a full-access free user has no service/address cap to
+   * upsell against, so this limit-reached modal would be a contradiction.
+   * Defaults to `false` so flag-OFF callers behave EXACTLY as before. When
+   * `true`, the modal never renders.
+   */
+  consumerFree?: boolean;
 }
 
 const DEFAULT_LIMIT = 10;
@@ -136,21 +144,23 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
   };
 }
 
-export function ServiceLimitUpsell({ open, details, onClose, returnTo }: ServiceLimitUpsellProps) {
+export function ServiceLimitUpsell({ open, details, onClose, returnTo, consumerFree = false }: ServiceLimitUpsellProps) {
   const router = useRouter();
   const closeRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || consumerFree) return;
     closeRef.current?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, onClose, consumerFree]);
 
-  if (!open) return null;
+  // CONSUMER_FREE: full-access free users have no cap to upsell — suppress the
+  // whole modal. Flag OFF (default) falls through to the unchanged behavior.
+  if (!open || consumerFree) return null;
 
   const copy = buildServiceLimitCopy(details);
   const eligibleForTrial =
@@ -200,7 +210,9 @@ export function ServiceLimitUpsell({ open, details, onClose, returnTo }: Service
 
         <p className="mt-3 text-sm text-muted-foreground">{copy.body}</p>
 
-        {typeof details?.current === "number" && typeof details?.limit === "number" ? (
+        {typeof details?.current === "number" &&
+        typeof details?.limit === "number" &&
+        !isUnlimited(details.limit) ? (
           <p className="mt-3 text-xs text-muted-foreground">
             {isAddressLimitCode(details?.code) ? "Addresses saved" : "Services tracked"}: {details.current} / {details.limit}
           </p>
