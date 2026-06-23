@@ -254,6 +254,53 @@ describe("IAP normalization", () => {
     });
   });
 
+  it("declines an Apple Family Sharing recipient from server status (finding 4.2)", async () => {
+    // A FAMILY_SHARED transaction is a family member claiming the purchaser's
+    // subscription — granting it would multiply one purchase into N entitlements.
+    vi.mocked(mapAppleStatus).mockReturnValue("ACTIVE");
+
+    const normalized = await normalizeAppleResult({
+      environment: "Production",
+      rawStatus: 1,
+      renewal: null,
+      transaction: {
+        transactionId: "1000000000002",
+        originalTransactionId: "1000000000001",
+        bundleId: "com.locateflow",
+        productId: "individual.ios",
+        purchaseDate: Date.now(),
+        originalPurchaseDate: Date.now(),
+        expiresDate: Date.now() + 86_400_000,
+        quantity: 1,
+        type: "Auto-Renewable Subscription",
+        inAppOwnershipType: "FAMILY_SHARED",
+        signedDate: Date.now(),
+        environment: "Production",
+      },
+    });
+
+    expect(normalized).toBeNull();
+  });
+
+  it("declines an Apple Family Sharing recipient from a locally verified transaction (finding 4.2)", async () => {
+    const normalized = await normalizeAppleTransactionPayload({
+      transactionId: "1000000000003",
+      originalTransactionId: "1000000000001",
+      bundleId: "com.locateflow",
+      productId: "individual.ios",
+      purchaseDate: Date.now(),
+      originalPurchaseDate: Date.now(),
+      expiresDate: Date.now() + 86_400_000,
+      quantity: 1,
+      type: "Auto-Renewable Subscription",
+      inAppOwnershipType: "FAMILY_SHARED",
+      signedDate: Date.now(),
+      environment: "Production",
+    });
+
+    expect(normalized).toBeNull();
+  });
+
   it("rejects locally verified Apple transactions for another bundle", async () => {
     await expect(
       normalizeAppleTransactionPayload({

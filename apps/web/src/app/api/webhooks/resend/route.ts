@@ -30,6 +30,26 @@ export const runtime = "nodejs";
 // many-MB body.
 const RESEND_WEBHOOK_MAX_BODY_BYTES = 16 * 1024;
 
+/**
+ * Normalize a Resend/Svix bounce classification to "permanent" | "transient".
+ * Looks at data.bounce.type first (the documented Svix bounce shape), then
+ * falls back to a top-level data.type. Anything that isn't clearly transient
+ * (soft) is treated as permanent so an unlabeled hard bounce still suppresses.
+ */
+function extractBounceType(event: ResendEvent): "permanent" | "transient" {
+  const data = (event?.data ?? {}) as Record<string, unknown>;
+  const bounce = data.bounce;
+  const rawCandidate =
+    bounce && typeof bounce === "object"
+      ? (bounce as Record<string, unknown>).type
+      : data.type;
+  const raw = typeof rawCandidate === "string" ? rawCandidate.toLowerCase() : "";
+  // Resend uses "Transient" for soft bounces; SES-style payloads use
+  // "Transient". Treat any value containing "transient" or "soft" as soft.
+  if (raw.includes("transient") || raw.includes("soft")) return "transient";
+  return "permanent";
+}
+
 export async function POST(request: NextRequest) {
   const declaredLength = Number(request.headers.get("content-length") || 0);
   if (declaredLength > RESEND_WEBHOOK_MAX_BODY_BYTES) {
@@ -101,7 +121,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, ignored: "no active user" });
   }
 
-  const source = eventType === "email.bounced" ? "bounce" : "complaint";
+  // 4.7a: only opt the recipient OUT for PERMANENT (hard) bounces and spam
+  // complaints. A TRANSIENT (soft) bounce — full mailbox, greylisting, a
+  // temporary MTA error — is not a dead address: opting out on it would
+  // wrongly suppress a legitimate recipient who will receive mail again on
+  // retry. Resend's bounce payload carries the classification at
+  // data.bounce.type (Svix shape) with data.type as a fallback; both render
+  // as "Permanent" / "Transient". Treat an unknown/absent type on a bounce as
+  // permanent (preserves the prior behavior of suppressing on every bounce
+  // when no classification is present, so we never silently keep mailing a
+  // truly-dead address the provider failed to label).
+  const isComplaint = eventType === "email.complained";
+  const bounceType = extractBounceType(event);
+  const isSoftBounce = eventType === "email.bounced" && bounceType === "transient";
+  if (isSoftBounce) {
+    // Record the soft bounce on the matching EmailLog row (best-effort) but do
+    // NOT opt the user out — the address may still deliver on retry.
+    if (event.data?.email_id) {
+      try {
+        await prisma.emailLog.updateMany({
+          where: { providerMessageId: event.data.email_id },
+          data: { status: "BOUNCED" },
+        });
+      } catch {
+        /* best-effort */
+      }
+    }
+    console.info("[RESEND] soft bounce — not opting out", {
+      userIdHint: user.id.slice(0, 6),
+      bounceType,
+    });
+    return NextResponse.json({ ok: true, suppressed: false, softBounce: true });
+  }
+
+  const source = isComplaint ? "complaint" : "bounce";
   await processUnsubscribe({ userId: user.id, kind: "all", source });
 
   // Record the bounce on the matching EmailLog row so the admin email-health

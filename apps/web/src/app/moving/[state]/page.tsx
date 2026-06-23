@@ -5,9 +5,11 @@
  * the product itself ships (packages/db/prisma/seed-data/state-rules.ts), so
  * the content never drifts from what the app knows.
  *
- * Rendering: fully static. `generateStaticParams` enumerates all 51 slugs and
- * `dynamicParams = false` makes any other slug a hard 404 — no per-request DB
- * work, no Prisma in the build graph (the data module is hand-free generated
+ * Rendering: dynamic per request (see the `dynamic`/`force-dynamic` note below
+ * — needed so each response carries the per-request CSP nonce). The slug set is
+ * still curated: `generateStaticParams` enumerates all 51 slugs and
+ * `dynamicParams = false` makes any other slug a hard 404. There is no
+ * per-request DB work and no Prisma in the graph (the data module is generated
  * and Prisma-free on purpose). Each page emits Article + FAQPage +
  * BreadcrumbList JSON-LD via the shared factory, a self-canonical + en-US/
  * x-default hreflang, and OpenGraph/Twitter cards.

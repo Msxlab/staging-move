@@ -10,11 +10,12 @@
  *     "statewide rules apply in {City}". The only city-level copy is neutral,
  *     evergreen relocation framing (the metro blurb) — nothing fabricated.
  *
- * Rendering mirrors the state page: fully static, `generateStaticParams`
- * enumerates every curated [state, city] pair and `dynamicParams = false`
- * makes any other pair a hard 404. Each page emits Article + FAQPage +
- * BreadcrumbList JSON-LD, a self-canonical + en-US/x-default hreflang, and
- * OpenGraph/Twitter cards.
+ * Rendering mirrors the state page: dynamic per request (for the per-request
+ * CSP nonce — see the note below), but with a curated slug set.
+ * `generateStaticParams` enumerates every curated [state, city] pair and
+ * `dynamicParams = false` makes any other pair a hard 404. Each page emits
+ * Article + FAQPage + BreadcrumbList JSON-LD, a self-canonical + en-US/x-default
+ * hreflang, and OpenGraph/Twitter cards.
  */
 
 import type { Metadata } from "next";

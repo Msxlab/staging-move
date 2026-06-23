@@ -57,7 +57,6 @@ vi.mock("@/lib/billing", () => ({
 vi.mock("@/lib/sentry", () => ({
   captureException: vi.fn(),
   captureMessage: vi.fn(),
-  initSentry: vi.fn(),
 }));
 vi.mock("@/lib/acquisition-campaigns", () => ({
   findAcquisitionCampaign: mocks.findAcquisitionCampaign,

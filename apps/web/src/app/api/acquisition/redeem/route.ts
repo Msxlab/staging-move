@@ -83,13 +83,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Best-effort idempotency for the (user, campaign) pair: a duplicate POST
-    // from a double-click or retry should not create a second redemption row.
-    // This is a check-then-create guard only — the schema has no unique index
-    // on (userId, campaignId) yet, so two truly concurrent requests can still
-    // both pass here. The only DB-enforced guard inside the transaction below
-    // is the campaign-level redemption cap; full per-user idempotency awaits a
-    // @@unique([userId, campaignId]) migration.
+    // Fast-path idempotency for the (user, campaign) pair: a duplicate POST
+    // from a double-click or retry should return ALREADY_REDEEMED without
+    // hitting the transaction. This is only a check-then-create guard — two
+    // truly concurrent requests can both pass here — but it doesn't stand
+    // alone: AcquisitionRedemption carries @@unique([userId, campaignId])
+    // (schema.prisma), so the loser of a real race fails the create with
+    // P2002 and is converted to ALREADY_REDEEMED in the catch below. The
+    // campaign-level cap is enforced separately inside the transaction.
     if (campaign.id) {
       const existingForCampaign = await (prisma as any).acquisitionRedemption.findFirst({
         where: { userId, campaignId: campaign.id },

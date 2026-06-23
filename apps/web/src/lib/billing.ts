@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@locateflow/db";
 import {
   createFallbackEntitlementSnapshot,
   DEFAULT_BILLING_PLAN,
@@ -338,12 +339,20 @@ export async function findSubscriptionForEntitlement(userId: string) {
   }
 }
 
+// Accepts either the full app client (default) or an interactive
+// transaction client, so callers that wrap multiple writes in
+// prisma.$transaction can run subscription provisioning inside the same
+// atomic unit. PrismaClient is structurally assignable to TransactionClient
+// for the model + raw methods used below.
+type SubscriptionDbClient = Prisma.TransactionClient;
+
 export async function ensureSubscriptionDefaults(
   userId: string,
   options: { platform?: string | null; trialEndsAt?: Date } = {},
+  tx: SubscriptionDbClient = prisma,
 ) {
   try {
-    return await prisma.subscription.upsert({
+    return await tx.subscription.upsert({
       where: { userId },
       update: {},
       create: {
@@ -359,7 +368,7 @@ export async function ensureSubscriptionDefaults(
   } catch (error) {
     if (!isMissingDbColumnError(error)) throw error;
     warnSchemaCompatibilityFallback("subscription:ensure-defaults", error);
-    return ensureSubscriptionDefaultsSchemaCompat(userId, options);
+    return ensureSubscriptionDefaultsSchemaCompat(userId, options, tx);
   }
 }
 
@@ -399,8 +408,8 @@ function fallbackSubscriptionId() {
   return `sub_${randomBytes(12).toString("hex")}`;
 }
 
-async function getSubscriptionColumns() {
-  const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+async function getSubscriptionColumns(db: SubscriptionDbClient = prisma) {
+  const rows = await db.$queryRawUnsafe<Array<Record<string, unknown>>>(
     "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?",
     "Subscription",
   );
@@ -411,13 +420,17 @@ async function getSubscriptionColumns() {
   );
 }
 
-async function selectFallbackSubscription(userId: string, columns: Set<string>) {
+async function selectFallbackSubscription(
+  userId: string,
+  columns: Set<string>,
+  db: SubscriptionDbClient = prisma,
+) {
   const selectColumns = SUBSCRIPTION_FALLBACK_SELECT_COLUMNS.filter((column) => columns.has(column));
   if (!selectColumns.includes("id") || !selectColumns.includes("userId")) {
     throw new Error("Subscription table is missing required id/userId columns.");
   }
 
-  const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+  const rows = await db.$queryRawUnsafe<Array<Record<string, unknown>>>(
     `SELECT ${selectColumns.map(quoteIdentifier).join(", ")} FROM \`Subscription\` WHERE \`userId\` = ? LIMIT 1`,
     userId,
   );
@@ -427,9 +440,10 @@ async function selectFallbackSubscription(userId: string, columns: Set<string>) 
 async function ensureSubscriptionDefaultsSchemaCompat(
   userId: string,
   options: { platform?: string | null; trialEndsAt?: Date } = {},
+  db: SubscriptionDbClient = prisma,
 ) {
-  const columns = await getSubscriptionColumns();
-  const existing = await selectFallbackSubscription(userId, columns);
+  const columns = await getSubscriptionColumns(db);
+  const existing = await selectFallbackSubscription(userId, columns, db);
   if (existing) return existing;
 
   const now = new Date();
@@ -455,14 +469,14 @@ async function ensureSubscriptionDefaultsSchemaCompat(
     throw new Error("Subscription table is missing required id/userId columns.");
   }
 
-  await prisma.$executeRawUnsafe(
+  await db.$executeRawUnsafe(
     `INSERT INTO \`Subscription\` (${insertColumns.map(quoteIdentifier).join(", ")}) ` +
       `VALUES (${insertColumns.map(() => "?").join(", ")}) ` +
       "ON DUPLICATE KEY UPDATE `userId` = `userId`",
     ...insertColumns.map((column) => insertValues.get(column)),
   );
 
-  return await selectFallbackSubscription(userId, columns) ?? {
+  return await selectFallbackSubscription(userId, columns, db) ?? {
     id: insertValues.get("id"),
     userId,
     plan: DEFAULT_BILLING_PLAN,

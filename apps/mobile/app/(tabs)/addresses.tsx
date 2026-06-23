@@ -56,12 +56,12 @@ function addressPerMonth(address: Address): number {
   );
 }
 
-function addressStatus(address: Address): { kind: StatusKind; label: string } {
-  if (address.type === "VACATION") return { kind: "seasonal", label: "Seasonal" };
+function addressStatus(address: Address): { kind: StatusKind; labelKey: string } {
+  if (address.type === "VACATION") return { kind: "seasonal", labelKey: "addresses.statusSeasonal" };
   if (address.endDate && new Date(address.endDate).getTime() < Date.now()) {
-    return { kind: "past", label: "Past" };
+    return { kind: "past", labelKey: "addresses.statusPast" };
   }
-  return { kind: "active", label: "Active" };
+  return { kind: "active", labelKey: "addresses.statusActive" };
 }
 
 /** Map an address's status to a Move-kit Pill tone + an accent color used for
@@ -334,7 +334,11 @@ export default function AddressesScreen() {
                   }}
                 >
                   <Text style={[styles.segText, seg === k && styles.segTextOn]}>
-                    {k === "all" ? "All" : k === "active" ? "Active" : "Past"}
+                    {k === "all"
+                      ? t("addresses.filterAll")
+                      : k === "active"
+                        ? t("addresses.filterActive")
+                        : t("addresses.filterPast")}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -458,7 +462,7 @@ export default function AddressesScreen() {
                   <MoveCard style={styles.detailCard} padding={16} radius={18}>
                     <View style={styles.detailHead}>
                       <Text style={[styles.detailKicker, { color: selTone.color }]}>
-                        {selStatus.label}
+                        {t(selStatus.labelKey)}
                       </Text>
                       {selected.isPrimary && <Pill label="Primary" tone="accent" />}
                     </View>
@@ -558,7 +562,7 @@ export default function AddressesScreen() {
                             {a.city}, {a.state}
                           </Text>
                         </View>
-                        <Text style={[styles.allStatus, { color: tone.color }]}>{st.label}</Text>
+                        <Text style={[styles.allStatus, { color: tone.color }]}>{t(st.labelKey)}</Text>
                         <ChevronRight size={16} color={theme.colors.faint} />
                       </TouchableOpacity>
                     );

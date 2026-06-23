@@ -192,7 +192,19 @@
     "system": "Sistema",
     "light_full": "Tema: Claro. Clic para cambiar a Oscuro.",
     "dark_full": "Tema: Oscuro. Clic para seguir al sistema.",
-    "system_full": "Tema: sigue al sistema. Clic para cambiar a Claro."
+    "system_full": "Tema: sigue al sistema. Clic para cambiar a Claro.",
+    "preference": "Preferencia de tema",
+    "match_system": "Seguir al sistema",
+    "light_mode": "Modo claro",
+    "dark_mode": "Modo oscuro"
+  },
+  "marketingNav": {
+    "features": "Funciones",
+    "whyFree": "Por qué es gratis",
+    "pricing": "Precios",
+    "help": "Ayuda",
+    "blog": "Blog",
+    "faq": "Preguntas frecuentes"
   },
   "language": {
     "label": "Idioma",

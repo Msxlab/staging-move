@@ -11,6 +11,7 @@
  */
 
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@locateflow/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 async function workspaceModelEnabled(): Promise<boolean> {
@@ -23,14 +24,20 @@ async function workspaceModelEnabled(): Promise<boolean> {
  * Inert when the workspace model is off; best-effort (never throws) so it can
  * sit on the signup / OAuth path without risking auth. Safe to call repeatedly.
  */
-export async function ensureWorkspaceDefaults(userId: string): Promise<void> {
+export async function ensureWorkspaceDefaults(
+  userId: string,
+  // Accepts either the full app client (default) or an interactive
+  // transaction client, so a caller wrapping signup in prisma.$transaction
+  // can provision the workspace inside the same atomic unit.
+  tx: Prisma.TransactionClient = prisma,
+): Promise<void> {
   try {
     if (!(await workspaceModelEnabled())) return;
-    const existing = await prisma.workspaceMember.findFirst({ where: { userId }, select: { id: true } });
+    const existing = await tx.workspaceMember.findFirst({ where: { userId }, select: { id: true } });
     if (existing) return;
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { firstName: true } });
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { firstName: true } });
     const name = user?.firstName ? `${user.firstName}'s Workspace` : "My Workspace";
-    await prisma.workspace.create({
+    await tx.workspace.create({
       data: {
         ownerUserId: userId,
         name,

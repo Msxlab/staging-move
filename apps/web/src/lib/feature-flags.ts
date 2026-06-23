@@ -96,13 +96,6 @@ export async function isFeatureEnabled(
   return false;
 }
 
-export async function getAllFlags(): Promise<Record<string, boolean>> {
-  const flags = await loadFlags();
-  const result: Record<string, boolean> = {};
-  flags.forEach((f, name) => { result[name] = f.enabled; });
-  return result;
-}
-
 export function invalidateFlagCache() {
   cacheTimestamp = 0;
   flagCache.clear();

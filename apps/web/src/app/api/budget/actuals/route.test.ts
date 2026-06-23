@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
-vi.mock("@/lib/db", () => ({
-  prisma: {
+vi.mock("@/lib/db", () => {
+  const prisma: any = {
     service: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
@@ -15,8 +15,13 @@ vi.mock("@/lib/db", () => ({
       findFirst: vi.fn(),
       update: vi.fn(),
     },
-  },
-}));
+    // Interactive transaction: run the callback with the prisma mock as the tx
+    // client so the wrapped cost-log write + service.update mirror hit the
+    // mocked delegates. Tests can override to assert rollback.
+    $transaction: vi.fn((cb: (tx: any) => unknown) => cb(prisma)),
+  };
+  return { prisma };
+});
 
 vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
@@ -48,6 +53,7 @@ const serviceMock = prisma.service as unknown as {
 };
 const logMock = prisma.serviceCostLog as unknown as { upsert: Mock; deleteMany: Mock };
 const budgetMock = prisma.budget as unknown as { findFirst: Mock; update: Mock };
+const transactionMock = (prisma as unknown as { $transaction: Mock }).$transaction;
 
 function postRequest(body: unknown) {
   return new Request("http://localhost/api/budget/actuals", {
@@ -60,6 +66,8 @@ function postRequest(body: unknown) {
 describe("budget actuals route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Restore the default $transaction implementation wiped by clearAllMocks.
+    transactionMock.mockImplementation((cb: (tx: any) => unknown) => cb(prisma));
     requireAppMutationUserMock.mockResolvedValue("user-1");
     serviceMock.findUnique.mockResolvedValue({
       id: "svc-1",
@@ -144,6 +152,45 @@ describe("budget actuals route", () => {
     );
     expect(response.status).toBe(400);
     expect(logMock.upsert).not.toHaveBeenCalled();
+  });
+
+  // 4.5 atomicity: for the CURRENT month the cost-log upsert and the legacy
+  // Service.actualMonthlyCost mirror run in one transaction, so a failure on the
+  // second write (service.update) rolls back the first (the cost-log upsert).
+  it("rolls back the cost-log upsert when the current-month scalar mirror fails", async () => {
+    // Viewed month = current month so the mirror service.update is exercised.
+    const now = new Date();
+    const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-15T00:00:00.000Z`;
+
+    let logPersisted = false;
+    logMock.upsert.mockImplementation(async ({ create, update }: any) => {
+      logPersisted = true;
+      return { amount: update?.amount ?? create?.amount };
+    });
+    serviceMock.update.mockImplementation(async () => {
+      throw new Error("MIRROR_UPDATE_FAILED");
+    });
+    // Emulate atomicity: a rejecting callback leaves no durable write.
+    transactionMock.mockImplementation(async (cb: (tx: any) => unknown) => {
+      try {
+        return await cb(prisma);
+      } catch (err) {
+        logPersisted = false; // rolled back with the failed mirror update
+        throw err;
+      }
+    });
+
+    const response = await POST(
+      postRequest({ serviceId: "svc-1", month: currentMonth, amount: 80 }),
+    );
+
+    // The route's outer catch maps the transaction failure to a 500.
+    expect(response.status).toBe(500);
+    // Both writes were attempted inside the transaction, then rolled back
+    // together — the per-month log and the scalar mirror cannot diverge.
+    expect(logMock.upsert).toHaveBeenCalled();
+    expect(serviceMock.update).toHaveBeenCalled();
+    expect(logPersisted).toBe(false);
   });
 
   it("GET returns each service's logged actual for the viewed month", async () => {

@@ -423,26 +423,6 @@ export async function getAppleSubscriptionStatus(
   return null;
 }
 
-/**
- * Convenience helper — given a JWS signed transaction from the client
- * (StoreKit2 `JWSRepresentation`), verify locally, then pivot to the
- * Server API to get the authoritative latest status.
- *
- * Returns null if the transaction is valid but no subscription matches
- * (e.g. consumable purchase).
- */
-export async function verifyAndLookupSignedTransaction(
-  signedTransaction: string,
-): Promise<AppleSubscriptionStatusResult | null> {
-  const payload = verifyAppleJws<AppleTransactionPayload>(signedTransaction);
-  const creds = await loadAppleApiCreds();
-  if (!creds) throw new Error("APPLE_API_CREDS_MISSING");
-  if (payload.bundleId !== creds.bundleId) {
-    throw new Error("APPLE_JWS_BUNDLE_MISMATCH");
-  }
-  return getAppleSubscriptionStatus(payload.originalTransactionId);
-}
-
 export function mapAppleStatus(rawStatus: number): "ACTIVE" | "EXPIRED" | "PAST_DUE" | "GRACE_PERIOD" | "CANCELED" | "UNKNOWN" {
   // Per Apple: 1=active, 2=expired, 3=in-billing-retry, 4=grace-period, 5=revoked.
   switch (rawStatus) {

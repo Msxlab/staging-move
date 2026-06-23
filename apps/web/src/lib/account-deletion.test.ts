@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   rawWaitlistDeleteMany: vi.fn(),
   rawNotificationQueueDeleteMany: vi.fn(),
   rawEmailLogDeleteMany: vi.fn(),
+  rawLeadDeleteMany: vi.fn(),
   rawWorkspaceFindMany: vi.fn(),
   rawWorkspaceDelete: vi.fn(),
   workspaceMemberFindFirst: vi.fn(),
@@ -72,6 +73,11 @@ vi.mock("@/lib/db", () => ({
     },
     emailLog: {
       deleteMany: (...args: unknown[]) => mocks.rawEmailLogDeleteMany(...args),
+    },
+    // Lead has no FK to User; purged explicitly before the user delete
+    // (LeadDispatch cascades from Lead) so no encrypted PII survives erasure.
+    lead: {
+      deleteMany: (...args: unknown[]) => mocks.rawLeadDeleteMany(...args),
     },
   },
 }));
@@ -136,6 +142,7 @@ describe("account deletion processor", () => {
     mocks.rawWaitlistDeleteMany.mockResolvedValue({ count: 0 });
     mocks.rawNotificationQueueDeleteMany.mockResolvedValue({ count: 0 });
     mocks.rawEmailLogDeleteMany.mockResolvedValue({ count: 0 });
+    mocks.rawLeadDeleteMany.mockResolvedValue({ count: 0 });
     mocks.rawUserUpdate.mockResolvedValue({ id: "user-1" });
     mocks.rawUserDelete.mockResolvedValue({ id: "user-1" });
     // Restore tokens are signed with USER_JWT_SECRET when no dedicated secret.
@@ -155,6 +162,9 @@ describe("account deletion processor", () => {
     expect(mocks.rawMovingPlanDeleteMany).toHaveBeenCalledWith({ where: { userId: "user-1" } });
     // GDPR Art.17: the plaintext recipient email must be purged from EmailLog too.
     expect(mocks.rawEmailLogDeleteMany).toHaveBeenCalledWith({ where: { to: "user@example.com" } });
+    // GDPR Art.17: Lead has no FK to User, so its encrypted PII must be purged
+    // explicitly (LeadDispatch cascades from Lead) before the user delete.
+    expect(mocks.rawLeadDeleteMany).toHaveBeenCalledWith({ where: { userId: "user-1" } });
     expect(mocks.rawUserDelete).toHaveBeenCalledWith({ where: { id: "user-1" } });
     expect(result.status).toBe("COMPLETED");
     expect(result.cleanup?.stripeCanceled).toBe(true);

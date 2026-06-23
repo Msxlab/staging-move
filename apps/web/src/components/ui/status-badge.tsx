@@ -69,7 +69,7 @@ export interface StatusBadgeProps
   /**
    * Override the default icon. Pass a Lucide component or `null` to
    * opt out explicitly — the status remains communicated through the
-   * label + role="status", which is screen-reader accessible.
+   * visible label, which is screen-reader accessible on its own.
    */
   icon?: LucideIcon | null;
   size?: keyof typeof SIZE_CLASSES;
@@ -88,8 +88,6 @@ export function StatusBadge({
 
   return (
     <span
-      role="status"
-      aria-label={label}
       className={cn(
         "inline-flex items-center rounded-full border font-medium",
         SIZE_CLASSES[size],

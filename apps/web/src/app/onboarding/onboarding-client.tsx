@@ -265,7 +265,12 @@ export default function OnboardingClient({
             hasBoatRV: data.profile?.hasBoatRV ?? prev.hasBoatRV,
             moveType: data.profile?.moveType || prev.moveType,
             isBusinessOwner: data.profile?.isBusinessOwner ?? prev.isBusinessOwner,
-            isMilitary: false,
+            // Preserve the persisted SENSITIVE military flag on resume. Hardcoding
+            // false here previously dropped a previously-saved isMilitary=true: the
+            // next profile save (buildOnboardingProfilePayload forwards this field)
+            // would overwrite the stored value back to false. Read it back so a
+            // returning military user's status survives the round-trip.
+            isMilitary: data.profile?.isMilitary ?? prev.isMilitary,
           }));
         }
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 
 type Option = {
   value: "system" | "light" | "dark";
@@ -11,27 +12,27 @@ type Option = {
   icon: LucideIcon;
 };
 
-const FULL_OPTIONS: Option[] = [
-  { value: "system", label: "Match system", icon: Monitor },
-  { value: "light", label: "Light mode", icon: Sun },
-  { value: "dark", label: "Dark mode", icon: Moon },
-];
-
-const COMPACT_OPTIONS: Option[] = [
-  { value: "light", label: "Light mode", icon: Sun },
-  { value: "dark", label: "Dark mode", icon: Moon },
-];
-
 export function LandingThemeToggle({
   variant = "full",
 }: {
   variant?: "full" | "compact";
 } = {}) {
   const { theme, resolvedTheme, setTheme } = useTheme();
+  const t = useTranslations("theme");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const options = variant === "compact" ? COMPACT_OPTIONS : FULL_OPTIONS;
+  const fullOptions: Option[] = [
+    { value: "system", label: t("match_system"), icon: Monitor },
+    { value: "light", label: t("light_mode"), icon: Sun },
+    { value: "dark", label: t("dark_mode"), icon: Moon },
+  ];
+  const compactOptions: Option[] = [
+    { value: "light", label: t("light_mode"), icon: Sun },
+    { value: "dark", label: t("dark_mode"), icon: Moon },
+  ];
+
+  const options = variant === "compact" ? compactOptions : fullOptions;
 
   // For the compact (sun/moon-only) toggle, "system" is not a selectable
   // state, so highlight whatever the system currently resolves to. That
@@ -46,7 +47,7 @@ export function LandingThemeToggle({
   return (
     <div
       role="radiogroup"
-      aria-label="Theme preference"
+      aria-label={t("preference")}
       className="relative inline-flex items-center rounded-full border border-border/60 bg-foreground/[0.04] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md"
     >
       {options.map(({ value, label, icon: Icon }) => {

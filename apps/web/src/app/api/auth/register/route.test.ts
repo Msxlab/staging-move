@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/db", () => ({
-  prisma: {
+vi.mock("@/lib/db", () => {
+  const prisma: any = {
     user: {
       findUnique: vi.fn(),
       create: vi.fn(),
@@ -11,17 +11,24 @@ vi.mock("@/lib/db", () => ({
     emailVerificationToken: {
       create: vi.fn(),
     },
-  },
+    // Interactive transaction: by default run the callback with the same
+    // prisma mock as the `tx` client so the wrapped writes execute against the
+    // mocked delegates. Individual tests can override to assert rollback.
+    $transaction: vi.fn((cb: (tx: any) => unknown) => cb(prisma)),
+  };
+  return {
+    prisma,
   // rawPrisma: the un-extended client. The soft-delete extension hides
   // deletedAt != null rows from the wrapped `prisma` client's findUnique
   // post-check, so the register route uses rawPrisma to keep the
   // "block re-signup for soft-deleted emails" gate honest.
-  rawPrisma: {
-    user: {
-      findUnique: vi.fn(),
+    rawPrisma: {
+      user: {
+        findUnique: vi.fn(),
+      },
     },
-  },
-}));
+  };
+});
 
 vi.mock("@/lib/user-auth", () => ({
   hashPassword: vi.fn(() => Promise.resolve("hashed-password")),
@@ -110,6 +117,7 @@ const rawUserMock = rawPrisma.user as unknown as {
   findUnique: Mock;
 };
 const tokenMock = prisma.emailVerificationToken as unknown as { create: Mock };
+const transactionMock = (prisma as unknown as { $transaction: Mock }).$transaction;
 const sendEmailVerificationEmailMock = sendEmailVerificationEmail as unknown as Mock;
 const ensureSubscriptionDefaultsMock = ensureSubscriptionDefaults as unknown as Mock;
 const recordLegalAcceptanceMock = recordLegalAcceptance as unknown as Mock;
@@ -143,6 +151,9 @@ describe("register route", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // clearAllMocks wipes the default $transaction implementation; restore it so
+    // each test runs the wrapped writes with the prisma mock as the tx client.
+    transactionMock.mockImplementation((cb: (tx: any) => unknown) => cb(prisma));
     userMock.findUnique.mockResolvedValue(null);
     rawUserMock.findUnique.mockResolvedValue(null);
     userMock.create.mockResolvedValue({ id: "user-new", email: "new@example.com" });
@@ -261,7 +272,7 @@ describe("register route", () => {
       },
     });
     expect(tokenMock.create).toHaveBeenCalled();
-    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("user-new");
+    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("user-new", {}, expect.anything());
     expect(applyQaPersonaSubscriptionForUserMock).not.toHaveBeenCalled();
     expect(sendEmailVerificationEmailMock).toHaveBeenCalledWith({
       userEmail: "new@example.com",
@@ -303,7 +314,7 @@ describe("register route", () => {
     });
     expect(tokenMock.create).not.toHaveBeenCalled();
     expect(sendEmailVerificationEmailMock).not.toHaveBeenCalled();
-    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("qa-user");
+    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("qa-user", {}, expect.anything());
     expect(applyQaPersonaSubscriptionForUserMock).toHaveBeenCalledWith({
       userId: "qa-user",
       email: "qa@example.com",
@@ -431,7 +442,7 @@ describe("register route", () => {
     }));
 
     expect(response.status).toBe(201);
-    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("user-new");
+    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("user-new", {}, expect.anything());
     expect(recordLegalAcceptanceMock).toHaveBeenCalledWith({
       userId: "user-new",
       request: expect.any(NextRequest),
@@ -506,6 +517,43 @@ describe("register route", () => {
       });
     },
   );
+
+  // 4.5 atomicity: a mid-sequence failure inside the signup transaction must
+  // leave NO partial state — the whole unit rolls back and nothing downstream
+  // (verification email) runs.
+  it("rolls back the user create when the verification-token write fails mid-transaction", async () => {
+    // Real $transaction semantics: the callback throws on the second write, so
+    // the transaction rejects and the (would-be) user create is not committed.
+    let userCreated = false;
+    let tokenCreated = false;
+    userMock.create.mockImplementation(async (args: any) => {
+      userCreated = true;
+      return { id: "user-new", email: args?.data?.email };
+    });
+    tokenMock.create.mockImplementation(async () => {
+      throw new Error("TOKEN_WRITE_FAILED");
+    });
+    // Emulate atomicity: if the callback rejects, surface the rejection AND
+    // signal that no writes are durably committed.
+    transactionMock.mockImplementation(async (cb: (tx: any) => unknown) => {
+      try {
+        return await cb(prisma);
+      } catch (err) {
+        userCreated = false; // rolled back
+        tokenCreated = false;
+        throw err;
+      }
+    });
+
+    await expect(POST(makeRequest(validBody))).rejects.toThrow("TOKEN_WRITE_FAILED");
+
+    // The token write was attempted (mid-sequence), then rolled back together
+    // with the user create. No verification email is sent for a failed signup.
+    expect(tokenMock.create).toHaveBeenCalled();
+    expect(userCreated).toBe(false);
+    expect(tokenCreated).toBe(false);
+    expect(sendEmailVerificationEmailMock).not.toHaveBeenCalled();
+  });
 
   // SEC-KILL: KILL_SIGNUPS operator kill switch.
   it("returns a polite 503 and creates nothing when KILL_SIGNUPS is on", async () => {

@@ -26,11 +26,17 @@ import {
   type ProviderForMigration,
   type UserChecklistProfile,
 } from "@/lib/shared-relocation";
+import {
+  assertScopedRecordAction,
+  resolveWorkspaceDataScope,
+  scopedRecordWhere,
+} from "@/lib/workspace-data-scope";
 
 // GET /api/moving/migration?planId={id}
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const rl = await rateLimit(getRateLimitKey(request, "moving:migration", { userId }), {
       limit: 30,
       windowSeconds: 60,
@@ -54,18 +60,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch moving plan with addresses
+    // Fetch moving plan with addresses. Scope by the resolved workspace data
+    // scope (not the raw actor userId) so a workspace MEMBER can open a shared
+    // plan, while soft-deleted plans stay hidden. assertScopedRecordAction
+    // enforces ownership/membership and returns 404 for out-of-scope ids,
+    // preserving the single-user (no-workspace) behavior exactly.
     const plan = await prisma.movingPlan.findFirst({
-      where: { id: planId, deletedAt: null },
+      where: scopedRecordWhere(scope, { id: planId, deletedAt: null }),
       include: {
         fromAddress: true,
         toAddress: true,
       },
     });
 
-    if (!plan || plan.userId !== userId) {
+    if (!plan) {
       return NextResponse.json({ error: "Moving plan not found" }, { status: 404 });
     }
+    assertScopedRecordAction(plan, scope, "address.view", { notFoundMessage: "Moving plan not found" });
 
     const fromState = (plan as any).fromAddress?.state || "";
     const toState = (plan as any).toAddress?.state || "";
@@ -77,13 +88,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Plan addresses must have state info" }, { status: 400 });
     }
 
-    // Fetch user's existing services at fromAddress with provider info
+    // Fetch existing services at fromAddress with provider info. Scope to the
+    // resolved owner/workspace (same as the plan) so a member sees the shared
+    // move's services. In the single-user case this resolves to { userId },
+    // preserving the previous behavior.
     const existingServices = await prisma.service.findMany({
-      where: {
-        userId,
+      where: scopedRecordWhere(scope, {
         addressId: plan.fromAddressId,
         isActive: true,
-      },
+      }),
       include: {
         provider: {
           select: {

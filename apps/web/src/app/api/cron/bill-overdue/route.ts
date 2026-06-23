@@ -59,33 +59,6 @@ export async function GET(req: Request) {
 
   try {
     const now = new Date();
-    const services = await prisma.service.findMany({
-      where: {
-        deletedAt: null,
-        isActive: true,
-        billingDay: { not: null },
-        monthlyCost: { gt: 0 },
-        user: { deletedAt: null },
-      },
-      select: {
-        id: true,
-        userId: true,
-        providerName: true,
-        category: true,
-        monthlyCost: true,
-        billingDay: true,
-        user: { select: { id: true, email: true, firstName: true, lastName: true, preferredLocale: true, profile: { select: { timezone: true } } } },
-      },
-    });
-
-    const userIds = [...new Set(services.map((service) => service.userId))];
-    const preferences = userIds.length
-      ? await prisma.notificationPreference.findMany({
-          where: { userId: { in: userIds } },
-          select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
-        })
-      : [];
-    const preferencesByUser = groupNotificationPreferencesByUser(preferences);
 
     // When the daily rollup owns the email/push send, suppress this cron's
     // per-item email + push (the digest sends them once, bundled). The in-app
@@ -95,9 +68,52 @@ export async function GET(req: Request) {
     let sentCount = 0;
     let mirroredCount = 0;
     let pushSentCount = 0;
+    let processed = 0;
     const errors: string[] = [];
 
-    for (const service of services) {
+    // 4.10a: cursor-paginate the candidate services so a large catalog can't
+    // load every active billable service into memory at once. Each page is
+    // bounded; preferences are batched per page. The id cursor advances until a
+    // short page signals the end.
+    const PAGE_SIZE = 500;
+    let cursor: string | undefined;
+
+    for (;;) {
+      const page = await prisma.service.findMany({
+        where: {
+          deletedAt: null,
+          isActive: true,
+          billingDay: { not: null },
+          monthlyCost: { gt: 0 },
+          user: { deletedAt: null },
+        },
+        select: {
+          id: true,
+          userId: true,
+          providerName: true,
+          category: true,
+          monthlyCost: true,
+          billingDay: true,
+          user: { select: { id: true, email: true, firstName: true, lastName: true, preferredLocale: true, profile: { select: { timezone: true } } } },
+        },
+        orderBy: { id: "asc" },
+        take: PAGE_SIZE,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      });
+      if (page.length === 0) break;
+      cursor = page[page.length - 1].id;
+      processed += page.length;
+
+      const userIds = [...new Set(page.map((service) => service.userId))];
+      const preferences = userIds.length
+        ? await prisma.notificationPreference.findMany({
+            where: { userId: { in: userIds } },
+            select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
+          })
+        : [];
+      const preferencesByUser = groupNotificationPreferencesByUser(preferences);
+
+      for (const service of page) {
       if (!service.user?.email || !service.billingDay) continue;
       // Local ~8am delivery gate (see reminder-timezone.ts). Per-day dedupe keys
       // keep any cross-run overlap idempotent.
@@ -171,11 +187,14 @@ export async function GET(req: Request) {
       } catch (err) {
         errors.push(`Failed for service ${service.id}: ${err instanceof Error ? err.message : String(err)}`);
       }
+      }
+
+      if (page.length < PAGE_SIZE) break;
     }
 
     return NextResponse.json({
       ok: true,
-      processed: services.length,
+      processed,
       sent: sentCount,
       mirrored: mirroredCount,
       pushSent: pushSentCount,

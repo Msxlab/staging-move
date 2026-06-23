@@ -49,30 +49,17 @@ export async function GET(req: Request) {
       billingDayFilter = { AND: [{ billingDay: { not: null } }, { billingDay: { gte: currentDay, lte: futureDay } }] };
     }
 
-    const services = await prisma.service.findMany({
-      where: {
-        ...billingDayFilter,
-        monthlyCost: { gt: 0 },
-        isActive: true,
-        // Skip services whose owner is in the deletion grace window (soft-deleted
-        // user). The soft-delete extension filters only the top-level model, not the
-        // included `user` relation — so without this guard a grace-deleted user still
-        // gets bill-reminder emails/push. Mirrors bill-overdue / task-reminders /
-        // move-reminders / contract-reminders, which all carry this guard.
-        user: { deletedAt: null },
-      },
-      include: {
-        user: { select: { id: true, email: true, firstName: true, lastName: true, profile: { select: { timezone: true } } } },
-      },
-    });
-    const userIds = [...new Set(services.map((service) => service.user?.id).filter(Boolean))] as string[];
-    const preferences = userIds.length > 0
-      ? await prisma.notificationPreference.findMany({
-          where: { userId: { in: userIds } },
-          select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
-        })
-      : [];
-    const preferencesByUser = groupNotificationPreferencesByUser(preferences);
+    const serviceWhere = {
+      ...billingDayFilter,
+      monthlyCost: { gt: 0 },
+      isActive: true,
+      // Skip services whose owner is in the deletion grace window (soft-deleted
+      // user). The soft-delete extension filters only the top-level model, not the
+      // included `user` relation — so without this guard a grace-deleted user still
+      // gets bill-reminder emails/push. Mirrors bill-overdue / task-reminders /
+      // move-reminders / contract-reminders, which all carry this guard.
+      user: { deletedAt: null },
+    };
 
     // When the daily rollup owns the email/push send, suppress this cron's
     // per-item email + push (the digest sends them once, bundled). The in-app
@@ -82,9 +69,39 @@ export async function GET(req: Request) {
     let sentCount = 0;
     let mirroredCount = 0;
     let pushSentCount = 0;
+    let processed = 0;
     const errors: string[] = [];
 
-    for (const svc of services) {
+    // 4.10a: cursor-paginate the candidate services so a large catalog can't
+    // load every active billable service into memory at once. Each page is
+    // bounded; preferences are batched per page.
+    const PAGE_SIZE = 500;
+    let cursor: string | undefined;
+
+    for (;;) {
+      const services = await prisma.service.findMany({
+        where: serviceWhere,
+        include: {
+          user: { select: { id: true, email: true, firstName: true, lastName: true, profile: { select: { timezone: true } } } },
+        },
+        orderBy: { id: "asc" },
+        take: PAGE_SIZE,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      });
+      if (services.length === 0) break;
+      cursor = services[services.length - 1].id;
+      processed += services.length;
+
+      const userIds = [...new Set(services.map((service) => service.user?.id).filter(Boolean))] as string[];
+      const preferences = userIds.length > 0
+        ? await prisma.notificationPreference.findMany({
+            where: { userId: { in: userIds } },
+            select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
+          })
+        : [];
+      const preferencesByUser = groupNotificationPreferencesByUser(preferences);
+
+      for (const svc of services) {
       if (!svc.user?.email) continue;
       const userPreferences = preferencesByUser.get(svc.user.id) || [];
       const notificationSettings = buildWebNotificationSettings(userPreferences);
@@ -169,11 +186,14 @@ export async function GET(req: Request) {
       } catch (err) {
         errors.push(`Failed for ${svc.providerName}: ${err}`);
       }
+      }
+
+      if (services.length < PAGE_SIZE) break;
     }
 
     return NextResponse.json({
       ok: true,
-      processed: services.length,
+      processed,
       sent: sentCount,
       mirrored: mirroredCount,
       pushSent: pushSentCount,

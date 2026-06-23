@@ -3,8 +3,8 @@ import { NextRequest } from "next/server";
 import { createAcceptedLegalConsents } from "@/lib/legal";
 import { buildOnboardingProfilePayload } from "@/lib/onboarding-profile-payload";
 
-vi.mock("@/lib/db", () => ({
-  prisma: {
+vi.mock("@/lib/db", () => {
+  const prisma: any = {
     user: {
       update: vi.fn(),
       findUnique: vi.fn(),
@@ -30,8 +30,13 @@ vi.mock("@/lib/db", () => ({
     movingPlan: {
       count: vi.fn(),
     },
-  },
-}));
+    // Interactive transaction: run the callback with the prisma mock as the tx
+    // client so the wrapped user.update + profile.upsert hit the mocked
+    // delegates. Tests can override to assert rollback.
+    $transaction: vi.fn((cb: (tx: any) => unknown) => cb(prisma)),
+  };
+  return { prisma };
+});
 
 vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(() => Promise.resolve("user-1")),
@@ -61,6 +66,7 @@ const mockService = (prisma as any).service as { count: Mock };
 const mockMovingPlan = (prisma as any).movingPlan as { count: Mock };
 const requireDbUserIdMock = requireDbUserId as unknown as Mock;
 const findSubscriptionForEntitlementMock = findSubscriptionForEntitlement as unknown as Mock;
+const transactionMock = (prisma as unknown as { $transaction: Mock }).$transaction;
 
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost/api/profile", {
@@ -73,6 +79,8 @@ function makeRequest(body: unknown) {
 describe("profile route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Restore the default $transaction implementation wiped by clearAllMocks.
+    transactionMock.mockImplementation((cb: (tx: any) => unknown) => cb(prisma));
     mockUserEvent.findFirst.mockResolvedValue({
       metadata: JSON.stringify(createAcceptedLegalConsents({
         termsVersion: "2026-03-13",
@@ -379,6 +387,57 @@ describe("profile route", () => {
     expect(response.status).toBe(400);
     expect(body.error).toBe("Validation failed");
     expect(mockProfile.upsert).not.toHaveBeenCalled();
+  });
+
+  // 4.5 atomicity: the user.update + profile.upsert run in one transaction, so a
+  // failure on the second write (upsert) rolls back the first (the name update).
+  it("rolls back the user-name update when the profile upsert fails mid-transaction", async () => {
+    let userNamePersisted = false;
+    mockUser.update.mockImplementation(async () => {
+      userNamePersisted = true;
+      return {};
+    });
+    mockProfile.upsert.mockImplementation(async () => {
+      throw new Error("UPSERT_FAILED");
+    });
+    // Emulate atomicity: if the callback rejects, the prior write is not durable.
+    transactionMock.mockImplementation(async (cb: (tx: any) => unknown) => {
+      try {
+        return await cb(prisma);
+      } catch (err) {
+        userNamePersisted = false; // rolled back with the failed upsert
+        throw err;
+      }
+    });
+
+    const payload = buildOnboardingProfilePayload({
+      firstName: "Taylor",
+      lastName: "Mover",
+      ageRange: "",
+      familyStatus: "SINGLE",
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      petTypes: [],
+      carCount: 0,
+      hasSenior: false,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+    });
+
+    const response = await POST(makeRequest(payload));
+    const body = await response.json();
+
+    // Original step-specific 500 message is preserved.
+    expect(response.status).toBe(500);
+    expect(body.error).toBe("Failed to save profile");
+    // The user.update was attempted mid-sequence, then rolled back with the
+    // failed profile upsert — no partial write survives.
+    expect(mockUser.update).toHaveBeenCalled();
+    expect(mockProfile.upsert).toHaveBeenCalled();
+    expect(userNamePersisted).toBe(false);
   });
 
   it("requires sensitive consent before saving sensitive profile fields", async () => {
