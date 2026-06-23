@@ -10,7 +10,7 @@ describe("admin billing plan options", () => {
   it("surfaces every grantable plan in user and subscription controls", () => {
     const files = [
       "src/app/(admin)/users/[id]/user-detail-client.tsx",
-      "src/app/(admin)/users/page.tsx",
+      "src/app/(admin)/users/users-client.tsx",
       "src/app/(admin)/subscriptions/subscriptions-client.tsx",
     ];
 
