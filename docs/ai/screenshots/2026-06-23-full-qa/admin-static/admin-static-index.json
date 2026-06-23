@@ -1,0 +1,2191 @@
+{
+  "generatedAt": "2026-06-23T15:24:04.804Z",
+  "base": "https://admin-staging.locateflow.com",
+  "routes": [
+    "/",
+    "/acquisition-campaigns",
+    "/affiliate",
+    "/analytics",
+    "/analytics/intelligence",
+    "/backups",
+    "/billing",
+    "/blog",
+    "/blog/analytics",
+    "/blog/new",
+    "/connector-fallbacks",
+    "/connector-metrics",
+    "/connectors",
+    "/email-templates",
+    "/feature-flags",
+    "/forbidden",
+    "/help-center",
+    "/insights",
+    "/leads",
+    "/login",
+    "/logs",
+    "/logs/activity",
+    "/movers",
+    "/movers/applications",
+    "/moving",
+    "/moving/at-risk",
+    "/notifications",
+    "/partners",
+    "/plans",
+    "/provider-governance",
+    "/provider-quality",
+    "/providers",
+    "/providers/coverage",
+    "/providers/needs-logo",
+    "/providers/new",
+    "/reports",
+    "/runtime-config",
+    "/security",
+    "/security/dashboard",
+    "/set-password",
+    "/set-password/change",
+    "/settings",
+    "/settings/health",
+    "/settings/two-factor",
+    "/sponsored",
+    "/state-rules",
+    "/subscriptions",
+    "/support",
+    "/team",
+    "/tickets",
+    "/users",
+    "/waitlist",
+    "/workspaces"
+  ],
+  "results": [
+    {
+      "route": "/",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\001-desktop-home.png",
+      "ms": 1338
+    },
+    {
+      "route": "/acquisition-campaigns",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\002-desktop-acquisition-campaigns.png",
+      "ms": 817
+    },
+    {
+      "route": "/affiliate",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\003-desktop-affiliate.png",
+      "ms": 834
+    },
+    {
+      "route": "/analytics",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\004-desktop-analytics.png",
+      "ms": 839
+    },
+    {
+      "route": "/analytics/intelligence",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\005-desktop-analytics-intelligence.png",
+      "ms": 857
+    },
+    {
+      "route": "/backups",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\006-desktop-backups.png",
+      "ms": 800
+    },
+    {
+      "route": "/billing",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\007-desktop-billing.png",
+      "ms": 851
+    },
+    {
+      "route": "/blog",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\008-desktop-blog.png",
+      "ms": 859
+    },
+    {
+      "route": "/blog/analytics",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\009-desktop-blog-analytics.png",
+      "ms": 824
+    },
+    {
+      "route": "/blog/new",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\010-desktop-blog-new.png",
+      "ms": 817
+    },
+    {
+      "route": "/connector-fallbacks",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\011-desktop-connector-fallbacks.png",
+      "ms": 840
+    },
+    {
+      "route": "/connector-metrics",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\012-desktop-connector-metrics.png",
+      "ms": 807
+    },
+    {
+      "route": "/connectors",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\013-desktop-connectors.png",
+      "ms": 840
+    },
+    {
+      "route": "/email-templates",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\014-desktop-email-templates.png",
+      "ms": 843
+    },
+    {
+      "route": "/feature-flags",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\015-desktop-feature-flags.png",
+      "ms": 786
+    },
+    {
+      "route": "/forbidden",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\016-desktop-forbidden.png",
+      "ms": 810
+    },
+    {
+      "route": "/help-center",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\017-desktop-help-center.png",
+      "ms": 904
+    },
+    {
+      "route": "/insights",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\018-desktop-insights.png",
+      "ms": 819
+    },
+    {
+      "route": "/leads",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\019-desktop-leads.png",
+      "ms": 845
+    },
+    {
+      "route": "/login",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\020-desktop-login.png",
+      "ms": 769
+    },
+    {
+      "route": "/logs",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\021-desktop-logs.png",
+      "ms": 796
+    },
+    {
+      "route": "/logs/activity",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\022-desktop-logs-activity.png",
+      "ms": 857
+    },
+    {
+      "route": "/movers",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\023-desktop-movers.png",
+      "ms": 862
+    },
+    {
+      "route": "/movers/applications",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\024-desktop-movers-applications.png",
+      "ms": 865
+    },
+    {
+      "route": "/moving",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\025-desktop-moving.png",
+      "ms": 951
+    },
+    {
+      "route": "/moving/at-risk",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\026-desktop-moving-at-risk.png",
+      "ms": 810
+    },
+    {
+      "route": "/notifications",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\027-desktop-notifications.png",
+      "ms": 827
+    },
+    {
+      "route": "/partners",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\028-desktop-partners.png",
+      "ms": 840
+    },
+    {
+      "route": "/plans",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\029-desktop-plans.png",
+      "ms": 899
+    },
+    {
+      "route": "/provider-governance",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\030-desktop-provider-governance.png",
+      "ms": 840
+    },
+    {
+      "route": "/provider-quality",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\031-desktop-provider-quality.png",
+      "ms": 791
+    },
+    {
+      "route": "/providers",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\032-desktop-providers.png",
+      "ms": 859
+    },
+    {
+      "route": "/providers/coverage",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\033-desktop-providers-coverage.png",
+      "ms": 844
+    },
+    {
+      "route": "/providers/needs-logo",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\034-desktop-providers-needs-logo.png",
+      "ms": 847
+    },
+    {
+      "route": "/providers/new",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\035-desktop-providers-new.png",
+      "ms": 827
+    },
+    {
+      "route": "/reports",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\036-desktop-reports.png",
+      "ms": 800
+    },
+    {
+      "route": "/runtime-config",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\037-desktop-runtime-config.png",
+      "ms": 846
+    },
+    {
+      "route": "/security",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\038-desktop-security.png",
+      "ms": 839
+    },
+    {
+      "route": "/security/dashboard",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\039-desktop-security-dashboard.png",
+      "ms": 847
+    },
+    {
+      "route": "/set-password",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/set-password",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "Set your password — Admin",
+      "finalPath": "/set-password",
+      "bodyChars": 218,
+      "h1": "Set your password",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [
+        {
+          "href": "/login",
+          "text": "Go to sign in"
+        }
+      ],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\040-desktop-set-password.png",
+      "ms": 868
+    },
+    {
+      "route": "/set-password/change",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\041-desktop-set-password-change.png",
+      "ms": 847
+    },
+    {
+      "route": "/settings",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\042-desktop-settings.png",
+      "ms": 837
+    },
+    {
+      "route": "/settings/health",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\043-desktop-settings-health.png",
+      "ms": 864
+    },
+    {
+      "route": "/settings/two-factor",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\044-desktop-settings-two-factor.png",
+      "ms": 868
+    },
+    {
+      "route": "/sponsored",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\045-desktop-sponsored.png",
+      "ms": 827
+    },
+    {
+      "route": "/state-rules",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\046-desktop-state-rules.png",
+      "ms": 834
+    },
+    {
+      "route": "/subscriptions",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\047-desktop-subscriptions.png",
+      "ms": 831
+    },
+    {
+      "route": "/support",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\048-desktop-support.png",
+      "ms": 836
+    },
+    {
+      "route": "/team",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\049-desktop-team.png",
+      "ms": 857
+    },
+    {
+      "route": "/tickets",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\050-desktop-tickets.png",
+      "ms": 839
+    },
+    {
+      "route": "/users",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\051-desktop-users.png",
+      "ms": 798
+    },
+    {
+      "route": "/waitlist",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\052-desktop-waitlist.png",
+      "ms": 852
+    },
+    {
+      "route": "/workspaces",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\053-desktop-workspaces.png",
+      "ms": 893
+    },
+    {
+      "route": "/",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\054-mobile-home.png",
+      "ms": 971
+    },
+    {
+      "route": "/acquisition-campaigns",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\055-mobile-acquisition-campaigns.png",
+      "ms": 737
+    },
+    {
+      "route": "/affiliate",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\056-mobile-affiliate.png",
+      "ms": 714
+    },
+    {
+      "route": "/analytics",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\057-mobile-analytics.png",
+      "ms": 743
+    },
+    {
+      "route": "/analytics/intelligence",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\058-mobile-analytics-intelligence.png",
+      "ms": 709
+    },
+    {
+      "route": "/backups",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\059-mobile-backups.png",
+      "ms": 730
+    },
+    {
+      "route": "/billing",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\060-mobile-billing.png",
+      "ms": 721
+    },
+    {
+      "route": "/blog",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\061-mobile-blog.png",
+      "ms": 716
+    },
+    {
+      "route": "/blog/analytics",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\062-mobile-blog-analytics.png",
+      "ms": 707
+    },
+    {
+      "route": "/blog/new",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\063-mobile-blog-new.png",
+      "ms": 711
+    },
+    {
+      "route": "/connector-fallbacks",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\064-mobile-connector-fallbacks.png",
+      "ms": 720
+    },
+    {
+      "route": "/connector-metrics",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\065-mobile-connector-metrics.png",
+      "ms": 733
+    },
+    {
+      "route": "/connectors",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\066-mobile-connectors.png",
+      "ms": 719
+    },
+    {
+      "route": "/email-templates",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\067-mobile-email-templates.png",
+      "ms": 695
+    },
+    {
+      "route": "/feature-flags",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\068-mobile-feature-flags.png",
+      "ms": 720
+    },
+    {
+      "route": "/forbidden",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\069-mobile-forbidden.png",
+      "ms": 712
+    },
+    {
+      "route": "/help-center",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\070-mobile-help-center.png",
+      "ms": 739
+    },
+    {
+      "route": "/insights",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\071-mobile-insights.png",
+      "ms": 728
+    },
+    {
+      "route": "/leads",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\072-mobile-leads.png",
+      "ms": 735
+    },
+    {
+      "route": "/login",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\073-mobile-login.png",
+      "ms": 684
+    },
+    {
+      "route": "/logs",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\074-mobile-logs.png",
+      "ms": 712
+    },
+    {
+      "route": "/logs/activity",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\075-mobile-logs-activity.png",
+      "ms": 735
+    },
+    {
+      "route": "/movers",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\076-mobile-movers.png",
+      "ms": 714
+    },
+    {
+      "route": "/movers/applications",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\077-mobile-movers-applications.png",
+      "ms": 708
+    },
+    {
+      "route": "/moving",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\078-mobile-moving.png",
+      "ms": 731
+    },
+    {
+      "route": "/moving/at-risk",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\079-mobile-moving-at-risk.png",
+      "ms": 714
+    },
+    {
+      "route": "/notifications",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\080-mobile-notifications.png",
+      "ms": 735
+    },
+    {
+      "route": "/partners",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\081-mobile-partners.png",
+      "ms": 737
+    },
+    {
+      "route": "/plans",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\082-mobile-plans.png",
+      "ms": 713
+    },
+    {
+      "route": "/provider-governance",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\083-mobile-provider-governance.png",
+      "ms": 739
+    },
+    {
+      "route": "/provider-quality",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\084-mobile-provider-quality.png",
+      "ms": 709
+    },
+    {
+      "route": "/providers",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\085-mobile-providers.png",
+      "ms": 723
+    },
+    {
+      "route": "/providers/coverage",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\086-mobile-providers-coverage.png",
+      "ms": 699
+    },
+    {
+      "route": "/providers/needs-logo",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\087-mobile-providers-needs-logo.png",
+      "ms": 719
+    },
+    {
+      "route": "/providers/new",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\088-mobile-providers-new.png",
+      "ms": 724
+    },
+    {
+      "route": "/reports",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\089-mobile-reports.png",
+      "ms": 725
+    },
+    {
+      "route": "/runtime-config",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\090-mobile-runtime-config.png",
+      "ms": 728
+    },
+    {
+      "route": "/security",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\091-mobile-security.png",
+      "ms": 705
+    },
+    {
+      "route": "/security/dashboard",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\092-mobile-security-dashboard.png",
+      "ms": 728
+    },
+    {
+      "route": "/set-password",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/set-password",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "Set your password — Admin",
+      "finalPath": "/set-password",
+      "bodyChars": 218,
+      "h1": "Set your password",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [
+        {
+          "href": "/login",
+          "text": "Go to sign in"
+        }
+      ],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\093-mobile-set-password.png",
+      "ms": 656
+    },
+    {
+      "route": "/set-password/change",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\094-mobile-set-password-change.png",
+      "ms": 742
+    },
+    {
+      "route": "/settings",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\095-mobile-settings.png",
+      "ms": 696
+    },
+    {
+      "route": "/settings/health",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\096-mobile-settings-health.png",
+      "ms": 706
+    },
+    {
+      "route": "/settings/two-factor",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\097-mobile-settings-two-factor.png",
+      "ms": 769
+    },
+    {
+      "route": "/sponsored",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\098-mobile-sponsored.png",
+      "ms": 709
+    },
+    {
+      "route": "/state-rules",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\099-mobile-state-rules.png",
+      "ms": 734
+    },
+    {
+      "route": "/subscriptions",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\100-mobile-subscriptions.png",
+      "ms": 705
+    },
+    {
+      "route": "/support",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\101-mobile-support.png",
+      "ms": 707
+    },
+    {
+      "route": "/team",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\102-mobile-team.png",
+      "ms": 715
+    },
+    {
+      "route": "/tickets",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\103-mobile-tickets.png",
+      "ms": 755
+    },
+    {
+      "route": "/users",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\104-mobile-users.png",
+      "ms": 719
+    },
+    {
+      "route": "/waitlist",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\105-mobile-waitlist.png",
+      "ms": 724
+    },
+    {
+      "route": "/workspaces",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "url": "https://admin-staging.locateflow.com/login",
+        "headersLocation": null
+      },
+      "error": null,
+      "title": "LocateFlow Admin",
+      "finalPath": "/login",
+      "bodyChars": 90,
+      "h1": "Admin Sign In",
+      "horizontalOverflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "links": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\admin-static\\106-mobile-workspaces.png",
+      "ms": 739
+    }
+  ]
+}

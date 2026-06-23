@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-06-23T15:28:22.245Z",
+  "results": [
+    {
+      "url": "https://staging.locateflow.com/movers/portal/enter",
+      "status": 307,
+      "location": "https://0.0.0.0:3000/movers/portal?error=invalid",
+      "ok": false,
+      "issue": "redirect_bad_origin_https://0.0.0.0:3000"
+    },
+    {
+      "url": "https://staging.locateflow.com/partners/portal/enter",
+      "status": 307,
+      "location": "https://0.0.0.0:3000/partners/portal?error=invalid",
+      "ok": false,
+      "issue": "redirect_bad_origin_https://0.0.0.0:3000"
+    }
+  ],
+  "issueCount": 2
+}

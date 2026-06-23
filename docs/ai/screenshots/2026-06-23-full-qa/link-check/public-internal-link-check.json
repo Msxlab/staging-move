@@ -1,0 +1,2233 @@
+{
+  "generatedAt": "2026-06-23T15:27:57.046Z",
+  "base": "https://staging.locateflow.com",
+  "inputFiles": [
+    "docs/ai/screenshots/2026-06-23-full-qa/public-web/public-web-screenshot-index.json",
+    "docs/ai/screenshots/2026-06-23-full-qa/public-web-viewports/public-web-viewport-index.json",
+    "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json"
+  ],
+  "uniqueInternalLinks": 18,
+  "ok": 18,
+  "issueCount": 0,
+  "issues": [],
+  "results": [
+    {
+      "url": "https://staging.locateflow.com/",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "desktop",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "mobile",
+          "text": "LocateFlow"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "mobile",
+          "text": "LocateFlow"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/about",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "About"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "About"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/about"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/blog",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Blog"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Blog"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/blog"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/ccpa-privacy-notice",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "California Privacy Notice"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "California Privacy Notice"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/ccpa-privacy-notice"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/contact",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "desktop",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "mobile",
+          "text": "Contact"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "mobile",
+          "text": "Contact"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/contact"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/dashboard",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "locateflow.com"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "locateflow.com"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 307,
+          "location": "/sign-in?redirect=%2Fdashboard",
+          "url": "https://staging.locateflow.com/dashboard"
+        },
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/sign-in?redirect=%2Fdashboard"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/disclaimer",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "desktop",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "mobile",
+          "text": "Disclaimer"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "mobile",
+          "text": "Disclaimer"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/disclaimer"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/faq",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "FAQ"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "FAQ"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/faq"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/features",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Features"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Everything that follows your address"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Features"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Everything that follows your address"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/features"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/forgot-password",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "desktop",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "mobile",
+          "text": "Forgot password?"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "mobile",
+          "text": "Forgot password?"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/forgot-password"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/help",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Help"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Help"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/help"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/pricing",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Pricing"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Pricing"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/pricing"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/privacy",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Privacy Policy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Privacy Policy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "desktop",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Privacy Policy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Privacy Policy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "mobile",
+          "text": "Privacy"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "mobile",
+          "text": "Privacy"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/privacy"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/settings/privacy",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Open privacy settings"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Open privacy settings"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 307,
+          "location": "/sign-in?redirect=%2Fsettings%2Fprivacy",
+          "url": "https://staging.locateflow.com/settings/privacy"
+        },
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/sign-in?redirect=%2Fsettings%2Fprivacy"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/sign-in",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Sign In"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Sign In"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/sign-in"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/sign-up",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Get started"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "desktop",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Get started"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "mobile",
+          "text": "Sign Up"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "mobile",
+          "text": "Sign Up"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/sign-up"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/terms",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "desktop",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/setup-password",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/addresses/new",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/budget",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/dashboard",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/expenses",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/moving/new",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/notifications",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/offline",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/onboarding",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/services/new",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/address-changes",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/connections",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/export",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/notifications",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/privacy",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/profile",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/subscription",
+          "label": "mobile",
+          "text": "Terms"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/settings/workspace",
+          "label": "mobile",
+          "text": "Terms"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/terms"
+        }
+      ]
+    },
+    {
+      "url": "https://staging.locateflow.com/why-free",
+      "sources": [
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "desktop",
+          "text": "Why free"
+        },
+        {
+          "input": "docs/ai/screenshots/2026-06-23-full-qa/web-static-missing/web-static-missing-index.json",
+          "route": "/account/delete",
+          "label": "mobile",
+          "text": "Why free"
+        }
+      ],
+      "ok": true,
+      "issue": null,
+      "chain": [
+        {
+          "status": 200,
+          "location": null,
+          "url": "https://staging.locateflow.com/why-free"
+        }
+      ]
+    }
+  ]
+}

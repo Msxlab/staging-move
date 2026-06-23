@@ -1,0 +1,561 @@
+{
+  "generatedAt": "2026-06-23T15:18:37.657Z",
+  "web": {
+    "total": 74,
+    "static": 58,
+    "dynamic": 16,
+    "routes": [
+      {
+        "file": "apps/web/src/app/page.tsx",
+        "route": "/"
+      },
+      {
+        "file": "apps/web/src/app/about/page.tsx",
+        "route": "/about"
+      },
+      {
+        "file": "apps/web/src/app/acceptable-use/page.tsx",
+        "route": "/acceptable-use"
+      },
+      {
+        "file": "apps/web/src/app/account/delete/page.tsx",
+        "route": "/account/delete"
+      },
+      {
+        "file": "apps/web/src/app/account/setup-password/page.tsx",
+        "route": "/account/setup-password"
+      },
+      {
+        "file": "apps/web/src/app/(app)/addresses/page.tsx",
+        "route": "/addresses"
+      },
+      {
+        "file": "apps/web/src/app/(app)/addresses/[id]/page.tsx",
+        "route": "/addresses/[id]"
+      },
+      {
+        "file": "apps/web/src/app/(app)/addresses/[id]/edit/page.tsx",
+        "route": "/addresses/[id]/edit"
+      },
+      {
+        "file": "apps/web/src/app/(app)/addresses/new/page.tsx",
+        "route": "/addresses/new"
+      },
+      {
+        "file": "apps/web/src/app/billing-policy/page.tsx",
+        "route": "/billing-policy"
+      },
+      {
+        "file": "apps/web/src/app/blog/page.tsx",
+        "route": "/blog"
+      },
+      {
+        "file": "apps/web/src/app/blog/[slug]/page.tsx",
+        "route": "/blog/[slug]"
+      },
+      {
+        "file": "apps/web/src/app/blog/category/[slug]/page.tsx",
+        "route": "/blog/category/[slug]"
+      },
+      {
+        "file": "apps/web/src/app/blog/preview/[token]/page.tsx",
+        "route": "/blog/preview/[token]"
+      },
+      {
+        "file": "apps/web/src/app/(app)/budget/page.tsx",
+        "route": "/budget"
+      },
+      {
+        "file": "apps/web/src/app/(app)/budget/[month]/page.tsx",
+        "route": "/budget/[month]"
+      },
+      {
+        "file": "apps/web/src/app/ccpa-privacy-notice/page.tsx",
+        "route": "/ccpa-privacy-notice"
+      },
+      {
+        "file": "apps/web/src/app/contact/page.tsx",
+        "route": "/contact"
+      },
+      {
+        "file": "apps/web/src/app/cookie-policy/page.tsx",
+        "route": "/cookie-policy"
+      },
+      {
+        "file": "apps/web/src/app/(app)/dashboard/page.tsx",
+        "route": "/dashboard"
+      },
+      {
+        "file": "apps/web/src/app/data-deletion/page.tsx",
+        "route": "/data-deletion"
+      },
+      {
+        "file": "apps/web/src/app/disclaimer/page.tsx",
+        "route": "/disclaimer"
+      },
+      {
+        "file": "apps/web/src/app/dpa/page.tsx",
+        "route": "/dpa"
+      },
+      {
+        "file": "apps/web/src/app/expenses/page.tsx",
+        "route": "/expenses"
+      },
+      {
+        "file": "apps/web/src/app/faq/page.tsx",
+        "route": "/faq"
+      },
+      {
+        "file": "apps/web/src/app/features/page.tsx",
+        "route": "/features"
+      },
+      {
+        "file": "apps/web/src/app/forgot-password/page.tsx",
+        "route": "/forgot-password"
+      },
+      {
+        "file": "apps/web/src/app/help/page.tsx",
+        "route": "/help"
+      },
+      {
+        "file": "apps/web/src/app/how-it-works/page.tsx",
+        "route": "/how-it-works"
+      },
+      {
+        "file": "apps/web/src/app/invitations/[token]/page.tsx",
+        "route": "/invitations/[token]"
+      },
+      {
+        "file": "apps/web/src/app/movers/apply/page.tsx",
+        "route": "/movers/apply"
+      },
+      {
+        "file": "apps/web/src/app/movers/portal/page.tsx",
+        "route": "/movers/portal"
+      },
+      {
+        "file": "apps/web/src/app/movers/portal/dashboard/page.tsx",
+        "route": "/movers/portal/dashboard"
+      },
+      {
+        "file": "apps/web/src/app/movers/portal/placements/page.tsx",
+        "route": "/movers/portal/placements"
+      },
+      {
+        "file": "apps/web/src/app/(app)/moving/page.tsx",
+        "route": "/moving"
+      },
+      {
+        "file": "apps/web/src/app/moving/[state]/page.tsx",
+        "route": "/moving/[state]"
+      },
+      {
+        "file": "apps/web/src/app/moving/[state]/[city]/page.tsx",
+        "route": "/moving/[state]/[city]"
+      },
+      {
+        "file": "apps/web/src/app/(app)/moving/new/page.tsx",
+        "route": "/moving/new"
+      },
+      {
+        "file": "apps/web/src/app/(app)/moving/plan/[id]/page.tsx",
+        "route": "/moving/plan/[id]"
+      },
+      {
+        "file": "apps/web/src/app/(app)/notifications/page.tsx",
+        "route": "/notifications"
+      },
+      {
+        "file": "apps/web/src/app/offline/page.tsx",
+        "route": "/offline"
+      },
+      {
+        "file": "apps/web/src/app/onboarding/page.tsx",
+        "route": "/onboarding"
+      },
+      {
+        "file": "apps/web/src/app/partners/apply/page.tsx",
+        "route": "/partners/apply"
+      },
+      {
+        "file": "apps/web/src/app/partners/portal/page.tsx",
+        "route": "/partners/portal"
+      },
+      {
+        "file": "apps/web/src/app/pricing/page.tsx",
+        "route": "/pricing"
+      },
+      {
+        "file": "apps/web/src/app/privacy/page.tsx",
+        "route": "/privacy"
+      },
+      {
+        "file": "apps/web/src/app/provider-coverage/page.tsx",
+        "route": "/provider-coverage"
+      },
+      {
+        "file": "apps/web/src/app/(app)/providers/page.tsx",
+        "route": "/providers"
+      },
+      {
+        "file": "apps/web/src/app/(app)/providers/[id]/page.tsx",
+        "route": "/providers/[id]"
+      },
+      {
+        "file": "apps/web/src/app/refund/page.tsx",
+        "route": "/refund"
+      },
+      {
+        "file": "apps/web/src/app/reset-password/[token]/page.tsx",
+        "route": "/reset-password/[token]"
+      },
+      {
+        "file": "apps/web/src/app/security/page.tsx",
+        "route": "/security"
+      },
+      {
+        "file": "apps/web/src/app/(app)/services/page.tsx",
+        "route": "/services"
+      },
+      {
+        "file": "apps/web/src/app/(app)/services/[id]/page.tsx",
+        "route": "/services/[id]"
+      },
+      {
+        "file": "apps/web/src/app/(app)/services/[id]/edit/page.tsx",
+        "route": "/services/[id]/edit"
+      },
+      {
+        "file": "apps/web/src/app/(app)/services/new/page.tsx",
+        "route": "/services/new"
+      },
+      {
+        "file": "apps/web/src/app/(app)/settings/page.tsx",
+        "route": "/settings"
+      },
+      {
+        "file": "apps/web/src/app/(app)/settings/address-changes/page.tsx",
+        "route": "/settings/address-changes"
+      },
+      {
+        "file": "apps/web/src/app/(app)/settings/connections/page.tsx",
+        "route": "/settings/connections"
+      },
+      {
+        "file": "apps/web/src/app/(app)/settings/export/page.tsx",
+        "route": "/settings/export"
+      },
+      {
+        "file": "apps/web/src/app/(app)/settings/notifications/page.tsx",
+        "route": "/settings/notifications"
+      },
+      {
+        "file": "apps/web/src/app/(app)/settings/privacy/page.tsx",
+        "route": "/settings/privacy"
+      },
+      {
+        "file": "apps/web/src/app/(app)/settings/profile/page.tsx",
+        "route": "/settings/profile"
+      },
+      {
+        "file": "apps/web/src/app/(app)/settings/subscription/page.tsx",
+        "route": "/settings/subscription"
+      },
+      {
+        "file": "apps/web/src/app/(app)/settings/workspace/page.tsx",
+        "route": "/settings/workspace"
+      },
+      {
+        "file": "apps/web/src/app/sign-in/page.tsx",
+        "route": "/sign-in"
+      },
+      {
+        "file": "apps/web/src/app/sign-up/page.tsx",
+        "route": "/sign-up"
+      },
+      {
+        "file": "apps/web/src/app/(app)/support/page.tsx",
+        "route": "/support"
+      },
+      {
+        "file": "apps/web/src/app/(app)/support/[id]/page.tsx",
+        "route": "/support/[id]"
+      },
+      {
+        "file": "apps/web/src/app/terms/page.tsx",
+        "route": "/terms"
+      },
+      {
+        "file": "apps/web/src/app/unsubscribe/page.tsx",
+        "route": "/unsubscribe"
+      },
+      {
+        "file": "apps/web/src/app/verify-email/page.tsx",
+        "route": "/verify-email"
+      },
+      {
+        "file": "apps/web/src/app/verify-email/[token]/page.tsx",
+        "route": "/verify-email/[token]"
+      },
+      {
+        "file": "apps/web/src/app/why-free/page.tsx",
+        "route": "/why-free"
+      }
+    ]
+  },
+  "admin": {
+    "total": 62,
+    "static": 53,
+    "dynamic": 9,
+    "routes": [
+      {
+        "file": "apps/admin/src/app/(admin)/page.tsx",
+        "route": "/"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/acquisition-campaigns/page.tsx",
+        "route": "/acquisition-campaigns"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/affiliate/page.tsx",
+        "route": "/affiliate"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/analytics/page.tsx",
+        "route": "/analytics"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/analytics/intelligence/page.tsx",
+        "route": "/analytics/intelligence"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/backups/page.tsx",
+        "route": "/backups"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/billing/page.tsx",
+        "route": "/billing"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/blog/page.tsx",
+        "route": "/blog"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/blog/[id]/edit/page.tsx",
+        "route": "/blog/[id]/edit"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/blog/analytics/page.tsx",
+        "route": "/blog/analytics"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/blog/new/page.tsx",
+        "route": "/blog/new"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/connector-fallbacks/page.tsx",
+        "route": "/connector-fallbacks"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/connector-metrics/page.tsx",
+        "route": "/connector-metrics"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/connectors/page.tsx",
+        "route": "/connectors"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/connectors/[connectorKey]/page.tsx",
+        "route": "/connectors/[connectorKey]"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/email-templates/page.tsx",
+        "route": "/email-templates"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/feature-flags/page.tsx",
+        "route": "/feature-flags"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/forbidden/page.tsx",
+        "route": "/forbidden"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/help-center/page.tsx",
+        "route": "/help-center"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/insights/page.tsx",
+        "route": "/insights"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/leads/page.tsx",
+        "route": "/leads"
+      },
+      {
+        "file": "apps/admin/src/app/login/page.tsx",
+        "route": "/login"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/logs/page.tsx",
+        "route": "/logs"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/logs/activity/page.tsx",
+        "route": "/logs/activity"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/movers/page.tsx",
+        "route": "/movers"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/movers/applications/page.tsx",
+        "route": "/movers/applications"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/moving/page.tsx",
+        "route": "/moving"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/moving/[id]/page.tsx",
+        "route": "/moving/[id]"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/moving/at-risk/page.tsx",
+        "route": "/moving/at-risk"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/notifications/page.tsx",
+        "route": "/notifications"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/partners/page.tsx",
+        "route": "/partners"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/plans/page.tsx",
+        "route": "/plans"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/provider-governance/page.tsx",
+        "route": "/provider-governance"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/provider-quality/page.tsx",
+        "route": "/provider-quality"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/providers/page.tsx",
+        "route": "/providers"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/providers/[id]/page.tsx",
+        "route": "/providers/[id]"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/providers/[id]/edit/page.tsx",
+        "route": "/providers/[id]/edit"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/providers/coverage/page.tsx",
+        "route": "/providers/coverage"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/providers/needs-logo/page.tsx",
+        "route": "/providers/needs-logo"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/providers/new/page.tsx",
+        "route": "/providers/new"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/reports/page.tsx",
+        "route": "/reports"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/runtime-config/page.tsx",
+        "route": "/runtime-config"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/security/page.tsx",
+        "route": "/security"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/security/dashboard/page.tsx",
+        "route": "/security/dashboard"
+      },
+      {
+        "file": "apps/admin/src/app/set-password/page.tsx",
+        "route": "/set-password"
+      },
+      {
+        "file": "apps/admin/src/app/set-password/change/page.tsx",
+        "route": "/set-password/change"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/settings/page.tsx",
+        "route": "/settings"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/settings/health/page.tsx",
+        "route": "/settings/health"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/settings/two-factor/page.tsx",
+        "route": "/settings/two-factor"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/sponsored/page.tsx",
+        "route": "/sponsored"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/state-rules/page.tsx",
+        "route": "/state-rules"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/subscriptions/page.tsx",
+        "route": "/subscriptions"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/support/page.tsx",
+        "route": "/support"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/support/[id]/page.tsx",
+        "route": "/support/[id]"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/team/page.tsx",
+        "route": "/team"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/tickets/page.tsx",
+        "route": "/tickets"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/tickets/[id]/page.tsx",
+        "route": "/tickets/[id]"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/users/page.tsx",
+        "route": "/users"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/users/[id]/page.tsx",
+        "route": "/users/[id]"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/waitlist/page.tsx",
+        "route": "/waitlist"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/workspaces/page.tsx",
+        "route": "/workspaces"
+      },
+      {
+        "file": "apps/admin/src/app/(admin)/workspaces/[id]/page.tsx",
+        "route": "/workspaces/[id]"
+      }
+    ]
+  }
+}

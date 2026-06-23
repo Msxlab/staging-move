@@ -1,0 +1,1096 @@
+{
+  "generatedAt": "2026-06-23T15:07:42.111Z",
+  "base": "https://staging.locateflow.com",
+  "results": [
+    {
+      "route": "/",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Your entire move, handled.",
+      "horizontalOverflow": false,
+      "clippedTextEls": [
+        {
+          "tag": "label",
+          "text": "Email address"
+        }
+      ],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\001-desktop-home.png",
+      "ms": 1294
+    },
+    {
+      "route": "/features",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/features",
+      "title": "Features | LocateFlow",
+      "h1": "Everything tied to the move, finally in one place.",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\002-desktop-features.png",
+      "ms": 1129
+    },
+    {
+      "route": "/how-it-works",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/how-it-works",
+      "title": "How It Works | LocateFlow",
+      "h1": "Providers, addresses, and moving tasks in one place.",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\003-desktop-how-it-works.png",
+      "ms": 1028
+    },
+    {
+      "route": "/why-free",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/why-free",
+      "title": "Why Free | LocateFlow",
+      "h1": "Free because the move should start before the checkout page.",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\004-desktop-why-free.png",
+      "ms": 982
+    },
+    {
+      "route": "/pricing",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/pricing",
+      "title": "Pricing | LocateFlow",
+      "h1": "LocateFlow is free for your whole move",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\005-desktop-pricing.png",
+      "ms": 1048
+    },
+    {
+      "route": "/provider-coverage",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/provider-coverage",
+      "title": "Provider Coverage | LocateFlow",
+      "h1": "Provider suggestions are a starting point, not a guarantee.",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\006-desktop-provider-coverage.png",
+      "ms": 918
+    },
+    {
+      "route": "/providers",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fproviders"
+      },
+      "finalPath": "/sign-in",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\007-desktop-providers.png",
+      "ms": 1065
+    },
+    {
+      "route": "/moving",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fmoving"
+      },
+      "finalPath": "/sign-in",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\008-desktop-moving.png",
+      "ms": 1015
+    },
+    {
+      "route": "/about",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/about",
+      "title": "About LocateFlow | LocateFlow",
+      "h1": "LocateFlow is a home-service and moving organization app.",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\009-desktop-about.png",
+      "ms": 887
+    },
+    {
+      "route": "/faq",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/faq",
+      "title": "Frequently Asked Questions | LocateFlow",
+      "h1": "Questions, answered.",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\010-desktop-faq.png",
+      "ms": 929
+    },
+    {
+      "route": "/contact",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/contact",
+      "title": "Contact | LocateFlow",
+      "h1": "Contact LocateFlow",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\011-desktop-contact.png",
+      "ms": 1003
+    },
+    {
+      "route": "/help",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/help",
+      "title": "Help Center | LocateFlow",
+      "h1": "Search LocateFlow guides and FAQs.",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\012-desktop-help.png",
+      "ms": 998
+    },
+    {
+      "route": "/support",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsupport"
+      },
+      "finalPath": "/sign-in",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\013-desktop-support.png",
+      "ms": 921
+    },
+    {
+      "route": "/security",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/security",
+      "title": "Security | LocateFlow",
+      "h1": "Security overview",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\014-desktop-security.png",
+      "ms": 899
+    },
+    {
+      "route": "/privacy",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/privacy",
+      "title": "Privacy Policy | LocateFlow",
+      "h1": "Privacy Policy",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\015-desktop-privacy.png",
+      "ms": 899
+    },
+    {
+      "route": "/terms",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/terms",
+      "title": "LocateFlow Terms of Service | LocateFlow",
+      "h1": "LocateFlow Terms of Service",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\016-desktop-terms.png",
+      "ms": 892
+    },
+    {
+      "route": "/billing-policy",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/billing-policy",
+      "title": "Billing Policy | LocateFlow",
+      "h1": "Billing Policy",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\017-desktop-billing-policy.png",
+      "ms": 983
+    },
+    {
+      "route": "/refund",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/refund",
+      "title": "Refund Policy | LocateFlow",
+      "h1": "Refund Policy",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\018-desktop-refund.png",
+      "ms": 1003
+    },
+    {
+      "route": "/cookie-policy",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/cookie-policy",
+      "title": "Cookie Policy | LocateFlow",
+      "h1": "Cookie Policy",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\019-desktop-cookie-policy.png",
+      "ms": 4039
+    },
+    {
+      "route": "/acceptable-use",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/acceptable-use",
+      "title": "Acceptable Use Policy | LocateFlow",
+      "h1": "Acceptable Use Policy",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\020-desktop-acceptable-use.png",
+      "ms": 1023
+    },
+    {
+      "route": "/ccpa-privacy-notice",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/ccpa-privacy-notice",
+      "title": "California Privacy Notice (CCPA / CPRA) | LocateFlow",
+      "h1": "California Privacy Notice",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\021-desktop-ccpa-privacy-notice.png",
+      "ms": 1010
+    },
+    {
+      "route": "/data-deletion",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/data-deletion",
+      "title": "Data Export and Deletion | LocateFlow",
+      "h1": "Data export and deletion",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\022-desktop-data-deletion.png",
+      "ms": 4031
+    },
+    {
+      "route": "/dpa",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/dpa",
+      "title": "Data Processing Addendum | LocateFlow",
+      "h1": "Data Processing Addendum",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\023-desktop-dpa.png",
+      "ms": 953
+    },
+    {
+      "route": "/disclaimer",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/disclaimer",
+      "title": "User-Entered Data and Legal Risk Disclaimer | LocateFlow",
+      "h1": "User-Entered Data and Legal Risk Disclaimer",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\024-desktop-disclaimer.png",
+      "ms": 1094
+    },
+    {
+      "route": "/blog",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/blog",
+      "title": "Blog | LocateFlow",
+      "h1": "Free guides to make your move effortless",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\025-desktop-blog.png",
+      "ms": 1039
+    },
+    {
+      "route": "/movers/apply",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/movers/apply",
+      "title": "List your moving company · LocateFlow | LocateFlow",
+      "h1": "List your moving company",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\026-desktop-movers-apply.png",
+      "ms": 880
+    },
+    {
+      "route": "/movers/portal",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/movers/portal",
+      "title": "Mover portal · LocateFlow | LocateFlow",
+      "h1": "Manage your listing",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\027-desktop-movers-portal.png",
+      "ms": 867
+    },
+    {
+      "route": "/movers/portal/enter",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "https://0.0.0.0:3000/movers/portal?error=invalid"
+      },
+      "navError": "Browser Use cannot open https://staging.locateflow.com/movers/portal/enter in tab 1. Browser reported: net::ERR_BLOCKED_BY_CLIENT",
+      "ms": 156
+    },
+    {
+      "route": "/partners/apply",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/partners/apply",
+      "title": "List your business · LocateFlow | LocateFlow",
+      "h1": "List your business",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\029-desktop-partners-apply.png",
+      "ms": 886
+    },
+    {
+      "route": "/partners/portal",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/partners/portal",
+      "title": "Partner portal · LocateFlow | LocateFlow",
+      "h1": "Partner portal",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\030-desktop-partners-portal.png",
+      "ms": 3903
+    },
+    {
+      "route": "/partners/portal/enter",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "https://0.0.0.0:3000/partners/portal?error=invalid"
+      },
+      "navError": "Browser Use cannot open https://staging.locateflow.com/partners/portal/enter in tab 1. Browser reported: net::ERR_BLOCKED_BY_CLIENT",
+      "ms": 144
+    },
+    {
+      "route": "/sign-in",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/sign-in",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\032-desktop-sign-in.png",
+      "ms": 929
+    },
+    {
+      "route": "/sign-up",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/sign-up",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Create your account",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\033-desktop-sign-up.png",
+      "ms": 882
+    },
+    {
+      "route": "/forgot-password",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/forgot-password",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Reset your password",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\034-desktop-forgot-password.png",
+      "ms": 888
+    },
+    {
+      "route": "/verify-email",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/verify-email",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Verify your email",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\035-desktop-verify-email.png",
+      "ms": 899
+    },
+    {
+      "route": "/unsubscribe",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/unsubscribe",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Link no longer valid",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\036-desktop-unsubscribe.png",
+      "ms": 3909
+    },
+    {
+      "route": "/",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Your entire move, handled.",
+      "horizontalOverflow": true,
+      "clippedTextEls": [
+        {
+          "tag": "p",
+          "text": "Your new home dossier"
+        },
+        {
+          "tag": "p",
+          "text": "Served by Wayne Township Public Schools"
+        },
+        {
+          "tag": "p",
+          "text": "Partly sunny — High 74°F · Low 58°F · 20% precip"
+        },
+        {
+          "tag": "p",
+          "text": "EPA Radon Zone 2 — moderate radon potential"
+        },
+        {
+          "tag": "p",
+          "text": "Area medians for the surrounding census tract"
+        },
+        {
+          "tag": "label",
+          "text": "Email address"
+        }
+      ],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\037-mobile-home.png",
+      "ms": 1121
+    },
+    {
+      "route": "/features",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/features",
+      "title": "Features | LocateFlow",
+      "h1": "Everything tied to the move, finally in one place.",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\038-mobile-features.png",
+      "ms": 1021
+    },
+    {
+      "route": "/how-it-works",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/how-it-works",
+      "title": "How It Works | LocateFlow",
+      "h1": "Providers, addresses, and moving tasks in one place.",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\039-mobile-how-it-works.png",
+      "ms": 1017
+    },
+    {
+      "route": "/why-free",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/why-free",
+      "title": "Why Free | LocateFlow",
+      "h1": "Free because the move should start before the checkout page.",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\040-mobile-why-free.png",
+      "ms": 992
+    },
+    {
+      "route": "/pricing",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/pricing",
+      "title": "Pricing | LocateFlow",
+      "h1": "LocateFlow is free for your whole move",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\041-mobile-pricing.png",
+      "ms": 981
+    },
+    {
+      "route": "/provider-coverage",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/provider-coverage",
+      "title": "Provider Coverage | LocateFlow",
+      "h1": "Provider suggestions are a starting point, not a guarantee.",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\042-mobile-provider-coverage.png",
+      "ms": 948
+    },
+    {
+      "route": "/providers",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fproviders"
+      },
+      "finalPath": "/sign-in",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\043-mobile-providers.png",
+      "ms": 4052
+    },
+    {
+      "route": "/moving",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fmoving"
+      },
+      "finalPath": "/sign-in",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\044-mobile-moving.png",
+      "ms": 979
+    },
+    {
+      "route": "/about",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/about",
+      "title": "About LocateFlow | LocateFlow",
+      "h1": "LocateFlow is a home-service and moving organization app.",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\045-mobile-about.png",
+      "ms": 955
+    },
+    {
+      "route": "/faq",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/faq",
+      "title": "Frequently Asked Questions | LocateFlow",
+      "h1": "Questions, answered.",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\046-mobile-faq.png",
+      "ms": 890
+    },
+    {
+      "route": "/contact",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/contact",
+      "title": "Contact | LocateFlow",
+      "h1": "Contact LocateFlow",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\047-mobile-contact.png",
+      "ms": 868
+    },
+    {
+      "route": "/help",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/help",
+      "title": "Help Center | LocateFlow",
+      "h1": "Search LocateFlow guides and FAQs.",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\048-mobile-help.png",
+      "ms": 896
+    },
+    {
+      "route": "/support",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsupport"
+      },
+      "finalPath": "/sign-in",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\049-mobile-support.png",
+      "ms": 922
+    },
+    {
+      "route": "/security",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/security",
+      "title": "Security | LocateFlow",
+      "h1": "Security overview",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\050-mobile-security.png",
+      "ms": 929
+    },
+    {
+      "route": "/privacy",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/privacy",
+      "title": "Privacy Policy | LocateFlow",
+      "h1": "Privacy Policy",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\051-mobile-privacy.png",
+      "ms": 1010
+    },
+    {
+      "route": "/terms",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/terms",
+      "title": "LocateFlow Terms of Service | LocateFlow",
+      "h1": "LocateFlow Terms of Service",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\052-mobile-terms.png",
+      "ms": 1009
+    },
+    {
+      "route": "/billing-policy",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/billing-policy",
+      "title": "Billing Policy | LocateFlow",
+      "h1": "Billing Policy",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\053-mobile-billing-policy.png",
+      "ms": 1001
+    },
+    {
+      "route": "/refund",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/refund",
+      "title": "Refund Policy | LocateFlow",
+      "h1": "Refund Policy",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\054-mobile-refund.png",
+      "ms": 1108
+    },
+    {
+      "route": "/cookie-policy",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/cookie-policy",
+      "title": "Cookie Policy | LocateFlow",
+      "h1": "Cookie Policy",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\055-mobile-cookie-policy.png",
+      "ms": 993
+    },
+    {
+      "route": "/acceptable-use",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/acceptable-use",
+      "title": "Acceptable Use Policy | LocateFlow",
+      "h1": "Acceptable Use Policy",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\056-mobile-acceptable-use.png",
+      "ms": 990
+    },
+    {
+      "route": "/ccpa-privacy-notice",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/ccpa-privacy-notice",
+      "title": "California Privacy Notice (CCPA / CPRA) | LocateFlow",
+      "h1": "California Privacy Notice",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\057-mobile-ccpa-privacy-notice.png",
+      "ms": 1058
+    },
+    {
+      "route": "/data-deletion",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/data-deletion",
+      "title": "Data Export and Deletion | LocateFlow",
+      "h1": "Data export and deletion",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\058-mobile-data-deletion.png",
+      "ms": 1069
+    },
+    {
+      "route": "/dpa",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/dpa",
+      "title": "Data Processing Addendum | LocateFlow",
+      "h1": "Data Processing Addendum",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\059-mobile-dpa.png",
+      "ms": 1015
+    },
+    {
+      "route": "/disclaimer",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/disclaimer",
+      "title": "User-Entered Data and Legal Risk Disclaimer | LocateFlow",
+      "h1": "User-Entered Data and Legal Risk Disclaimer",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\060-mobile-disclaimer.png",
+      "ms": 1030
+    },
+    {
+      "route": "/blog",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/blog",
+      "title": "Blog | LocateFlow",
+      "h1": "Free guides to make your move effortless",
+      "horizontalOverflow": true,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\061-mobile-blog.png",
+      "ms": 1052
+    },
+    {
+      "route": "/movers/apply",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/movers/apply",
+      "title": "List your moving company · LocateFlow | LocateFlow",
+      "h1": "List your moving company",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\062-mobile-movers-apply.png",
+      "ms": 885
+    },
+    {
+      "route": "/movers/portal",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/movers/portal",
+      "title": "Mover portal · LocateFlow | LocateFlow",
+      "h1": "Manage your listing",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\063-mobile-movers-portal.png",
+      "ms": 884
+    },
+    {
+      "route": "/movers/portal/enter",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "https://0.0.0.0:3000/movers/portal?error=invalid"
+      },
+      "navError": "Browser Use cannot open https://staging.locateflow.com/movers/portal/enter in tab 1. Browser reported: net::ERR_BLOCKED_BY_CLIENT",
+      "ms": 135
+    },
+    {
+      "route": "/partners/apply",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/partners/apply",
+      "title": "List your business · LocateFlow | LocateFlow",
+      "h1": "List your business",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\065-mobile-partners-apply.png",
+      "ms": 897
+    },
+    {
+      "route": "/partners/portal",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/partners/portal",
+      "title": "Partner portal · LocateFlow | LocateFlow",
+      "h1": "Partner portal",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\066-mobile-partners-portal.png",
+      "ms": 899
+    },
+    {
+      "route": "/partners/portal/enter",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "https://0.0.0.0:3000/partners/portal?error=invalid"
+      },
+      "navError": "Browser Use cannot open https://staging.locateflow.com/partners/portal/enter in tab 1. Browser reported: net::ERR_BLOCKED_BY_CLIENT",
+      "ms": 149
+    },
+    {
+      "route": "/sign-in",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/sign-in",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\068-mobile-sign-in.png",
+      "ms": 882
+    },
+    {
+      "route": "/sign-up",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/sign-up",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Create your account",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\069-mobile-sign-up.png",
+      "ms": 841
+    },
+    {
+      "route": "/forgot-password",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/forgot-password",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Reset your password",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\070-mobile-forgot-password.png",
+      "ms": 888
+    },
+    {
+      "route": "/verify-email",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/verify-email",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Verify your email",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\071-mobile-verify-email.png",
+      "ms": 3893
+    },
+    {
+      "route": "/unsubscribe",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "finalPath": "/unsubscribe",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "h1": "Link no longer valid",
+      "horizontalOverflow": false,
+      "clippedTextEls": [],
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\public-web-viewports\\072-mobile-unsubscribe.png",
+      "ms": 876
+    }
+  ]
+}
