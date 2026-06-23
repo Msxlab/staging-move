@@ -12,6 +12,7 @@ import {
 import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 import { isDailyDigestEnabled } from "@/lib/daily-digest-config";
 import { formatDateOnlyUtc } from "@locateflow/shared";
+import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 
 const TASK_REMINDER_DAYS = [3, 1, 0];
 // Hard-deadline escalation: deadline-bearing checklist tasks (USCIS AR-11, DMV
@@ -22,6 +23,44 @@ const TASK_REMINDER_DAYS = [3, 1, 0];
 // distinct dedupe key.
 const DEADLINE_ESCALATION_DAYS = [7, 1];
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 4.8b: build the set of userIds that currently have an active entitlement, so
+ * we don't keep sending reminders to LAPSED users. Read-only: one batched
+ * Subscription read + the canonical resolver.
+ *
+ * Uses `resolveConsumerEntitlement`, which applies the H3-safe CONSUMER_FREE
+ * override — so in the everything-free pivot a free / campaign / no-row
+ * consumer still resolves to access and is NOT skipped. Only a genuinely lapsed
+ * payer (expired stripe/trial with CONSUMER_FREE off) is dropped. A user whose
+ * subscription read or resolve fails is allowed through (fail-open) so a
+ * transient DB hiccup never silences a paying user's reminders.
+ */
+async function buildEntitledUserIds(userIds: string[]): Promise<Set<string>> {
+  const entitled = new Set<string>(userIds);
+  if (userIds.length === 0) return entitled;
+  let subscriptions: Array<{ userId: string } & Record<string, unknown>>;
+  try {
+    subscriptions = (await prisma.subscription.findMany({
+      where: { userId: { in: userIds } },
+    })) as Array<{ userId: string } & Record<string, unknown>>;
+  } catch {
+    // Fail-open: never silence a legitimate user over a read error.
+    return entitled;
+  }
+  const subByUser = new Map(subscriptions.map((sub) => [sub.userId, sub]));
+  for (const userId of userIds) {
+    try {
+      const { entitlement } = await resolveConsumerEntitlement(
+        (subByUser.get(userId) ?? null) as never,
+      );
+      if (!entitlement.hasAccess) entitled.delete(userId);
+    } catch {
+      // Fail-open on resolver error.
+    }
+  }
+  return entitled;
+}
 
 function parseDeadlineDate(metadata: unknown): Date | null {
   if (!metadata || typeof metadata !== "object") return null;
@@ -129,6 +168,9 @@ export async function GET(req: Request) {
       : [];
     const preferencesByUser = groupNotificationPreferencesByUser(preferences);
 
+    // 4.8b: only remind users with an active entitlement — skip lapsed users.
+    const entitledUserIds = await buildEntitledUserIds(userIds);
+
     // When the daily rollup owns the email/push send, suppress this cron's
     // per-item SOFT-DUE email + push (the digest emails/pushes them once,
     // bundled). The in-app feed entry is STILL written so the feed stays
@@ -146,6 +188,7 @@ export async function GET(req: Request) {
 
     for (const task of allTaskRows) {
       if (!task.user || !task.dueDate) continue;
+      if (!entitledUserIds.has(task.userId)) continue; // 4.8b: skip lapsed users
       const userTimeZone = resolveReminderTimeZone(task.user.profile?.timezone);
       // Local ~8am delivery gate (see reminder-timezone.ts). Dedupe keys keep
       // any cross-run overlap idempotent.
@@ -234,6 +277,7 @@ export async function GET(req: Request) {
     // collides with the soft-due reminder above — no spam.
     for (const task of allTaskRows) {
       if (!task.user) continue;
+      if (!entitledUserIds.has(task.userId)) continue; // 4.8b: skip lapsed users
       const deadlineDate = parseDeadlineDate(task.metadata);
       if (!deadlineDate) continue;
 
