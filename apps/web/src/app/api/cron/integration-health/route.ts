@@ -71,7 +71,7 @@ async function runHealthCheck() {
   for (const s of unhealthy) {
     const errorRatio = Math.round((s.failures / s.total) * 1000) / 1000;
     emitSecurityEvent({
-      type: "LIMITER_DEGRADED",
+      type: "INTEGRATION_DEGRADED",
       severity: "error",
       group: "integration",
       key: s.source,

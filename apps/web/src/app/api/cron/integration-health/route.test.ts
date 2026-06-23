@@ -56,7 +56,7 @@ describe("integration-health cron", () => {
     expect(mocks.emitSecurityEvent).toHaveBeenCalledTimes(1);
     expect(mocks.emitSecurityEvent).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: "LIMITER_DEGRADED",
+        type: "INTEGRATION_DEGRADED",
         severity: "error",
         key: "fcc",
         context: expect.objectContaining({ source: "fcc", failures: 25, total: 30 }),
