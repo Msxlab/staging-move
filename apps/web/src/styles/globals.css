@@ -80,7 +80,7 @@
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             41.25 33.33% 90.59%;
+    --background:             220 33% 97%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -95,10 +95,10 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  38.57 41.18% 93.33%;
+    --muted:                  216 31% 94%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 38.57 41.18% 93.33%;
+    --accent:                 216 31% 94%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
@@ -114,8 +114,8 @@
 
     --radius:                 0.625rem;
 
-    /* Legacy short surface tokens — warm paper canvas */
-    --surface-secondary:      #F5F0E7;
+    /* Legacy short surface tokens — clean light canvas */
+    --surface-secondary:      #FFFFFF;
     --text-primary:           rgba(20, 32, 47, 1);
     --text-secondary:         rgba(20, 32, 47, 0.72);
     --text-tertiary:          rgba(20, 32, 47, 0.50);
@@ -321,17 +321,17 @@
 }
 
 .light {
-  --lf-app-bg: #EFEADF;
+  --lf-app-bg: #F8F5EF;
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.28) 0%, transparent 28%),
-    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.028) 0%, transparent 24%),
-    linear-gradient(180deg, rgba(231, 225, 212, 0.18) 0%, rgba(239, 234, 223, 0.04) 58%, transparent 100%),
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.72) 0%, transparent 28%),
+    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.045) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, transparent 58%),
     repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.018) 0 1px, transparent 1px 80px),
     repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.012) 0 1px, transparent 1px 80px);
-  opacity: 0.58;
+  opacity: 0.52;
 }
 
 /* =========================================================================
