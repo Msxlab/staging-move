@@ -450,4 +450,21 @@ describe("/api/onboarding/briefing", () => {
     expect(body.source).toBe("rule_based");
     expect(mocks.generateLlmBriefing).toHaveBeenCalledTimes(3);
   });
+
+  it("fails soft instead of 500ing when signal gathering throws", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.serviceFindMany.mockRejectedValueOnce(new Error("db unavailable"));
+
+    const response = await POST(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ configured: false });
+    expect(mocks.generateLlmBriefing).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Failed to build onboarding briefing:",
+      expect.any(Error),
+    );
+    errorSpy.mockRestore();
+  });
 });
