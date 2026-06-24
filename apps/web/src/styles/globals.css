@@ -79,7 +79,7 @@
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             220 23% 97%;
+    --background:             41.25 33.33% 90.59%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -94,10 +94,10 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  216 25% 94%;
+    --muted:                  41.05 28.36% 86.86%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 40 24% 94%;
+    --accent:                 40 32.14% 89.02%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
@@ -107,8 +107,8 @@
     --success:                162 75% 24%;
     --info:                   184 66% 25%;
 
-    --border:                 216 20% 82%;
-    --input:                  216 20% 82%;
+    --border:                 40 17% 76%;
+    --input:                  40 17% 76%;
     --ring:                   217.38 58.56% 43.53%;
 
     --radius:                 0.625rem;
@@ -321,10 +321,12 @@
 
 .light .app-shell-backdrop {
   background:
-    repeating-linear-gradient(90deg, rgba(20, 32, 47, 0.018) 0 1px, transparent 1px 72px),
-    repeating-linear-gradient(0deg, rgba(20, 32, 47, 0.012) 0 1px, transparent 1px 72px),
-    radial-gradient(ellipse 120% 80% at 50% -20%, #EFEEEA 0%, #DEDCD3 68%, #D4D2C8 100%);
-  opacity: 1;
+    repeating-linear-gradient(90deg, rgba(20, 32, 47, 0.010) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(20, 32, 47, 0.007) 0 1px, transparent 1px 72px),
+    radial-gradient(ellipse 92% 56% at 50% -18%, rgba(255, 255, 255, 0.66) 0%, rgba(255, 255, 255, 0.16) 48%, transparent 72%),
+    radial-gradient(ellipse 68% 42% at 82% 6%, rgba(46, 95, 176, 0.045) 0%, transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 100%);
+  opacity: 0.72;
 }
 
 /* =========================================================================
@@ -1355,7 +1357,8 @@ html[data-embed="mobile"] .install-prompt {
   z-index: 0;
   -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.62) 8%, black 20%);
   mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.62) 8%, black 20%);
-  filter: saturate(1.42) contrast(1.12);
+  opacity: 0.86;
+  filter: saturate(1.32) contrast(1.08);
 }
 .da-layer::before {
   content: "";
@@ -1365,16 +1368,33 @@ html[data-embed="mobile"] .install-prompt {
   background:
     radial-gradient(ellipse 70% 78% at 72% 58%, color-mix(in srgb, var(--foil-b) 14%, transparent), transparent 68%),
     linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface-2) 22%, transparent));
-  opacity: 0.28;
+  opacity: 0.22;
 }
 .light .da-layer {
-  filter: saturate(1.65) contrast(1.18);
+  opacity: 0.94;
+  filter: saturate(1.24) contrast(1.06);
 }
 .light .da-layer::before {
   background:
-    radial-gradient(ellipse 76% 84% at 74% 58%, rgba(203, 164, 94, 0.12), transparent 68%),
-    linear-gradient(90deg, transparent, rgba(255, 250, 240, 0.24));
-  opacity: 0.42;
+    radial-gradient(ellipse 76% 84% at 74% 58%, rgba(46, 95, 176, 0.075), transparent 68%),
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18));
+  opacity: 0.34;
+}
+.da-layer[data-source-level="bad"],
+.da-layer[data-source-level="storm"],
+.da-layer[data-source-level="snow"],
+.da-layer[data-source-level="wind"],
+.da-layer[data-source-level="heat"],
+.da-layer[data-source-level="cold"] {
+  opacity: 0.98;
+}
+.light .da-layer[data-source-level="bad"],
+.light .da-layer[data-source-level="storm"],
+.light .da-layer[data-source-level="snow"],
+.light .da-layer[data-source-level="wind"],
+.light .da-layer[data-source-level="heat"],
+.light .da-layer[data-source-level="cold"] {
+  filter: saturate(1.34) contrast(1.08);
 }
 .da-layer.da-paused,
 .da-layer.da-paused * {

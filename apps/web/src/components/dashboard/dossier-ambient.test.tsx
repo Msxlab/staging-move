@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { DossierAmbient, ambientForSection } from "./dossier-ambient";
+import { DossierAmbient, ambientForSection, sourceDossierSceneFor } from "./dossier-ambient";
 
 describe("ambientForSection — flood", () => {
   it("maps FEMA high-risk to elevated, low-risk to calm, unknown to moderate", () => {
@@ -188,6 +188,39 @@ describe("ambientForSection — weather", () => {
   });
 });
 
+describe("sourceDossierSceneFor", () => {
+  it("maps current ambient rows to the source DossierScene type/level matrix", () => {
+    expect(sourceDossierSceneFor({ kind: "air", intensity: 0 })).toEqual({ type: "air", level: "good" });
+    expect(sourceDossierSceneFor({ kind: "air", intensity: 1 })).toEqual({ type: "air", level: "mid" });
+    expect(sourceDossierSceneFor({ kind: "air", intensity: 2 })).toEqual({ type: "air", level: "bad" });
+    expect(sourceDossierSceneFor({ kind: "water", intensity: 2 })).toEqual({ type: "water", level: "bad" });
+    expect(sourceDossierSceneFor({ kind: "housing", intensity: 2 })).toEqual({ type: "cost", level: "bad" });
+  });
+
+  it("preserves source weather variants and positive availability bands", () => {
+    expect(sourceDossierSceneFor({ kind: "weather", intensity: 2, variant: "storm" })).toEqual({
+      type: "weather",
+      level: "storm",
+    });
+    expect(sourceDossierSceneFor({ kind: "weather", intensity: 1, variant: "winter" })).toEqual({
+      type: "weather",
+      level: "snow",
+    });
+    expect(sourceDossierSceneFor({ kind: "evCharging", intensity: 2 })).toEqual({
+      type: "transit",
+      level: "good",
+    });
+    expect(sourceDossierSceneFor({ kind: "evCharging", intensity: 0 })).toEqual({
+      type: "transit",
+      level: "bad",
+    });
+    expect(sourceDossierSceneFor({ kind: "neighborhood", intensity: 2 })).toEqual({
+      type: "area",
+      level: "good",
+    });
+  });
+});
+
 describe("DossierAmbient rendering", () => {
   it("renders an aria-hidden, pointer-events-none masked layer with data attributes", () => {
     const markup = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} />);
@@ -196,6 +229,8 @@ describe("DossierAmbient rendering", () => {
     expect(markup).toContain("pointer-events-none");
     expect(markup).toContain('data-kind="flood"');
     expect(markup).toContain('data-intensity="2"');
+    expect(markup).toContain('data-source-type="area"');
+    expect(markup).toContain('data-source-level="bad"');
   });
 
   it("clamps out-of-range intensity into the 0-2 contract", () => {
