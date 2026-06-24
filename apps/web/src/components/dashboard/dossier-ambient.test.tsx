@@ -194,7 +194,11 @@ describe("sourceDossierSceneFor", () => {
     expect(sourceDossierSceneFor({ kind: "air", intensity: 1 })).toEqual({ type: "air", level: "mid" });
     expect(sourceDossierSceneFor({ kind: "air", intensity: 2 })).toEqual({ type: "air", level: "bad" });
     expect(sourceDossierSceneFor({ kind: "water", intensity: 2 })).toEqual({ type: "water", level: "bad" });
-    expect(sourceDossierSceneFor({ kind: "housing", intensity: 2 })).toEqual({ type: "cost", level: "bad" });
+    expect(sourceDossierSceneFor({ kind: "housing", intensity: 2 })).toEqual({ type: "housing", level: "mid" });
+    expect(sourceDossierSceneFor({ kind: "hazard", intensity: 2, variant: "lightning" })).toEqual({
+      type: "weather",
+      level: "storm",
+    });
   });
 
   it("preserves source weather variants and positive availability bands", () => {
@@ -231,6 +235,8 @@ describe("DossierAmbient rendering", () => {
     expect(markup).toContain('data-intensity="2"');
     expect(markup).toContain('data-source-type="area"');
     expect(markup).toContain('data-source-level="bad"');
+    expect(markup).toContain('data-ds-type="area"');
+    expect(markup).toContain('data-ds-level="bad"');
   });
 
   it("clamps out-of-range intensity into the 0-2 contract", () => {
@@ -242,103 +248,110 @@ describe("DossierAmbient rendering", () => {
     );
   });
 
-  it("renders the three parallax waves for the flood scene", () => {
-    const markup = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={1} />);
-    expect(markup).toContain("da-wave-back");
-    expect(markup).toContain("da-wave-mid");
-    expect(markup).toContain("da-wave-front");
+  it("renders the source area scene for flood/radon fallback sections", () => {
+    const flood = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} />);
+    expect(flood).toContain('data-ds-type="area"');
+    expect(flood).toContain('data-ds-level="bad"');
+    expect(flood).toContain("ds-chase-pack");
+
+    const radon = renderToStaticMarkup(<DossierAmbient kind="radon" intensity={0} />);
+    expect(radon).toContain('data-ds-type="area"');
+    expect(radon).toContain('data-ds-level="good"');
+    expect(radon).toContain("ds-streetlight");
   });
 
-  it("renders the handoff-style story character with contextual poses", () => {
+  it("renders the source air and storm character props", () => {
     const air = renderToStaticMarkup(<DossierAmbient kind="air" intensity={2} />);
-    expect(air).toContain("da-story");
-    expect(air).toContain('data-story="air-bad"');
-    expect(air).toContain("da-story-mask");
-    expect(air).toContain("da-story-sweat");
+    expect(air).toContain('data-ds-type="air"');
+    expect(air).toContain('data-ds-level="bad"');
+    expect(air).toContain("ds-mask");
+    expect(air).toContain("ds-popmark");
 
     const storm = renderToStaticMarkup(<DossierAmbient kind="weather" intensity={2} variant="storm" />);
-    expect(storm).toContain('data-story="storm"');
-    expect(storm).toContain("da-story-sign");
+    expect(storm).toContain('data-ds-level="storm"');
+    expect(storm).toContain("ds-flash");
+    expect(storm).toContain("ds-lightning");
   });
 
-  it("renders the hazard scene by variant", () => {
+  it("renders hazard rows through source weather variants", () => {
     expect(
       renderToStaticMarkup(<DossierAmbient kind="hazard" intensity={2} variant="lightning" />),
-    ).toContain("da-bolt");
+    ).toContain('data-ds-level="storm"');
     expect(
       renderToStaticMarkup(<DossierAmbient kind="hazard" intensity={1} variant="winter" />),
-    ).toContain("da-snow");
+    ).toContain('data-ds-level="snow"');
     expect(
       renderToStaticMarkup(<DossierAmbient kind="hazard" intensity={1} variant="wind" />),
-    ).toContain("da-streak");
+    ).toContain('data-ds-level="wind"');
   });
 
-  it("scales scene density with intensity (wind streak count)", () => {
-    const calm = renderToStaticMarkup(<DossierAmbient kind="hazard" intensity={0} variant="wind" />);
-    const elevated = renderToStaticMarkup(<DossierAmbient kind="hazard" intensity={2} variant="wind" />);
-    expect(calm.match(/da-streak-track/g)).toHaveLength(3);
-    expect(elevated.match(/da-streak-track/g)).toHaveLength(5);
+  it("renders the source transit availability bands", () => {
+    const frequent = renderToStaticMarkup(<DossierAmbient kind="evCharging" intensity={2} />);
+    expect(frequent).toContain('data-ds-type="transit"');
+    expect(frequent).toContain('data-ds-level="good"');
+    expect(frequent.match(/ds-vehicle/g)).not.toBeNull();
+
+    const none = renderToStaticMarkup(<DossierAmbient kind="evCharging" intensity={0} />);
+    expect(none).toContain('data-ds-level="bad"');
+    expect(none).toContain("ds-sign");
   });
 
-  it("renders the air extras only at their bands (leaf at 0, haze at 2)", () => {
+  it("renders the source air extras at their bands", () => {
     const calm = renderToStaticMarkup(<DossierAmbient kind="air" intensity={0} />);
     const moderate = renderToStaticMarkup(<DossierAmbient kind="air" intensity={1} />);
     const elevated = renderToStaticMarkup(<DossierAmbient kind="air" intensity={2} />);
-    expect(calm).toContain("da-leaf");
-    expect(calm).not.toContain("da-haze");
-    expect(moderate).not.toContain("da-leaf");
-    expect(moderate).not.toContain("da-haze");
-    expect(elevated).toContain("da-haze");
-    expect(elevated).not.toContain("da-leaf");
+    expect(calm).toContain("ds-leaf");
+    expect(calm).not.toContain("ds-mask");
+    expect(moderate).toContain("ds-mote-amber");
+    expect(moderate).toContain("ds-mask");
+    expect(elevated).toContain("ds-haze-bg");
+    expect(elevated).toContain("ds-mask");
   });
 
-  it("renders water, housing, and EV scenes", () => {
+  it("renders source water and housing scenes", () => {
     const water = renderToStaticMarkup(<DossierAmbient kind="water" intensity={2} />);
-    expect(water).toContain("da-water-ripple");
-    expect(water).toContain("da-water-drop");
+    expect(water).toContain('data-ds-type="water"');
+    expect(water).toContain('data-ds-level="bad"');
+    expect(water).toContain("ds-alert-symbol");
 
     const housing = renderToStaticMarkup(<DossierAmbient kind="housing" intensity={1} />);
-    expect(housing).toContain("da-housing-homes");
-    expect(housing.match(/da-housing-bar/g)).toHaveLength(4);
-
-    const ev = renderToStaticMarkup(<DossierAmbient kind="evCharging" intensity={2} />);
-    expect(ev).toContain("da-ev-path");
-    expect(ev.match(/da-ev-node/g)).toHaveLength(3);
-    expect(ev).toContain("da-ev-bolt");
+    expect(housing).toContain('data-ds-type="housing"');
+    expect(housing).toContain("ds-house-row");
+    expect(housing.match(/ds-house/g)).not.toBeNull();
   });
 
   it("renders the weather scene by variant", () => {
     expect(renderToStaticMarkup(<DossierAmbient kind="weather" intensity={0} variant="sun" />)).toContain(
-      "da-sun",
+      "ds-sun-core",
     );
     expect(
       renderToStaticMarkup(<DossierAmbient kind="weather" intensity={1} variant="cloud" />),
-    ).toContain("da-wcloud");
+    ).toContain("ds-cloud-a");
     expect(
       renderToStaticMarkup(<DossierAmbient kind="weather" intensity={1} variant="rain" />),
-    ).toContain("da-rain");
+    ).toContain("ds-umbrella");
     expect(
       renderToStaticMarkup(<DossierAmbient kind="weather" intensity={2} variant="storm" />),
-    ).toContain("da-bolt");
+    ).toContain("ds-lightning");
     expect(
       renderToStaticMarkup(<DossierAmbient kind="weather" intensity={2} variant="snow" />),
-    ).toContain("da-snow");
+    ).toContain("ds-snowman");
     expect(
       renderToStaticMarkup(<DossierAmbient kind="weather" intensity={1} variant="fog" />),
-    ).toContain("da-fog-line");
+    ).toContain("ds-fogband");
     expect(
       renderToStaticMarkup(<DossierAmbient kind="weather" intensity={1} variant="heat" />),
-    ).toContain("da-heat-line");
+    ).toContain("ds-ac");
     expect(
       renderToStaticMarkup(<DossierAmbient kind="weather" intensity={1} variant="wind" />),
-    ).toContain("da-streak");
+    ).toContain("ds-streak");
   });
 
-  it("renders the neighborhood skyline with staggered windows and footsteps", () => {
+  it("renders neighborhood as the source area confidence scene", () => {
     const markup = renderToStaticMarkup(<DossierAmbient kind="neighborhood" intensity={2} />);
-    expect(markup.match(/da-bld/g)).toHaveLength(7);
-    expect(markup.match(/da-window/g)).toHaveLength(8);
-    expect(markup.match(/da-step(?!-)/g)).toHaveLength(3);
-    expect(markup).toContain("da-walkpath");
+    expect(markup).toContain('data-ds-type="area"');
+    expect(markup).toContain('data-ds-level="good"');
+    expect(markup).toContain("ds-lamp-glow");
+    expect(markup).toContain("ds-badge");
   });
 });

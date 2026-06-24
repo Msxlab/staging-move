@@ -102,10 +102,10 @@ export const surfaceDark = {
 } as const;
 
 export const surfaceLight = {
-  background: "#EFEADF", // warm greige canvas (Step 2, D9 — was cool #F2F4F8)
+  background: "#F7F8FB", // clean app canvas; warmth stays in secondary surfaces
   surface: "#FFFFFF",
-  card: "#F5F0E7", // surface-2 warm paper (Step 2 — was #EAEEF4)
-  cardHover: "#E2E7EE", // au-base-3
+  card: "#F7F3EC",
+  cardHover: "#EEF2F7",
   elevated: "#FFFFFF",
 } as const;
 

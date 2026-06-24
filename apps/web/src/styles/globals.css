@@ -8,6 +8,7 @@
    The @import must precede @tailwind so it is the first rule (CSS spec /
    Turbopack requirement); custom properties resolve regardless of order. */
 @import "./_tokens.generated.css";
+@import "./source-dossier-scene.css";
 
 @tailwind base;
 @tailwind components;
@@ -79,7 +80,7 @@
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             41.25 33.33% 90.59%;
+    --background:             220 33% 97%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -94,10 +95,10 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  41.05 28.36% 86.86%;
+    --muted:                  214 36% 95%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 40 32.14% 89.02%;
+    --accent:                 38 42% 94%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
@@ -107,13 +108,13 @@
     --success:                162 75% 24%;
     --info:                   184 66% 25%;
 
-    --border:                 40 17% 76%;
-    --input:                  40 17% 76%;
+    --border:                 214 24% 82%;
+    --input:                  214 24% 82%;
     --ring:                   217.38 58.56% 43.53%;
 
     --radius:                 0.625rem;
 
-    /* Legacy short surface tokens — Aurora greige paper */
+    /* Legacy short surface tokens — clean paper canvas */
     --surface-secondary:      #FFFFFF;
     --text-primary:           rgba(20, 32, 47, 1);
     --text-secondary:         rgba(20, 32, 47, 0.72);

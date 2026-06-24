@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
-import { DossierRaccoon, dossierRaccoonFor, type DossierRaccoonMood } from "./dossier-raccoon";
+import { useEffect, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode } from "react";
+import { DossierRaccoon, type DossierRaccoonMood } from "./dossier-raccoon";
 
 /**
  * DOSSIER AMBIENT — Aurora decorative scene layer for the home-dossier rows.
@@ -111,9 +111,8 @@ function weatherSourceLevel(variant: AmbientVariant | undefined): SourceDossierS
 
 /**
  * Bridge the current row ambient contract to the source bundle's
- * DossierScene(type, level) matrix. Web still renders its existing row art, but
- * these source semantics keep the UI testable against the prototype and make
- * every source state explicit in the DOM.
+ * DossierScene(type, level) matrix so web renders the prototype scene states
+ * explicitly rather than an unrelated row-art approximation.
  */
 export function sourceDossierSceneFor({ kind, intensity, variant }: AmbientSpec): SourceDossierSceneSpec {
   switch (kind) {
@@ -124,18 +123,461 @@ export function sourceDossierSceneFor({ kind, intensity, variant }: AmbientSpec)
     case "water":
       return { type: "water", level: riskSourceLevel(intensity) };
     case "housing":
-      return { type: "cost", level: riskSourceLevel(intensity) };
+      return { type: "housing", level: "mid" };
     case "evCharging":
       return { type: "transit", level: positiveSourceLevel(intensity) };
     case "neighborhood":
       return { type: "area", level: positiveSourceLevel(intensity) };
     case "school":
       return { type: "area", level: "mid" };
-    case "flood":
     case "hazard":
+      return { type: "weather", level: weatherSourceLevel(variant) };
+    case "flood":
     case "radon":
       return { type: "area", level: riskSourceLevel(intensity) };
   }
+}
+
+type SourceSceneVariables = CSSProperties & {
+  "--ds-tone": string;
+  "--ds-glow": string;
+  "--rc-head": string;
+  "--rc-mask": string;
+  "--rc-ear": string;
+  "--rc-eye": string;
+  "--rc-pupil": string;
+};
+
+function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVariables {
+  const isBad =
+    level === "bad" ||
+    level === "storm" ||
+    level === "heat" ||
+    level === "wind" ||
+    level === "cold";
+  const isGood = level === "good" || level === "sun";
+  const tone =
+    type === "air" && isGood
+      ? "var(--sage)"
+      : type === "water" && isGood
+        ? "var(--info)"
+        : type === "transit" && isGood
+          ? "var(--info)"
+          : isBad
+            ? "var(--danger)"
+            : "var(--foil-b)";
+  return {
+    "--ds-tone": tone,
+    "--ds-glow": `color-mix(in srgb, ${tone} 22%, transparent)`,
+    "--rc-head": "color-mix(in srgb, var(--fg) 30%, transparent)",
+    "--rc-mask": "color-mix(in srgb, var(--fg) 58%, transparent)",
+    "--rc-ear": "color-mix(in srgb, var(--fg) 38%, transparent)",
+    "--rc-eye": "var(--foil-b)",
+    "--rc-pupil": "color-mix(in srgb, var(--fg) 86%, black 14%)",
+  };
+}
+
+function SourceCharacter({
+  mood,
+  size = 29,
+  style,
+  headStyle,
+  bodyStyle,
+  headChildren,
+  children,
+}: {
+  mood: DossierRaccoonMood;
+  size?: number;
+  style?: CSSProperties;
+  headStyle?: CSSProperties;
+  bodyStyle?: CSSProperties;
+  headChildren?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="ds-char" style={style}>
+      <div className="ds-hd" style={headStyle}>
+        <DossierRaccoon mood={mood} size={size} />
+        {headChildren}
+      </div>
+      <div className="ds-bd" style={bodyStyle}>
+        <div className="ds-belly" />
+        <div className="ds-foot" style={{ left: 5 }} />
+        <div className="ds-foot" style={{ right: 5 }} />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function MiniVehicle({ delay = "0s", variant = "bus" }: { delay?: string; variant?: "bus" | "train" }) {
+  const width = variant === "bus" ? 50 : 58;
+  return (
+    <div className="ds-vehicle" data-variant={variant} style={{ width, animationDelay: delay }}>
+      <div className="ds-vehicle-body" />
+      {[0, 1, 2, 3, 4].slice(0, variant === "bus" ? 4 : 5).map((i) => (
+        <div key={i} className="ds-vehicle-window" style={{ left: 5 + i * 10 }} />
+      ))}
+      <div className="ds-wheel" style={{ left: 8 }} />
+      <div className="ds-wheel" style={{ right: 9 }} />
+    </div>
+  );
+}
+
+function TransitSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  if (level === "bad") {
+    return (
+      <>
+        <div className="ds-ground ds-ground-warn" />
+        <div className="ds-road ds-road-warn" />
+        <div className="ds-tumble" />
+        <SourceCharacter mood="happy" style={{ left: "46%", animation: "ds-bob 2.8s ease-in-out infinite" }}>
+          <div className="ds-arm" style={{ right: -6, bottom: 12, transform: "rotate(-34deg)", transformOrigin: "left center" }} />
+          <div className="ds-thumb" />
+          <div className="ds-sign">NY?</div>
+        </SourceCharacter>
+      </>
+    );
+  }
+  if (level === "mid") {
+    return (
+      <>
+        <div className="ds-ground" />
+        <div className="ds-road ds-road-mid" />
+        <div className="ds-stop" />
+        <MiniVehicle variant="bus" />
+        <SourceCharacter
+          mood="thinking"
+          style={{ left: "34%", animation: "ds-bob 2.8s ease-in-out infinite" }}
+          headStyle={{ transformOrigin: "bottom center", animation: "ds-look 3.4s ease-in-out infinite" }}
+        >
+          <div className="ds-arm" style={{ right: -3, bottom: 15, transform: "rotate(-58deg)", transformOrigin: "left center" }} />
+          <div className="ds-watch" />
+        </SourceCharacter>
+      </>
+    );
+  }
+  return (
+    <>
+      <div className="ds-ground" />
+      <div className="ds-road" />
+      <div className="ds-stop" />
+      <SourceCharacter mood="happy" style={{ left: 26, animation: "ds-bob 2.4s ease-in-out infinite" }}>
+        <div className="ds-arm ds-wave-arm" style={{ right: 1, bottom: 11, transformOrigin: "left center" }} />
+      </SourceCharacter>
+      <MiniVehicle variant="bus" />
+      <MiniVehicle variant="train" delay="3s" />
+    </>
+  );
+}
+
+function AirSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  if (level === "bad") {
+    return (
+      <>
+        <div className="ds-haze-bg" />
+        {[14, 30, 44, 64, 78].map((left, i) => (
+          <span key={left} className="ds-mote" style={{ left: `${left}%`, bottom: 8 + ((i * 6) % 20), animationDelay: `${i * 0.4}s` }} />
+        ))}
+        <SourceCharacter
+          mood="alert"
+          style={{ left: "50%", marginLeft: -17, animation: "ds-heave 1.1s ease-in-out infinite" }}
+          headChildren={<div className="ds-mask" />}
+        >
+          <span className="ds-popmark">~</span>
+        </SourceCharacter>
+      </>
+    );
+  }
+  if (level === "mid") {
+    return (
+      <>
+        <div className="ds-amber-bg" />
+        {[24, 60, 76].map((left, i) => (
+          <span key={left} className="ds-mote ds-mote-amber" style={{ left: `${left}%`, bottom: 14 + ((i * 4) % 10), animationDelay: `${i * 0.7}s` }} />
+        ))}
+        <SourceCharacter
+          mood="thinking"
+          style={{ left: "50%", marginLeft: -17, animation: "ds-bob 3s ease-in-out infinite" }}
+          headChildren={<div className="ds-mask" />}
+        />
+      </>
+    );
+  }
+  return (
+    <>
+      <div className="ds-radial" />
+      {[24, 56, 72].map((left, i) => (
+        <span key={left} className="ds-leaf" style={{ left: `${left}%`, bottom: 14 + i * 3, animationDelay: `${i}s` }} />
+      ))}
+      <SourceCharacter
+        mood="approved"
+        size={30}
+        style={{ left: "50%", marginLeft: -17, animation: "ds-bob 3s ease-in-out infinite" }}
+        bodyStyle={{ transformOrigin: "bottom center", animation: "ds-breathe 3.4s ease-in-out infinite" }}
+      />
+    </>
+  );
+}
+
+function WaterSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  if (level === "bad") {
+    return (
+      <>
+        <div className="ds-haze-bg" />
+        {[60, 66].map((left, i) => (
+          <span key={left} className="ds-mote ds-mote-amber" style={{ left: `${left}%`, bottom: 18 + i * 4, animationDelay: `${i * 0.6}s` }} />
+        ))}
+        <span className="ds-alert-symbol">!</span>
+        <SourceCharacter mood="alert" style={{ left: "40%", animation: "ds-bob 3s ease-in-out infinite" }}>
+          <div className="ds-arm" style={{ left: "50%", marginLeft: -5, bottom: 20, transform: "rotate(-50deg)", transformOrigin: "right center" }} />
+        </SourceCharacter>
+      </>
+    );
+  }
+  if (level === "mid") {
+    return (
+      <>
+        <div className="ds-amber-bg" />
+        <SourceCharacter mood="thinking" style={{ left: "40%", animation: "ds-bob 3.2s ease-in-out infinite" }}>
+          <div className="ds-filter" />
+          <span className="ds-drip" />
+        </SourceCharacter>
+      </>
+    );
+  }
+  return (
+    <>
+      <div className="ds-radial" />
+      <span className="ds-spark">+</span>
+      <SourceCharacter
+        mood="happy"
+        style={{ left: "42%", animation: "ds-bob 3s ease-in-out infinite" }}
+        headStyle={{ transformOrigin: "bottom center", animation: "ds-sip 4s ease-in-out infinite" }}
+      >
+        <div className="ds-glass"><div /></div>
+      </SourceCharacter>
+    </>
+  );
+}
+
+function AreaSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  if (level === "bad") {
+    return (
+      <>
+        <div className="ds-ground ds-ground-dark" />
+        <div className="ds-dark-wash" />
+        <div className="ds-flicker" />
+        <span className="ds-alert-symbol ds-alert-right">!</span>
+        <div className="ds-chase-pack">
+          <SourceCharacter mood="alert" size={26} style={{ left: 0, bottom: 0, animation: "ds-run .32s ease-in-out infinite" }} />
+          <div className="ds-shadow-runner" />
+          <div className="ds-shadow-runner ds-shadow-runner-b" />
+        </div>
+      </>
+    );
+  }
+  if (level === "mid") {
+    return (
+      <>
+        <div className="ds-ground" />
+        <div className="ds-streetlight" />
+        <div className="ds-lamp-glow" />
+        <SourceCharacter
+          mood="thinking"
+          style={{ left: "28%", animation: "ds-bob 2.2s ease-in-out infinite" }}
+          headStyle={{ transformOrigin: "bottom center", animation: "ds-look 3.2s ease-in-out infinite" }}
+        />
+      </>
+    );
+  }
+  return (
+    <>
+      <div className="ds-ground" />
+      <div className="ds-streetlight" />
+      <div className="ds-lamp-glow" />
+      <MiniVehicle variant="bus" />
+      <SourceCharacter mood="approved" style={{ left: "30%", animation: "ds-bob 3s ease-in-out infinite" }}>
+        <div className="ds-badge" />
+      </SourceCharacter>
+    </>
+  );
+}
+
+function CostSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  if (level === "good") {
+    return (
+      <>
+        <div className="ds-radial" />
+        <span className="ds-dollar">$</span>
+        <SourceCharacter mood="happy" style={{ left: "40%", animation: "ds-bob 2.8s ease-in-out infinite" }}>
+          <div className="ds-arm" style={{ right: -4, bottom: 14, transform: "rotate(-34deg)", transformOrigin: "left center" }} />
+        </SourceCharacter>
+      </>
+    );
+  }
+  return (
+    <>
+      <div className="ds-amber-bg" />
+      <span className="ds-price-arrow">↑</span>
+      <div className="ds-bill-stack" />
+      <SourceCharacter mood="alert" style={{ left: "24%" }} bodyStyle={{ transformOrigin: "bottom center", animation: "ds-tug 1.4s ease-in-out infinite" }}>
+        <div className="ds-arm" style={{ right: -4, bottom: 13, transform: "rotate(-46deg)", transformOrigin: "left center" }} />
+        <span className="ds-sweat" />
+      </SourceCharacter>
+    </>
+  );
+}
+
+function HousingSourceScene() {
+  return (
+    <>
+      <div className="ds-ground" />
+      <div className="ds-house-row">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="ds-house" style={{ left: `${i * 34}%`, animationDelay: `${i * 0.4}s` }}>
+            <div className="ds-house-roof" />
+            <div className="ds-house-body" />
+            <div className="ds-house-window" />
+          </div>
+        ))}
+      </div>
+      <div className="ds-key-post" />
+      <SourceCharacter mood="happy" style={{ left: "14%", animation: "ds-bob 3s ease-in-out infinite" }}>
+        <div className="ds-arm" style={{ right: -4, bottom: 13, transform: "rotate(-30deg)", transformOrigin: "left center" }} />
+        <div className="ds-key" />
+      </SourceCharacter>
+    </>
+  );
+}
+
+function WeatherSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  switch (level) {
+    case "rain":
+      return (
+        <>
+          <div className="ds-cloud ds-cloud-rain" />
+          {[20, 36, 78, 90].map((left, i) => (
+            <span key={left} className="ds-rain" style={{ left: `${left}%`, animationDelay: `${i * 0.18}s` }} />
+          ))}
+          <SourceCharacter mood="calm" style={{ left: "28%", animation: "ds-bob 3s ease-in-out infinite" }}>
+            <div className="ds-arm" style={{ right: -3, bottom: 14, transform: "rotate(-44deg)", transformOrigin: "left center" }} />
+          </SourceCharacter>
+          <div className="ds-umbrella" />
+        </>
+      );
+    case "snow":
+      return (
+        <>
+          <div className="ds-snow-bg" />
+          {[18, 40, 62, 82].map((left, i) => (
+            <span key={left} className="ds-snow" style={{ left: `${left}%`, animationDelay: `${i * 0.45}s` }} />
+          ))}
+          <div className="ds-snowman" />
+          <SourceCharacter mood="thinking" style={{ left: "24%", animation: "ds-shiver .25s ease-in-out infinite" }}>
+            <div className="ds-scarf" />
+          </SourceCharacter>
+        </>
+      );
+    case "storm":
+      return (
+        <>
+          <div className="ds-flash" />
+          <div className="ds-cloud ds-cloud-storm" />
+          {[22, 42, 72].map((left, i) => (
+            <span key={left} className="ds-rain ds-rain-hard" style={{ left: `${left}%`, animationDelay: `${i * 0.2}s` }} />
+          ))}
+          <svg className="ds-lightning" viewBox="0 0 20 30"><path d="M11 0 L3 17 L9 16 L6 30 L18 11 L11 12 Z" /></svg>
+          <SourceCharacter mood="alert" style={{ left: "24%", animation: "ds-shiver .2s ease-in-out infinite" }}>
+            <div className="ds-arm" style={{ right: -3, bottom: 15, transform: "rotate(-44deg)", transformOrigin: "left center" }} />
+          </SourceCharacter>
+        </>
+      );
+    case "fog":
+      return (
+        <>
+          <div className="ds-fog-bg" />
+          {[16, 34, 52].map((top, i) => (
+            <div key={top} className="ds-fogband" style={{ top, animationDelay: `${i * 0.4}s` }} />
+          ))}
+          <span className="ds-warning-triangle">!</span>
+          <SourceCharacter mood="thinking" style={{ left: "32%", animation: "ds-bob 3.4s ease-in-out infinite" }} headChildren={<div className="ds-shades" />}>
+            <div className="ds-arm" style={{ right: -2, bottom: 12, transform: "rotate(-30deg)", transformOrigin: "left center" }} />
+            <div className="ds-cane" />
+          </SourceCharacter>
+        </>
+      );
+    case "wind":
+      return (
+        <>
+          {[20, 34, 48].map((top, i) => (
+            <div key={top} className="ds-streak" style={{ top, animationDelay: `${i * 0.35}s` }} />
+          ))}
+          <span className="ds-leaf ds-leaf-wind" />
+          <SourceCharacter mood="alert" style={{ left: "34%", animation: "ds-lean 1.4s ease-in-out infinite", transformOrigin: "bottom center" }}>
+            <div className="ds-arm" style={{ right: -4, bottom: 18, transform: "rotate(-58deg)", transformOrigin: "left center" }} />
+          </SourceCharacter>
+        </>
+      );
+    case "heat":
+      return (
+        <>
+          <div className="ds-hot-sun" />
+          {[30, 50].map((left, i) => (
+            <div key={left} className="ds-heatline" style={{ left: `${left}%`, animationDelay: `${i * 0.6}s` }} />
+          ))}
+          <div className="ds-ac" />
+          <span className="ds-impact">*</span>
+          <SourceCharacter mood="alert" style={{ left: "22%", animation: "ds-bob 2.6s ease-in-out infinite" }}>
+            <div className="ds-kick-leg" />
+            <span className="ds-sweat" />
+          </SourceCharacter>
+        </>
+      );
+    case "cold":
+      return (
+        <>
+          <div className="ds-cold-bg" />
+          <SourceCharacter mood="thinking" style={{ left: "32%", animation: "ds-shiver .22s ease-in-out infinite" }}>
+            <span className="ds-breath" />
+            <div className="ds-scarf" />
+            <div className="ds-arm" style={{ left: 0, bottom: 9, transform: "rotate(34deg)", transformOrigin: "right center" }} />
+            <div className="ds-arm" style={{ right: 0, bottom: 9, transform: "rotate(-34deg)", transformOrigin: "left center" }} />
+          </SourceCharacter>
+        </>
+      );
+    case "sun":
+      return (
+        <>
+          <div className="ds-sun-rays" />
+          <div className="ds-sun-core" />
+          <SourceCharacter mood="approved" size={30} style={{ left: "26%", animation: "ds-bob 3.2s ease-in-out infinite" }} />
+        </>
+      );
+    case "cloud":
+    default:
+      return (
+        <>
+          <div className="ds-cloud ds-cloud-a" />
+          <div className="ds-cloud ds-cloud-b" />
+          <SourceCharacter mood="calm" size={30} style={{ left: "24%", animation: "ds-bob 3.2s ease-in-out infinite" }} />
+        </>
+      );
+  }
+}
+
+function SourceDossierScene({ scene }: { scene: SourceDossierSceneSpec }) {
+  return (
+    <div className="ds-root" data-ds-type={scene.type} data-ds-level={scene.level} style={sourceSceneVars(scene)}>
+      {scene.type === "transit" && <TransitSourceScene level={scene.level} />}
+      {scene.type === "air" && <AirSourceScene level={scene.level} />}
+      {scene.type === "water" && <WaterSourceScene level={scene.level} />}
+      {scene.type === "area" && <AreaSourceScene level={scene.level} />}
+      {scene.type === "cost" && <CostSourceScene level={scene.level} />}
+      {scene.type === "housing" && <HousingSourceScene />}
+      {scene.type === "weather" && <WeatherSourceScene level={scene.level} />}
+    </div>
+  );
 }
 
 /**
@@ -1033,33 +1475,22 @@ export function DossierAmbient({
 }) {
   const ref = useAmbientPause();
   const level = clampIntensity(intensity);
-  const mood = dossierRaccoonFor({ kind, intensity: level, variant });
   const sourceScene = sourceDossierSceneFor({ kind, intensity: level, variant });
   return (
-    <>
-      <div
-        ref={ref}
-        aria-hidden="true"
-        data-kind={kind}
-        data-intensity={level}
-        data-source-type={sourceScene.type}
-        data-source-level={sourceScene.level}
-        data-variant={variant}
-        // Keep the scene on a visible foreground plane; globals.css masks it to
-        // the right side and lifts row copy above it.
-        style={{ zIndex: 0 }}
-        className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden rounded-r-xl"
-      >
-        <AmbientScene kind={kind} intensity={level} variant={variant} />
-      </div>
-      <div
-        aria-hidden="true"
-        // The foreground character sits above the scene in the bottom-right
-        // corner the row carries no text.
-        className="da-raccoon pointer-events-none absolute bottom-0 right-2 z-[1] flex items-end"
-      >
-        <DossierStoryCharacter kind={kind} intensity={level} variant={variant} mood={mood} />
-      </div>
-    </>
+    <div
+      ref={ref}
+      aria-hidden="true"
+      data-kind={kind}
+      data-intensity={level}
+      data-source-type={sourceScene.type}
+      data-source-level={sourceScene.level}
+      data-variant={variant}
+      // Keep the scene on a visible foreground plane; globals.css masks it to
+      // the right side and lifts row copy above it.
+      style={{ zIndex: 0 }}
+      className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden rounded-r-xl"
+    >
+      <SourceDossierScene scene={sourceScene} />
+    </div>
   );
 }
