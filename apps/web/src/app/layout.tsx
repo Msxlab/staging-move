@@ -180,6 +180,13 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="LocateFlow" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        {/*
+         * iOS splash screens (apple-touch-startup-image) are a follow-up: they
+         * require per-device, exactly-sized PNGs that do not yet exist under
+         * public/. We intentionally do NOT reference placeholder paths here —
+         * a broken startup-image link degrades the standalone launch. Add the
+         * generated splash assets + media-queried <link>s in a later pass.
+         */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
         {/*

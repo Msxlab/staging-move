@@ -4,16 +4,22 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { WaitlistForm } from "@/components/marketing/waitlist-form";
 import { IOS_APP_STORE_URL, ANDROID_PLAY_STORE_URL } from "@/lib/store-links";
+import { usePwaInstall, isStandaloneDisplayMode } from "@/lib/use-pwa-install";
 
 /**
- * Smart app install banner.
+ * Smart app install banner — platform-aware per the owner decision.
  *
- * Detects the visitor's OS and offers the matching native app: App Store on
- * iOS, Google Play on Android. We intentionally do NOT use a PWA
- * `beforeinstallprompt` flow — when a real native app exists, asking the user
- * to "Add to Home Screen" instead is confusing (two Move icons end up
- * on their phone). On desktop the banner stays hidden; there's nothing useful
- * to install.
+ *   - Chromium desktop + Android Chrome (the browser fires
+ *     `beforeinstallprompt`): the PRIMARY path is a real PWA install. We capture
+ *     the deferred event (see usePwaInstall) and the "Install app" button fires
+ *     the browser's native install dialog. On Android, where a native app also
+ *     exists, we keep the Google Play link as a secondary alternative.
+ *   - iOS Safari (no `beforeinstallprompt`): keep the native App Store path when
+ *     NEXT_PUBLIC_IOS_APP_STORE_ID is set; otherwise show concise
+ *     "Add to Home Screen" guidance.
+ *   - Anywhere the PWA isn't installable and no platform is detected: the
+ *     banner stays hidden, preserving the store-links / WaitlistForm fallback
+ *     for the contexts that still need it (closed beta, native-only stores).
  *
  * Store URLs come from env so the same component works during closed beta
  * (no public URL yet → fall back to the existing waitlist modal) and after
@@ -25,6 +31,10 @@ import { IOS_APP_STORE_URL, ANDROID_PLAY_STORE_URL } from "@/lib/store-links";
  *     this component entirely in that mode).
  *   - The site is opened as an installed PWA (display-mode: standalone).
  *   - The user dismissed the banner in the last 14 days.
+ *
+ * SSR-safe: window/navigator are only touched inside effects (here and in
+ * usePwaInstall), and nothing renders until mounted to avoid a hydration
+ * mismatch.
  */
 
 type Platform = "ios" | "android" | null;
@@ -44,13 +54,6 @@ function detectPlatform(): Platform {
   return null;
 }
 
-function isStandalonePwa(): boolean {
-  if (typeof window === "undefined") return false;
-  if (window.matchMedia?.("(display-mode: standalone)").matches) return true;
-  // iOS Safari uses a non-standard `navigator.standalone` for installed PWAs.
-  return Boolean((window.navigator as unknown as { standalone?: boolean }).standalone);
-}
-
 function isDismissedRecently(): boolean {
   try {
     const raw = localStorage.getItem(DISMISS_KEY);
@@ -62,6 +65,25 @@ function isDismissedRecently(): boolean {
   } catch {
     return false;
   }
+}
+
+function DownloadLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  );
 }
 
 function AppleLogo({ className }: { className?: string }) {
@@ -101,17 +123,23 @@ function PlayLogo({ className }: { className?: string }) {
   );
 }
 
+// iOS Safari can install a PWA via Share → Add to Home Screen, but only when
+// the user already has it open in Safari (not an in-app browser). We surface
+// this only as a fallback when no native App Store listing is configured.
+const IOS_APP_STORE_ID = process.env.NEXT_PUBLIC_IOS_APP_STORE_ID;
+
 export function InstallPrompt() {
   const [platform, setPlatform] = useState<Platform>(null);
   const [dismissed, setDismissed] = useState(true);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const { mounted, canPromptInstall, isInstalled, promptInstall } = usePwaInstall();
 
   useEffect(() => {
-    if (isStandalonePwa()) return;
+    if (isStandaloneDisplayMode()) return;
     if (isDismissedRecently()) return;
-    const p = detectPlatform();
-    if (!p) return;
-    setPlatform(p);
+    // Platform detection is best-effort UI copy; desktop Chromium reports null
+    // here but can still offer a PWA install via `canPromptInstall`.
+    setPlatform(detectPlatform());
     setDismissed(false);
   }, []);
 
@@ -131,7 +159,7 @@ export function InstallPrompt() {
     }
   };
 
-  const handleInstall = () => {
+  const openStore = () => {
     if (storeUrl) {
       window.location.href = storeUrl;
       return;
@@ -141,7 +169,120 @@ export function InstallPrompt() {
     setWaitlistOpen(true);
   };
 
-  if (dismissed || !platform) return null;
+  const handlePwaInstall = async () => {
+    const outcome = await promptInstall();
+    if (outcome === "accepted") dismiss();
+  };
+
+  // Render nothing until mounted (SSR-safe; avoids hydration mismatch), once
+  // dismissed (recently or this session), or once installed/standalone.
+  if (!mounted || dismissed || isInstalled) return null;
+
+  // The PWA install dialog is the PRIMARY path wherever the browser offers it.
+  // iOS Safari never does, so it falls through to the native-store / guidance
+  // path below.
+  if (canPromptInstall) {
+    // On Android the native app also exists → keep Play as a secondary option.
+    const secondaryStoreUrl = platform === "android" ? ANDROID_PLAY_STORE_URL : undefined;
+    return (
+      <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:w-[22rem] z-50 animate-in slide-in-from-bottom-4">
+        <div
+          className="rounded-2xl border border-border p-4 shadow-2xl"
+          style={{ background: "color-mix(in srgb, var(--surface-secondary) 95%, transparent)" }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-foreground/5 p-2.5 shrink-0">
+              <DownloadLogo className="h-7 w-7 text-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Install the LocateFlow app</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Add LocateFlow to your device for a faster, full-screen, offline-ready experience.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={handlePwaInstall}
+                  className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-semibold text-background hover:opacity-90 transition"
+                >
+                  Install app
+                </button>
+                {secondaryStoreUrl ? (
+                  <a
+                    href={secondaryStoreUrl}
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition"
+                  >
+                    Google Play
+                  </a>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={dismiss}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={dismiss}
+              aria-label="Dismiss"
+              className="text-foreground/30 hover:text-muted-foreground shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // iOS Safari with no native listing configured → concise Add-to-Home-Screen
+  // guidance (the only way to install a PWA on iOS).
+  if (platform === "ios" && !IOS_APP_STORE_ID) {
+    return (
+      <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:w-[22rem] z-50 animate-in slide-in-from-bottom-4">
+        <div
+          className="rounded-2xl border border-border p-4 shadow-2xl"
+          style={{ background: "color-mix(in srgb, var(--surface-secondary) 95%, transparent)" }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-foreground/5 p-2.5 shrink-0">
+              <AppleLogo className="h-7 w-7 text-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Add LocateFlow to your Home Screen</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Tap the Share button, then &ldquo;Add to Home Screen&rdquo; to install the app.
+              </p>
+              <div className="flex gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={dismiss}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={dismiss}
+              aria-label="Dismiss"
+              className="text-foreground/30 hover:text-muted-foreground shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Native-store path (iOS App Store / Google Play), preserving the existing
+  // closed-beta waitlist fallback. Hidden on desktop (no platform, no PWA).
+  if (!platform) return null;
 
   const storeLabel = platform === "ios" ? "App Store" : "Google Play";
   const Logo = platform === "ios" ? AppleLogo : PlayLogo;
@@ -168,7 +309,7 @@ export function InstallPrompt() {
               <div className="flex gap-2 mt-3">
                 <button
                   type="button"
-                  onClick={handleInstall}
+                  onClick={openStore}
                   className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-semibold text-background hover:opacity-90 transition"
                 >
                   {verb} on {storeLabel}
