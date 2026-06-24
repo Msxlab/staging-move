@@ -95,7 +95,7 @@
     --secondary-foreground:   0 0% 100%;
 
     --muted:                  218 21% 88%;
-    --muted-foreground:       213 14% 35%;
+    --muted-foreground:       213 18% 30%;
 
     --accent:                 218 21% 90%;
     --accent-foreground:      213 39% 13%;
@@ -360,6 +360,27 @@
 
 .light .placeholder\:text-white\/30::placeholder { color: rgba(20, 32, 47, 0.48); }
 .light .placeholder\:text-white\/25::placeholder { color: rgba(20, 32, 47, 0.44); }
+
+/* ── Light-mode foreground-opacity floor ──────────────────────────────────
+   Dark-first Tailwind leans on `text-foreground/40`–`/55` for the bulk of
+   readable secondary copy (captions, labels, helper text, empty-state lines,
+   form hints). On the DARK surface the bright --foreground at those alphas is
+   legible; on the LIGHT paper the dark-navy --foreground (213 39% 13%) at the
+   same alphas composites to only ~2.4–3.7:1 — failing WCAG AA and producing
+   the "most text unreadable / grey wash" the owner reported. These overrides
+   lift the readable buckets to a contrast-passing ink in LIGHT mode ONLY
+   (DARK is untouched — utilities resolve to their authored alpha there).
+   Decorative buckets /10–/30 (dividers, faint icons, disabled glyphs) are
+   deliberately left alone so the visual hierarchy survives. Verified on both
+   --background (220 23% 96%) and --card (218 21% 92%): /40→5.1:1, /45–/55→
+   ≥4.6:1, /35→~3.9:1 (large/secondary). Mirrors the .text-white/NN remap above. */
+.light .text-foreground\/35 { color: hsl(var(--foreground) / 0.58); }
+.light .text-foreground\/40 { color: hsl(var(--foreground) / 0.66); }
+.light .text-foreground\/45 { color: hsl(var(--foreground) / 0.66); }
+.light .text-foreground\/50 { color: hsl(var(--foreground) / 0.68); }
+.light .text-foreground\/55 { color: hsl(var(--foreground) / 0.70); }
+.light .hover\:text-foreground\/40:hover { color: hsl(var(--foreground) / 0.66); }
+.light .group:hover .group-hover\:text-foreground\/40 { color: hsl(var(--foreground) / 0.66); }
 
 .light .bg-white\/5 { background-color: rgba(20, 32, 47, 0.045); }
 .light .bg-white\/10 { background-color: rgba(20, 32, 47, 0.07); }
@@ -1268,13 +1289,18 @@ html[data-embed="mobile"] .install-prompt {
    IntersectionObserver adds .da-paused while the layer is offscreen.
    ========================================================================= */
 .da-layer {
-  z-index: -1;
-  -webkit-mask-image: linear-gradient(to right, transparent, black 30%);
-  mask-image: linear-gradient(to right, transparent, black 30%);
+  z-index: 0;
+  -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.32) 18%, black 36%);
+  mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.32) 18%, black 36%);
+  filter: saturate(1.15) contrast(1.05);
 }
 .da-layer.da-paused,
 .da-layer.da-paused * {
   animation-play-state: paused !important;
+}
+.da-layer ~ *:not(.da-raccoon) {
+  position: relative;
+  z-index: 2;
 }
 
 /* — Mood-driven raccoon character (parity with mobile DossierAmbient): a static
@@ -1300,12 +1326,12 @@ html[data-embed="mobile"] .install-prompt {
   fill: var(--da-wave-color);
   will-change: transform;
 }
-.da-wave-back  { height: 16px; opacity: 0.10; animation: da-wave-drift 26s linear infinite; }
-.da-wave-mid   { height: 12px; opacity: 0.12; animation: da-wave-drift 19s linear infinite reverse; }
-.da-wave-front { height: 8px;  opacity: 0.14; animation: da-wave-drift 14s linear infinite; }
-.da-layer[data-kind="flood"][data-intensity="2"] .da-wave-back  { animation-duration: 18s; opacity: 0.12; }
-.da-layer[data-kind="flood"][data-intensity="2"] .da-wave-mid   { animation-duration: 13s; opacity: 0.15; }
-.da-layer[data-kind="flood"][data-intensity="2"] .da-wave-front { animation-duration: 9.5s; opacity: 0.18; }
+.da-wave-back  { height: 16px; opacity: 0.18; animation: da-wave-drift 26s linear infinite; }
+.da-wave-mid   { height: 12px; opacity: 0.22; animation: da-wave-drift 19s linear infinite reverse; }
+.da-wave-front { height: 8px;  opacity: 0.26; animation: da-wave-drift 14s linear infinite; }
+.da-layer[data-kind="flood"][data-intensity="2"] .da-wave-back  { animation-duration: 18s; opacity: 0.22; }
+.da-layer[data-kind="flood"][data-intensity="2"] .da-wave-mid   { animation-duration: 13s; opacity: 0.27; }
+.da-layer[data-kind="flood"][data-intensity="2"] .da-wave-front { animation-duration: 9.5s; opacity: 0.32; }
 .da-layer[data-kind="flood"][data-intensity="0"] .da-flood-group {
   animation: da-flood-breathe 16s ease-in-out infinite;
 }
@@ -1331,7 +1357,7 @@ html[data-embed="mobile"] .install-prompt {
   bottom: 6px;
   height: 1px;
   background: var(--fg);
-  opacity: 0.10;
+  opacity: 0.16;
 }
 .da-kid-track {
   position: absolute;
@@ -1365,7 +1391,7 @@ html[data-embed="mobile"] .install-prompt {
   top: 6px;
   right: 10%;
   fill: var(--fg);
-  opacity: 0.06;
+  opacity: 0.11;
 }
 .da-bolt {
   position: absolute;
@@ -1417,7 +1443,7 @@ html[data-embed="mobile"] .install-prompt {
   height: 2px;
   border-radius: 9999px;
   background: linear-gradient(90deg, transparent, var(--fg), transparent);
-  opacity: 0.16;
+  opacity: 0.26;
   transform: rotate(-8deg);
 }
 @keyframes da-drift-x {
@@ -1430,14 +1456,14 @@ html[data-embed="mobile"] .install-prompt {
   position: absolute;
   border-radius: 9999px;
   background: var(--fg);
-  opacity: 0.16;
+  opacity: 0.24;
   animation: da-snow-fall 11s linear infinite;
 }
 @keyframes da-snow-fall {
   0%   { transform: translate3d(0, -46px, 0); opacity: 0; }
-  12%  { opacity: 0.16; }
+  12%  { opacity: 0.24; }
   40%  { transform: translate3d(4px, 8px, 0); }
-  70%  { transform: translate3d(-3px, 62px, 0); opacity: 0.16; }
+  70%  { transform: translate3d(-3px, 62px, 0); opacity: 0.24; }
   100% { transform: translate3d(2px, 116px, 0); opacity: 0; }
 }
 
@@ -1446,14 +1472,14 @@ html[data-embed="mobile"] .install-prompt {
   position: absolute;
   border-radius: 9999px;
   background: var(--foil-b);
-  opacity: 0.15;
+  opacity: 0.22;
   animation: da-bubble-rise 11s linear infinite;
 }
 @keyframes da-bubble-rise {
   0%   { transform: translate3d(0, 30px, 0); opacity: 0; }
-  15%  { opacity: 0.15; }
+  15%  { opacity: 0.22; }
   55%  { transform: translate3d(3px, -28px, 0); }
-  85%  { opacity: 0.13; }
+  85%  { opacity: 0.20; }
   100% { transform: translate3d(-2px, -86px, 0); opacity: 0; }
 }
 
@@ -1473,8 +1499,8 @@ html[data-embed="mobile"] .install-prompt {
 }
 @keyframes da-water-ripple {
   0%   { opacity: 0; transform: scaleX(0.68); }
-  18%  { opacity: 0.18; }
-  74%  { opacity: 0.10; }
+  18%  { opacity: 0.28; }
+  74%  { opacity: 0.18; }
   100% { opacity: 0; transform: scaleX(1.22); }
 }
 .da-water-drop {
@@ -1489,8 +1515,8 @@ html[data-embed="mobile"] .install-prompt {
 }
 @keyframes da-water-drop {
   0%   { transform: translateY(-8px); opacity: 0; }
-  20%  { opacity: 0.20; }
-  84%  { opacity: 0.18; }
+  20%  { opacity: 0.30; }
+  84%  { opacity: 0.27; }
   100% { transform: translateY(58px); opacity: 0; }
 }
 
@@ -1509,7 +1535,7 @@ html[data-embed="mobile"] .install-prompt {
   height: 2px;
   border-radius: 9999px;
   background: linear-gradient(90deg, transparent, var(--da-air-color), transparent);
-  opacity: 0.14;
+  opacity: 0.25;
 }
 .da-leaf-track {
   position: absolute;
@@ -1522,7 +1548,7 @@ html[data-embed="mobile"] .install-prompt {
 .da-leaf {
   display: block;
   fill: var(--sage);
-  opacity: 0.3;
+  opacity: 0.42;
   animation: da-leaf-tumble 2.6s ease-in-out infinite;
   transform-origin: center;
 }
@@ -1539,13 +1565,13 @@ html[data-embed="mobile"] .install-prompt {
   height: 46px;
   border-radius: 9999px;
   background: var(--danger);
-  opacity: 0.08;
+  opacity: 0.11;
   filter: blur(14px);
   animation: da-haze-pulse 9s ease-in-out infinite;
 }
 @keyframes da-haze-pulse {
-  0%, 100% { opacity: 0.06; }
-  50%      { opacity: 0.10; }
+  0%, 100% { opacity: 0.09; }
+  50%      { opacity: 0.16; }
 }
 
 /* — Neighborhood: skyline silhouette, honey windows lighting up one by one,
@@ -1564,16 +1590,16 @@ html[data-embed="mobile"] .install-prompt {
 }
 .da-housing-homes path {
   fill: var(--fg);
-  opacity: 0.055;
+  opacity: 0.10;
 }
 .da-housing-homes rect {
   fill: var(--da-market-color);
-  opacity: 0.18;
+  opacity: 0.28;
 }
 .da-housing-homes line {
   stroke: var(--fg);
   stroke-width: 1;
-  opacity: 0.08;
+  opacity: 0.14;
 }
 .da-housing-bar {
   position: absolute;
@@ -1581,11 +1607,11 @@ html[data-embed="mobile"] .install-prompt {
   width: 10px;
   border-radius: 9999px;
   background: var(--da-market-color);
-  opacity: 0.14;
+  opacity: 0.23;
   animation: da-housing-bar 3.2s ease-in-out infinite;
 }
-.da-layer[data-kind="housing"][data-intensity="1"] .da-housing-bar { opacity: 0.17; }
-.da-layer[data-kind="housing"][data-intensity="2"] .da-housing-bar { opacity: 0.20; }
+.da-layer[data-kind="housing"][data-intensity="1"] .da-housing-bar { opacity: 0.28; }
+.da-layer[data-kind="housing"][data-intensity="2"] .da-housing-bar { opacity: 0.34; }
 @keyframes da-housing-bar {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-4px); }
@@ -1604,22 +1630,22 @@ html[data-embed="mobile"] .install-prompt {
   stroke: var(--da-ev-color);
   stroke-width: 1.2;
   fill: none;
-  opacity: 0.16;
+  opacity: 0.26;
   stroke-dasharray: 3 5;
 }
-.da-layer[data-kind="evCharging"][data-intensity="0"] .da-ev-path path { opacity: 0.08; }
+.da-layer[data-kind="evCharging"][data-intensity="0"] .da-ev-path path { opacity: 0.14; }
 .da-ev-node {
   position: absolute;
   width: 7px;
   height: 7px;
   border-radius: 9999px;
   background: var(--da-ev-color);
-  opacity: 0.18;
+  opacity: 0.28;
   animation: da-ev-node 2.6s ease-in-out infinite;
 }
 @keyframes da-ev-node {
-  0%, 100% { opacity: 0.18; transform: scale(0.88); }
-  20%      { opacity: 0.42; transform: scale(1.18); }
+  0%, 100% { opacity: 0.28; transform: scale(0.88); }
+  20%      { opacity: 0.55; transform: scale(1.18); }
 }
 .da-ev-bolt {
   position: absolute;
@@ -1630,13 +1656,13 @@ html[data-embed="mobile"] .install-prompt {
   stroke-linejoin: round;
   stroke-linecap: round;
   fill: none;
-  opacity: 0.22;
+  opacity: 0.34;
   animation: da-ev-charge 1.1s ease-in-out infinite alternate;
 }
-.da-layer[data-kind="evCharging"][data-intensity="0"] .da-ev-bolt { opacity: 0.12; }
+.da-layer[data-kind="evCharging"][data-intensity="0"] .da-ev-bolt { opacity: 0.20; }
 @keyframes da-ev-charge {
-  from { opacity: 0.22; transform: scale(0.96); }
-  to   { opacity: 0.52; transform: scale(1.05); }
+  from { opacity: 0.34; transform: scale(0.96); }
+  to   { opacity: 0.62; transform: scale(1.05); }
 }
 
 .da-layer[data-kind="neighborhood"][data-intensity="0"] { --da-cadence: 2.2s; }
@@ -1648,7 +1674,7 @@ html[data-embed="mobile"] .install-prompt {
   width: 100%;
   height: 36px;
 }
-.da-skyline .da-bld { fill: var(--fg); opacity: 0.06; }
+.da-skyline .da-bld { fill: var(--fg); opacity: 0.11; }
 .da-window {
   fill: var(--foil-b);
   opacity: 0;
@@ -1667,7 +1693,7 @@ html[data-embed="mobile"] .install-prompt {
   right: 4%;
   bottom: 4px;
   border-top: 1px dotted var(--fg);
-  opacity: 0.12;
+  opacity: 0.20;
 }
 .da-step {
   position: absolute;
@@ -1676,7 +1702,7 @@ html[data-embed="mobile"] .install-prompt {
   height: 3px;
   border-radius: 9999px;
   background: var(--fg);
-  opacity: 0.35;
+  opacity: 0.45;
   animation: da-step-pulse calc(var(--da-cadence, 1.2s) * 3.2) linear infinite;
 }
 @keyframes da-step-pulse {
@@ -1693,7 +1719,7 @@ html[data-embed="mobile"] .install-prompt {
   top: 6px;
   right: 8%;
   fill: var(--foil-b);
-  opacity: 0.16;
+  opacity: 0.25;
   animation: da-sun-spin 60s linear infinite;
 }
 .da-sun-rays {
@@ -1712,7 +1738,7 @@ html[data-embed="mobile"] .install-prompt {
 }
 
 /* — Weather / cloud: two puffs drifting gently, offset loops. — */
-.da-wcloud { position: absolute; fill: var(--fg); opacity: 0.07; }
+.da-wcloud { position: absolute; fill: var(--fg); opacity: 0.12; }
 .da-wcloud-a {
   top: 10px;
   right: 24%;
@@ -1721,7 +1747,7 @@ html[data-embed="mobile"] .install-prompt {
 .da-wcloud-b {
   top: 32px;
   right: 8%;
-  opacity: 0.05;
+  opacity: 0.09;
   animation: da-cloud-drift-b 40s ease-in-out infinite;
 }
 @keyframes da-cloud-drift-a {
@@ -1740,26 +1766,26 @@ html[data-embed="mobile"] .install-prompt {
   height: 6px;
   border-radius: 9999px;
   background: var(--rose);
-  opacity: 0.22;
+  opacity: 0.30;
   animation: da-rain-fall 1.4s linear infinite;
 }
 @keyframes da-rain-fall {
   0%   { transform: translate3d(0, -14px, 0) rotate(8deg); opacity: 0; }
-  18%  { opacity: 0.22; }
-  82%  { opacity: 0.22; }
+  18%  { opacity: 0.30; }
+  82%  { opacity: 0.30; }
   100% { transform: translate3d(-5px, 64px, 0) rotate(8deg); opacity: 0; }
 }
 
 .da-fog-cloud-a {
   top: 12px;
   right: 24%;
-  opacity: 0.055;
+  opacity: 0.10;
   animation: da-cloud-drift-a 24s ease-in-out infinite;
 }
 .da-fog-cloud-b {
   top: 32px;
   right: 7%;
-  opacity: 0.045;
+  opacity: 0.08;
   animation: da-cloud-drift-b 32s ease-in-out infinite;
 }
 .da-fog-line {
@@ -1776,12 +1802,12 @@ html[data-embed="mobile"] .install-prompt {
   width: 2px;
   border-radius: 9999px;
   background: var(--foil-b);
-  opacity: 0.1;
+  opacity: 0.17;
   animation: da-heat-shimmer 1.7s ease-in-out infinite alternate;
 }
 @keyframes da-heat-shimmer {
-  from { opacity: 0.08; transform: translateY(2px) skewX(-6deg); }
-  to   { opacity: 0.18; transform: translateY(-2px) skewX(6deg); }
+  from { opacity: 0.14; transform: translateY(2px) skewX(-6deg); }
+  to   { opacity: 0.28; transform: translateY(-2px) skewX(6deg); }
 }
 
 /* Reduced motion: every dossier-ambient animation off. Static fallbacks keep

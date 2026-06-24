@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
 
 # Least-privilege default. Individual jobs that need write scopes
 # (e.g. uploading release artifacts, commenting on PRs) should opt in
@@ -44,6 +44,15 @@ jobs:
 
       - name: TypeScript (mobile)
         run: pnpm --filter @locateflow/mobile lint
+
+      - name: TypeScript (db)
+        run: pnpm --filter @locateflow/db exec tsc --noEmit
+
+      - name: TypeScript (shared)
+        run: pnpm --filter @locateflow/shared exec tsc --noEmit
+
+      - name: TypeScript (connectors)
+        run: pnpm --filter @locateflow/connectors exec tsc --noEmit
 
       - name: Prisma validate
         run: pnpm --filter @locateflow/db exec prisma validate
@@ -113,6 +122,12 @@ jobs:
 
       - name: Run tests (mobile)
         run: pnpm --filter @locateflow/mobile test
+
+      - name: Run tests (shared)
+        run: pnpm --filter @locateflow/shared test
+
+      - name: Run tests (connectors)
+        run: pnpm --filter @locateflow/connectors test
 
   migrate:
     name: Prisma Migrate (status only)

@@ -5,6 +5,7 @@ import {
   type WorkspaceRole,
 } from "@locateflow/shared";
 import { ApiGateError } from "@/lib/api-gates";
+import { prisma } from "@/lib/db";
 import type { PlanLimitScope } from "@/lib/plan-limits";
 import {
   isWorkspaceModelEnabled,
@@ -42,6 +43,19 @@ async function safeWorkspaceModelEnabled(): Promise<boolean> {
 
 export async function resolveWorkspaceDataScope(request: Request, userId: string): Promise<WorkspaceDataScope> {
   if (!(await safeWorkspaceModelEnabled())) return legacyDataScope(userId);
+
+  // Users created BEFORE workspace mode was turned on have NO WorkspaceMember row
+  // (ensureWorkspaceDefaults only provisions one at registration). Flipping
+  // WORKSPACE_MODEL_ENABLED on must NOT 403 those users out of their OWN data:
+  // when the user belongs to no workspace at all, fall back to legacy (self)
+  // scope so they keep full access to their own records (and POST /api/workspaces
+  // later migrates those rows into a workspace they create). Users who DO have a
+  // membership (any status) still resolve the full workspace context below, so
+  // genuine cross-workspace access and suspended members are handled there.
+  const hasAnyMembership = await prisma.workspaceMember
+    .findFirst({ where: { userId }, select: { id: true } })
+    .catch(() => null);
+  if (!hasAnyMembership) return legacyDataScope(userId);
 
   try {
     const context = await requireWorkspaceContext(request);

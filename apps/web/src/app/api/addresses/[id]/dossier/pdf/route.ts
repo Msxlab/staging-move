@@ -84,7 +84,15 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
   } catch (error) {
     const gateResponse = apiGateErrorResponse(error);
     if (gateResponse) return gateResponse;
-    console.error("Failed to build dossier PDF:", error);
+    // Log the real error (code/message/stack) so runtime-only failures are
+    // diagnosable in prod — e.g. the standalone-build pdfkit font ENOENT that
+    // caused dossier-pdf-500 was invisible behind the generic message before.
+    const err = error as { code?: string; message?: string; stack?: string };
+    console.error("Failed to build dossier PDF:", {
+      code: err?.code,
+      message: err?.message,
+      stack: err?.stack,
+    });
     return NextResponse.json({ error: "Failed to build dossier PDF" }, { status: 500 });
   }
 }

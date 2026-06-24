@@ -1,8 +1,21 @@
 # Next Agent Tasks
 
-Updated: 2026-06-23
+Updated: 2026-06-24
 
 ## Current Staging Thread Note
+
+Use [[handoffs/2026-06-24-staging-regression-audit-fixes]] as the latest source-fix
+handoff for the 2026-06-24 staging regression batch. Branch:
+`codex/staging-regression-audit-fixes`.
+
+Immediate follow-up from the 2026-06-24 regression fixes:
+
+1. Deploy `codex/staging-regression-audit-fixes` to staging and verify `/api/build-info` reports that commit.
+2. Re-test authenticated dashboard console noise: `/api/profile`, `/api/addresses`, `/api/services`, `/api/moving`, `/api/budget`, and `/api/providers/recommendations` should no longer mass-403 for a read-only/stale workspace context.
+3. Re-test `/api/onboarding/briefing`; it should fail soft instead of surfacing an HTTP 500 if workspace/entitlement scope is unavailable.
+4. Re-test Dossier PDF export from a production-like standalone build; the build prep now explicitly copies pdfkit standard font data.
+5. Re-test `/settings/workspace`; consumer-free users should see create/invite UI when `WORKSPACE_MODEL_ENABLED` is on, not "coming soon."
+6. Re-test the household invite modal focus/autofill behavior and the Home Dossier ambient animations against the latest supplied theme reference.
 
 Use [[handoffs/2026-06-23-full-qa-audit]] as the active staging QA memory, with
 [[handoffs/2026-06-22-theme-source-integration-pass]] as the theme/runtime

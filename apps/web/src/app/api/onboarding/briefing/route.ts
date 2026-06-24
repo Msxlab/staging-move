@@ -4,6 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { checkGlobalBudget } from "@/lib/global-spend-guard";
+import { ApiGateError } from "@/lib/api-gates";
 import { scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { CANCELED_MOVING_PLAN_STATUSES, CONSUMER_FREE_FLAG, planFeatures } from "@locateflow/shared";
@@ -161,10 +162,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ configured: false });
   }
 
-  const [{ scope, plan: userPlan }, consumerFree] = await Promise.all([
-    getRequestEntitlement(request, userId),
-    isFeatureEnabled(CONSUMER_FREE_FLAG, { userId }),
-  ]);
+  let entitlement: Awaited<ReturnType<typeof getRequestEntitlement>>;
+  let consumerFree: boolean;
+  try {
+    [entitlement, consumerFree] = await Promise.all([
+      getRequestEntitlement(request, userId),
+      isFeatureEnabled(CONSUMER_FREE_FLAG, { userId }),
+    ]);
+  } catch (error) {
+    // The briefing is an assistive dashboard card. If workspace/scope
+    // entitlement resolution is temporarily unavailable or gated, hide the card
+    // instead of bubbling a production Server Components 500 into the dashboard.
+    if (!(error instanceof ApiGateError)) {
+      console.error("Failed to resolve onboarding briefing entitlement:", error);
+    }
+    recordIntegrationOutcome("briefing", "gated");
+    return NextResponse.json({ configured: false });
+  }
+  const { scope, plan: userPlan } = entitlement;
 
   // Paid-plan gate (owner decision): the AI briefing is Family and Pro.
   // FREE/FREE_TRIAL get a value-first upgrade teaser instead. HTTP 200 — never
