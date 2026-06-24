@@ -101,7 +101,7 @@ export function AppShell({
   if (embedShell) return embedShell;
 
   return (
-    <div className={`flex min-h-screen relative ${planClass}`} style={{ background: "var(--bg)" }}>
+    <div className={`lf-app-shell flex min-h-screen relative ${planClass}`} style={{ background: "var(--lf-app-bg, var(--bg))" }}>
       <div className="app-shell-backdrop fixed inset-0 pointer-events-none z-0" aria-hidden="true" />
       <a
         href="#main-content"

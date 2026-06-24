@@ -180,11 +180,11 @@ function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVa
   return {
     "--ds-tone": tone,
     "--ds-glow": `color-mix(in srgb, ${tone} 22%, transparent)`,
-    "--rc-head": "color-mix(in srgb, var(--fg) 38%, transparent)",
-    "--rc-mask": "color-mix(in srgb, var(--fg) 68%, transparent)",
-    "--rc-ear": "color-mix(in srgb, var(--fg) 46%, transparent)",
+    "--rc-head": "#8C9AB2",
+    "--rc-mask": "#0C1525",
+    "--rc-ear": "#C4A090",
     "--rc-eye": "var(--foil-b)",
-    "--rc-pupil": "color-mix(in srgb, var(--fg) 86%, black 14%)",
+    "--rc-pupil": "#04080F",
   };
 }
 

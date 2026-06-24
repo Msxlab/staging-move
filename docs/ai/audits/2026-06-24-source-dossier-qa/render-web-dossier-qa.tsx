@@ -30,7 +30,7 @@ const rows: Array<AmbientSpec & { label: string; note: string }> = [
 const body = rows
   .map((row) =>
     renderToStaticMarkup(
-      <div className="qa-row">
+      <div className="qa-row lf-dossier-row lf-dossier-scene-card">
         <DossierAmbient kind={row.kind} intensity={row.intensity} variant={row.variant} />
         <div className="qa-copy">
           <strong>{row.label}</strong>
@@ -45,11 +45,13 @@ const html = `<!doctype html><html class="light"><head><meta charset="utf-8"><st
 :root,.light{--bg:#EFEADF;--surface:#FFFFFF;--surface-2:#F5F0E7;--surface-3:#ECE6DA;--fg:#14202F;--fg-2:rgba(20,32,47,.72);--foil-b:#CBA45E;--info:#16666B;--sage:#0F6B50;--danger:#A83333;--rose:#2E5FB0;--primary:217.38 58.56% 43.53%;font-family:'DM Sans',Arial,sans-serif;color:var(--fg);}
 body{margin:0;min-height:100vh;background:linear-gradient(180deg,#FAF8F2 0%,#F4EFE5 58%,#ECE6DA 100%);padding:28px;}
 .qa-board{width:980px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.qa-row{position:relative;isolation:isolate;height:84px;overflow:hidden;border:1px solid rgba(20,32,47,.11);border-radius:18px;background:color-mix(in srgb,#FFFFFF 70%,var(--surface-2) 30%);box-shadow:inset 0 1px 0 rgba(255,255,255,.86);}
-.qa-copy{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:center;padding:0 18px;gap:4px;max-width:44%;}
+.qa-row{position:relative;isolation:isolate;min-height:188px;overflow:hidden;border:1px solid rgba(20,32,47,.11);border-radius:18px;background:#fff;box-shadow:0 16px 38px rgba(20,32,47,.07),inset 0 1px 0 rgba(255,255,255,.9);padding:102px 14px 14px;}
+.qa-copy{position:relative;z-index:2;display:flex;flex-direction:column;gap:4px;}
 .qa-copy strong{font-size:13px;line-height:1.1}.qa-copy span{font-size:11px;color:var(--fg-2)}
-.da-layer{position:absolute;z-index:0;inset-block:0;right:0;width:72%;overflow:hidden;border-radius:0 18px 18px 0;-webkit-mask-image:linear-gradient(to right,transparent,rgba(0,0,0,.62) 8%,black 20%);mask-image:linear-gradient(to right,transparent,rgba(0,0,0,.62) 8%,black 20%);opacity:.94;filter:saturate(1.24) contrast(1.06);}
-.da-layer::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 76% 84% at 74% 58%,rgba(46,95,176,.075),transparent 68%),linear-gradient(90deg,transparent,rgba(255,255,255,.18));opacity:.34;}
+.lf-dossier-scene-card{--lf-dossier-stage-h:92px;}
+.lf-dossier-scene-card>.da-layer{position:absolute;z-index:0;inset:0 0 auto 0;width:100%;height:var(--lf-dossier-stage-h);overflow:hidden;border-radius:18px 18px 0 0;border-bottom:1px solid rgba(16,29,45,.13);background:radial-gradient(ellipse 70% 92% at 72% 86%,rgba(203,164,94,.12),transparent 68%),linear-gradient(180deg,#101B30,#0A1322);-webkit-mask-image:none;mask-image:none;opacity:1;filter:saturate(1.16) contrast(1.04);}
+.lf-dossier-scene-card>.da-layer::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 82% at 74% 62%,rgba(255,255,255,.08),transparent 68%),linear-gradient(180deg,rgba(255,255,255,.06),transparent 48%);opacity:.38;}
+.lf-dossier-scene-card>.da-layer .ds-root{min-height:0;}
 ${sceneCss}
 </style></head><body><main class="qa-board">${body}</main></body></html>`;
 

@@ -320,14 +320,18 @@
   opacity: 0.85;
 }
 
+.light {
+  --lf-app-bg: #F8F5EF;
+}
+
 .light .app-shell-backdrop {
   background:
-    repeating-linear-gradient(90deg, rgba(20, 32, 47, 0.006) 0 1px, transparent 1px 72px),
-    repeating-linear-gradient(0deg, rgba(20, 32, 47, 0.004) 0 1px, transparent 1px 72px),
-    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.62) 0%, transparent 30%),
-    radial-gradient(circle at 82% 12%, rgba(245, 240, 231, 0.28) 0%, transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.36) 0%, rgba(245, 240, 231, 0.20) 58%, rgba(231, 225, 212, 0.14) 100%);
-  opacity: 0.34;
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.72) 0%, transparent 28%),
+    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.045) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 58%, transparent 100%),
+    repeating-linear-gradient(90deg, rgba(46, 95, 176, 0.012) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(0deg, rgba(46, 95, 176, 0.008) 0 1px, transparent 1px 80px);
+  opacity: 0.42;
 }
 
 /* =========================================================================
@@ -390,11 +394,32 @@
 .light .bg-white\/\[0\.05\] { background-color: rgba(20, 32, 47, 0.055); }
 .light .bg-white\/\[0\.07\] { background-color: rgba(20, 32, 47, 0.07); }
 
+.light .bg-foreground\/5,
+.light .bg-foreground\/\[0\.05\] {
+  background-color: rgba(255, 255, 255, 0.78);
+}
+.light .bg-foreground\/\[0\.02\],
+.light .bg-foreground\/\[0\.03\],
+.light .bg-foreground\/\[0\.04\] {
+  background-color: rgba(255, 255, 255, 0.62);
+}
+.light .bg-foreground\/\[0\.06\],
+.light .bg-foreground\/\[0\.08\] {
+  background-color: rgba(255, 255, 255, 0.86);
+}
+
 .light .hover\:bg-white\/5:hover { background-color: rgba(20, 32, 47, 0.06); }
 .light .hover\:bg-white\/10:hover { background-color: rgba(20, 32, 47, 0.085); }
 .light .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(20, 32, 47, 0.045); }
 .light .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(20, 32, 47, 0.06); }
 .light .hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(20, 32, 47, 0.08); }
+
+.light .hover\:bg-foreground\/5:hover,
+.light .hover\:bg-foreground\/\[0\.05\]:hover,
+.light .hover\:bg-foreground\/\[0\.06\]:hover,
+.light .hover\:bg-foreground\/\[0\.08\]:hover {
+  background-color: rgba(255, 255, 255, 0.92);
+}
 
 .light .group:hover .group-hover\:bg-orange-500 { background-color: var(--rose); }
 
@@ -1281,10 +1306,10 @@ html[data-embed="mobile"] .install-prompt {
    Dashboard map + dossier theme hooks
    ========================================================================= */
 .lf-route-map-label {
-  border: 1px solid color-mix(in srgb, var(--fg) 13%, transparent);
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  color: var(--fg-2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 15, 28, 0.82);
+  color: rgba(239, 243, 250, 0.92);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.24);
 }
 .lf-route-map-label[data-endpoint="from"] {
@@ -1292,24 +1317,35 @@ html[data-embed="mobile"] .install-prompt {
 }
 .lf-route-map-label[data-endpoint="to"] {
   border-color: color-mix(in srgb, hsl(var(--primary)) 32%, transparent);
-  color: color-mix(in srgb, hsl(var(--primary)) 72%, var(--fg));
+  color: color-mix(in srgb, hsl(var(--primary)) 22%, rgba(239, 243, 250, 0.92) 78%);
 }
 .light .lf-route-map-label {
-  background: rgba(245, 240, 231, 0.90);
-  border-color: rgba(16, 29, 45, 0.16);
-  color: rgba(16, 29, 45, 0.78);
-  box-shadow: 0 6px 18px rgba(20, 32, 47, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(16, 29, 45, 0.12);
+  color: rgba(16, 29, 45, 0.82);
+  box-shadow: 0 6px 18px rgba(20, 32, 47, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.88);
   text-shadow: none;
 }
 .light .lf-route-map-label[data-endpoint="from"] {
-  background: color-mix(in srgb, var(--sage) 10%, rgba(245, 240, 231, 0.90) 90%);
-  border-color: color-mix(in srgb, var(--sage) 28%, rgba(16, 29, 45, 0.12));
+  background: color-mix(in srgb, var(--sage) 7%, rgba(255, 255, 255, 0.94) 93%);
+  border-color: color-mix(in srgb, var(--sage) 24%, rgba(16, 29, 45, 0.10));
   color: color-mix(in srgb, var(--sage) 60%, #101D2D 40%);
 }
 .light .lf-route-map-label[data-endpoint="to"] {
-  background: color-mix(in srgb, hsl(var(--primary)) 8%, rgba(245, 240, 231, 0.90) 92%);
-  border-color: color-mix(in srgb, hsl(var(--primary)) 30%, rgba(16, 29, 45, 0.12));
+  background: color-mix(in srgb, hsl(var(--primary)) 6%, rgba(255, 255, 255, 0.94) 94%);
+  border-color: color-mix(in srgb, hsl(var(--primary)) 24%, rgba(16, 29, 45, 0.10));
   color: color-mix(in srgb, hsl(var(--primary)) 58%, #101D2D 42%);
+}
+
+.lf-dossier-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.625rem;
+}
+@media (min-width: 900px) {
+  .lf-dossier-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .lf-dossier-shell {
@@ -1323,19 +1359,72 @@ html[data-embed="mobile"] .install-prompt {
 .lf-dossier-stat {
   background: color-mix(in srgb, var(--surface) 42%, transparent);
 }
+.lf-dossier-scene-card {
+  --lf-dossier-stage-h: clamp(76px, 10vw, 92px);
+  min-height: calc(var(--lf-dossier-stage-h) + 112px);
+  padding: calc(var(--lf-dossier-stage-h) + 0.75rem) 0.75rem 0.75rem !important;
+  overflow: hidden;
+}
+.lf-dossier-scene-card > .da-layer {
+  inset: 0 0 auto 0 !important;
+  width: 100% !important;
+  height: var(--lf-dossier-stage-h) !important;
+  border-radius: inherit !important;
+  border-bottom-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  background:
+    radial-gradient(ellipse 68% 90% at 70% 86%, color-mix(in srgb, var(--foil-b) 16%, transparent), transparent 66%),
+    linear-gradient(180deg, #101B30, #0A1322);
+  -webkit-mask-image: none;
+  mask-image: none;
+  opacity: 1;
+  filter: saturate(1.18) contrast(1.04);
+}
+.lf-dossier-scene-card > .da-layer::before {
+  background:
+    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
+  opacity: 0.38;
+}
+.lf-dossier-scene-card > .da-layer .ds-root {
+  min-height: 0;
+}
+.lf-dossier-scene-card > .da-layer ~ * {
+  position: relative;
+  z-index: 2;
+}
 .light .lf-dossier-shell {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.80), rgba(255, 255, 255, 0.56)),
-    color-mix(in srgb, #FFFFFF 72%, var(--surface-2) 28%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88)),
+    #FFFFFF;
   border-color: rgba(20, 32, 47, 0.11);
-  box-shadow: 0 14px 38px rgba(20, 32, 47, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16px 38px rgba(20, 32, 47, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 .light .lf-dossier-row {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.62)),
-    color-mix(in srgb, #FFFFFF 70%, var(--surface-2) 30%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86)),
+    #FFFFFF;
   border-color: rgba(20, 32, 47, 0.10);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+.light .lf-dossier-scene-card > .da-layer {
+  border-color: rgba(16, 29, 45, 0.13);
+  background:
+    radial-gradient(ellipse 70% 92% at 72% 86%, rgba(203, 164, 94, 0.12), transparent 68%),
+    linear-gradient(180deg, #101B30, #0A1322);
+  filter: saturate(1.16) contrast(1.04);
+}
+.light .lf-dossier-scene-card > .da-layer::before {
+  background:
+    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
+  opacity: 0.38;
+}
+.light .lf-dossier-scene-card > .da-layer .ds-ground,
+.light .lf-dossier-scene-card > .da-layer .ds-ground-warn,
+.light .lf-dossier-scene-card > .da-layer .ds-ground-dark {
+  opacity: 0.86;
 }
 .light .lf-dossier-stat {
   background: color-mix(in srgb, #FFFFFF 78%, var(--surface-2) 22%);
