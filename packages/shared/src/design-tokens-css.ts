@@ -484,7 +484,7 @@ const webShadcnLight: CssBlock = {
     v("background", "41.25 33.33% 90.59%"),
     v("foreground", "213 39% 13%"),
     blank,
-    v("card", "38.57 41.18% 93.33%"),
+    v("card", "0 0% 100%"),
     v("card-foreground", "213 39% 13%"),
     blank,
     v("popover", "0 0% 100%"),

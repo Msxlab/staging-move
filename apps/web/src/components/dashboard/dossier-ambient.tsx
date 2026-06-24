@@ -973,7 +973,7 @@ export function DossierAmbient({
         // is untouched. (Follow-up if the right-edge overlap is ever distracting:
         // give the row's text content `relative z-[2]` so it paints above this.)
         style={{ zIndex: 0 }}
-        className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[64%] overflow-hidden rounded-r-xl"
+        className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden rounded-r-xl"
       >
         <AmbientScene kind={kind} intensity={level} variant={variant} />
       </div>
