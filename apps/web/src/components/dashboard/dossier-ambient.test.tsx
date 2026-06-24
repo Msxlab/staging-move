@@ -214,6 +214,18 @@ describe("DossierAmbient rendering", () => {
     expect(markup).toContain("da-wave-front");
   });
 
+  it("renders the handoff-style story character with contextual poses", () => {
+    const air = renderToStaticMarkup(<DossierAmbient kind="air" intensity={2} />);
+    expect(air).toContain("da-story");
+    expect(air).toContain('data-story="air-bad"');
+    expect(air).toContain("da-story-mask");
+    expect(air).toContain("da-story-sweat");
+
+    const storm = renderToStaticMarkup(<DossierAmbient kind="weather" intensity={2} variant="storm" />);
+    expect(storm).toContain('data-story="storm"');
+    expect(storm).toContain("da-story-sign");
+  });
+
   it("renders the hazard scene by variant", () => {
     expect(
       renderToStaticMarkup(<DossierAmbient kind="hazard" intensity={2} variant="lightning" />),

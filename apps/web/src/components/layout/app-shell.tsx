@@ -89,7 +89,7 @@ export function AppShell({
   const embedShell = useMemo(() => {
     if (!embedMode) return null;
     return (
-      <div className="min-h-screen" style={{ background: "var(--surface)" }}>
+      <div className="min-h-screen" style={{ background: "var(--bg)" }}>
         <ImpersonationBanner />
         <main id="main-content" tabIndex={-1} className="p-4 focus:outline-none">
           <div className="mx-auto w-full max-w-screen-md">{children}</div>
@@ -101,7 +101,7 @@ export function AppShell({
   if (embedShell) return embedShell;
 
   return (
-    <div className={`flex min-h-screen relative ${planClass}`} style={{ background: "var(--surface)" }}>
+    <div className={`flex min-h-screen relative ${planClass}`} style={{ background: "var(--bg)" }}>
       <div className="app-shell-backdrop fixed inset-0 pointer-events-none z-0" aria-hidden="true" />
       <a
         href="#main-content"

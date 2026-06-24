@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
-import { DossierRaccoon, dossierRaccoonFor } from "./dossier-raccoon";
+import { DossierRaccoon, dossierRaccoonFor, type DossierRaccoonMood } from "./dossier-raccoon";
 
 /**
  * DOSSIER AMBIENT — Aurora decorative scene layer for the home-dossier rows.
@@ -844,6 +844,85 @@ function AmbientScene({ kind, intensity, variant }: AmbientSpec) {
 
 // ── Layer component ───────────────────────────────────────────────────────────
 
+function storyPose(kind: AmbientKind, intensity: AmbientIntensity, variant?: AmbientVariant): string {
+  if (kind === "weather") {
+    if (variant === "storm" || variant === "lightning") return "storm";
+    if (variant === "snow" || variant === "winter" || variant === "cold") return "cold";
+    if (variant === "fog" || variant === "wind" || variant === "heat" || variant === "rain" || variant === "cloud") {
+      return variant;
+    }
+    return "sun";
+  }
+  if (kind === "hazard") {
+    if (variant === "lightning") return "storm";
+    if (variant === "winter") return "cold";
+    return "wind";
+  }
+  if (kind === "air") return intensity === 2 ? "air-bad" : intensity === 1 ? "air-mid" : "air-good";
+  if (kind === "water") return intensity === 2 ? "water-bad" : intensity === 1 ? "water-mid" : "water-good";
+  if (kind === "flood") return intensity === 2 ? "flood-bad" : intensity === 1 ? "flood-mid" : "flood-good";
+  if (kind === "housing") return intensity === 2 ? "cost-bad" : "housing";
+  if (kind === "school") return "wave";
+  if (kind === "evCharging") return "spark";
+  if (kind === "neighborhood") return intensity >= 1 ? "walk" : "calm";
+  if (kind === "radon") return intensity >= 2 ? "alert" : "calm";
+  return "calm";
+}
+
+function DossierStoryCharacter({
+  kind,
+  intensity,
+  variant,
+  mood,
+}: {
+  kind: AmbientKind;
+  intensity: AmbientIntensity;
+  variant?: AmbientVariant;
+  mood: DossierRaccoonMood;
+}) {
+  const pose = storyPose(kind, intensity, variant);
+  const showMask = pose === "air-mid" || pose === "air-bad";
+  const showScarf = pose === "cold";
+  const showShades = pose === "fog";
+  const showGlass = pose === "water-good" || pose === "water-mid";
+  const showSweat = pose === "air-bad" || pose === "heat" || pose === "cost-bad";
+  const showPuff = pose === "cold" || pose === "air-bad";
+  const showSpark = pose === "spark" || pose === "water-good";
+  const showSign = pose === "storm" || pose === "cost-bad" || pose === "flood-bad" || pose === "alert";
+
+  return (
+    <div className="da-story" data-story={pose}>
+      <div className="da-story-head">
+        <DossierRaccoon mood={mood} size={30} />
+        {showMask && <span className="da-story-mask" />}
+        {showScarf && <span className="da-story-scarf" />}
+        {showShades && (
+          <span className="da-story-shades">
+            <span />
+            <span />
+          </span>
+        )}
+        {showPuff && <span className="da-story-puff" />}
+      </div>
+      <div className="da-story-body">
+        <span className="da-story-belly" />
+        <span className="da-story-foot da-story-foot-left" />
+        <span className="da-story-foot da-story-foot-right" />
+      </div>
+      <span className="da-story-arm da-story-arm-left" />
+      <span className="da-story-arm da-story-arm-right" />
+      {showGlass && (
+        <span className="da-story-glass">
+          <span />
+        </span>
+      )}
+      {showSweat && <span className="da-story-sweat" />}
+      {showSpark && <span className="da-story-spark" />}
+      {showSign && <span className="da-story-sign" />}
+    </div>
+  );
+}
+
 function clampIntensity(value: number): AmbientIntensity {
   const n = Math.round(value);
   return n <= 0 ? 0 : n >= 2 ? 2 : 1;
@@ -904,7 +983,7 @@ export function DossierAmbient({
         // z-0) in the bottom-right corner the row carries no text.
         className="da-raccoon pointer-events-none absolute bottom-0 right-2 z-[1] flex items-end"
       >
-        <DossierRaccoon mood={mood} size={44} />
+        <DossierStoryCharacter kind={kind} intensity={level} variant={variant} mood={mood} />
       </div>
     </>
   );
