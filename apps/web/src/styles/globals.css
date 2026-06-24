@@ -79,7 +79,7 @@
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             41.25 33.33% 90.59%;
+    --background:             220 23% 97%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -94,10 +94,10 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  41.05 28.36% 86.86%;
+    --muted:                  216 25% 94%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 40 32.14% 89.02%;
+    --accent:                 40 24% 94%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
@@ -107,8 +107,8 @@
     --success:                162 75% 24%;
     --info:                   184 66% 25%;
 
-    --border:                 40 17% 76%;
-    --input:                  40 17% 76%;
+    --border:                 216 20% 82%;
+    --input:                  216 20% 82%;
     --ring:                   217.38 58.56% 43.53%;
 
     --radius:                 0.625rem;
