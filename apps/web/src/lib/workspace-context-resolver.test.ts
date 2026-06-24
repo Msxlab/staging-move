@@ -98,4 +98,24 @@ describe("requireWorkspaceContext", () => {
       orderBy: { joinedAt: "asc" },
     });
   });
+
+  it("resolves SUSPENDED members so read-only routes can still use the permission matrix", async () => {
+    mocks.workspaceMemberFindFirst.mockResolvedValueOnce({
+      workspaceId: "ws_readonly",
+      role: "MEMBER",
+      status: "SUSPENDED",
+    });
+    mocks.workspaceFindUnique.mockResolvedValue({
+      id: "ws_readonly",
+      ownerUserId: "owner_1",
+      name: "Read-only workspace",
+    });
+
+    await expect(requireWorkspaceContext(request())).resolves.toMatchObject({
+      workspaceId: "ws_readonly",
+      memberRole: "MEMBER",
+      memberStatus: "SUSPENDED",
+      canInitiateSync: false,
+    });
+  });
 });

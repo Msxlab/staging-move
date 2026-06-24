@@ -23,7 +23,15 @@ export async function refreshPartnerConsentById(id: string) {
   if (!tokens?.accessToken) {
     await prisma.partnerConsent.update({
       where: { id: consent.id },
-      data: { status: "EXPIRED", activeGrantKey: null, revocationReason: "AUTO_EXPIRED", revokedAt: new Date() },
+      data: {
+        status: "EXPIRED",
+        tokenEncrypted: null,
+        refreshTokenEncrypted: null,
+        tokenExpiresAt: null,
+        activeGrantKey: null,
+        revocationReason: "AUTO_EXPIRED",
+        revokedAt: new Date(),
+      },
     });
     return NextResponse.json({ refreshed: false }, { status: 502 });
   }

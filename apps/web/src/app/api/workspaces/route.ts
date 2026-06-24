@@ -101,7 +101,10 @@ export async function GET() {
   // that DID have data) passes through unchanged.
   const filtered = visibleWorkspaces.filter((entry) => !entry.hidden).map((entry) => entry.workspace);
 
-  return NextResponse.json({ workspaces: filtered }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(
+    { workspaces: filtered, workspaceModelEnabled: true },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(request: NextRequest) {

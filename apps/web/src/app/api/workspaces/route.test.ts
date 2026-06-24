@@ -89,6 +89,7 @@ describe("GET /api/workspaces", () => {
     const body = await res.json();
 
     expect(res.status).toBe(200);
+    expect(body.workspaceModelEnabled).toBe(true);
     expect(body.workspaces).toEqual([
       expect.objectContaining({
         id: "ws_1",

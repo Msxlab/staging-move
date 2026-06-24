@@ -58,12 +58,18 @@ function candidateDataDirs(): string[] {
     if (dir && !dirs.includes(dir)) dirs.push(dir);
   };
 
-  // 1) Standalone runtime: server.js runs from the standalone root and the
-  //    traced data sits at <root>/node_modules/pdfkit/js/data.
-  add(path.join(process.cwd(), "node_modules", "pdfkit", "js", "data"));
-  // 2) Monorepo / nested standalone layout (apps/web cwd variants).
-  add(path.join(process.cwd(), "apps", "web", "node_modules", "pdfkit", "js", "data"));
-  // 3) Resolvable install (dev, tests, non-bundled): ask Node where pdfkit is.
+  // 1) Runtime cwd variants. Docker usually starts from the standalone root, but
+  //    local scripts/tests can run from apps/web; walk a few ancestors so both
+  //    layouts find <root>/node_modules/pdfkit/js/data.
+  let cursor = process.cwd();
+  for (let i = 0; i < 5; i += 1) {
+    add(path.join(cursor, "node_modules", "pdfkit", "js", "data"));
+    add(path.join(cursor, "apps", "web", "node_modules", "pdfkit", "js", "data"));
+    const parent = path.dirname(cursor);
+    if (parent === cursor) break;
+    cursor = parent;
+  }
+  // 2) Resolvable install (dev, tests, non-bundled): ask Node where pdfkit is.
   try {
     const pkg = require.resolve("pdfkit/package.json");
     add(path.join(path.dirname(pkg), "js", "data"));
