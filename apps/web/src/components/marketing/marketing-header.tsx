@@ -59,14 +59,18 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
           {userId ? (
             <MarketingUserMenu />
           ) : (
-            <>
+            // Below lg the auth CTAs live inside MarketingMobileNav's hamburger
+            // panel (which is `lg:hidden`), so this desktop pair must hide there
+            // too — otherwise it overflows the viewport on mobile (495px > 390px)
+            // and duplicates the panel's Sign in / Get started buttons.
+            <div className="hidden items-center gap-1 md:gap-2 lg:flex">
               <Button asChild variant="ghost" size="sm">
                 <Link href="/sign-in">{tCommon("signIn")}</Link>
               </Button>
               <Button asChild size="sm">
                 <Link href="/sign-up">{tLanding("heroCta")}</Link>
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
