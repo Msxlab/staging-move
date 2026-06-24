@@ -1397,12 +1397,50 @@ html[data-embed="mobile"] .install-prompt {
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
   opacity: 0.38;
 }
+.lf-dossier-scene-card .lf-dossier-scene-tag {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 4;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--ds-tone) 28%, transparent);
+  background: color-mix(in srgb, var(--ds-tone) 14%, rgba(12, 19, 34, 0.72));
+  color: var(--ds-tone);
+  padding: 0.1875rem 0.4375rem;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  backdrop-filter: blur(3px);
+}
 .lf-dossier-scene-card > .da-layer .ds-root {
   min-height: 0;
 }
 .lf-dossier-scene-card > .da-layer ~ * {
   position: relative;
   z-index: 2;
+}
+.lf-dossier-scene-card > .da-layer + div [class~="text-xs"][class~="text-muted-foreground"] {
+  color: var(--muted-foreground);
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.lf-dossier-scene-card > .da-layer + div [class~="text-sm"][class~="font-semibold"] {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--fg);
+  font-family: var(--font-display, "Playfair Display", Didot, Georgia, serif);
+  font-size: clamp(1rem, 1.35vw, 1.25rem);
+  font-weight: 900;
+  line-height: 1.08;
+  text-overflow: clip;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .light .lf-dossier-shell {
   background:
@@ -1430,6 +1468,9 @@ html[data-embed="mobile"] .install-prompt {
     radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
   opacity: 0.38;
+}
+.light .lf-dossier-scene-card .lf-dossier-scene-tag {
+  background: color-mix(in srgb, var(--ds-tone) 13%, rgba(255, 255, 255, 0.78));
 }
 .light .lf-dossier-scene-card > .da-layer .ds-ground,
 .light .lf-dossier-scene-card > .da-layer .ds-ground-warn,

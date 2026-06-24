@@ -59,7 +59,15 @@ export interface AmbientSpec {
   variant?: AmbientVariant;
 }
 
-export type SourceDossierSceneType = "weather" | "air" | "water" | "area" | "transit" | "cost" | "housing";
+export type SourceDossierSceneType =
+  | "weather"
+  | "air"
+  | "water"
+  | "area"
+  | "transit"
+  | "cost"
+  | "housing"
+  | "flood";
 
 export type SourceDossierSceneLevel =
   | "good"
@@ -139,8 +147,9 @@ export function sourceDossierSceneFor({ kind, intensity, variant }: AmbientSpec)
     case "hazard":
       return { type: "weather", level: weatherSourceLevel(variant) };
     case "flood":
-      // Flood risk -> water scenes: calm/sparkling when low, turbulent/unsafe when high.
-      return { type: "water", level: riskSourceLevel(intensity) };
+      // Flood risk -> dedicated flood scene: drifting parallax water bands that rise
+      // toward the raccoon as risk climbs (calm at low risk, alert + rain at high).
+      return { type: "flood", level: riskSourceLevel(intensity) };
     case "radon":
       // Radon is an airborne hazard -> air scenes: clean breeze (zone 3) -> light haze
       // (zone 2) -> heavy haze + mask (zone 1). Bubbles would be ideal but the source
@@ -174,9 +183,13 @@ function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVa
         ? "var(--info)"
         : type === "transit" && isGood
           ? "var(--info)"
-          : isBad
-            ? "var(--danger)"
-            : "var(--foil-b)";
+          : type === "flood"
+            ? isBad
+              ? "var(--danger)"
+              : "var(--info)"
+            : isBad
+              ? "var(--danger)"
+              : "var(--foil-b)";
   return {
     "--ds-tone": tone,
     "--ds-glow": `color-mix(in srgb, ${tone} 22%, transparent)`,
@@ -186,6 +199,13 @@ function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVa
     "--rc-eye": "var(--foil-b)",
     "--rc-pupil": "#04080F",
   };
+}
+
+function sourceSceneTag({ type, level }: SourceDossierSceneSpec): string {
+  if (type === "housing") return "AREA";
+  if (level === "good" || level === "sun") return "GOOD";
+  if (level === "bad" || level === "storm" || level === "heat" || level === "cold") return "ALERT";
+  return "CHECK";
 }
 
 function SourceCharacter({
@@ -367,6 +387,61 @@ function WaterSourceScene({ level }: { level: SourceDossierSceneLevel }) {
         headStyle={{ transformOrigin: "bottom center", animation: "ds-sip 4s ease-in-out infinite" }}
       >
         <div className="ds-glass"><div /></div>
+      </SourceCharacter>
+    </>
+  );
+}
+
+function FloodSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  const water = (
+    <div className={level === "bad" ? "ds-flood ds-flood-bad" : "ds-flood"}>
+      <div className="ds-flood-band ds-flood-band-3" />
+      <div className="ds-flood-band ds-flood-band-2" />
+      <div className="ds-flood-band ds-flood-band-1" />
+    </div>
+  );
+  if (level === "bad") {
+    return (
+      <>
+        <div className="ds-radial" />
+        {[30, 60, 84].map((left, i) => (
+          <span
+            key={left}
+            className="ds-rain"
+            style={{ left: `${left}%`, top: 6 + (i % 2) * 5, animationDelay: `${i * 0.3}s` }}
+          />
+        ))}
+        <span className="ds-alert-symbol">!</span>
+        {water}
+        <SourceCharacter mood="alert" style={{ left: "42%", animation: "ds-bob 2.2s ease-in-out infinite" }}>
+          <div
+            className="ds-arm"
+            style={{ right: -4, bottom: 17, transform: "rotate(-54deg)", transformOrigin: "left center" }}
+          />
+        </SourceCharacter>
+      </>
+    );
+  }
+  if (level === "mid") {
+    return (
+      <>
+        <div className="ds-radial" />
+        {water}
+        <SourceCharacter
+          mood="thinking"
+          style={{ left: "42%", animation: "ds-bob 3.2s ease-in-out infinite" }}
+          headStyle={{ transformOrigin: "bottom center", animation: "ds-look 3.4s ease-in-out infinite" }}
+        />
+      </>
+    );
+  }
+  return (
+    <>
+      <div className="ds-radial" />
+      <span className="ds-spark">+</span>
+      {water}
+      <SourceCharacter mood="happy" style={{ left: "42%", animation: "ds-bob 3s ease-in-out infinite" }}>
+        <div className="ds-arm ds-wave-arm" style={{ right: 1, bottom: 12, transformOrigin: "left center" }} />
       </SourceCharacter>
     </>
   );
@@ -583,6 +658,7 @@ function SourceDossierScene({ scene }: { scene: SourceDossierSceneSpec }) {
       {scene.type === "transit" && <TransitSourceScene level={scene.level} />}
       {scene.type === "air" && <AirSourceScene level={scene.level} />}
       {scene.type === "water" && <WaterSourceScene level={scene.level} />}
+      {scene.type === "flood" && <FloodSourceScene level={scene.level} />}
       {scene.type === "area" && <AreaSourceScene level={scene.level} />}
       {scene.type === "cost" && <CostSourceScene level={scene.level} />}
       {scene.type === "housing" && <HousingSourceScene />}
@@ -1502,6 +1578,7 @@ export function DossierAmbient({
       style={{ zIndex: 0, ...sourceSceneStyle }}
       className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden rounded-r-xl"
     >
+      <span className="lf-dossier-scene-tag">{sourceSceneTag(sourceScene)}</span>
       <SourceDossierScene scene={sourceScene} />
     </div>
   );

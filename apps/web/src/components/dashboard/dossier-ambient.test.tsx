@@ -194,6 +194,7 @@ describe("sourceDossierSceneFor", () => {
     expect(sourceDossierSceneFor({ kind: "air", intensity: 0 })).toEqual({ type: "air", level: "good" });
     expect(sourceDossierSceneFor({ kind: "air", intensity: 1 })).toEqual({ type: "air", level: "mid" });
     expect(sourceDossierSceneFor({ kind: "air", intensity: 2 })).toEqual({ type: "air", level: "bad" });
+    expect(sourceDossierSceneFor({ kind: "flood", intensity: 2 })).toEqual({ type: "flood", level: "bad" });
     expect(sourceDossierSceneFor({ kind: "water", intensity: 2 })).toEqual({ type: "water", level: "bad" });
     expect(sourceDossierSceneFor({ kind: "housing", intensity: 2 })).toEqual({ type: "housing", level: "mid" });
     expect(sourceDossierSceneFor({ kind: "hazard", intensity: 2, variant: "lightning" })).toEqual({
@@ -252,11 +253,16 @@ describe("DossierAmbient rendering", () => {
     expect(markup).toContain("pointer-events-none");
     expect(markup).toContain('data-kind="flood"');
     expect(markup).toContain('data-intensity="2"');
-    // Flood maps to the WATER scene (not the area crime/patrol scene).
-    expect(markup).toContain('data-source-type="water"');
+    // Flood maps to its dedicated FLOOD scene (not water, not the area crime/patrol scene).
+    expect(markup).toContain('data-source-type="flood"');
     expect(markup).toContain('data-source-level="bad"');
-    expect(markup).toContain('data-ds-type="water"');
+    expect(markup).toContain('data-ds-type="flood"');
     expect(markup).toContain('data-ds-level="bad"');
+    expect(markup).toContain("ds-flood-band");
+    expect(markup).toContain("lf-dossier-scene-tag");
+    expect(markup).toContain("ALERT");
+    expect(markup).toContain("--ds-tone");
+    expect(markup).toContain("--rc-head");
   });
 
   it("clamps out-of-range intensity into the 0-2 contract", () => {
@@ -268,10 +274,12 @@ describe("DossierAmbient rendering", () => {
     );
   });
 
-  it("maps flood to water and radon to air (not the area crime/streetlight scenes)", () => {
+  it("maps flood to its dedicated flood scene and radon to air (not the area crime/streetlight scenes)", () => {
     const flood = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} />);
-    expect(flood).toContain('data-ds-type="water"');
+    expect(flood).toContain('data-ds-type="flood"');
     expect(flood).toContain('data-ds-level="bad"');
+    expect(flood).toContain("ds-flood");
+    expect(flood).toContain("ds-flood-bad");
     expect(flood).not.toContain("ds-chase-pack");
 
     const radon = renderToStaticMarkup(<DossierAmbient kind="radon" intensity={0} />);
