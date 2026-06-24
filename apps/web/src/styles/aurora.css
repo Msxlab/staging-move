@@ -426,7 +426,7 @@
 .light .lf-aurora {
   --background:           41.25 33.33% 90.59%;
   --foreground:           213 39% 13%;
-  --card:                 38.57 41.18% 93.33%;
+  --card:                 0 0% 100%;
   --card-foreground:      213 39% 13%;
   --popover:              0 0% 100%;
   --popover-foreground:   213 39% 13%;

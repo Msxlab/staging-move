@@ -82,7 +82,7 @@
     --background:             41.25 33.33% 90.59%;
     --foreground:             213 39% 13%;
 
-    --card:                   38.57 41.18% 93.33%;
+    --card:                   0 0% 100%;
     --card-foreground:        213 39% 13%;
 
     --popover:                0 0% 100%;
@@ -1353,9 +1353,9 @@ html[data-embed="mobile"] .install-prompt {
    ========================================================================= */
 .da-layer {
   z-index: 0;
-  -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.48) 10%, black 24%);
-  mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.48) 10%, black 24%);
-  filter: saturate(1.28) contrast(1.08);
+  -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.62) 8%, black 20%);
+  mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.62) 8%, black 20%);
+  filter: saturate(1.42) contrast(1.12);
 }
 .da-layer::before {
   content: "";
@@ -1368,7 +1368,7 @@ html[data-embed="mobile"] .install-prompt {
   opacity: 0.28;
 }
 .light .da-layer {
-  filter: saturate(1.36) contrast(1.10);
+  filter: saturate(1.65) contrast(1.18);
 }
 .light .da-layer::before {
   background:
