@@ -735,9 +735,41 @@ function buildCspHeader(nonce: string, isDev: boolean): string {
   ].join("; ");
 }
 
+// App Router soft navigations and `<Link>` prefetches are RSC "flight"
+// requests, identified by the `RSC: 1` request header and/or the `_rsc=`
+// query param Next appends. These are NOT document loads — the live
+// document already owns its CSP. Minting a fresh nonce and overriding the
+// Content-Security-Policy on the flight response makes its inline-script
+// nonce disagree with the live document's CSP, so the client router cannot
+// apply the flight payload and bails out to a FULL PAGE BROWSER NAVIGATION
+// (hard reload) on every in-app navigation — the "changing pages reloads
+// again and again" symptom. Mirrors the guard already in
+// apps/admin/src/middleware.ts (`isRscRequest` / `nextWithCsp`).
+function isRscRequest(request: NextRequest): boolean {
+  return (
+    request.headers.get("rsc") === "1" ||
+    request.nextUrl.searchParams.has("_rsc") ||
+    request.url.includes("_rsc=")
+  );
+}
+
 function nextWithCurrentPath(request: NextRequest): NextResponse {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-locateflow-pathname", request.nextUrl.pathname);
+
+  // For RSC soft-navigation/prefetch requests, pass through WITHOUT a fresh
+  // nonce or CSP override so the App Router can apply the flight response as
+  // a soft navigation instead of falling back to a hard reload. The
+  // `x-locateflow-pathname` header is still forwarded so the app layout's
+  // current-path resolution keeps working.
+  if (isRscRequest(request)) {
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
   // Generate the per-request nonce here so both the request (server
   // components reading via headers()) and the response (CSP header) see
   // the same value. API routes also pass through this helper but their
