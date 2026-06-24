@@ -49,6 +49,11 @@ function DialogContent({ children, className }: { children: React.ReactNode; cla
   const { open, setOpen, titleId } = React.useContext(DialogContext);
   const contentRef = React.useRef<HTMLDivElement>(null);
   const restoreFocusRef = React.useRef<HTMLElement | null>(null);
+  const setOpenRef = React.useRef(setOpen);
+
+  React.useEffect(() => {
+    setOpenRef.current = setOpen;
+  }, [setOpen]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -60,7 +65,7 @@ function DialogContent({ children, className }: { children: React.ReactNode; cla
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setOpen(false);
+        setOpenRef.current(false);
         return;
       }
       if (e.key === "Tab" && node) {
@@ -86,7 +91,7 @@ function DialogContent({ children, className }: { children: React.ReactNode; cla
       // Restore focus to the trigger when the dialog closes.
       restoreFocusRef.current?.focus?.();
     };
-  }, [open, setOpen]);
+  }, [open]);
 
   if (!open) return null;
 
