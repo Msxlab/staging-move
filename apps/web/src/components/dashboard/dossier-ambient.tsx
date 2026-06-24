@@ -1487,6 +1487,7 @@ export function DossierAmbient({
   const ref = useAmbientPause();
   const level = clampIntensity(intensity);
   const sourceScene = sourceDossierSceneFor({ kind, intensity: level, variant });
+  const sourceSceneStyle = sourceSceneVars(sourceScene);
   return (
     <div
       ref={ref}
@@ -1498,7 +1499,7 @@ export function DossierAmbient({
       data-variant={variant}
       // Keep the scene on a visible foreground plane; globals.css masks it to
       // the right side and lifts row copy above it.
-      style={{ zIndex: 0 }}
+      style={{ zIndex: 0, ...sourceSceneStyle }}
       className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden rounded-r-xl"
     >
       <SourceDossierScene scene={sourceScene} />

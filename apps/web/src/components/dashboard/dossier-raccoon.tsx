@@ -111,12 +111,12 @@ export function DossierRaccoon({
   mood?: DossierRaccoonMood;
   size?: number;
 }) {
-  // Token-pure palette: --fg drives the silhouette, the accent foil tints eyes.
-  const H = "color-mix(in srgb, var(--fg) 26%, transparent)";
-  const M = "color-mix(in srgb, var(--fg) 52%, transparent)";
-  const E = "color-mix(in srgb, var(--fg) 34%, transparent)";
-  const EY = "var(--foil-b)";
-  const P = "color-mix(in srgb, var(--fg) 78%, transparent)";
+  // Source scene variables drive the prototype palette; tokens stay as fallbacks.
+  const H = "var(--rc-head, color-mix(in srgb, var(--fg) 26%, transparent))";
+  const M = "var(--rc-mask, color-mix(in srgb, var(--fg) 52%, transparent))";
+  const E = "var(--rc-ear, color-mix(in srgb, var(--fg) 34%, transparent))";
+  const EY = "var(--rc-eye, var(--foil-b))";
+  const P = "var(--rc-pupil, color-mix(in srgb, var(--fg) 78%, transparent))";
 
   const squint = mood === "thinking";
   const happy = mood === "happy" || mood === "approved";

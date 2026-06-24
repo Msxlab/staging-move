@@ -80,7 +80,7 @@
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             220 33% 97%;
+    --background:             41.25 33.33% 90.59%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -95,10 +95,10 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  214 36% 95%;
+    --muted:                  38.57 41.18% 93.33%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 38 42% 94%;
+    --accent:                 38.57 41.18% 93.33%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
@@ -115,7 +115,7 @@
     --radius:                 0.625rem;
 
     /* Legacy short surface tokens — warm paper canvas */
-    --surface-secondary:      #FFFFFF;
+    --surface-secondary:      #F5F0E7;
     --text-primary:           rgba(20, 32, 47, 1);
     --text-secondary:         rgba(20, 32, 47, 0.72);
     --text-tertiary:          rgba(20, 32, 47, 0.50);
@@ -321,17 +321,17 @@
 }
 
 .light {
-  --lf-app-bg: #F8F5EF;
+  --lf-app-bg: #EFEADF;
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.72) 0%, transparent 28%),
-    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.045) 0%, transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 58%, transparent 100%),
-    repeating-linear-gradient(90deg, rgba(46, 95, 176, 0.012) 0 1px, transparent 1px 80px),
-    repeating-linear-gradient(0deg, rgba(46, 95, 176, 0.008) 0 1px, transparent 1px 80px);
-  opacity: 0.42;
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.28) 0%, transparent 28%),
+    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.028) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(231, 225, 212, 0.18) 0%, rgba(239, 234, 223, 0.04) 58%, transparent 100%),
+    repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.018) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.012) 0 1px, transparent 1px 80px);
+  opacity: 0.58;
 }
 
 /* =========================================================================
@@ -1360,10 +1360,20 @@ html[data-embed="mobile"] .install-prompt {
   background: color-mix(in srgb, var(--surface) 42%, transparent);
 }
 .lf-dossier-scene-card {
-  --lf-dossier-stage-h: clamp(76px, 10vw, 92px);
+  --lf-dossier-stage-h: 82px;
+  border-radius: 20px !important;
   min-height: calc(var(--lf-dossier-stage-h) + 112px);
   padding: calc(var(--lf-dossier-stage-h) + 0.75rem) 0.75rem 0.75rem !important;
   overflow: hidden;
+}
+.lf-dossier-scene-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 3;
+  height: 2px;
+  background: var(--ds-tone, var(--foil-b));
+  opacity: 0.58;
 }
 .lf-dossier-scene-card > .da-layer {
   inset: 0 0 auto 0 !important;
