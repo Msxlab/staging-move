@@ -637,4 +637,54 @@ describe("web middleware auth boundaries", () => {
       { algorithms: ["HS256"] },
     );
   });
+
+  describe("RSC soft-navigation does not force a full reload", () => {
+    beforeEach(() => {
+      mocks.tryGetUserJwtSecretKey.mockReturnValue(
+        new TextEncoder().encode("test-user-jwt-secret-32-characters") as any,
+      );
+      mocks.jwtVerify.mockResolvedValue({ payload: { userId: "user-1" } } as any);
+    });
+
+    it("stamps a fresh CSP + nonce on a normal authenticated page load", async () => {
+      const response = await middleware(
+        request("https://locateflow.com/dashboard", {
+          headers: { cookie: "user_session=valid-token" },
+        }),
+      );
+
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-nonce")).toBeTruthy();
+      expect(response.headers.get("content-security-policy")).toContain(
+        `'nonce-${response.headers.get("x-nonce")}'`,
+      );
+    });
+
+    it("does NOT override CSP/nonce on an RSC prefetch request (RSC header)", async () => {
+      const response = await middleware(
+        request("https://locateflow.com/addresses", {
+          headers: { cookie: "user_session=valid-token", rsc: "1" },
+        }),
+      );
+
+      // Pass-through soft navigation: the live document already owns the CSP,
+      // so the flight response must NOT carry a fresh nonce/CSP that would make
+      // the App Router bail to a hard reload.
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-nonce")).toBeNull();
+      expect(response.headers.get("content-security-policy")).toBeNull();
+    });
+
+    it("does NOT override CSP/nonce on an RSC navigation request (_rsc query)", async () => {
+      const response = await middleware(
+        request("https://locateflow.com/services?_rsc=abc123", {
+          headers: { cookie: "user_session=valid-token" },
+        }),
+      );
+
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-nonce")).toBeNull();
+      expect(response.headers.get("content-security-policy")).toBeNull();
+    });
+  });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
+import { DossierRaccoon, dossierRaccoonFor } from "./dossier-raccoon";
 
 /**
  * DOSSIER AMBIENT — Aurora decorative scene layer for the home-dossier rows.
@@ -850,9 +851,19 @@ function clampIntensity(value: number): AmbientIntensity {
 
 /**
  * The ambient layer for one dossier section row. The host row must be
- * `relative isolate`; this layer fills its right 55%, masked so the left text
- * zone stays clean, stacked under the row content (z-index -1 via .da-layer),
- * and paused while offscreen.
+ * `relative isolate`; the scene layer fills its right 55%, masked so the left
+ * text zone stays clean, stacked under the row content (z-index -1 via
+ * .da-layer), and paused while offscreen.
+ *
+ * On TOP of that data-derived scene sits the mood-driven raccoon character —
+ * the same character the mobile DossierAmbient renders. It is a separate
+ * FOREGROUND element (the scene layer is z-index:-1 + masked, so the raccoon
+ * couldn't show through it) anchored in the bottom-right corner where the row
+ * carries no text. ambientForSection stays the data-honest source of truth for
+ * the scene; dossierRaccoonFor only picks the expression that mirrors this
+ * reading (good -> happy/approved, mid -> calm/thinking, bad -> alert). The
+ * raccoon is a static SVG — no new motion — so it is inherently
+ * reduced-motion safe and aria-hidden like the rest of the decoration.
  */
 export function DossierAmbient({
   kind,
@@ -865,15 +876,24 @@ export function DossierAmbient({
 }) {
   const ref = useAmbientPause();
   const level = clampIntensity(intensity);
+  const mood = dossierRaccoonFor({ kind, intensity: level, variant });
   return (
-    <div
-      ref={ref}
-      aria-hidden="true"
-      data-kind={kind}
-      data-intensity={level}
-      className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[55%] overflow-hidden rounded-r-xl"
-    >
-      <AmbientScene kind={kind} intensity={level} variant={variant} />
-    </div>
+    <>
+      <div
+        ref={ref}
+        aria-hidden="true"
+        data-kind={kind}
+        data-intensity={level}
+        className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[55%] overflow-hidden rounded-r-xl"
+      >
+        <AmbientScene kind={kind} intensity={level} variant={variant} />
+      </div>
+      <div
+        aria-hidden="true"
+        className="da-raccoon pointer-events-none absolute bottom-0 right-2 z-0 flex items-end"
+      >
+        <DossierRaccoon mood={mood} size={44} />
+      </div>
+    </>
   );
 }
