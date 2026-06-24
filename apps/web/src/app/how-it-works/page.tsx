@@ -164,13 +164,13 @@ export default function HowItWorksPage() {
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link href="/pricing">See pricing</Link>
+            <Link href="/why-free">Why it&apos;s free</Link>
           </Button>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-xs text-muted-foreground">
-          Trial length, renewal date, price, and payment method requirements are shown at checkout. See the{" "}
-          <Link href="/billing-policy" className="underline">Billing Policy</Link>{" "}
-          and <Link href="/disclaimer" className="underline">Disclaimer</Link> before relying on provider or moving guidance.
+          LocateFlow is 100% free — every feature included, no subscription and no credit card. It stays free through
+          affiliate and referral commissions, at no cost to you. See the{" "}
+          <Link href="/disclaimer" className="underline">Disclaimer</Link> before relying on provider or moving guidance.
         </p>
       </section>
     </PublicPageShell>

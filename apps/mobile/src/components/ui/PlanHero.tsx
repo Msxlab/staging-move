@@ -145,7 +145,7 @@ export function PlanHero({ celebrateTick = 0 }: { celebrateTick?: number }) {
   const isPro = key === "PRO";
   const title = isPro ? t("plan.proTitle", "Pro household") : t("plan.familyTitle", "Family household");
   const subtitle = isPro
-    ? t("plan.proSubtitle", "Premium tools for your whole crew.")
+    ? t("plan.proSubtitle", "Your whole crew's move, all in one place.")
     : t("plan.familySubtitle", "Everyone under one roof, together.");
 
   return (

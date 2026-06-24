@@ -523,13 +523,22 @@ function ConsumerFreePricing({
         ))}
       </div>
 
+      {/* CONSUMER_FREE: the transparent "how we stay free" note (owner chose the
+          open/transparent option) — affiliate-funded, never a paywall. */}
       <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-muted-foreground">
+        LocateFlow stays free because partners pay us a commission when you choose a provider or service through us — at
+        no cost to you. It never changes the price you pay or how we rank providers.{" "}
+        <Link href="/why-free" className="underline hover:text-foreground">Why it&apos;s free</Link>.
+      </p>
+
+      <p className="mx-auto mt-4 max-w-3xl text-center text-sm text-muted-foreground">
         LocateFlow tracks your services and move workflow. It does not log into or change your accounts with any
         provider on your behalf — it gives you guided checklists, reminders, and links so you update each provider
         yourself through their official channel.
       </p>
 
       <div className="mx-auto mt-6 flex max-w-4xl flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
+        <Link href="/why-free" className="underline hover:text-foreground">Why it&apos;s free</Link>
         <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
         <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
       </div>

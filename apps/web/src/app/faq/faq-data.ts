@@ -25,39 +25,34 @@ export const faqCopyGroups: Array<{ title: string; items: FaqCopy[] }> = [
           "No. LocateFlow provides informational organization tools and suggestions only. Users should consult authoritative sources or licensed professionals.",
       },
       {
-        q: "What is included in the free plan?",
+        q: "What is included? Is it really free?",
         plain:
-          "The free plan organizes your home: up to 3 addresses, up to 10 service providers, and bill and renewal reminders. When you have a move planned, the free plan shows a preview of your personalized plan — your countdown and top critical steps. Creating and tracking the full move plan (checklist, state guide, provider migration, and move tasks) requires the Individual, Family, or Pro plan.",
+          "LocateFlow is 100% free — every feature is included for everyone, with no subscription, no payments, and no credit card. That covers the full personalized move plan, checklist, state guide, provider migration, move tasks, the complete Home Dossier, reminders, budgets, and exports. A few generous fair-use limits keep it fast and free for everyone; they are abuse safeguards, not a prompt to pay. LocateFlow stays free through affiliate and referral commissions when you choose a provider through us — at no cost to you.",
       },
     ],
   },
   {
-    title: "Billing, trials, and refunds",
+    title: "Cost and affiliate disclosure",
     items: [
       {
-        q: "How does billing work?",
+        q: "How does LocateFlow make money if it's free?",
         plain:
-          "Web subscriptions are billed through Stripe. iOS purchases may be managed by Apple App Store and Android purchases by Google Play.",
+          "LocateFlow earns referral or affiliate commissions when you choose certain providers or services through the app. The partner pays us, at no extra cost to you, and it never affects the price you pay or how we rank or recommend providers. There is no consumer subscription or charge.",
       },
       {
-        q: "How do free trials and promotions work?",
+        q: "Do I need a credit card or a subscription?",
         plain:
-          "Trial length, price, renewal date, and payment method requirements are shown at checkout before purchase. Some offers require a payment method and renew automatically unless canceled.",
+          "No. There is no credit card, no subscription, and no trial that ends. You sign up and use every feature for free.",
       },
       {
-        q: "How do I cancel?",
+        q: "Will I ever be charged?",
         plain:
-          "Supported web subscriptions can be canceled in Settings or the Stripe portal. App Store and Google Play subscriptions must be managed through the applicable store.",
+          "No. LocateFlow does not charge consumers. Because there is nothing to bill, there is nothing to cancel or refund. Our Billing Policy and Refund Policy are retained only in case paid plans are reintroduced in the future.",
       },
       {
-        q: "Are refunds available?",
+        q: "Does choosing a recommended provider cost extra?",
         plain:
-          "Refund eligibility depends on the Refund Policy, the checkout offer, legal requirements, and store rules for mobile purchases.",
-      },
-      {
-        q: "How do App Store and Google Play subscriptions work?",
-        plain:
-          "Store purchases may be billed, renewed, canceled, and refunded through Apple or Google under their own rules.",
+          "No. When you choose a provider through LocateFlow, you pay that provider their normal price. Any commission is paid to us by the partner, at no extra cost to you, and it never affects how we rank or recommend providers.",
       },
     ],
   },

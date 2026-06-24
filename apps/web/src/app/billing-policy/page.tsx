@@ -2,6 +2,7 @@
 import { CalendarClock, CreditCard, ReceiptText, Store } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_CONTACTS, STORE_PURCHASE_DISTINCTION, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import { AffiliateDisclosure } from "@/components/affiliate/affiliate-disclosure";
 import { createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
@@ -41,6 +42,24 @@ export default function BillingPolicyPage() {
       description="How LocateFlow billing, trials, subscriptions, auto-renewal, cancellation, failed payments, taxes, and store purchases work."
     >
       <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
+
+      {/*
+        CONSUMER_FREE / affiliate pivot (owner decision 2026-06-23).
+        LEGAL REVIEW REQUIRED: banner + affiliate-disclosure section added for
+        consistency with "free, affiliate-funded". The billing terms below are
+        kept (dormant) and remain accurate only if paid plans return. Counsel
+        must review before relying on this as binding.
+      */}
+      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
+        <p className="text-sm leading-relaxed text-foreground">
+          <strong>LocateFlow is currently free for consumers.</strong> There are no
+          subscriptions or charges to bill, so the billing terms below do not apply to
+          everyday use today — they are retained in case paid plans are reintroduced.
+          LocateFlow is funded by affiliate and referral commissions; see the
+          disclosure at the bottom of this page and{" "}
+          <Link href="/why-free" className="text-primary underline">Why it&apos;s free</Link>.
+        </p>
+      </div>
 
       <div className="grid gap-5 md:grid-cols-2">
         {highlights.map((item) => (
@@ -104,6 +123,17 @@ export default function BillingPolicyPage() {
         <p>
           For billing support, email <a href={mailto(LEGAL_CONTACTS.billing, "LocateFlow billing request")} className="text-primary underline">{LEGAL_CONTACTS.billing}</a>. See the <Link href="/refund" className="text-primary underline">Refund Policy</Link> for refund request windows and exclusions.
         </p>
+      </PublicSection>
+
+      {/* LEGAL REVIEW REQUIRED — FTC affiliate disclosure (counsel to confirm). */}
+      <PublicSection title="How LocateFlow makes money (affiliate disclosure)">
+        <p>
+          Instead of charging consumers, LocateFlow earns referral or affiliate
+          commissions when you choose certain providers or services through the app.
+          The partner pays us, at no extra cost to you, and it never affects the price
+          you pay or how we rank or recommend providers.
+        </p>
+        <AffiliateDisclosure className="mt-2 text-xs" />
       </PublicSection>
     </PublicPageShell>
   );

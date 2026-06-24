@@ -19,7 +19,7 @@ import { createPublicPageMetadata } from "@/lib/seo";
 export const metadata = createPublicPageMetadata({
   title: "Features",
   description:
-    "LocateFlow brings address records, provider tracking, moving tasks, reminders, budgets, dossiers, exports, and shared household workflows into one calm workspace.",
+    "Every LocateFlow feature is free for everyone — address records, provider tracking, moving tasks, reminders, budgets, dossiers, exports, and shared household workflows in one calm workspace. No subscription, no credit card.",
   path: "/features",
 });
 

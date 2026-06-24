@@ -9,6 +9,7 @@ import {
 } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requirePagePermission } from "@/lib/page-guard";
+import { getConsumerFreeStatus } from "@/lib/consumer-free-status";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminPanel } from "@/components/admin-panel";
 
@@ -118,7 +119,17 @@ export default async function PlansPage() {
     minimumRole: "VIEWER",
   });
 
-  const tierStats = await getTierStats();
+  // Under the consumer-free pivot this paid plan ladder is LEGACY/DORMANT:
+  // the consumer app is free (affiliate-funded), so the prices, "Premium"
+  // tag and MRR below describe the dormant (kept-for-reversibility) billing
+  // catalog rather than the live revenue model. We resolve the CONSUMER_FREE
+  // flag and reframe the page accordingly — mirroring /billing and
+  // /subscriptions — without removing the data or operator controls. Flag off
+  // ⇒ the pre-pivot subscription narrative reads correctly.
+  const [{ consumerFreeEnabled }, tierStats] = await Promise.all([
+    getConsumerFreeStatus(),
+    getTierStats(),
+  ]);
 
   const totalMrr = PAID_BILLING_PLANS.reduce(
     (sum, plan) => sum + (tierStats[plan]?.mrrUsd ?? 0),
@@ -132,10 +143,31 @@ export default async function PlansPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        eyebrow="Billing"
+        eyebrow={consumerFreeEnabled ? "Legacy billing" : "Billing"}
         title="Plans"
-        subtitle="The live plan catalog — pricing, entitlements, and adoption per tier. Definitions are read from the shared billing source of truth."
+        subtitle={
+          consumerFreeEnabled
+            ? "Legacy plan catalog — dormant under the free model. The consumer app is free for everyone (affiliate-funded); these tiers, prices, and MRR are kept for historical data and reversibility, not the live revenue story."
+            : "The live plan catalog — pricing, entitlements, and adoption per tier. Definitions are read from the shared billing source of truth."
+        }
       />
+
+      {consumerFreeEnabled && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-tone-honey-br bg-tone-honey-bg/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-foreground">
+            <span className="font-semibold">Legacy / dormant.</span> The consumer
+            app is free (affiliate-funded). This paid plan ladder &mdash; prices,
+            the &ldquo;Premium&rdquo; tier and MRR &mdash; is kept for historical
+            data and remains reversible, but is not the live revenue model.
+          </p>
+          <a
+            href="/affiliate"
+            className="shrink-0 self-start rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-accent sm:self-auto"
+          >
+            View affiliate revenue →
+          </a>
+        </div>
+      )}
 
       {/* Tier cards — Free / Individual / Family (POPULAR) / Pro */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -159,9 +191,13 @@ export default async function PlansPage() {
                   {def.displayName}
                 </h2>
                 <span
-                  className={`ml-auto rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.14em] ${pres.tagClass}`}
+                  className={`ml-auto rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.14em] ${
+                    consumerFreeEnabled && def.isPaid
+                      ? "bg-muted text-muted-foreground"
+                      : pres.tagClass
+                  }`}
                 >
-                  {pres.tag}
+                  {consumerFreeEnabled && def.isPaid ? "Legacy" : pres.tag}
                 </span>
               </div>
 
@@ -213,8 +249,12 @@ export default async function PlansPage() {
       {/* MRR by plan — flat horizontal bars, same realized-revenue policy as
           the dashboard KPI, so the two surfaces always agree. */}
       <AdminPanel
-        title="MRR by plan"
-        caption={`${fmtUsd(totalMrr)} total monthly recurring · active paid subscriptions, yearly amortized`}
+        title={consumerFreeEnabled ? "MRR by plan (legacy)" : "MRR by plan"}
+        caption={
+          consumerFreeEnabled
+            ? `${fmtUsd(totalMrr)} legacy monthly recurring · dormant under the free model, kept for historical data`
+            : `${fmtUsd(totalMrr)} total monthly recurring · active paid subscriptions, yearly amortized`
+        }
       >
         <div className="space-y-4">
           {PAID_BILLING_PLANS.map((plan) => {

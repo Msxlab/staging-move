@@ -101,17 +101,29 @@ const annualTrialPreset: typeof emptyForm = {
   checkoutDisclosureCopy: "Today: $0. Trial: 14 days. Your annual plan starts after the trial. You can cancel before then in Settings.",
 };
 
+// LocateFlow is free for everyone (affiliate-funded), so the public-facing
+// defaults here are deliberately NOT paywall copy. The Monthly Paid slot is a
+// dormant, reversible legacy mechanism: the access type / billing fields stay
+// intact so an operator can still bind a real Stripe price if the free pivot is
+// ever reverted, but the DEFAULT public copy must never advertise
+// "Subscribe / $X per month / upgrade" onto the now-free public site. An
+// operator who genuinely needs paid copy must type it deliberately.
 const monthlyPaidPreset: typeof emptyForm = {
   ...emptyForm,
-  name: "Individual Monthly",
+  name: "Individual Monthly (legacy / dormant)",
   code: "INDIVIDUALMONTHLY",
   accessType: "PAID",
   billingInterval: "MONTH",
   trialDays: "",
-  displayPriceLabel: "$4.99/month",
-  publicHeadline: "Subscribe monthly",
-  publicSubheadline: "Simple monthly billing. Cancel anytime.",
-  checkoutDisclosureCopy: "Today: $4.99. Your Individual Monthly subscription starts today and renews monthly until you cancel.",
+  // Active default shows NO paywall price under the free pivot. For the
+  // dormant/reversible binding the canonical Individual Monthly price is
+  // $4.99/month — an operator re-enabling paid copy must set displayPriceLabel
+  // to that canonical value deliberately (kept here so it can never drift to a
+  // stale price, and asserted by plan-compare-table.test.tsx).
+  displayPriceLabel: "",
+  publicHeadline: "Free for everyone",
+  publicSubheadline: "Every feature is free, funded by affiliate partners — not a subscription.",
+  checkoutDisclosureCopy: "LocateFlow is free. We may earn a commission when you choose a provider through LocateFlow, at no extra cost to you.",
   newUsersOnly: false,
 };
 
@@ -474,9 +486,12 @@ export default function AcquisitionCampaignsClient() {
           accessType,
           billingInterval: current.accessType === "PAID" ? current.billingInterval : "MONTH",
           displayPriceLabel: current.accessType === "PAID" ? current.displayPriceLabel : "",
-          publicHeadline: current.accessType === "PAID" ? current.publicHeadline : "Subscribe monthly",
-          publicSubheadline: current.accessType === "PAID" ? current.publicSubheadline : "Simple monthly billing.",
-          checkoutDisclosureCopy: current.accessType === "PAID" ? current.checkoutDisclosureCopy : "Checkout shows today's due amount, monthly renewal terms, and how to cancel.",
+          // Free/affiliate voice by default — never seed paywall copy onto the
+          // now-free public site. PAID is legacy/dormant; an operator reverting
+          // the free pivot must author paid copy deliberately.
+          publicHeadline: current.accessType === "PAID" ? current.publicHeadline : "Free for everyone",
+          publicSubheadline: current.accessType === "PAID" ? current.publicSubheadline : "Every feature is free, funded by affiliate partners.",
+          checkoutDisclosureCopy: current.accessType === "PAID" ? current.checkoutDisclosureCopy : "LocateFlow is free. We may earn a commission when you choose a provider through LocateFlow, at no extra cost to you.",
         };
       }
       if (accessType === "FREE_ACCESS") {
@@ -508,12 +523,11 @@ export default function AcquisitionCampaignsClient() {
       ...current,
       billingInterval: value,
       displayPriceLabel: current.accessType === "PAID" ? "" : current.displayPriceLabel,
-      publicHeadline: current.accessType === "PAID"
-        ? (value === "YEAR" ? "Subscribe annually" : "Subscribe monthly")
-        : current.publicHeadline,
-      publicSubheadline: current.accessType === "PAID"
-        ? (value === "YEAR" ? "Annual billing starts today." : "Simple monthly billing.")
-        : current.publicSubheadline,
+      // Switching the billing interval no longer reseeds subscription headlines:
+      // the public site is free, so we keep whatever copy is present rather than
+      // injecting "Subscribe annually / monthly" paywall defaults.
+      publicHeadline: current.publicHeadline,
+      publicSubheadline: current.publicSubheadline,
     }));
   }
 
@@ -631,7 +645,7 @@ export default function AcquisitionCampaignsClient() {
       <AdminPageHeader
         eyebrow="Growth"
         title="Acquisition <em>Campaigns</em>"
-        subtitle="Each public surface (homepage, /pricing, settings upgrade banner) reads from the active campaign in its slot. Slots are independent — Annual Trial and Monthly Paid each need their own campaign. Public site updates within 60 seconds after activation."
+        subtitle="Each public surface (homepage, /pricing, settings) reads from the active campaign in its slot, so this copy ships LIVE to the public site within ~60s of activation. LocateFlow is free for everyone (affiliate-funded) — keep public headlines, subheadlines, and disclosures in the free/affiliate voice and avoid 'Subscribe / $X per month / upgrade' paywall wording. The Paid / Monthly slot is a dormant, reversible legacy mechanism; the defaults here are intentionally free-consistent."
       />
 
       {slotConflicts.length > 0 ? (
@@ -660,7 +674,7 @@ export default function AcquisitionCampaignsClient() {
       <div className="grid gap-4 md:grid-cols-2">
         <SlotCard
           title="Annual Trial slot"
-          description="Drives the primary card on / and /pricing, and the upgrade banner for Free Access users."
+          description="Drives the primary card on / and /pricing, and the promo banner for Free Access users."
           campaign={slots.annualTrial}
           emptyHint="No annual trial published. The homepage will fall back to static annual copy until you activate one."
           onCreate={() => startCreate(annualTrialPreset)}
@@ -668,8 +682,8 @@ export default function AcquisitionCampaignsClient() {
           createLabel="Create Annual Trial"
         />
         <SlotCard
-          title="Monthly Paid slot"
-          description="Drives the second pricing card and the monthly checkout option in subscription settings."
+          title="Monthly Paid slot (legacy / dormant)"
+          description="Legacy paid slot — dormant while LocateFlow is free. Kept reversible; defaults stay in the free/affiliate voice and ship no paywall copy to the public site."
           campaign={slots.monthlyPaid}
           emptyHint="No monthly campaign active. The pricing page hides the monthly card until you activate one."
           onCreate={() => startCreate(monthlyPaidPreset)}
@@ -799,10 +813,10 @@ export default function AcquisitionCampaignsClient() {
               className={inputCls}
               value={form.displayPriceLabel}
               onChange={(event) => update("displayPriceLabel", event.target.value)}
-              placeholder={form.accessType === "PAID" && form.billingInterval === "MONTH" ? "$4.99/month" : "$24/year"}
+              placeholder="Leave blank — the public app is free"
             />
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Leave blank to auto-fill from Stripe. Otherwise must match the Stripe price.
+              LocateFlow is free for everyone. Leave this blank so no price shows on the public site. A price label only applies to the dormant/legacy paid path and must match its Stripe price.
             </p>
           </div>
           <div>

@@ -22,7 +22,14 @@ function parseOptionalBoolean(value: string | undefined): boolean | null {
 
 function defaultFlagEnabled(flagName: string): boolean {
   if (flagName !== CONSUMER_FREE_FLAG) return false;
-  return parseOptionalBoolean(process.env.CONSUMER_FREE_DEFAULT) ?? false;
+  // CONSUMER_FREE is the PRODUCT DEFAULT (ON): LocateFlow is 100% free for every
+  // user — no subscriptions, no payments — and monetizes through affiliate /
+  // commission partnerships instead. Every consumer resolves to PRO-level access,
+  // bounded only by the abuse/safety caps (addresses/services/providers and the
+  // concurrent-move limit). Reversible WITHOUT a code change: set
+  // CONSUMER_FREE_DEFAULT=false (or add a disabled CONSUMER_FREE DB flag row) to
+  // fall back to the paid ladder — e.g. to roll back or A/B the pivot.
+  return parseOptionalBoolean(process.env.CONSUMER_FREE_DEFAULT) ?? true;
 }
 
 async function loadFlags(): Promise<Map<string, FeatureFlag>> {

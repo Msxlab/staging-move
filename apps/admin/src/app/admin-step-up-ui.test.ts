@@ -14,7 +14,7 @@ describe("admin high-blast step-up UI", () => {
     notifications: read("(admin)/notifications/notifications-client.tsx"),
     featureFlags: read("(admin)/feature-flags/feature-flags-client.tsx"),
     security: read("(admin)/security/security-client.tsx"),
-    stateRules: read("(admin)/state-rules/page.tsx"),
+    stateRules: read("(admin)/state-rules/state-rules-client.tsx"),
   };
 
   it("renders the shared password confirmation modal in each protected client", () => {

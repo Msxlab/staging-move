@@ -978,7 +978,7 @@ function LegacySubscriptionScreen() {
             <Text style={styles.includedAccessCopy}>
               {t("settings.subscription_freeIncludedCopy", {
                 defaultValue:
-                  "You have full access to every LocateFlow feature. There is no subscription, no credit card, and nothing to renew or cancel.",
+                  "LocateFlow is free to use, with full access to every feature. There's no subscription, no credit card, and nothing to renew or cancel. We're funded by referral commissions when you choose a provider through LocateFlow — at no cost to you. Fair-use limits keep it fast and free for everyone.",
               })}
             </Text>
           </MoveCard>
