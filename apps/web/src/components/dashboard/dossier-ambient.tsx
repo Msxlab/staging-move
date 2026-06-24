@@ -59,6 +59,85 @@ export interface AmbientSpec {
   variant?: AmbientVariant;
 }
 
+export type SourceDossierSceneType = "weather" | "air" | "water" | "area" | "transit" | "cost" | "housing";
+
+export type SourceDossierSceneLevel =
+  | "good"
+  | "mid"
+  | "bad"
+  | "sun"
+  | "cloud"
+  | "rain"
+  | "snow"
+  | "storm"
+  | "fog"
+  | "wind"
+  | "heat"
+  | "cold";
+
+export interface SourceDossierSceneSpec {
+  type: SourceDossierSceneType;
+  level: SourceDossierSceneLevel;
+}
+
+function riskSourceLevel(intensity: AmbientIntensity): "good" | "mid" | "bad" {
+  return intensity === 2 ? "bad" : intensity === 1 ? "mid" : "good";
+}
+
+function positiveSourceLevel(intensity: AmbientIntensity): "good" | "mid" | "bad" {
+  return intensity === 2 ? "good" : intensity === 1 ? "mid" : "bad";
+}
+
+function weatherSourceLevel(variant: AmbientVariant | undefined): SourceDossierSceneLevel {
+  switch (variant) {
+    case "storm":
+    case "snow":
+    case "fog":
+    case "wind":
+    case "rain":
+    case "cloud":
+    case "heat":
+    case "cold":
+    case "sun":
+      return variant;
+    case "lightning":
+      return "storm";
+    case "winter":
+      return "snow";
+    default:
+      return "sun";
+  }
+}
+
+/**
+ * Bridge the current row ambient contract to the source bundle's
+ * DossierScene(type, level) matrix. Web still renders its existing row art, but
+ * these source semantics keep the UI testable against the prototype and make
+ * every source state explicit in the DOM.
+ */
+export function sourceDossierSceneFor({ kind, intensity, variant }: AmbientSpec): SourceDossierSceneSpec {
+  switch (kind) {
+    case "weather":
+      return { type: "weather", level: weatherSourceLevel(variant) };
+    case "air":
+      return { type: "air", level: riskSourceLevel(intensity) };
+    case "water":
+      return { type: "water", level: riskSourceLevel(intensity) };
+    case "housing":
+      return { type: "cost", level: riskSourceLevel(intensity) };
+    case "evCharging":
+      return { type: "transit", level: positiveSourceLevel(intensity) };
+    case "neighborhood":
+      return { type: "area", level: positiveSourceLevel(intensity) };
+    case "school":
+      return { type: "area", level: "mid" };
+    case "flood":
+    case "hazard":
+    case "radon":
+      return { type: "area", level: riskSourceLevel(intensity) };
+  }
+}
+
 /**
  * Per-section inputs for the pure mapper. Shapes mirror the derived dossier
  * view (home-dossier.tsx) without importing it — keeps the dependency one-way
@@ -936,8 +1015,7 @@ function clampIntensity(value: number): AmbientIntensity {
  *
  * On TOP of that data-derived scene sits the mood-driven raccoon character —
  * the same character the mobile DossierAmbient renders. It is a separate
- * FOREGROUND element (the scene layer is z-index:-1 + masked, so the raccoon
- * couldn't show through it) anchored in the bottom-right corner where the row
+ * foreground element anchored in the bottom-right corner where the row
  * carries no text. ambientForSection stays the data-honest source of truth for
  * the scene; dossierRaccoonFor only picks the expression that mirrors this
  * reading (good -> happy/approved, mid -> calm/thinking, bad -> alert). The
@@ -956,6 +1034,7 @@ export function DossierAmbient({
   const ref = useAmbientPause();
   const level = clampIntensity(intensity);
   const mood = dossierRaccoonFor({ kind, intensity: level, variant });
+  const sourceScene = sourceDossierSceneFor({ kind, intensity: level, variant });
   return (
     <>
       <div
@@ -963,15 +1042,11 @@ export function DossierAmbient({
         aria-hidden="true"
         data-kind={kind}
         data-intensity={level}
-        // globals.css pins .da-layer at z-index:-1; on web the per-situation
-        // scene read as weak/absent there (owner: "merged with the old", only the
-        // foreground raccoon showed). Lift it to the foreground plane so the
-        // data-derived motion is actually perceivable (mobile already overlays
-        // it positively). The scene stays masked to the right side, subtle,
-        // aria-hidden and pointer-events-none, so the
-        // right-edge values it overlaps remain clearly readable and interaction
-        // is untouched. (Follow-up if the right-edge overlap is ever distracting:
-        // give the row's text content `relative z-[2]` so it paints above this.)
+        data-source-type={sourceScene.type}
+        data-source-level={sourceScene.level}
+        data-variant={variant}
+        // Keep the scene on a visible foreground plane; globals.css masks it to
+        // the right side and lifts row copy above it.
         style={{ zIndex: 0 }}
         className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden rounded-r-xl"
       >
@@ -979,8 +1054,8 @@ export function DossierAmbient({
       </div>
       <div
         aria-hidden="true"
-        // Raccoon sits ABOVE the now-foreground scene art (z-[1] > the scene's
-        // z-0) in the bottom-right corner the row carries no text.
+        // The foreground character sits above the scene in the bottom-right
+        // corner the row carries no text.
         className="da-raccoon pointer-events-none absolute bottom-0 right-2 z-[1] flex items-end"
       >
         <DossierStoryCharacter kind={kind} intensity={level} variant={variant} mood={mood} />
