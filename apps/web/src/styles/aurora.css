@@ -424,24 +424,27 @@
 
 /* --- Light theme overrides ----------------------------------------- */
 .light .lf-aurora {
-  --background:           220 23% 96%;
+  --background:           41.25 33.33% 90.59%;
   --foreground:           213 39% 13%;
-  --card:                 218 21% 92%;
+  --card:                 38.57 41.18% 93.33%;
   --card-foreground:      213 39% 13%;
-  --popover:              218 21% 96%;
+  --popover:              0 0% 100%;
   --popover-foreground:   213 39% 13%;
   --primary:              217.38 58.56% 43.53%;
   --primary-foreground:   0 0% 100%;
   --secondary:            214 22% 38%;
   --secondary-foreground: 0 0% 100%;
-  --muted:                218 21% 88%;
-  --muted-foreground:     213 14% 35%;
-  --accent:               218 21% 90%;
+  --muted:                41.05 28.36% 86.86%;
+  --muted-foreground:     213 18% 30%;
+  --accent:               40 32.14% 89.02%;
   --accent-foreground:    213 39% 13%;
   --destructive:          358 47% 43%;
   --destructive-foreground: 0 0% 100%;
-  --border:               213 18% 82%;
-  --input:                213 18% 82%;
+  --warning:              36.73 67.12% 28.63%;
+  --success:              162 75% 24%;
+  --info:                 184 66% 25%;
+  --border:               40 17% 76%;
+  --input:                40 17% 76%;
   --ring:                 217.38 58.56% 43.53%;
 
   --tone-foil-fg:         #244C90;
