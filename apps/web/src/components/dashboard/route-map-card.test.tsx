@@ -7,6 +7,7 @@ import {
   hslTripletToHex,
   nextRouteMapSrcAfterError,
   resolveActiveRouteCoords,
+  routeMarkerCorners,
 } from "./route-map-card";
 
 // lucide-react ships its own nested React copy, which breaks hooks under the
@@ -100,6 +101,37 @@ describe("resolveActiveRouteCoords", () => {
     expect(resolveActiveRouteCoords(undefined, [CHI, ATX])).toBeNull();
     expect(resolveActiveRouteCoords([plan()], "nope")).toBeNull();
     expect(resolveActiveRouteCoords([null, plan({ fromAddressId: 7 })], [CHI, ATX])).toBeNull();
+  });
+});
+
+describe("routeMarkerCorners", () => {
+  it("anchors each endpoint to its true north-up corner (origin north+east → top-right)", () => {
+    // Chicago (origin) is north + east of Austin (destination): the OLD-home /
+    // origin marker must land top-right and NEW-home / destination bottom-left,
+    // not the fixed old=bottom-left default that read as swapped on the basemap.
+    const corners = routeMarkerCorners({
+      from: { lat: CHI.latitude, lng: CHI.longitude },
+      to: { lat: ATX.latitude, lng: ATX.longitude },
+    });
+    expect(corners).toEqual({
+      from: { x: "right", y: "top" },
+      to: { x: "left", y: "bottom" },
+    });
+  });
+
+  it("places the destination diagonally opposite the origin (origin south+west → bottom-left)", () => {
+    const corners = routeMarkerCorners({
+      from: { lat: ATX.latitude, lng: ATX.longitude },
+      to: { lat: CHI.latitude, lng: CHI.longitude },
+    });
+    expect(corners).toEqual({
+      from: { x: "left", y: "bottom" },
+      to: { x: "right", y: "top" },
+    });
+  });
+
+  it("returns null without coordinates so the stylized canvas keeps its default diagonal", () => {
+    expect(routeMarkerCorners(null)).toBeNull();
   });
 });
 

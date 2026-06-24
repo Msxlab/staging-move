@@ -123,6 +123,41 @@ export function nextRouteMapSrcAfterError(currentSrc: string | null, previewSrc:
   return null;
 }
 
+/**
+ * The real basemap is auto-fitted NORTH-UP to the from/to bounding box (see
+ * /api/maps/static — `area=rect:west,south,east,north`, no markers drawn), so
+ * each endpoint's on-image corner is dictated by its actual geography: the
+ * northern endpoint sits at the top, the eastern endpoint on the right. The
+ * overlay pins/labels must follow that, otherwise the OLD-home and NEW-home
+ * markers appear SWAPPED whenever the move runs north-east→south-west (e.g.
+ * Chicago→Austin: origin is north+east → top-right, not the fixed bottom-left).
+ *
+ * Returns the screen-space corner anchors for the origin (from / old home) and
+ * destination (to / new home) markers given the resolved coordinates. Null when
+ * coords are absent — callers keep the abstract diagonal for the stylized
+ * loading canvas.
+ */
+export type CornerAnchor = { x: "left" | "right"; y: "top" | "bottom" };
+
+export function routeMarkerCorners(
+  coords: { from: RouteCoord; to: RouteCoord } | null,
+): { from: CornerAnchor; to: CornerAnchor } | null {
+  if (!coords) return null;
+  // North-up: larger lat → "top"; east-positive: larger lng → "right".
+  const fromIsNorth = coords.from.lat >= coords.to.lat;
+  const fromIsEast = coords.from.lng >= coords.to.lng;
+  const from: CornerAnchor = {
+    x: fromIsEast ? "right" : "left",
+    y: fromIsNorth ? "top" : "bottom",
+  };
+  // Destination occupies the diagonally opposite corner.
+  const to: CornerAnchor = {
+    x: fromIsEast ? "left" : "right",
+    y: fromIsNorth ? "bottom" : "top",
+  };
+  return { from, to };
+}
+
 export function buildRouteMapImageSources(
   coords: { from: RouteCoord; to: RouteCoord },
   opts: { width: number; height: number; theme: "dark" | "light"; accent?: string | null },
@@ -156,6 +191,17 @@ function MapPin({ left, top, color }: { left: string; top: string; color: string
   );
 }
 
+// Per-corner positioning so a label/pin can be anchored to whichever corner its
+// endpoint actually occupies on the north-up basemap.
+const LABEL_CORNER_CLASS: Record<"top" | "bottom", Record<"left" | "right", string>> = {
+  top: { left: "left-[8%] top-[7%]", right: "right-[4%] top-[7%]" },
+  bottom: { left: "left-[8%] top-[79%]", right: "right-[4%] top-[79%]" },
+};
+const PIN_CORNER: Record<"top" | "bottom", Record<"left" | "right", { left: string; top: string }>> = {
+  top: { left: { left: "13%", top: "27%" }, right: { left: "87%", top: "27%" } },
+  bottom: { left: { left: "13%", top: "76%" }, right: { left: "87%", top: "76%" } },
+};
+
 /** Mono uppercase label chip pinned onto the canvas. */
 function MapLabel({
   text,
@@ -177,7 +223,16 @@ function MapLabel({
  * The original CSS/SVG-stylized canvas — kept verbatim as the loading state
  * and the graceful fallback whenever a real map image can't be shown.
  */
-function StylizedCanvas() {
+function StylizedCanvas({
+  corners,
+}: {
+  corners: { from: CornerAnchor; to: CornerAnchor } | null;
+}) {
+  // Default abstract diagonal (origin bottom-left, destination top-right) until
+  // real coords resolve; once they do, pin each endpoint to its true corner so
+  // the sage/origin and primary/destination markers can't read as swapped.
+  const fromPin = corners ? PIN_CORNER[corners.from.y][corners.from.x] : { left: "13%", top: "76%" };
+  const toPin = corners ? PIN_CORNER[corners.to.y][corners.to.x] : { left: "87%", top: "27%" };
   return (
     <>
       {/* terrain — blurred tone blobs (brand CSS vars over the dark base) */}
@@ -236,9 +291,10 @@ function StylizedCanvas() {
         />
       </svg>
 
-      {/* pins — origin in sage, destination in the plan accent */}
-      <MapPin left="13%" top="76%" color="var(--sage)" />
-      <MapPin left="87%" top="27%" color="hsl(var(--primary))" />
+      {/* pins — origin in sage, destination in the plan accent (each anchored
+          to its true geographic corner once coords resolve) */}
+      <MapPin left={fromPin.left} top={fromPin.top} color="var(--sage)" />
+      <MapPin left={toPin.left} top={toPin.top} color="hsl(var(--primary))" />
     </>
   );
 }
@@ -267,6 +323,9 @@ export function RouteMapCard({
   const [src, setSrc] = useState<string | null>(null);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [imgState, setImgState] = useState<"loading" | "ready" | "failed">("loading");
+  // Resolved endpoint coords drive which corner each marker/label anchors to,
+  // so old/new home track the north-up basemap instead of fixed corners.
+  const [corners, setCorners] = useState<{ from: CornerAnchor; to: CornerAnchor } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -282,6 +341,7 @@ export function RouteMapCard({
         const [movingData, addrData] = await Promise.all([movingRes.json(), addrRes.json()]);
         const coords = resolveActiveRouteCoords(movingData?.plans, addrData?.addresses);
         if (!coords || cancelled) return;
+        setCorners(routeMarkerCorners(coords));
         // Live plan accent (Free/Family/Pro re-point --primary via .plan-*).
         const accent = cardRef.current
           ? hslTripletToHex(getComputedStyle(cardRef.current).getPropertyValue("--primary"))
@@ -330,7 +390,7 @@ export function RouteMapCard({
 
       {/* Map canvas — real basemap once loaded, stylized fallback otherwise */}
       <div className="relative mx-4 mb-4 h-56 overflow-hidden rounded-xl border border-border bg-black">
-        {showStylized && <StylizedCanvas />}
+        {showStylized && <StylizedCanvas corners={corners} />}
 
         {src && imgState !== "failed" && (
           /* Same-origin authenticated proxy image — next/image's optimizer
@@ -359,9 +419,17 @@ export function RouteMapCard({
           />
         )}
 
-        {/* labels overlay both the real map and the stylized fallback */}
-        <MapLabel text={`${td("routeMap_oldHome")} · ${fromCity}`} className="left-[8%] top-[79%]" />
-        <MapLabel text={`${td("routeMap_newHome")} · ${toCity}`} className="right-[4%] top-[7%]" />
+        {/* labels overlay both the real map and the stylized fallback; each is
+            anchored to its endpoint's true corner once coords resolve, with the
+            original old=bottom-left / new=top-right diagonal as the default. */}
+        <MapLabel
+          text={`${td("routeMap_oldHome")} · ${fromCity}`}
+          className={corners ? LABEL_CORNER_CLASS[corners.from.y][corners.from.x] : "left-[8%] top-[79%]"}
+        />
+        <MapLabel
+          text={`${td("routeMap_newHome")} · ${toCity}`}
+          className={corners ? LABEL_CORNER_CLASS[corners.to.y][corners.to.x] : "right-[4%] top-[7%]"}
+        />
 
         {showStylized && (
           <span className="absolute bottom-1.5 right-2 font-mono text-[8px] uppercase tracking-[0.08em] text-white/30">
