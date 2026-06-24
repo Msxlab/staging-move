@@ -57,12 +57,12 @@
   --au-ink-2:       #4A5C75;
   --au-ink-3:       #7A8A9F;
   --au-ink-4:       #ABB6C5;
-  --au-base:        #F7F4EC;
+  --au-base:        #EFEADF;
   --au-base-2:      #FFFFFF;
-  --au-base-3:      #F4EFE5;
-  --au-pane:        rgba(255, 255, 255, 0.86);
-  --au-pane-2:      rgba(255, 255, 255, 0.94);
-  --au-pane-3:      rgba(255, 255, 255, 0.98);
+  --au-base-3:      #F5F0E7;
+  --au-pane:        rgba(255, 255, 255, 0.92);
+  --au-pane-2:      rgba(255, 255, 255, 0.98);
+  --au-pane-3:      #FFFFFF;
   --au-edge:        rgba(255, 255, 255, 0.95);
   --au-edge-2:      rgba(20, 32, 47, 0.06);
   --au-rule:        rgba(20, 32, 47, 0.08);

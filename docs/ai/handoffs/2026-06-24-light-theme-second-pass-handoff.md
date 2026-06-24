@@ -2,7 +2,7 @@
 
 ## Scope
 
-Responded to the staging dashboard light-theme regression reported by the user: the prior beige/light canvas appeared too dark and low-contrast on `/dashboard`. Also preserved and verified the dossier scene fixes from the source prototype comparison.
+Responded to the staging dashboard light-theme regression reported by the user: the prior beige/light canvas appeared too dark, grey-brown, and low-contrast on `/dashboard`. Also preserved and verified the dossier scene fixes from the source prototype comparison.
 
 ## Source Evidence Used
 
@@ -12,11 +12,11 @@ Responded to the staging dashboard light-theme regression reported by the user: 
 
 ## Code Changes
 
-- Adjusted web Aurora light tokens to use a lighter warm-paper base:
+- Adjusted web Aurora light tokens back to the source warm-paper base `#EFEADF`, while making panes/cards more opaque white:
   - `packages/shared/src/design-tokens-css.ts`
   - `apps/web/src/styles/_aurora-tokens.generated.css`
-- Adjusted web light shadcn override values in `apps/web/src/styles/aurora.css`.
-- Lightened the app-shell backdrop and dossier row/card surfaces in `apps/web/src/styles/globals.css`.
+- Added scoped `.light .lf-aurora` overrides for dark-first translucent utility classes (`bg-foreground/5`, `bg-card/70`, `bg-background/55`, etc.) so app panels no longer inherit a muddy ink wash.
+- Lightened the app-shell backdrop in `apps/web/src/styles/globals.css`.
 - Updated light browser theme color metadata in `apps/web/src/app/layout.tsx`.
 - Kept dossier mapping fixes in `apps/web/src/components/dashboard/dossier-ambient.tsx`:
   - flood -> water
@@ -37,6 +37,7 @@ Responded to the staging dashboard light-theme regression reported by the user: 
 - `pnpm --filter @locateflow/mobile test -- src/lib/home-dossier.test.ts src/lib/home-dossier-cache.test.ts src/lib/dossier-raccoon.test.ts`
 - `pnpm --filter @locateflow/web build`
 - `pnpm --filter @locateflow/web exec tsx "../../docs/ai/audits/2026-06-24-source-dossier-qa/render-web-dossier-qa.tsx"`
+- Local light-shell Playwright harness: `02-web-light-shell-harness.png` / `.metrics.json` under `docs/ai/audits/2026-06-24-source-dossier-qa/`
 - `git diff --check`
 
 Known command warnings:

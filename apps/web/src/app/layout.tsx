@@ -136,7 +136,7 @@ export const viewport: Viewport = {
   // scrollbars correctly in either theme. The per-scheme browser-chrome color
   // is set via the media-aware <meta name="theme-color"> tags in <head> below,
   // sourced from the canonical --bg tokens (dark #070B14 deepened to #0A0F18,
-  // light warm paper (#F7F4EC).
+  // light warm paper (#EFEADF).
   colorScheme: "dark light",
 };
 
@@ -169,10 +169,10 @@ export default async function RootLayout({
         {/*
          * Media-aware browser-chrome color so the address bar / status bar
          * tracks the active theme. Light value is the canonical --bg light
-         * token (#F7F4EC warm paper); dark keeps the existing brand
+         * token (#EFEADF warm paper); dark keeps the existing brand
          * deep-navy. A bare fallback follows for UAs that ignore `media`.
          */}
-        <meta name="theme-color" content="#F7F4EC" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#EFEADF" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#0A0F18" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#0A0F18" />
         <meta name="mobile-web-app-capable" content="yes" />
