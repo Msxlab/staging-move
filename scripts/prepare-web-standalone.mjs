@@ -6,6 +6,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const webRoot = resolve(root, "apps/web");
 const standaloneRoot = resolve(webRoot, ".next/standalone");
 const standaloneWebRoot = resolve(webRoot, ".next/standalone/apps/web");
+const pdfkitDataTargets = [
+  resolve(standaloneRoot, "node_modules/pdfkit/js/data"),
+  resolve(standaloneWebRoot, "node_modules/pdfkit/js/data"),
+];
 
 const copies = [
   {
@@ -63,6 +67,18 @@ async function mustExist(path, label) {
   }
 }
 
+async function firstExisting(paths) {
+  for (const path of paths) {
+    try {
+      await stat(path);
+      return path;
+    } catch {
+      // Try the next package-manager layout.
+    }
+  }
+  return null;
+}
+
 async function main() {
   await mustExist(resolve(standaloneWebRoot, "server.js"), "standalone server");
   for (const item of copies) {
@@ -70,6 +86,18 @@ async function main() {
     await mkdir(dirname(item.to), { recursive: true });
     await cp(item.from, item.to, { recursive: true, force: true, dereference: true });
     console.log(`Copied ${item.label} to ${item.to}`);
+  }
+  const pdfkitDataSource = await firstExisting([
+    resolve(webRoot, "node_modules/pdfkit/js/data"),
+    resolve(root, "node_modules/pdfkit/js/data"),
+  ]);
+  if (!pdfkitDataSource) {
+    throw new Error("pdfkit standard font data not found. Run pnpm install before building the web standalone bundle.");
+  }
+  for (const target of pdfkitDataTargets) {
+    await mkdir(dirname(target), { recursive: true });
+    await cp(pdfkitDataSource, target, { recursive: true, force: true, dereference: true });
+    console.log(`Copied pdfkit standard font data to ${target}`);
   }
 }
 

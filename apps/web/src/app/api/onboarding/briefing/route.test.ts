@@ -76,6 +76,7 @@ vi.mock("@/lib/onboarding-briefing", async (importOriginal) => {
 });
 
 import { POST } from "./route";
+import { ApiGateError } from "@/lib/api-gates";
 
 function makeRequest() {
   return new NextRequest("https://locateflow.com/api/onboarding/briefing", {
@@ -213,6 +214,17 @@ describe("/api/onboarding/briefing", () => {
 
     // No upgrade CTA for a feature this deployment cannot serve to anyone.
     expect(body).toEqual({ configured: false });
+  });
+
+  it("fails soft when workspace entitlement resolution is gated", async () => {
+    mocks.resolveWorkspaceDataScope.mockRejectedValueOnce(new ApiGateError("FORBIDDEN"));
+
+    const response = await POST(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ configured: false });
+    expect(mocks.generateLlmBriefing).not.toHaveBeenCalled();
   });
 
   it("consumer-free lets a free plan receive the included briefing", async () => {

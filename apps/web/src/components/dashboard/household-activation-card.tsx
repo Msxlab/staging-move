@@ -128,6 +128,8 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [result, setResult] = useState<SetupResult | null>(null);
   const autoOpenConsumedRef = useRef(false);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const firstEmailInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     try {
@@ -217,6 +219,15 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
       /* non-blocking */
     }
   }, [visible]);
+
+  useEffect(() => {
+    if (!open || result || submitting) return;
+    const raf = window.requestAnimationFrame(() => {
+      const targetInput = name.trim() ? firstEmailInputRef.current : nameInputRef.current;
+      targetInput?.focus();
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [open, result, submitting]);
 
   const handleDismiss = () => {
     setDismissed(true);
@@ -444,7 +455,10 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
                   {td("household_nameLabel")}
                 </label>
                 <input
+                  ref={nameInputRef}
                   id="household-name"
+                  name="householdName"
+                  autoComplete="organization"
                   value={name}
                   maxLength={60}
                   onChange={(e) => setName(e.target.value)}
@@ -461,7 +475,11 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
                 {emails.map((value, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <input
+                      ref={i === 0 ? firstEmailInputRef : undefined}
                       type="email"
+                      name={`householdInviteEmail-${i + 1}`}
+                      autoComplete="email"
+                      inputMode="email"
                       aria-label={td("household_emailFieldLabel", { index: i + 1 })}
                       placeholder="name@email.com"
                       value={value}
