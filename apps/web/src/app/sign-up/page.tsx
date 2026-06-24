@@ -52,7 +52,6 @@ function SignUpForm() {
   const tCommon = useTranslations("common");
   const tLegal = useTranslations("legal");
   const tToast = useTranslations("toast");
-  const tLanding = useTranslations("landing");
 
   useEffect(() => {
     trackEvent("sign_up_started", { method: "email" });
@@ -189,7 +188,11 @@ function SignUpForm() {
         <div className="w-full max-w-[380px] space-y-6">
           <div>
             <h2 className="font-display text-3xl font-bold text-foreground">{tAuth("signUp_title")}</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">{tAuth("signUp_subtitle")} {tLanding("noCreditCard")}</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">{tAuth("signUp_subtitle")}</p>
+            <div className="mt-3 flex gap-2 rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-xs leading-5 text-foreground">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <span>{tAuth("freeAccessPromise")}</span>
+            </div>
           </div>
 
         {isInviteRedirect && (

@@ -15,14 +15,16 @@ Free-pivot verification: [[audits/2026-06-23-free-pivot-verification]]
 Latest free-pivot handoff: [[handoffs/2026-06-23-free-pivot-verification]]
 Free-pivot runtime follow-up: [[audits/2026-06-23-free-pivot-followup]]
 Latest free-pivot runtime handoff: [[handoffs/2026-06-23-free-pivot-followup]]
+Free-pivot source fixes: [[audits/2026-06-23-live-staging-source-fixes]]
+Latest free-pivot source-fix handoff: [[handoffs/2026-06-23-live-staging-source-fixes]]
 
 Immediate follow-up from the free-pivot verification and runtime follow-up:
 
 1. Redeploy staging from the intended branch/commit and verify authenticated `/api/build-info`; live staging web currently reports `feat/design-foundation` commit `38cb3718abf1958f6fd1c6cd731abd3974047b23`, not the latest `origin/staging` or `origin/main`.
 2. Build or provide an official signed Android `preview` / `staging-preview` artifact, install it, and rerun the mobile QA matrix. A local debug APK was installed with staging env and tested successfully, but this is not the signed preview artifact.
-3. Fix public mobile web horizontal overflow on staging home, pricing, and why-free at 390px.
-4. Fix the admin `CONSUMER_FREE` missing-row default so admin status matches the web product default.
-5. Add visible "free / no credit card / affiliate-funded" reassurance to sign-up and sign-in, and remove stale "checkout terms" wording from the free account creation surface.
+3. Redeploy and re-verify public mobile web horizontal overflow on staging home, pricing, and why-free at 390px. Source already hides the logged-out desktop header CTA below `lg`; live staging still shows the old bundle.
+4. Deploy and verify the admin `CONSUMER_FREE` missing-row default fix so admin status matches the web product default.
+5. Deploy and verify visible "free / no credit card / affiliate-funded" reassurance on sign-up/sign-in, and confirm stale "checkout terms" wording is gone from live staging.
 6. Provide approved admin QA credentials or an approved admin test account before authenticated admin runtime screenshots.
 7. Get legal review for the billing/refund free-pivot disclosure language.
 
@@ -38,6 +40,7 @@ Immediate QA blockers found 2026-06-23:
 
 Additional QA evidence added 2026-06-23:
 
+- Live staging source-fix pass checked 16 public/auth/legal routes at mobile `390x844` and desktop `1440x900`, saving screenshots and metrics under [[audits/2026-06-23-live-staging-source-fixes]]. Live staging still showed mobile header overflow and stale sign-up checkout copy, but the current source branch contains fixes/tests for those source issues.
 - Public/protected web internal link check found 18 unique staging links and 0 404/5xx/bad redirects.
 - Portal enter sentinel check still reproduces 2 bad `0.0.0.0:3000` invalid-token redirects.
 - Dossier source contract was reviewed: Free preview, Individual+ full Dossier, Pro PDF/neighborhood unless the `CONSUMER_FREE` feature flag intentionally promotes consumer read paths to Pro.
