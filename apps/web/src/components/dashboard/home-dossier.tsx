@@ -1340,6 +1340,53 @@ function HomeDossierSkeleton() {
 
 // ── Fetching wrapper (default dashboard entry) ───────────────────────────────
 
+const DOSSIER_SESSION_CACHE_PREFIX = "lf:home-dossier:v1:";
+const DOSSIER_SESSION_CACHE_FALLBACK_TTL_MS = 10 * 60 * 1000;
+
+type DossierSessionCacheEntry = {
+  expiresAt: number;
+  data: HomeDossierResponse;
+};
+
+function dossierSessionCacheKey(addressId: string): string {
+  return `${DOSSIER_SESSION_CACHE_PREFIX}${addressId}`;
+}
+
+function readDossierSessionCache(addressId: string): HomeDossierResponse | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(dossierSessionCacheKey(addressId));
+    if (!raw) return null;
+    const entry = JSON.parse(raw) as Partial<DossierSessionCacheEntry>;
+    if (!entry || typeof entry.expiresAt !== "number" || entry.expiresAt <= Date.now() || !entry.data) {
+      window.sessionStorage.removeItem(dossierSessionCacheKey(addressId));
+      return null;
+    }
+    return entry.data as HomeDossierResponse;
+  } catch {
+    return null;
+  }
+}
+
+function maxAgeFromCacheControl(cacheControl: string | null): number {
+  const match = /(?:^|,\s*)max-age=(\d+)/i.exec(cacheControl ?? "");
+  if (!match) return DOSSIER_SESSION_CACHE_FALLBACK_TTL_MS;
+  const seconds = Number(match[1]);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : DOSSIER_SESSION_CACHE_FALLBACK_TTL_MS;
+}
+
+function writeDossierSessionCache(addressId: string, data: HomeDossierResponse, ttlMs: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(
+      dossierSessionCacheKey(addressId),
+      JSON.stringify({ expiresAt: Date.now() + ttlMs, data } satisfies DossierSessionCacheEntry),
+    );
+  } catch {
+    // Browser privacy modes or storage pressure should never break the dashboard.
+  }
+}
+
 export function HomeDossier({ addressId }: { addressId: string | null }) {
   const [state, setState] = useState<{ status: "loading" | "done"; data: HomeDossierResponse | null }>({
     status: "loading",
@@ -1352,6 +1399,13 @@ export function HomeDossier({ addressId }: { addressId: string | null }) {
       return;
     }
     let cancelled = false;
+    const cached = readDossierSessionCache(addressId);
+    if (cached) {
+      setState({ status: "done", data: cached });
+      return () => {
+        cancelled = true;
+      };
+    }
     setState({ status: "loading", data: null });
     (async () => {
       try {
@@ -1362,6 +1416,7 @@ export function HomeDossier({ addressId }: { addressId: string | null }) {
           return;
         }
         const json = (await res.json()) as HomeDossierResponse;
+        writeDossierSessionCache(addressId, json, maxAgeFromCacheControl(res.headers.get("Cache-Control")));
         if (!cancelled) setState({ status: "done", data: json });
       } catch {
         if (!cancelled) setState({ status: "done", data: null });
