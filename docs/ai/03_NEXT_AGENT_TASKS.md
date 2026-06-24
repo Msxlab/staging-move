@@ -4,10 +4,12 @@ Updated: 2026-06-24
 
 ## Current Staging Thread Note
 
-Use [[handoffs/2026-06-24-staging-regression-audit-fixes]] plus the follow-up
-[[handoffs/2026-06-24-dossier-theme-map-pdf-followup]] as the latest source-fix
-handoffs for the 2026-06-24 staging regression batch. Branch:
-`codex/staging-regression-audit-fixes`.
+Use [[handoffs/2026-06-24-source-beige-dossier-visibility-correction]] as the
+latest UI/theme correction handoff for the 2026-06-24 staging regression batch.
+It supersedes the earlier clean-canvas direction for light mode. Branch:
+`fix/ui-ux-remediation`. Earlier source-fix handoffs remain:
+[[handoffs/2026-06-24-staging-regression-audit-fixes]] and
+[[handoffs/2026-06-24-dossier-theme-map-pdf-followup]].
 
 Immediate follow-up from the 2026-06-24 regression fixes:
 

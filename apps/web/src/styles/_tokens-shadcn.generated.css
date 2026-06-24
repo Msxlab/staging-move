@@ -91,7 +91,7 @@
 
     --radius:                 0.625rem;
 
-    /* Legacy short surface tokens — clean paper canvas */
+    /* Legacy short surface tokens — warm paper canvas */
     --surface-secondary:      #FFFFFF;
     --text-primary:           rgba(20, 32, 47, 1);
     --text-secondary:         rgba(20, 32, 47, 0.72);
