@@ -104,7 +104,7 @@ function DemoRow({
   children?: ReactNode;
 }) {
   return (
-    <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+    <div className="lf-dossier-row relative isolate p-3 rounded-xl border border-border">
       <DossierAmbient {...ambient} />
       <div className="flex items-center gap-3">
         <div
@@ -173,7 +173,7 @@ export function DossierShowcase() {
         {/* Demo card — same chrome as the dashboard HomeDossierCard, with the
             glass-card + hairline marketing finish. Ambient scene parameters
             derive from the sample figures via the product's own mapper. */}
-        <div className="glass-card hairline overflow-hidden">
+        <div className="lf-dossier-shell glass-card hairline overflow-hidden">
           <div className="flex items-baseline justify-between gap-3 px-5 pt-5 pb-3">
             <div className="flex items-center gap-2 min-w-0">
               <Compass className="h-4 w-4 shrink-0 text-tone-sky-fg" />
@@ -280,7 +280,7 @@ export function DossierShowcase() {
                 feature). */}
             <div
               ref={counts.ref}
-              className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]"
+              className="lf-dossier-row relative isolate p-3 rounded-xl border border-border"
             >
               <DossierAmbient
                 {...ambientForSection({
