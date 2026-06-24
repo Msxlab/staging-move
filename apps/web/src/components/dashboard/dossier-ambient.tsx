@@ -851,9 +851,9 @@ function clampIntensity(value: number): AmbientIntensity {
 
 /**
  * The ambient layer for one dossier section row. The host row must be
- * `relative isolate`; the scene layer fills its right 55%, masked so the left
- * text zone stays clean, stacked under the row content (z-index -1 via
- * .da-layer), and paused while offscreen.
+ * `relative isolate`; the scene layer fills its right side, masked so the left
+ * text zone stays clean, stacked under the row content, and paused while
+ * offscreen.
  *
  * On TOP of that data-derived scene sits the mood-driven raccoon character —
  * the same character the mobile DossierAmbient renders. It is a separate
@@ -888,13 +888,13 @@ export function DossierAmbient({
         // scene read as weak/absent there (owner: "merged with the old", only the
         // foreground raccoon showed). Lift it to the foreground plane so the
         // data-derived motion is actually perceivable (mobile already overlays
-        // it positively). The scene stays masked to the right ~55%, faint
-        // (opacity 0.06–0.22), aria-hidden and pointer-events-none, so the
+        // it positively). The scene stays masked to the right side, subtle,
+        // aria-hidden and pointer-events-none, so the
         // right-edge values it overlaps remain clearly readable and interaction
         // is untouched. (Follow-up if the right-edge overlap is ever distracting:
         // give the row's text content `relative z-[2]` so it paints above this.)
         style={{ zIndex: 0 }}
-        className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[55%] overflow-hidden rounded-r-xl"
+        className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[64%] overflow-hidden rounded-r-xl"
       >
         <AmbientScene kind={kind} intensity={level} variant={variant} />
       </div>

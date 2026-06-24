@@ -88,6 +88,7 @@ COPY . .
 
 RUN pnpm --filter @locateflow/db generate \
  && pnpm --filter @locateflow/web build \
+ && node scripts/prepare-web-standalone.mjs \
  && test -f apps/web/.next/standalone/apps/web/server.js \
  && test -d apps/web/.next/static \
  && test -d apps/web/public

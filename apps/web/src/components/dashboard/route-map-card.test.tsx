@@ -241,6 +241,9 @@ describe("RouteMapCard markup", () => {
     // overlay labels from the real catalog
     expect(html).toContain("Old home");
     expect(html).toContain("New home");
+    expect(html).toContain("lf-route-map-label");
+    expect(html).toContain('data-endpoint="from"');
+    expect(html).toContain('data-endpoint="to"');
     // stylized fallback is showing, and no <img> exists yet
     expect(html).toContain("Stylized view");
     expect(html).not.toContain("<img");
