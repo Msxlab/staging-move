@@ -63,6 +63,15 @@ export async function isFeatureEnabled(
   if (!flag) return defaultFlagEnabled(flagName);
   if (!flag.enabled) return false;
 
+  // CONSUMER_FREE is a GLOBAL master switch (the truly-free pivot) and is always
+  // read WITHOUT per-user context. Per-user targeting (percentage/user-list/plan)
+  // is meaningless for it and would collapse the context-less read to false (or a
+  // random result for PERCENTAGE) — silently dropping every consumer back to the
+  // paid ladder and disabling PRO-gated features (e.g. addressValidation, which
+  // drives provider serviceability). So an enabled CONSUMER_FREE row is ON for
+  // everyone, however the row happened to be targeted.
+  if (flagName === CONSUMER_FREE_FLAG) return true;
+
   if (flag.targetType === "ALL") return true;
 
   if (flag.targetValue) {

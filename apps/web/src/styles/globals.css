@@ -1277,6 +1277,15 @@ html[data-embed="mobile"] .install-prompt {
   animation-play-state: paused !important;
 }
 
+/* — Mood-driven raccoon character (parity with mobile DossierAmbient): a static
+   SVG mark anchored in the row's bottom-right foreground, ON TOP of the masked
+   z-(-1) scene layer but kept subtle so the row copy always dominates. No
+   animation of its own, so nothing to disable under reduced motion. — */
+.da-raccoon {
+  opacity: 0.85;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
+}
+
 /* — Flood: 2-3 stacked sine waves along the bottom, parallax drift.
    Intensity 0 calm cool, 1 honey swells, 2 faster coral + level breathing. — */
 .da-layer[data-kind="flood"] { --da-wave-color: var(--foil-b); }
