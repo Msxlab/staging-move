@@ -64,6 +64,46 @@ function formatPlanBadgeLabel(plan: string): string | null {
     .join(" ");
 }
 
+/**
+ * Home-Dossier address chip-row (parity with the mobile DossierAddressChips) —
+ * lets the user switch which of their homes the Dossier shows (current home by
+ * default; the active move's destination is marked with "→"). Only rendered by
+ * the caller when there is more than one selectable home. Horizontally
+ * scrollable so a long address list never wraps the dashboard column.
+ */
+function DossierAddressChips({
+  chips,
+  selectedId,
+  onSelect,
+}: {
+  chips: { id: string; label: string }[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group">
+      {chips.map((c) => {
+        const active = c.id === selectedId;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onSelect(c.id)}
+            aria-pressed={active}
+            className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+              active
+                ? "bg-primary text-primary-foreground"
+                : "border border-border bg-foreground/[0.04] text-muted-foreground hover:bg-foreground/[0.08] hover:text-foreground"
+            }`}
+          >
+            {c.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 interface AddressInfo {
   id: string; type: string; nickname?: string; street: string; city: string; state: string; isPrimary: boolean;
   services?: { id: string; providerName: string; category: string; monthlyCost: number; billingCycle?: string | null; createdAt?: string; website?: string }[];
@@ -277,10 +317,18 @@ export default function DashboardClient({
   // undefined) the smart defaults from DEFAULT_COLLAPSED apply once; every
   // toggle thereafter is persisted alongside order/visibility.
   const [collapsed, setCollapsed] = useState<Record<WidgetKey, boolean>>(() => normaliseCollapsed(initialPrefs?.collapsed));
-  // Address the New Home Dossier card looks up: the active move's destination
-  // when one exists (that's where flood/school/weather matter most), otherwise
-  // the primary address. Null hides the widget entirely.
+  // Address the New Home Dossier card looks up. The DEFAULT target is the active
+  // move's destination when one exists (that's where flood/school/weather matter
+  // most), otherwise the primary address. A chip-row (parity with mobile
+  // DossierAddressChips) lets the user switch between / COMPARE their homes incl.
+  // the move destination; a manual pick (selectedDossierAddressId) wins. The
+  // effective id is derived at render so it always tracks the latest selection.
   const [dossierAddressId, setDossierAddressId] = useState<string | null>(null);
+  // The active move's destination address id, kept separately so the chip-row
+  // can mark it with a "→" the way mobile does. Null when not moving.
+  const [dossierDestId, setDossierDestId] = useState<string | null>(null);
+  // Manual chip pick — overrides the default destination/primary selection.
+  const [selectedDossierAddressId, setSelectedDossierAddressId] = useState<string | null>(null);
   const [criticalActions, setCriticalActions] = useState<Array<{
     id: string;
     name: string;
@@ -448,7 +496,9 @@ export default function DashboardClient({
         // (the /api/moving feed spreads the full plan record, so toAddressId is
         // present) — else the primary address, else the first one.
         const primaryAddressId = addrs.find((a) => a.isPrimary)?.id || addrs[0]?.id || null;
-        setDossierAddressId((inProgressPlan as any)?.toAddressId || primaryAddressId);
+        const destAddressId = (inProgressPlan as any)?.toAddressId || null;
+        setDossierDestId(destAddressId);
+        setDossierAddressId(destAddressId || primaryAddressId);
 
         // Generate relocation checklist if active plan exists
         if (inProgressPlan) {
@@ -683,6 +733,25 @@ export default function DashboardClient({
   const premiumBadgeLabel = consumerFree ? "Full Access" : formatPlanBadgeLabel(premiumPlan) ?? td("premiumBadge");
   const featurePlan = consumerFree && (!premiumPlan || premiumPlan === "FREE_TRIAL") ? "PRO" : premiumPlan;
 
+  // ── Home-Dossier address selection (parity with mobile DossierAddressChips) ──
+  // Show the dossier of the user's CURRENT home by default (the active move's
+  // destination wins when moving); a chip-row lets the user switch between /
+  // COMPARE their homes incl. the move destination. A manual pick wins.
+  const effectiveDossierAddressId =
+    selectedDossierAddressId ?? dossierDestId ?? dossierAddressId ?? null;
+  const dossierChips: { id: string; label: string }[] = addresses
+    .filter((a) => a?.id)
+    .map((a) => {
+      const base = a.nickname || [a.city, a.state].filter(Boolean).join(", ") || a.street || td("widget_homeDossier");
+      return { id: a.id, label: a.id === dossierDestId ? `→ ${base}` : base };
+    })
+    // Primary first so the user's current home leads the row.
+    .sort((a, b) => {
+      const ap = addresses.find((x) => x.id === a.id)?.isPrimary ? 0 : 1;
+      const bp = addresses.find((x) => x.id === b.id)?.isPrimary ? 0 : 1;
+      return ap - bp;
+    });
+
   // Central widget render dispatch — every column widget body lives in this
   // one switch. A null body keeps each widget's existing self-hide behavior
   // (no data => nothing renders, not even the collapse strip).
@@ -908,11 +977,23 @@ export default function DashboardClient({
           <MilestoneTimeline key={key} checklist={checklist} />
         ) : null;
       case "homeDossier":
-        // New Home Dossier — flood zone / school district / moving-day
-        // weather for the destination (or primary) address. The card
-        // self-hides when every section degrades (no empty shell).
-        return !loading && dossierAddressId ? (
-          <HomeDossier key={key} addressId={dossierAddressId} />
+        // New Home Dossier — flood zone / school district / moving-day weather.
+        // Shows the CURRENT home by default (the active move's destination wins
+        // when moving) and, when the user has more than one home, a chip-row to
+        // switch/compare between them incl. the move destination (marked "→") —
+        // matching mobile DossierAddressChips. The card self-hides when every
+        // section degrades (no empty shell).
+        return !loading && effectiveDossierAddressId ? (
+          <div key={key} className="space-y-2">
+            {dossierChips.length > 1 && (
+              <DossierAddressChips
+                chips={dossierChips}
+                selectedId={effectiveDossierAddressId}
+                onSelect={setSelectedDossierAddressId}
+              />
+            )}
+            <HomeDossier addressId={effectiveDossierAddressId} />
+          </div>
         ) : null;
       case "recent":
         return !loading && recentServices.length > 0 ? (
