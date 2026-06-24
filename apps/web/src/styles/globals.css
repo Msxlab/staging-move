@@ -322,12 +322,12 @@
 
 .light .app-shell-backdrop {
   background:
-    repeating-linear-gradient(90deg, rgba(20, 32, 47, 0.012) 0 1px, transparent 1px 72px),
-    repeating-linear-gradient(0deg, rgba(20, 32, 47, 0.008) 0 1px, transparent 1px 72px),
-    radial-gradient(circle at 20% 0%, rgba(246, 242, 234, 0.92) 0%, transparent 28%),
-    radial-gradient(circle at 80% 10%, rgba(233, 223, 205, 0.68) 0%, transparent 24%),
-    linear-gradient(180deg, #EFEEEA 0%, #DEDCD3 45%, #D4D2C8 100%);
-  opacity: 0.76;
+    repeating-linear-gradient(90deg, rgba(20, 32, 47, 0.010) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(20, 32, 47, 0.006) 0 1px, transparent 1px 72px),
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.78) 0%, transparent 30%),
+    radial-gradient(circle at 82% 12%, rgba(239, 234, 223, 0.44) 0%, transparent 24%),
+    linear-gradient(180deg, #FAF8F2 0%, #F4EFE5 58%, #ECE6DA 100%);
+  opacity: 0.58;
 }
 
 /* =========================================================================
@@ -1325,21 +1325,21 @@ html[data-embed="mobile"] .install-prompt {
 }
 .light .lf-dossier-shell {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.24)),
-    color-mix(in srgb, var(--surface-2) 70%, var(--bg) 30%);
-  border-color: rgba(20, 32, 47, 0.13);
-  box-shadow: 0 14px 44px rgba(20, 32, 47, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.70);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.80), rgba(255, 255, 255, 0.56)),
+    color-mix(in srgb, #FFFFFF 72%, var(--surface-2) 28%);
+  border-color: rgba(20, 32, 47, 0.11);
+  box-shadow: 0 14px 38px rgba(20, 32, 47, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 .light .lf-dossier-row {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.34)),
-    color-mix(in srgb, var(--surface-2) 72%, transparent);
-  border-color: rgba(20, 32, 47, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.62)),
+    color-mix(in srgb, #FFFFFF 70%, var(--surface-2) 30%);
+  border-color: rgba(20, 32, 47, 0.10);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 .light .lf-dossier-stat {
-  background: color-mix(in srgb, #FFFFFF 62%, var(--surface-2) 38%);
-  border-color: rgba(20, 32, 47, 0.12);
+  background: color-mix(in srgb, #FFFFFF 78%, var(--surface-2) 22%);
+  border-color: rgba(20, 32, 47, 0.10);
 }
 
 /* =========================================================================

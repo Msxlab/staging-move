@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { DossierAmbient, ambientForSection, sourceDossierSceneFor } from "./dossier-ambient";
@@ -226,6 +227,24 @@ describe("sourceDossierSceneFor", () => {
 });
 
 describe("DossierAmbient rendering", () => {
+  it("defines every rendered source-scene CSS class", () => {
+    const source = readFileSync(new URL("./dossier-ambient.tsx", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../../styles/source-dossier-scene.css", import.meta.url), "utf8");
+    const used = new Set(
+      Array.from(source.matchAll(/className="([^"]+)"/g))
+        .flatMap((match) => match[1].split(/\s+/))
+        .filter((className) => className.startsWith("ds-")),
+    );
+    const defined = new Set(
+      Array.from(css.matchAll(/\.([A-Za-z0-9_-]+)/g))
+        .map((match) => match[1])
+        .filter((className) => className.startsWith("ds-")),
+    );
+    const missing = Array.from(used).filter((className) => !defined.has(className));
+
+    expect(missing).toEqual([]);
+  });
+
   it("renders an aria-hidden, pointer-events-none masked layer with data attributes", () => {
     const markup = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} />);
     expect(markup).toContain('aria-hidden="true"');
@@ -233,9 +252,10 @@ describe("DossierAmbient rendering", () => {
     expect(markup).toContain("pointer-events-none");
     expect(markup).toContain('data-kind="flood"');
     expect(markup).toContain('data-intensity="2"');
-    expect(markup).toContain('data-source-type="area"');
+    // Flood maps to the WATER scene (not the area crime/patrol scene).
+    expect(markup).toContain('data-source-type="water"');
     expect(markup).toContain('data-source-level="bad"');
-    expect(markup).toContain('data-ds-type="area"');
+    expect(markup).toContain('data-ds-type="water"');
     expect(markup).toContain('data-ds-level="bad"');
   });
 
@@ -248,16 +268,28 @@ describe("DossierAmbient rendering", () => {
     );
   });
 
-  it("renders the source area scene for flood/radon fallback sections", () => {
+  it("maps flood to water and radon to air (not the area crime/streetlight scenes)", () => {
     const flood = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} />);
-    expect(flood).toContain('data-ds-type="area"');
+    expect(flood).toContain('data-ds-type="water"');
     expect(flood).toContain('data-ds-level="bad"');
-    expect(flood).toContain("ds-chase-pack");
+    expect(flood).not.toContain("ds-chase-pack");
 
     const radon = renderToStaticMarkup(<DossierAmbient kind="radon" intensity={0} />);
-    expect(radon).toContain('data-ds-type="area"');
+    expect(radon).toContain('data-ds-type="air"');
     expect(radon).toContain('data-ds-level="good"');
-    expect(radon).toContain("ds-streetlight");
+  });
+
+  it("never renders the area crime/chase scene for school or low-walkability neighborhood", () => {
+    // School is informational: calm, well-lit area scene.
+    const school = renderToStaticMarkup(<DossierAmbient kind="school" intensity={1} />);
+    expect(school).toContain('data-ds-type="area"');
+    expect(school).toContain('data-ds-level="good"');
+
+    // Walkability is not a safety signal: a low walk band must clamp to "mid", never "bad".
+    const lowWalk = renderToStaticMarkup(<DossierAmbient kind="neighborhood" intensity={0} />);
+    expect(lowWalk).toContain('data-ds-type="area"');
+    expect(lowWalk).toContain('data-ds-level="mid"');
+    expect(lowWalk).not.toContain("ds-chase-pack");
   });
 
   it("renders the source air and storm character props", () => {

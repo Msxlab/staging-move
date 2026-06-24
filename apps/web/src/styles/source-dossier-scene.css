@@ -115,6 +115,10 @@
 .ds-cloud-storm { left: 28%; top: 4px; opacity: .95; }
 .ds-rain { position: absolute; top: 24px; width: 1.5px; height: 9px; border-radius: 2px; background: var(--ds-tone); animation: ds-rain 1s linear infinite; }
 .ds-rain-hard { height: 11px; transform: rotate(14deg); animation-duration: .7s; }
+.ds-umbrella { position: absolute; left: 30%; top: 6px; z-index: 5; width: 42px; height: 30px; transform-origin: bottom center; animation: ds-umbrella 5s ease-in-out infinite; }
+.ds-umbrella::before { content: ""; position: absolute; left: 0; top: 0; width: 42px; height: 19px; border-radius: 21px 21px 2px 2px; background: var(--ds-tone); box-shadow: inset 7px 14px 0 -13px rgba(0,0,0,.18), inset 21px 14px 0 -13px rgba(0,0,0,.18), inset 35px 14px 0 -13px rgba(0,0,0,.18); }
+.ds-umbrella::after { content: ""; position: absolute; left: 50%; top: 2px; width: 1.5px; height: 27px; background: var(--rc-head); transform: translateX(-50%); }
+.ds-umbrella span { position: absolute; left: 50%; bottom: 0; width: 5px; height: 4px; border: 1.5px solid var(--rc-head); border-top: 0; border-radius: 0 0 4px 4px; transform: translateX(-90%); }
 .ds-snow-bg,.ds-cold-bg { position: absolute; inset: 0; background: linear-gradient(180deg,rgba(150,190,235,.14),transparent 70%); }
 .ds-snow { position: absolute; top: 4px; width: 4px; height: 4px; border-radius: 50%; background: #fff; --dx: 8px; animation: ds-snow 4s linear infinite; }
 .ds-snowman { position: absolute; right: 16px; bottom: 9px; width: 22px; height: 32px; animation: ds-bob 4.4s ease-in-out infinite; }

@@ -127,14 +127,25 @@ export function sourceDossierSceneFor({ kind, intensity, variant }: AmbientSpec)
     case "evCharging":
       return { type: "transit", level: positiveSourceLevel(intensity) };
     case "neighborhood":
-      return { type: "area", level: positiveSourceLevel(intensity) };
+      // Walkability is NOT a safety signal. The area "bad" scene is a crime/chase
+      // vignette (shady figures) - never render it for a low walk band. Clamp to the
+      // safe (good) / neutral (mid) area scenes only.
+      return { type: "area", level: intensity === 2 ? "good" : "mid" };
     case "school":
-      return { type: "area", level: "mid" };
+      // No education scene exists in the source type set; "area" is the closest
+      // (a neighbourhood attribute). Use the calm, well-lit (good) area scene rather
+      // than the dim "glancing" mid - a school district carries no risk signal.
+      return { type: "area", level: "good" };
     case "hazard":
       return { type: "weather", level: weatherSourceLevel(variant) };
     case "flood":
+      // Flood risk -> water scenes: calm/sparkling when low, turbulent/unsafe when high.
+      return { type: "water", level: riskSourceLevel(intensity) };
     case "radon":
-      return { type: "area", level: riskSourceLevel(intensity) };
+      // Radon is an airborne hazard -> air scenes: clean breeze (zone 3) -> light haze
+      // (zone 2) -> heavy haze + mask (zone 1). Bubbles would be ideal but the source
+      // type set has no gas scene; air is the honest thematic match.
+      return { type: "air", level: riskSourceLevel(intensity) };
   }
 }
 
@@ -463,7 +474,7 @@ function WeatherSourceScene({ level }: { level: SourceDossierSceneLevel }) {
           <SourceCharacter mood="calm" style={{ left: "28%", animation: "ds-bob 3s ease-in-out infinite" }}>
             <div className="ds-arm" style={{ right: -3, bottom: 14, transform: "rotate(-44deg)", transformOrigin: "left center" }} />
           </SourceCharacter>
-          <div className="ds-umbrella" />
+          <div className="ds-umbrella"><span /></div>
         </>
       );
     case "snow":
