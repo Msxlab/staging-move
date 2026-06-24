@@ -1,3 +1,6 @@
+// Must precede the pdfkit import: installs the standard-font (.afm) shim that
+// makes pdfkit work in the standalone/prod build (root cause of dossier-pdf-500).
+import "@/lib/pdf/standard-font-data";
 import PDFDocument from "pdfkit";
 import {
   drawFooter,

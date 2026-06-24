@@ -884,13 +884,25 @@ export function DossierAmbient({
         aria-hidden="true"
         data-kind={kind}
         data-intensity={level}
+        // globals.css pins .da-layer at z-index:-1; on web the per-situation
+        // scene read as weak/absent there (owner: "merged with the old", only the
+        // foreground raccoon showed). Lift it to the foreground plane so the
+        // data-derived motion is actually perceivable (mobile already overlays
+        // it positively). The scene stays masked to the right ~55%, faint
+        // (opacity 0.06–0.22), aria-hidden and pointer-events-none, so the
+        // right-edge values it overlaps remain clearly readable and interaction
+        // is untouched. (Follow-up if the right-edge overlap is ever distracting:
+        // give the row's text content `relative z-[2]` so it paints above this.)
+        style={{ zIndex: 0 }}
         className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[55%] overflow-hidden rounded-r-xl"
       >
         <AmbientScene kind={kind} intensity={level} variant={variant} />
       </div>
       <div
         aria-hidden="true"
-        className="da-raccoon pointer-events-none absolute bottom-0 right-2 z-0 flex items-end"
+        // Raccoon sits ABOVE the now-foreground scene art (z-[1] > the scene's
+        // z-0) in the bottom-right corner the row carries no text.
+        className="da-raccoon pointer-events-none absolute bottom-0 right-2 z-[1] flex items-end"
       >
         <DossierRaccoon mood={mood} size={44} />
       </div>

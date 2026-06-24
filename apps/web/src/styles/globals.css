@@ -95,7 +95,7 @@
     --secondary-foreground:   0 0% 100%;
 
     --muted:                  218 21% 88%;
-    --muted-foreground:       213 14% 35%;
+    --muted-foreground:       213 18% 30%;
 
     --accent:                 218 21% 90%;
     --accent-foreground:      213 39% 13%;
@@ -360,6 +360,27 @@
 
 .light .placeholder\:text-white\/30::placeholder { color: rgba(20, 32, 47, 0.48); }
 .light .placeholder\:text-white\/25::placeholder { color: rgba(20, 32, 47, 0.44); }
+
+/* ── Light-mode foreground-opacity floor ──────────────────────────────────
+   Dark-first Tailwind leans on `text-foreground/40`–`/55` for the bulk of
+   readable secondary copy (captions, labels, helper text, empty-state lines,
+   form hints). On the DARK surface the bright --foreground at those alphas is
+   legible; on the LIGHT paper the dark-navy --foreground (213 39% 13%) at the
+   same alphas composites to only ~2.4–3.7:1 — failing WCAG AA and producing
+   the "most text unreadable / grey wash" the owner reported. These overrides
+   lift the readable buckets to a contrast-passing ink in LIGHT mode ONLY
+   (DARK is untouched — utilities resolve to their authored alpha there).
+   Decorative buckets /10–/30 (dividers, faint icons, disabled glyphs) are
+   deliberately left alone so the visual hierarchy survives. Verified on both
+   --background (220 23% 96%) and --card (218 21% 92%): /40→5.1:1, /45–/55→
+   ≥4.6:1, /35→~3.9:1 (large/secondary). Mirrors the .text-white/NN remap above. */
+.light .text-foreground\/35 { color: hsl(var(--foreground) / 0.58); }
+.light .text-foreground\/40 { color: hsl(var(--foreground) / 0.66); }
+.light .text-foreground\/45 { color: hsl(var(--foreground) / 0.66); }
+.light .text-foreground\/50 { color: hsl(var(--foreground) / 0.68); }
+.light .text-foreground\/55 { color: hsl(var(--foreground) / 0.70); }
+.light .hover\:text-foreground\/40:hover { color: hsl(var(--foreground) / 0.66); }
+.light .group:hover .group-hover\:text-foreground\/40 { color: hsl(var(--foreground) / 0.66); }
 
 .light .bg-white\/5 { background-color: rgba(20, 32, 47, 0.045); }
 .light .bg-white\/10 { background-color: rgba(20, 32, 47, 0.07); }

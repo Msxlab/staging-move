@@ -93,6 +93,11 @@ export default function WorkspaceSettingsClient({ consumerFree = false }: { cons
   const inviteEmailRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [featureOff, setFeatureOff] = useState(false);
+  // Whether the workspace MODEL is actually enabled (WORKSPACE_MODEL_ENABLED).
+  // GET /api/workspaces reports this as `workspaceModelEnabled`; POST is gated on
+  // it server-side (404s when off). The create affordance must follow THIS, not
+  // just consumerFree, or the UI promises a create flow the backend refuses.
+  const [workspaceModelEnabled, setWorkspaceModelEnabled] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   // Consumer-free create-workspace flow (flag-gated). Under CONSUMER_FREE every
   // consumer resolves to PRO, so POST /api/workspaces is permitted — surface a
@@ -150,6 +155,10 @@ export default function WorkspaceSettingsClient({ consumerFree = false }: { cons
         const meData = await meRes.json().catch(() => ({}));
         const list: Workspace[] = Array.isArray(wsData.workspaces) ? wsData.workspaces : [];
         setWorkspaces(list);
+        // The model is enabled only when the API says so. When OFF, GET returns
+        // 200 with workspaceModelEnabled:false (not a 404), so this is the only
+        // signal that a POST would 404 — gate the create form on it below.
+        setWorkspaceModelEnabled(wsData.workspaceModelEnabled === true);
         setMyUserId(meData.user?.id ?? null);
         if (list.length > 0) {
           const cookieWorkspaceId = readWorkspaceCookie();
@@ -576,7 +585,7 @@ export default function WorkspaceSettingsClient({ consumerFree = false }: { cons
     return (
       <div className="max-w-2xl mx-auto space-y-6 pb-8">
         <Header />
-        {consumerFree ? (
+        {consumerFree && workspaceModelEnabled ? (
           <div className="rounded-2xl border border-border bg-foreground/5 p-6">
             <p className="text-sm text-muted-foreground">
               You&apos;re not part of any shared workspace yet. Create one to invite up to{" "}
@@ -604,6 +613,13 @@ export default function WorkspaceSettingsClient({ consumerFree = false }: { cons
                 Create workspace
               </button>
             </div>
+          </div>
+        ) : consumerFree ? (
+          // Consumer-free but the workspace MODEL is off (WORKSPACE_MODEL_ENABLED
+          // false): POST /api/workspaces would 404, so don't promise a create
+          // flow. Show a neutral "coming soon" instead of paid-plan copy.
+          <div className="rounded-2xl border border-border bg-foreground/5 p-6 text-sm text-muted-foreground">
+            Shared workspaces are coming soon. You&apos;ll be able to create one and invite people to share your move.
           </div>
         ) : (
           <div className="rounded-2xl border border-border bg-foreground/5 p-6 text-sm text-muted-foreground">
@@ -911,9 +927,11 @@ export default function WorkspaceSettingsClient({ consumerFree = false }: { cons
               own data container, not a household they staff. */}
           {iAmManager && selected.isPersonalSolo && (
             <div className="rounded-2xl border border-border bg-foreground/5 p-5 text-xs text-muted-foreground">
-              {consumerFree
+              {consumerFree && workspaceModelEnabled
                 ? "This is your personal workspace — just your own data. Create a shared workspace below to invite people and share your move as a household — included free."
-                : "This is your personal workspace — just your own data. Upgrade to a Family or Pro plan to invite people and share it as a household."}
+                : consumerFree
+                  ? "This is your personal workspace — just your own data. Shared workspaces are coming soon — you'll be able to invite people and share your move as a household."
+                  : "This is your personal workspace — just your own data. Upgrade to a Family or Pro plan to invite people and share it as a household."}
             </div>
           )}
 
@@ -921,7 +939,7 @@ export default function WorkspaceSettingsClient({ consumerFree = false }: { cons
               a personal-solo workspace, so they can actually spin up a shared one
               (the API already permits it under CONSUMER_FREE). Hidden when the
               flag is OFF, preserving the original no-create behavior. */}
-          {consumerFree && iAmManager && selected.isPersonalSolo && (
+          {consumerFree && workspaceModelEnabled && iAmManager && selected.isPersonalSolo && (
             <div className="rounded-2xl border border-border bg-foreground/5 p-5">
               <h3 className="text-sm font-semibold text-foreground">Create a shared workspace</h3>
               <p className="mt-1 text-xs text-muted-foreground">
