@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-06-23T11:25:28.5497507-04:00",
+  "web": {
+    "sourcePageRoutes": 74,
+    "sourceStaticPageRoutes": 58,
+    "sourceDynamicPageRoutes": 16,
+    "publicSweepStaticRoutesCovered": 34,
+    "followUpStaticRoutesCaptured": 24,
+    "staticRoutesWithSavedScreenshots": 58,
+    "status": "static web page screenshot coverage complete for unauthenticated/public state",
+    "pending": "dynamic and authenticated web content require IDs, tokens, or approved QA account session"
+  },
+  "admin": {
+    "sourcePageRoutes": 62,
+    "sourceStaticPageRoutes": 53,
+    "sourceDynamicPageRoutes": 9,
+    "unauthenticatedStaticRoutesCaptured": 53,
+    "screenshotsCaptured": 106,
+    "finalPaths": {
+      "/login": 104,
+      "/set-password": 2
+    },
+    "horizontalOverflowCount": 0,
+    "status": "static admin page screenshot coverage complete for unauthenticated state",
+    "pending": "authenticated admin content requires approved admin session"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-06-23T15:56:00.900Z",
+  "hrefInfo": {
+    "href": "https://staging.locateflow.com/api/addresses/cmqqtosf4000pbuyqyv6buarl/dossier/pdf",
+    "text": "Export PDF"
+  },
+  "opened": true,
+  "url": "https://staging.locateflow.com/api/addresses/cmqqtosf4000pbuyqyv6buarl/dossier/pdf",
+  "title": "staging.locateflow.com/api/addresses/cmqqtosf4000pbuyqyv6buarl/dossier/pdf",
+  "bodyText": "{\"error\":\"Failed to build dossier PDF\"}",
+  "error": null
+}

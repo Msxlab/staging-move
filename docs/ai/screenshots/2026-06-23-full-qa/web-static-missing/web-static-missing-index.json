@@ -1,0 +1,2180 @@
+{
+  "generatedAt": "2026-06-23T15:20:03.920Z",
+  "base": "https://staging.locateflow.com",
+  "routes": [
+    "/account/delete",
+    "/account/setup-password",
+    "/addresses",
+    "/addresses/new",
+    "/budget",
+    "/dashboard",
+    "/expenses",
+    "/movers/portal/dashboard",
+    "/movers/portal/placements",
+    "/moving/new",
+    "/notifications",
+    "/offline",
+    "/onboarding",
+    "/services",
+    "/services/new",
+    "/settings",
+    "/settings/address-changes",
+    "/settings/connections",
+    "/settings/export",
+    "/settings/notifications",
+    "/settings/privacy",
+    "/settings/profile",
+    "/settings/subscription",
+    "/settings/workspace"
+  ],
+  "results": [
+    {
+      "route": "/account/delete",
+      "label": "desktop",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "bodyChars": 4664,
+      "finalPath": "/account/delete",
+      "h1": "Delete your LocateFlow account",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/features",
+          "text": "Features"
+        },
+        {
+          "href": "/why-free",
+          "text": "Why free"
+        },
+        {
+          "href": "/pricing",
+          "text": "Pricing"
+        },
+        {
+          "href": "/help",
+          "text": "Help"
+        },
+        {
+          "href": "/blog",
+          "text": "Blog"
+        },
+        {
+          "href": "/faq",
+          "text": "FAQ"
+        },
+        {
+          "href": "/sign-in",
+          "text": "Sign In"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Get started"
+        },
+        {
+          "href": "/dashboard",
+          "text": "locateflow.com"
+        },
+        {
+          "href": "mailto:privacy@locateflow.com?subject=LocateFlow%20account%20deletion%20request",
+          "text": "privacy@locateflow.com"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy Policy"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy Policy"
+        },
+        {
+          "href": "/ccpa-privacy-notice",
+          "text": "California Privacy Notice"
+        },
+        {
+          "href": "mailto:privacy@locateflow.com?subject=LocateFlow%20privacy%20request",
+          "text": "privacy@locateflow.com"
+        },
+        {
+          "href": "mailto:support@locateflow.com?subject=LocateFlow%20support",
+          "text": "support@locateflow.com"
+        },
+        {
+          "href": "/settings/privacy",
+          "text": "Open privacy settings"
+        },
+        {
+          "href": "mailto:support@locateflow.com?subject=LocateFlow%20account%20deletion%20help",
+          "text": "support@locateflow.com"
+        },
+        {
+          "href": "/about",
+          "text": "About"
+        },
+        {
+          "href": "/features",
+          "text": "Everything that follows your address"
+        }
+      ],
+      "title": "Delete your LocateFlow account | LocateFlow",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\001-desktop-account-delete.png",
+      "ms": 1019
+    },
+    {
+      "route": "/account/setup-password",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Faccount%2Fsetup-password"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\002-desktop-account-setup-password.png",
+      "ms": 899
+    },
+    {
+      "route": "/addresses",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Faddresses"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\003-desktop-addresses.png",
+      "ms": 887
+    },
+    {
+      "route": "/addresses/new",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Faddresses%2Fnew"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\004-desktop-addresses-new.png",
+      "ms": 920
+    },
+    {
+      "route": "/budget",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fbudget"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\005-desktop-budget.png",
+      "ms": 902
+    },
+    {
+      "route": "/dashboard",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fdashboard"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\006-desktop-dashboard.png",
+      "ms": 875
+    },
+    {
+      "route": "/expenses",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fexpenses"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\007-desktop-expenses.png",
+      "ms": 895
+    },
+    {
+      "route": "/movers/portal/dashboard",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/movers/portal"
+      },
+      "bodyChars": 227,
+      "finalPath": "/movers/portal",
+      "h1": "Manage your listing",
+      "horizontalOverflow": false,
+      "links": [],
+      "title": "Mover portal · LocateFlow | LocateFlow",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\008-desktop-movers-portal-dashboard.png",
+      "ms": 893
+    },
+    {
+      "route": "/movers/portal/placements",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/movers/portal"
+      },
+      "bodyChars": 227,
+      "finalPath": "/movers/portal",
+      "h1": "Manage your listing",
+      "horizontalOverflow": false,
+      "links": [],
+      "title": "Mover portal · LocateFlow | LocateFlow",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\009-desktop-movers-portal-placements.png",
+      "ms": 911
+    },
+    {
+      "route": "/moving/new",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fmoving%2Fnew"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\010-desktop-moving-new.png",
+      "ms": 876
+    },
+    {
+      "route": "/notifications",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fnotifications"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\011-desktop-notifications.png",
+      "ms": 867
+    },
+    {
+      "route": "/offline",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Foffline"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\012-desktop-offline.png",
+      "ms": 867
+    },
+    {
+      "route": "/onboarding",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fonboarding"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\013-desktop-onboarding.png",
+      "ms": 952
+    },
+    {
+      "route": "/services",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fservices"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\014-desktop-services.png",
+      "ms": 860
+    },
+    {
+      "route": "/services/new",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fservices%2Fnew"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\015-desktop-services-new.png",
+      "ms": 865
+    },
+    {
+      "route": "/settings",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\016-desktop-settings.png",
+      "ms": 891
+    },
+    {
+      "route": "/settings/address-changes",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Faddress-changes"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\017-desktop-settings-address-changes.png",
+      "ms": 863
+    },
+    {
+      "route": "/settings/connections",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fconnections"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\018-desktop-settings-connections.png",
+      "ms": 897
+    },
+    {
+      "route": "/settings/export",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fexport"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\019-desktop-settings-export.png",
+      "ms": 932
+    },
+    {
+      "route": "/settings/notifications",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fnotifications"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\020-desktop-settings-notifications.png",
+      "ms": 883
+    },
+    {
+      "route": "/settings/privacy",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fprivacy"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\021-desktop-settings-privacy.png",
+      "ms": 862
+    },
+    {
+      "route": "/settings/profile",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fprofile"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\022-desktop-settings-profile.png",
+      "ms": 950
+    },
+    {
+      "route": "/settings/subscription",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fsubscription"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\023-desktop-settings-subscription.png",
+      "ms": 871
+    },
+    {
+      "route": "/settings/workspace",
+      "label": "desktop",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fworkspace"
+      },
+      "bodyChars": 223,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\024-desktop-settings-workspace.png",
+      "ms": 884
+    },
+    {
+      "route": "/account/delete",
+      "label": "mobile",
+      "http": {
+        "status": 200,
+        "location": null
+      },
+      "bodyChars": 4624,
+      "finalPath": "/account/delete",
+      "h1": "Delete your LocateFlow account",
+      "horizontalOverflow": true,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/features",
+          "text": "Features"
+        },
+        {
+          "href": "/why-free",
+          "text": "Why free"
+        },
+        {
+          "href": "/pricing",
+          "text": "Pricing"
+        },
+        {
+          "href": "/help",
+          "text": "Help"
+        },
+        {
+          "href": "/blog",
+          "text": "Blog"
+        },
+        {
+          "href": "/faq",
+          "text": "FAQ"
+        },
+        {
+          "href": "/sign-in",
+          "text": "Sign In"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Get started"
+        },
+        {
+          "href": "/dashboard",
+          "text": "locateflow.com"
+        },
+        {
+          "href": "mailto:privacy@locateflow.com?subject=LocateFlow%20account%20deletion%20request",
+          "text": "privacy@locateflow.com"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy Policy"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy Policy"
+        },
+        {
+          "href": "/ccpa-privacy-notice",
+          "text": "California Privacy Notice"
+        },
+        {
+          "href": "mailto:privacy@locateflow.com?subject=LocateFlow%20privacy%20request",
+          "text": "privacy@locateflow.com"
+        },
+        {
+          "href": "mailto:support@locateflow.com?subject=LocateFlow%20support",
+          "text": "support@locateflow.com"
+        },
+        {
+          "href": "/settings/privacy",
+          "text": "Open privacy settings"
+        },
+        {
+          "href": "mailto:support@locateflow.com?subject=LocateFlow%20account%20deletion%20help",
+          "text": "support@locateflow.com"
+        },
+        {
+          "href": "/about",
+          "text": "About"
+        },
+        {
+          "href": "/features",
+          "text": "Everything that follows your address"
+        }
+      ],
+      "title": "Delete your LocateFlow account | LocateFlow",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\025-mobile-account-delete.png",
+      "ms": 839
+    },
+    {
+      "route": "/account/setup-password",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Faccount%2Fsetup-password"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\026-mobile-account-setup-password.png",
+      "ms": 840
+    },
+    {
+      "route": "/addresses",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Faddresses"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\027-mobile-addresses.png",
+      "ms": 846
+    },
+    {
+      "route": "/addresses/new",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Faddresses%2Fnew"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\028-mobile-addresses-new.png",
+      "ms": 858
+    },
+    {
+      "route": "/budget",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fbudget"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\029-mobile-budget.png",
+      "ms": 884
+    },
+    {
+      "route": "/dashboard",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fdashboard"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\030-mobile-dashboard.png",
+      "ms": 878
+    },
+    {
+      "route": "/expenses",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fexpenses"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\031-mobile-expenses.png",
+      "ms": 870
+    },
+    {
+      "route": "/movers/portal/dashboard",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/movers/portal"
+      },
+      "bodyChars": 227,
+      "finalPath": "/movers/portal",
+      "h1": "Manage your listing",
+      "horizontalOverflow": false,
+      "links": [],
+      "title": "Mover portal · LocateFlow | LocateFlow",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\032-mobile-movers-portal-dashboard.png",
+      "ms": 862
+    },
+    {
+      "route": "/movers/portal/placements",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/movers/portal"
+      },
+      "bodyChars": 227,
+      "finalPath": "/movers/portal",
+      "h1": "Manage your listing",
+      "horizontalOverflow": false,
+      "links": [],
+      "title": "Mover portal · LocateFlow | LocateFlow",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\033-mobile-movers-portal-placements.png",
+      "ms": 879
+    },
+    {
+      "route": "/moving/new",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fmoving%2Fnew"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\034-mobile-moving-new.png",
+      "ms": 871
+    },
+    {
+      "route": "/notifications",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fnotifications"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\035-mobile-notifications.png",
+      "ms": 855
+    },
+    {
+      "route": "/offline",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Foffline"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\036-mobile-offline.png",
+      "ms": 880
+    },
+    {
+      "route": "/onboarding",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fonboarding"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\037-mobile-onboarding.png",
+      "ms": 841
+    },
+    {
+      "route": "/services",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fservices"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\038-mobile-services.png",
+      "ms": 873
+    },
+    {
+      "route": "/services/new",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fservices%2Fnew"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\039-mobile-services-new.png",
+      "ms": 925
+    },
+    {
+      "route": "/settings",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\040-mobile-settings.png",
+      "ms": 845
+    },
+    {
+      "route": "/settings/address-changes",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Faddress-changes"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\041-mobile-settings-address-changes.png",
+      "ms": 857
+    },
+    {
+      "route": "/settings/connections",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fconnections"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\042-mobile-settings-connections.png",
+      "ms": 846
+    },
+    {
+      "route": "/settings/export",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fexport"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\043-mobile-settings-export.png",
+      "ms": 848
+    },
+    {
+      "route": "/settings/notifications",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fnotifications"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\044-mobile-settings-notifications.png",
+      "ms": 849
+    },
+    {
+      "route": "/settings/privacy",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fprivacy"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\045-mobile-settings-privacy.png",
+      "ms": 896
+    },
+    {
+      "route": "/settings/profile",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fprofile"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\046-mobile-settings-profile.png",
+      "ms": 875
+    },
+    {
+      "route": "/settings/subscription",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fsubscription"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\047-mobile-settings-subscription.png",
+      "ms": 843
+    },
+    {
+      "route": "/settings/workspace",
+      "label": "mobile",
+      "http": {
+        "status": 307,
+        "location": "/sign-in?redirect=%2Fsettings%2Fworkspace"
+      },
+      "bodyChars": 159,
+      "finalPath": "/sign-in",
+      "h1": "Welcome back",
+      "horizontalOverflow": false,
+      "links": [
+        {
+          "href": "/",
+          "text": "LocateFlow"
+        },
+        {
+          "href": "/sign-up",
+          "text": "Sign Up"
+        },
+        {
+          "href": "/forgot-password",
+          "text": "Forgot password?"
+        },
+        {
+          "href": "/terms",
+          "text": "Terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "Privacy"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "Disclaimer"
+        },
+        {
+          "href": "/contact",
+          "text": "Contact"
+        }
+      ],
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\web-static-missing\\048-mobile-settings-workspace.png",
+      "ms": 854
+    }
+  ]
+}

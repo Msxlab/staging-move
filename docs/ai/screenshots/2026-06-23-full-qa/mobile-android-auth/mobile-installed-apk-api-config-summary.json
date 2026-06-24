@@ -1,0 +1,46 @@
+{
+  "generatedAt": "2026-06-23T16:16:36.106Z",
+  "package": "com.locateflow.mobile",
+  "versionName": "1.0.2",
+  "versionCode": 21,
+  "apkSha256": "090c952f6224147676715d7503de15c389b1d581abf29166be00d32637da30a6",
+  "embeddedConfig": {
+    "name": "LocateFlow",
+    "slug": "locateflow",
+    "version": "1.0.2",
+    "runtimeVersion": "sdk55-1.0.0",
+    "updatesEnabled": true,
+    "updatesUrl": "https://u.expo.dev/4e25bc4e-dad5-4cf2-9181-7026d11a764d",
+    "androidPackage": "com.locateflow.mobile",
+    "androidIntentHosts": [
+      "locateflow.com",
+      "locateflow.com",
+      "locateflow.com",
+      "locateflow.com"
+    ],
+    "extraKeys": [
+      "build",
+      "eas",
+      "router"
+    ],
+    "extraHasApiUrl": false,
+    "extraHasAppUrl": false,
+    "extraHasEnvironment": false,
+    "buildCommit": "12cfb8377ec1",
+    "buildProfileType": "object",
+    "buildProfileValue": {},
+    "builtAt": "2026-06-23T09:45:00.411Z"
+  },
+  "stringEvidence": {
+    "containsStagingApiUrl": false,
+    "containsStagingHost": false,
+    "containsProductionApiFallbackHost": true,
+    "expoPublicKeysObserved": [
+      "EXPO_PUBLIC_API_URLM",
+      "EXPO_PUBLIC_APP_URL_MISMATCH_ERRNSB",
+      "EXPO_PUBLIC_SENTRY_DSN"
+    ]
+  },
+  "sourceFallbackReference": "apps/mobile/src/lib/api.ts resolveApiUrl() falls back to envApiUrl || https://locateflow.com/api when no Constants.expoConfig.extra.apiUrl exists.",
+  "qaImpact": "Installed Android build cannot be used for staging authenticated QA with mobile.qa@locateflow.com unless a staging/preview build or OTA with apiUrl=https://staging.locateflow.com/api is installed."
+}

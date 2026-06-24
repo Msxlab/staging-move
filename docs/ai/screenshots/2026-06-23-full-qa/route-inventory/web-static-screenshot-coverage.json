@@ -1,0 +1,104 @@
+{
+  "generatedAt": "2026-06-23T15:18:49.672Z",
+  "staticWebCount": 58,
+  "coveredCount": 34,
+  "missingCount": 24,
+  "missing": [
+    {
+      "file": "apps/web/src/app/account/delete/page.tsx",
+      "route": "/account/delete"
+    },
+    {
+      "file": "apps/web/src/app/account/setup-password/page.tsx",
+      "route": "/account/setup-password"
+    },
+    {
+      "file": "apps/web/src/app/(app)/addresses/page.tsx",
+      "route": "/addresses"
+    },
+    {
+      "file": "apps/web/src/app/(app)/addresses/new/page.tsx",
+      "route": "/addresses/new"
+    },
+    {
+      "file": "apps/web/src/app/(app)/budget/page.tsx",
+      "route": "/budget"
+    },
+    {
+      "file": "apps/web/src/app/(app)/dashboard/page.tsx",
+      "route": "/dashboard"
+    },
+    {
+      "file": "apps/web/src/app/expenses/page.tsx",
+      "route": "/expenses"
+    },
+    {
+      "file": "apps/web/src/app/movers/portal/dashboard/page.tsx",
+      "route": "/movers/portal/dashboard"
+    },
+    {
+      "file": "apps/web/src/app/movers/portal/placements/page.tsx",
+      "route": "/movers/portal/placements"
+    },
+    {
+      "file": "apps/web/src/app/(app)/moving/new/page.tsx",
+      "route": "/moving/new"
+    },
+    {
+      "file": "apps/web/src/app/(app)/notifications/page.tsx",
+      "route": "/notifications"
+    },
+    {
+      "file": "apps/web/src/app/offline/page.tsx",
+      "route": "/offline"
+    },
+    {
+      "file": "apps/web/src/app/onboarding/page.tsx",
+      "route": "/onboarding"
+    },
+    {
+      "file": "apps/web/src/app/(app)/services/page.tsx",
+      "route": "/services"
+    },
+    {
+      "file": "apps/web/src/app/(app)/services/new/page.tsx",
+      "route": "/services/new"
+    },
+    {
+      "file": "apps/web/src/app/(app)/settings/page.tsx",
+      "route": "/settings"
+    },
+    {
+      "file": "apps/web/src/app/(app)/settings/address-changes/page.tsx",
+      "route": "/settings/address-changes"
+    },
+    {
+      "file": "apps/web/src/app/(app)/settings/connections/page.tsx",
+      "route": "/settings/connections"
+    },
+    {
+      "file": "apps/web/src/app/(app)/settings/export/page.tsx",
+      "route": "/settings/export"
+    },
+    {
+      "file": "apps/web/src/app/(app)/settings/notifications/page.tsx",
+      "route": "/settings/notifications"
+    },
+    {
+      "file": "apps/web/src/app/(app)/settings/privacy/page.tsx",
+      "route": "/settings/privacy"
+    },
+    {
+      "file": "apps/web/src/app/(app)/settings/profile/page.tsx",
+      "route": "/settings/profile"
+    },
+    {
+      "file": "apps/web/src/app/(app)/settings/subscription/page.tsx",
+      "route": "/settings/subscription"
+    },
+    {
+      "file": "apps/web/src/app/(app)/settings/workspace/page.tsx",
+      "route": "/settings/workspace"
+    }
+  ]
+}

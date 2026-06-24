@@ -1,0 +1,452 @@
+{
+  "generatedAt": "2026-06-23T15:32:29.381Z",
+  "total": 50,
+  "static": 37,
+  "dynamic": 13,
+  "tabRoutes": [
+    "/addresses",
+    "/",
+    "/more",
+    "/moving",
+    "/services"
+  ],
+  "groups": {
+    "+not-found": 1,
+    "addresses": 3,
+    "auth": 3,
+    "blog": 2,
+    "budget": 3,
+    "custom-providers": 3,
+    "help": 3,
+    "invitations": 1,
+    "moving": 2,
+    "notifications": 1,
+    "oauth": 1,
+    "onboarding": 1,
+    "providers": 3,
+    "reminders": 1,
+    "reset-password": 1,
+    "search": 1,
+    "services": 3,
+    "settings": 10,
+    "setup-password": 1,
+    "tab": 5,
+    "workspace": 1
+  },
+  "routes": [
+    {
+      "file": "apps/mobile/app/(auth)/forgot-password.tsx",
+      "route": "/forgot-password",
+      "group": "auth",
+      "dynamic": false,
+      "authState": "public-or-auth"
+    },
+    {
+      "file": "apps/mobile/app/(auth)/sign-in.tsx",
+      "route": "/sign-in",
+      "group": "auth",
+      "dynamic": false,
+      "authState": "public-or-auth"
+    },
+    {
+      "file": "apps/mobile/app/(auth)/sign-up.tsx",
+      "route": "/sign-up",
+      "group": "auth",
+      "dynamic": false,
+      "authState": "public-or-auth"
+    },
+    {
+      "file": "apps/mobile/app/(tabs)/addresses.tsx",
+      "route": "/addresses",
+      "group": "tab",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/(tabs)/index.tsx",
+      "route": "/",
+      "group": "tab",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/(tabs)/more.tsx",
+      "route": "/more",
+      "group": "tab",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/(tabs)/moving.tsx",
+      "route": "/moving",
+      "group": "tab",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/(tabs)/services.tsx",
+      "route": "/services",
+      "group": "tab",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/+not-found.tsx",
+      "route": "/+not-found",
+      "group": "+not-found",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/addresses/[id]/edit.tsx",
+      "route": "/addresses/[id]/edit",
+      "group": "addresses",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/addresses/[id]/index.tsx",
+      "route": "/addresses/[id]",
+      "group": "addresses",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/addresses/new.tsx",
+      "route": "/addresses/new",
+      "group": "addresses",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/blog/[slug].tsx",
+      "route": "/blog/[slug]",
+      "group": "blog",
+      "dynamic": true,
+      "authState": "public-or-auth"
+    },
+    {
+      "file": "apps/mobile/app/blog/index.tsx",
+      "route": "/blog",
+      "group": "blog",
+      "dynamic": false,
+      "authState": "public-or-auth"
+    },
+    {
+      "file": "apps/mobile/app/budget/[id].tsx",
+      "route": "/budget/[id]",
+      "group": "budget",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/budget/index.tsx",
+      "route": "/budget",
+      "group": "budget",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/budget/new.tsx",
+      "route": "/budget/new",
+      "group": "budget",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/custom-providers/[id].tsx",
+      "route": "/custom-providers/[id]",
+      "group": "custom-providers",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/custom-providers/[id]/edit.tsx",
+      "route": "/custom-providers/[id]/edit",
+      "group": "custom-providers",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/custom-providers/index.tsx",
+      "route": "/custom-providers",
+      "group": "custom-providers",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/help/index.tsx",
+      "route": "/help",
+      "group": "help",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/help/tickets.tsx",
+      "route": "/help/tickets",
+      "group": "help",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/help/tickets/[id].tsx",
+      "route": "/help/tickets/[id]",
+      "group": "help",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/invitations/[token].tsx",
+      "route": "/invitations/[token]",
+      "group": "invitations",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/moving/[id].tsx",
+      "route": "/moving/[id]",
+      "group": "moving",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/moving/new.tsx",
+      "route": "/moving/new",
+      "group": "moving",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/notifications/index.tsx",
+      "route": "/notifications",
+      "group": "notifications",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/oauth.tsx",
+      "route": "/oauth",
+      "group": "oauth",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/onboarding.tsx",
+      "route": "/onboarding",
+      "group": "onboarding",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/providers/[id].tsx",
+      "route": "/providers/[id]",
+      "group": "providers",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/providers/compare.tsx",
+      "route": "/providers/compare",
+      "group": "providers",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/providers/index.tsx",
+      "route": "/providers",
+      "group": "providers",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/reminders/index.tsx",
+      "route": "/reminders",
+      "group": "reminders",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/reset-password/[token].tsx",
+      "route": "/reset-password/[token]",
+      "group": "reset-password",
+      "dynamic": true,
+      "authState": "public-or-auth"
+    },
+    {
+      "file": "apps/mobile/app/search.tsx",
+      "route": "/search",
+      "group": "search",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/services/[id].tsx",
+      "route": "/services/[id]",
+      "group": "services",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/services/[id]/edit.tsx",
+      "route": "/services/[id]/edit",
+      "group": "services",
+      "dynamic": true,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/services/new.tsx",
+      "route": "/services/new",
+      "group": "services",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/address-changes.tsx",
+      "route": "/settings/address-changes",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/connections.tsx",
+      "route": "/settings/connections",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/delete-account.tsx",
+      "route": "/settings/delete-account",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/export.tsx",
+      "route": "/settings/export",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/notifications.tsx",
+      "route": "/settings/notifications",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/privacy.tsx",
+      "route": "/settings/privacy",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/profile.tsx",
+      "route": "/settings/profile",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/subscription.tsx",
+      "route": "/settings/subscription",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/two-factor.tsx",
+      "route": "/settings/two-factor",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/settings/workspace.tsx",
+      "route": "/settings/workspace",
+      "group": "settings",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/setup-password.tsx",
+      "route": "/setup-password",
+      "group": "setup-password",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    },
+    {
+      "file": "apps/mobile/app/workspace/accept-invite.tsx",
+      "route": "/workspace/accept-invite",
+      "group": "workspace",
+      "dynamic": false,
+      "authState": "authenticated-or-token"
+    }
+  ],
+  "authenticatedQaMatrix": {
+    "mustVisitTabs": [
+      "/",
+      "/addresses",
+      "/moving",
+      "/services",
+      "/more"
+    ],
+    "mustVisitStaticScreens": [
+      "/",
+      "/+not-found",
+      "/addresses",
+      "/addresses/new",
+      "/budget",
+      "/budget/new",
+      "/custom-providers",
+      "/help",
+      "/help/tickets",
+      "/more",
+      "/moving",
+      "/moving/new",
+      "/notifications",
+      "/oauth",
+      "/onboarding",
+      "/providers",
+      "/providers/compare",
+      "/reminders",
+      "/search",
+      "/services",
+      "/services/new",
+      "/settings/address-changes",
+      "/settings/connections",
+      "/settings/delete-account",
+      "/settings/export",
+      "/settings/notifications",
+      "/settings/privacy",
+      "/settings/profile",
+      "/settings/subscription",
+      "/settings/two-factor",
+      "/settings/workspace",
+      "/setup-password",
+      "/workspace/accept-invite"
+    ],
+    "dynamicScreensNeedSeedData": [
+      "/addresses/[id]",
+      "/addresses/[id]/edit",
+      "/blog/[slug]",
+      "/budget/[id]",
+      "/custom-providers/[id]",
+      "/custom-providers/[id]/edit",
+      "/help/tickets/[id]",
+      "/invitations/[token]",
+      "/moving/[id]",
+      "/providers/[id]",
+      "/reset-password/[token]",
+      "/services/[id]",
+      "/services/[id]/edit"
+    ],
+    "notes": [
+      "Source inventory only; does not prove runtime rendering.",
+      "Dynamic screens need IDs/tokens from the QA account lifecycle.",
+      "Authenticated screenshots remain pending explicit approval to create/use mobile.qa@locateflow.com."
+    ]
+  }
+}

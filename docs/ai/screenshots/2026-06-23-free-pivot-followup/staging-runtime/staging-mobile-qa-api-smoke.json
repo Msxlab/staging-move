@@ -1,0 +1,13 @@
+{
+  "email": "mobile.qa@locateflow.com",
+  "registerStatus": 201,
+  "registerSuccess": true,
+  "registerEmailVerified": true,
+  "registerRequiresEmailVerification": false,
+  "mobileLoginStatus": 200,
+  "mobileLoginHasToken": true,
+  "mobileLoginUserEmail": "mobile.qa@locateflow.com",
+  "passwordSaved": false,
+  "tokenSaved": false,
+  "checkedAt": "2026-06-23T18:39:43.917Z"
+}

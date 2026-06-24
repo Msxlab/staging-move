@@ -1,0 +1,28 @@
+Starting project at C:\Users\Kutay\Documents\staging-move\apps\mobile
+Expo Autolinking module resolution enabled
+Starting Metro Bundler
+
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Android apps\mobile\index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android apps\mobile\index.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 75.2% (517/596)
+Android apps\mobile\index.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 75.2% ( 908/1252)
+Android apps\mobile\index.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 75.2% (2177/3327)
+Android apps\mobile\index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.4% (3538/3741)
+Android Bundled 15340ms apps\mobile\index.js (3939 modules)
+ INFO  [API] mobile base URL https://staging.locateflow.com/api
+ WARN  [billing-flags] Android IAP is DISABLED. Subscription screen will render in read-only mode. Before Play submission set EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED=true.
+ INFO  [OAuthProviders] sign-in {"apiUrl": "https://staging.locateflow.com/api", "error": undefined, "providers": {"apple": {"configured": true, "label": "Apple", "message": "Apple sign-in is ready."}, "google": {"configured": true, "label": "Google", "message": "Google sign-in is ready."}}}
+ INFO  [OAuthProviders] sign-up {"apiUrl": "https://staging.locateflow.com/api", "error": undefined, "providers": {"apple": {"configured": true, "label": "Apple", "message": "Apple sign-in is ready."}, "google": {"configured": true, "label": "Google", "message": "Google sign-in is ready."}}}
+Android apps\mobile\index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 97ms apps\mobile\index.js (1 module)
+ INFO  [API] mobile base URL https://staging.locateflow.com/api
+ WARN  [billing-flags] Android IAP is DISABLED. Subscription screen will render in read-only mode. Before Play submission set EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED=true.
+ INFO  [OAuthProviders] sign-in {"apiUrl": "https://staging.locateflow.com/api", "error": undefined, "providers": {"apple": {"configured": true, "label": "Apple", "message": "Apple sign-in is ready."}, "google": {"configured": true, "label": "Google", "message": "Google sign-in is ready."}}}
+Android apps\mobile\index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 104ms apps\mobile\index.js (1 module)
+ INFO  [API] mobile base URL https://staging.locateflow.com/api
+ WARN  [billing-flags] Android IAP is DISABLED. Subscription screen will render in read-only mode. Before Play submission set EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED=true.
+Android node_modules\react-native-android-widget\src\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 536ms node_modules\react-native-android-widget\src\index.ts (862 modules)
+Android Bundled 361ms apps\mobile\src\widgets\MoveWidget.tsx (1029 modules)

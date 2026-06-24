@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-06-23T16:11:52.260Z",
+  "account": "mobile.qa@locateflow.com",
+  "records": [
+    {
+      "name": "001-addresses-list-before-buttons",
+      "url": "https://staging.locateflow.com/addresses",
+      "h1": "Your addresses",
+      "overflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAd",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\001-addresses-list-before-buttons.png"
+    },
+    {
+      "name": "002-address-details",
+      "url": "https://staging.locateflow.com/addresses/cmqqtosf4000pbuyqyv6buarl",
+      "h1": "QA Home",
+      "overflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAd",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\002-address-details.png"
+    },
+    {
+      "name": "003-address-edit",
+      "url": "https://staging.locateflow.com/addresses/cmqqtosf4000pbuyqyv6buarl/edit",
+      "h1": "QA Home",
+      "overflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAd",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\003-address-edit.png"
+    },
+    {
+      "name": "004-services-new-before-custom",
+      "url": "https://staging.locateflow.com/services/new",
+      "h1": "Add Services",
+      "overflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAd",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\004-services-new-before-custom.png"
+    },
+    {
+      "name": "005-services-custom-provider-form",
+      "url": "https://staging.locateflow.com/services/new",
+      "h1": "Add Services",
+      "overflow": false,
+      "docWidth": 1440,
+      "viewportWidth": 1440,
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAd",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\005-services-custom-provider-form.png"
+    },
+    {
+      "name": "006-mobile-dashboard-dynamic-check",
+      "url": "https://staging.locateflow.com/dashboard",
+      "h1": "Your dashboard",
+      "overflow": false,
+      "docWidth": 390,
+      "viewportWidth": 390,
+      "bodyPreview": "(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=[\"light\",\"dark\"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c=\"class\"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&\"system\"===a?window.matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\":a;k(d)}catch(a){}})(\"class\",\"locateflow-theme\",\"dark\",null,[\"light\",\"dark\",\"system\"],null,true,true)Skip to main contentLocateflowWorkspaceDashboardAd",
+      "screenshot": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-full-qa\\authenticated-web-dynamic\\006-mobile-dashboard-dynamic-check.png"
+    }
+  ]
+}

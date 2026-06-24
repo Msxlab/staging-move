@@ -1,0 +1,18 @@
+{
+  "account": "mobile.qa@locateflow.com",
+  "passwordSaved": false,
+  "cookieSaved": false,
+  "loginBeforeDeleteStatus": 200,
+  "deleteStatus": 200,
+  "deleteOk": true,
+  "deleteResponse": {
+    "success": true,
+    "status": "COMPLETED",
+    "message": "Account deletion completed.",
+    "hasRequestId": true,
+    "scheduledPurgeAt": null
+  },
+  "reloginAfterDeleteStatus": 401,
+  "reloginAfterDeleteCode": null,
+  "reloginAfterDeleteError": "Invalid email or password."
+}

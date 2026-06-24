@@ -19,6 +19,19 @@ describe("auth page regressions", () => {
     expect(signUp).toContain('href="/disclaimer"');
   });
 
+  it("keeps auth pages aligned with the free no-card account promise", () => {
+    const signIn = read("src/app/sign-in/page.tsx");
+    const signUp = read("src/app/sign-up/page.tsx");
+    const enMessages = read("src/i18n/messages/en.json");
+    const esMessages = read("src/i18n/messages/es.json");
+
+    expect(signIn).toContain("freeAccessPromise");
+    expect(signUp).toContain("freeAccessPromise");
+    expect(enMessages).toContain("Free forever. No subscription, no credit card.");
+    expect(enMessages).not.toContain("Checkout terms shown before purchase");
+    expect(esMessages).not.toContain("Terminos de checkout antes de comprar");
+  });
+
   it("keeps sign-in and sign-up free of client auth polling loops", () => {
     const signIn = read("src/app/sign-in/page.tsx");
     const signUp = read("src/app/sign-up/page.tsx");

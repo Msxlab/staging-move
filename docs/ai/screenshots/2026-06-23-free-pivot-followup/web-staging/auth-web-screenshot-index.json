@@ -1,0 +1,86 @@
+{
+  "login": {
+    "account": "mobile.qa@locateflow.com",
+    "passwordSaved": false
+  },
+  "buildInfo": {
+    "loginStatus": 200,
+    "loginOk": true,
+    "loginHasMfa": false,
+    "cookieSaved": false,
+    "buildInfoStatus": 200,
+    "buildInfoOk": true,
+    "buildInfo": {
+      "service": "web",
+      "commitSha": "38cb3718abf1958f6fd1c6cd731abd3974047b23",
+      "sourceBranch": "feat/design-foundation",
+      "builtAt": "2026-06-23T16:16:25.779Z",
+      "environment": "staging"
+    }
+  },
+  "results": [
+    {
+      "slug": "dashboard",
+      "url": "https://staging.locateflow.com/dashboard",
+      "screenshot": "dashboard-auth-1366x900.png",
+      "h1": "Your dashboard",
+      "horizontalOverflow": false,
+      "textSample": "Skip to main content Locateflow WORKSPACE Dashboard Addresses Services Providers Budget Moving ACCOUNT Notifications Support Help Settings Search... Ctrl K MQ Your move briefing AI-generated You're planning a move to Colorado in the next one to three months, and you'll need to handle some important paperwork—including updating your address with the post office, registering your vehicle with Colorado's DMV, and setting up electric service at your new rental. Since you have pets and need storage, you'll want to research pet policies at your new place and lock in storage early, and you should also plan time to sort out your tax filing address and any ID updates before you go. 1 Set up mail & postal It's one of the essentials most people need in place around a move. 2 Set up tax (irs) It's one of the essentials most people need in place around a move. 3 Set up dmv It's one of the essentials most people need in place around a move. MOVING COMMAND CENTER 53 days to go Austin → Denver · Aug 15, 2026 View your plan 6% Moving readiness 0/37 checklist done UP NEXT View all Find replacement: internet Due Jul 25 📬 USPS Mail Forwarding Due Aug 1 🩺 Request Medical Records Transfer Due Aug 1 Yo",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker"
+    },
+    {
+      "slug": "addresses",
+      "url": "https://staging.locateflow.com/addresses",
+      "screenshot": "addresses-auth-1366x900.png",
+      "h1": "Your addresses",
+      "horizontalOverflow": false,
+      "textSample": "Skip to main content Locateflow WORKSPACE Dashboard Addresses Services Providers Budget Moving ACCOUNT Notifications Support Help Settings Search... Ctrl K MQ ADDRESS COMMAND Your addresses Enter the details of your address Add Address 2 ADDRESSES 1 SERVICES $79 MONTHLY MOVE IN PROGRESS Austin, TX Old · moving out Denver, CO New · current 0% complete · move day Aug 14 - 1 account still at the old address QA Denver Home 456 Market St, Denver, CO 80202 I rent this home 0 0 $0 Aug 2026 Details Edit Add Service QA Austin Home 123 Main St, Austin, TX 78701 I rent this home 1 1 $79 Jun 2026 1 account still active here Details Edit Add Service",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker"
+    },
+    {
+      "slug": "services",
+      "url": "https://staging.locateflow.com/services",
+      "screenshot": "services-auth-1366x900.png",
+      "h1": "Services, sorted",
+      "horizontalOverflow": false,
+      "textSample": "Skip to main content Locateflow WORKSPACE Dashboard Addresses Services Providers Budget Moving ACCOUNT Notifications Support Help Settings Search... Ctrl K MQ ACCOUNTS & SUBSCRIPTIONS Services, sorted Every utility, bank, insurance, and subscription tied to your addresses. 1 $79.00/mo Add Service PER MONTH $79.00 across 1 service ACTIVE 1 tracked and running NEEDS ATTENTION 0 nothing due soon SETUP GAPS 0 Core provider setup looks covered BY CATEGORY OTHER $79.00 Your Relocation Checklist TX → CO · Phase 1: Before the Move 0% 0% done 📬 USPS Mail Forwarding Forward your mail to your new address. Do this 2 weeks before moving. ~10 min Do it FILTER All QA Denver Home 0 QA Austin Home 1 Name Cost: high to low Cost: low to high Newest Oldest All 1 INTERNET 1 QA Fiber Internet Internet QA Austin Home example.com $79.00/mo Some “Get started” links are affiliate links: LocateFlow may earn a commission if you start service through them, at no extra cost to you. This never affects our rankings.",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker"
+    },
+    {
+      "slug": "moving",
+      "url": "https://staging.locateflow.com/moving",
+      "screenshot": "moving-auth-1366x900.png",
+      "h1": "Moving Plans",
+      "horizontalOverflow": false,
+      "textSample": "Skip to main content Locateflow WORKSPACE Dashboard Addresses Services Providers Budget Moving ACCOUNT Notifications Support Help Settings Search... Ctrl K MQ Moving Plans Transfer, cancel, or reconnect with one click. Start a move August 15, 2026 123 Main St 456 Market St Planning",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker"
+    },
+    {
+      "slug": "settings-profile",
+      "url": "https://staging.locateflow.com/settings/profile",
+      "screenshot": "settings-profile-auth-1366x900.png",
+      "h1": "Profile",
+      "horizontalOverflow": false,
+      "textSample": "Skip to main content Locateflow WORKSPACE Dashboard Addresses Services Providers Budget Moving ACCOUNT Notifications Support Help Settings Search... Ctrl K MQ Back Profile Manage your personal info and household details Personal Info First Name Last Name Email Managed by authentication provider Household Age Range Select 18-24 25-34 35-44 45-54 55+ Family Status Single Couple Family Other Children Pets Senior Disability Motorcycle Boat / RV Storage Pet Types Number of Cars Save Profile",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker"
+    },
+    {
+      "slug": "settings-subscription",
+      "url": "https://staging.locateflow.com/settings/subscription",
+      "screenshot": "settings-subscription-auth-1366x900.png",
+      "h1": "Your plan",
+      "horizontalOverflow": false,
+      "textSample": "Skip to main content Locateflow WORKSPACE Dashboard Addresses Services Providers Budget Moving ACCOUNT Notifications Support Help Settings Search... Ctrl K MQ Back Your plan Everything LocateFlow does, included CURRENT PLAN Free Everything included You have full access to every LocateFlow feature — no subscription, no credit card, nothing to renew or cancel. Coming soon Concierge (done-for-you moving help) and Business (tools for movers & partners) are on the way. They will appear here when they are ready.",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker"
+    },
+    {
+      "slug": "settings-privacy",
+      "url": "https://staging.locateflow.com/settings/privacy",
+      "screenshot": "settings-privacy-auth-1366x900.png",
+      "h1": "Privacy & Security",
+      "horizontalOverflow": false,
+      "textSample": "Skip to main content Locateflow WORKSPACE Dashboard Addresses Services Providers Budget Moving ACCOUNT Notifications Support Help Settings Search... Ctrl K MQ Privacy & Security Manage passwords, sessions, and data Account Access EMAIL Verified PASSWORD Enabled MFA Off LINKED SIGN-IN METHODS Password LOGIN SESSIONS 3 active session(s) Revoke other sessions Chrome / Windows Current anonymous · Last active 6/23/2026, 3:00:29 PM Revoke LocateFlow Android app / Android anonymous · Last active 6/23/2026, 2:54:26 PM Revoke LocateFlow Android app / Android anonymous · Last active 6/23/2026, 2:48:48 PM Revoke LocateFlow Android app / Android Revoked anonymous · Last active 6/23/2026, 2:39:32 PM Change Password Current Password New Password Confirm New Password Must include upper, lower, digit, and special character. Other devices are signed out. Update Password Two-Factor Authentication Add extra security with an authenticator app Re-enter your password to start Start setup Data Privacy Download My Data Export supported account data Export Danger Zone Delete Account Permanently delete all data. Cannot be undone. Delete Account",
+      "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker"
+    }
+  ]
+}

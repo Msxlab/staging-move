@@ -1,0 +1,15 @@
+{
+  "loginStatus": 200,
+  "loginOk": true,
+  "loginHasMfa": false,
+  "cookieSaved": false,
+  "buildInfoStatus": 200,
+  "buildInfoOk": true,
+  "buildInfo": {
+    "service": "web",
+    "commitSha": "38cb3718abf1958f6fd1c6cd731abd3974047b23",
+    "sourceBranch": "feat/design-foundation",
+    "builtAt": "2026-06-23T16:16:25.779Z",
+    "environment": "staging"
+  }
+}

@@ -1,0 +1,416 @@
+{
+  "generatedAt": "2026-06-23T16:15:13.262Z",
+  "account": "mobile.qa@locateflow.com",
+  "addressId": "cmqqtosf4000pbuyqyv6buarl",
+  "full": {
+    "status": 200,
+    "contentType": "application/json",
+    "summary": {
+      "topLevelKeys": [
+        "address",
+        "air",
+        "configured",
+        "dossierPdf",
+        "evCharging",
+        "flood",
+        "hazards",
+        "housing",
+        "neighborhood",
+        "radon",
+        "school",
+        "water",
+        "weather"
+      ],
+      "configured": true,
+      "address": {
+        "keys": [
+          "city",
+          "id",
+          "state",
+          "zip"
+        ],
+        "city": "New York",
+        "state": "NY"
+      },
+      "sectionNames": [
+        "flood",
+        "school",
+        "weather",
+        "hazards",
+        "radon",
+        "water",
+        "air",
+        "housing",
+        "evCharging",
+        "neighborhood",
+        "dossierPdf"
+      ],
+      "sections": {
+        "flood": {
+          "keys": [
+            "isHighRisk",
+            "status",
+            "zone"
+          ],
+          "primitives": {
+            "status": "ok",
+            "zone": "X",
+            "isHighRisk": false
+          }
+        },
+        "school": {
+          "keys": [
+            "districtName",
+            "ncesId",
+            "status"
+          ],
+          "primitives": {
+            "status": "ok",
+            "districtName": "New York City Department Of Education",
+            "ncesId": "3620580"
+          }
+        },
+        "weather": {
+          "keys": [
+            "forecastDate",
+            "precipChancePct",
+            "status",
+            "summary",
+            "tempHighF",
+            "tempLowF"
+          ],
+          "primitives": {
+            "status": "too_far",
+            "forecastDate": null,
+            "summary": null,
+            "tempHighF": null,
+            "tempLowF": null,
+            "precipChancePct": null
+          }
+        },
+        "hazards": {
+          "keys": [
+            "overallRating",
+            "status",
+            "topRisks"
+          ],
+          "primitives": {
+            "status": "ok",
+            "topRisks": {
+              "count": 3,
+              "sample": [
+                {
+                  "hazard": "Cold Wave",
+                  "rating": "Relatively Moderate"
+                },
+                {
+                  "hazard": "Heat Wave",
+                  "rating": "Relatively Moderate"
+                },
+                {
+                  "hazard": "Hurricane",
+                  "rating": "Relatively Moderate"
+                }
+              ]
+            },
+            "overallRating": "Relatively Low"
+          }
+        },
+        "radon": {
+          "keys": [
+            "status",
+            "zone"
+          ],
+          "primitives": {
+            "status": "ok",
+            "zone": 3
+          }
+        },
+        "water": {
+          "keys": [
+            "status",
+            "systemName",
+            "violations5y"
+          ],
+          "primitives": {
+            "status": "ok",
+            "systemName": null,
+            "violations5y": null
+          }
+        },
+        "air": {
+          "keys": [
+            "aqi",
+            "category",
+            "status"
+          ],
+          "primitives": {
+            "status": "ok",
+            "aqi": 31,
+            "category": "Good"
+          }
+        },
+        "housing": {
+          "keys": [
+            "areaName",
+            "caveat",
+            "cbsaCode",
+            "countyFips",
+            "countyName",
+            "entityId",
+            "fairMarketRent",
+            "incomeLimits",
+            "metroName",
+            "status",
+            "zip"
+          ],
+          "primitives": {
+            "status": "ok",
+            "zip": "10118",
+            "entityId": "3606199999",
+            "countyFips": "36061",
+            "cbsaCode": "35620",
+            "countyName": "New York County, NY",
+            "metroName": "New York-Newark-Jersey City, NY-NJ",
+            "areaName": "New York, NY HUD Metro FMR Area",
+            "fairMarketRent.year": 2026,
+            "fairMarketRent.efficiency": 2529,
+            "fairMarketRent.oneBedroom": 2655,
+            "fairMarketRent.twoBedroom": 2910,
+            "fairMarketRent.threeBedroom": 3644,
+            "fairMarketRent.fourBedroom": 3959,
+            "fairMarketRent.zipSpecific": false,
+            "incomeLimits.year": 2026,
+            "incomeLimits.medianIncome": 104300,
+            "incomeLimits.extremelyLowIncome4Person": 50900,
+            "incomeLimits.veryLowIncome4Person": 84800,
+            "incomeLimits.lowIncome4Person": 135700,
+            "caveat": "This product uses the HUD User Data API but is not endorsed or certified by HUD User. HUD rent and income-limit figures describe HUD geographies and program thresholds, not a quote, appraisal, or eligibility decision for a specific home."
+          }
+        },
+        "evCharging": {
+          "keys": [
+            "caveat",
+            "ccsCompatibleCount",
+            "dcFastPortCount",
+            "level2PortCount",
+            "nearestDistanceMiles",
+            "radiusMiles",
+            "stationCount",
+            "stations",
+            "status",
+            "teslaCompatibleCount",
+            "totalResults"
+          ],
+          "primitives": {
+            "status": "ok",
+            "radiusMiles": 10,
+            "totalResults": 995,
+            "stationCount": 20,
+            "nearestDistanceMiles": 0.08741,
+            "dcFastPortCount": 0,
+            "level2PortCount": 69,
+            "teslaCompatibleCount": 17,
+            "ccsCompatibleCount": 0,
+            "stations": {
+              "count": 5,
+              "sample": [
+                {
+                  "name": "GGMC Parking 8 E 33rd St Garage - Tesla Destination",
+                  "distanceMiles": 0.08741,
+                  "network": "Tesla Destination",
+                  "streetAddress": "325 East 5th Ave",
+                  "city": "New York",
+                  "state": "NY",
+                  "zip": "10016",
+                  "accessDaysTime": null,
+                  "connectorTypes": {
+                    "count": 2,
+                    "sample": [
+                      "J1772",
+                      "TESLA"
+                    ]
+                  },
+                  "dcFastPorts": null,
+                  "level2Ports": 3
+                },
+                {
+                  "name": "8 E 33rd St",
+                  "distanceMiles": 0.09795,
+                  "network": "EVOKE",
+                  "streetAddress": "8 E 33rd St",
+                  "city": "New York",
+                  "state": "NY",
+                  "zip": "10016",
+                  "accessDaysTime": "24 hours daily",
+                  "connectorTypes": {
+                    "count": 1,
+                    "sample": [
+                      "J1772"
+                    ]
+                  },
+                  "dcFastPorts": null,
+                  "level2Ports": 10
+                },
+                {
+                  "name": "Central Parking - Tower 31",
+                  "distanceMiles": 0.12439,
+                  "network": "Blink Network",
+                  "streetAddress": "9 W 31st Street",
+                  "city": "New York",
+                  "state": "NY",
+                  "zip": "10001",
+                  "accessDaysTime": "24 hours daily",
+                  "connectorTypes": {
+                    "count": 1,
+                    "sample": [
+                      "J1772"
+                    ]
+                  },
+                  "dcFastPorts": null,
+                  "level2Ports": 2
+                }
+              ]
+            },
+            "caveat": "EV charging results are nearby public active station listings from NLR/AFDC. Verify access, pricing, connector compatibility, and real-time availability with the station or charging network before relying on it."
+          }
+        },
+        "neighborhood": {
+          "keys": [
+            "caveat",
+            "homeValueBand",
+            "incomeBand",
+            "medianGrossRent",
+            "medianHomeValue",
+            "medianHouseholdIncome",
+            "ownerOccupiedPct",
+            "schools",
+            "status",
+            "upgradeRequired",
+            "walkBand",
+            "walkScore"
+          ],
+          "primitives": {
+            "status": "ok",
+            "upgradeRequired": null,
+            "medianHomeValue": null,
+            "medianGrossRent": null,
+            "medianHouseholdIncome": null,
+            "ownerOccupiedPct": null,
+            "incomeBand": "unknown",
+            "homeValueBand": "unknown",
+            "walkScore": 16.3,
+            "walkBand": "most",
+            "schools": {
+              "count": 6,
+              "sample": [
+                {
+                  "name": "EAST SIDE COMMUNITY SCHOOL",
+                  "level": "High"
+                },
+                {
+                  "name": "STAR ACADEMY PS 63 (THE)",
+                  "level": "Elementary"
+                },
+                {
+                  "name": "PS 34 FRANKLIN D ROOSEVELT",
+                  "level": "Elementary"
+                }
+              ]
+            },
+            "caveat": null
+          }
+        },
+        "dossierPdf": {
+          "value": true
+        }
+      }
+    }
+  },
+  "lightweight": {
+    "status": 200,
+    "contentType": "application/json",
+    "summary": {
+      "topLevelKeys": [
+        "address",
+        "air",
+        "configured",
+        "housing"
+      ],
+      "configured": true,
+      "address": {
+        "keys": [
+          "city",
+          "id",
+          "state",
+          "zip"
+        ],
+        "city": "New York",
+        "state": "NY"
+      },
+      "sectionNames": [
+        "air",
+        "housing"
+      ],
+      "sections": {
+        "air": {
+          "keys": [
+            "aqi",
+            "category",
+            "status"
+          ],
+          "primitives": {
+            "status": "ok",
+            "aqi": 31,
+            "category": "Good"
+          }
+        },
+        "housing": {
+          "keys": [
+            "areaName",
+            "caveat",
+            "cbsaCode",
+            "countyFips",
+            "countyName",
+            "entityId",
+            "fairMarketRent",
+            "incomeLimits",
+            "metroName",
+            "status",
+            "zip"
+          ],
+          "primitives": {
+            "status": "ok",
+            "zip": "10118",
+            "entityId": "3606199999",
+            "countyFips": "36061",
+            "cbsaCode": "35620",
+            "countyName": "New York County, NY",
+            "metroName": "New York-Newark-Jersey City, NY-NJ",
+            "areaName": "New York, NY HUD Metro FMR Area",
+            "fairMarketRent.year": 2026,
+            "fairMarketRent.efficiency": 2529,
+            "fairMarketRent.oneBedroom": 2655,
+            "fairMarketRent.twoBedroom": 2910,
+            "fairMarketRent.threeBedroom": 3644,
+            "fairMarketRent.fourBedroom": 3959,
+            "fairMarketRent.zipSpecific": false,
+            "incomeLimits.year": 2026,
+            "incomeLimits.medianIncome": 104300,
+            "incomeLimits.extremelyLowIncome4Person": 50900,
+            "incomeLimits.veryLowIncome4Person": 84800,
+            "incomeLimits.lowIncome4Person": 135700,
+            "caveat": "This product uses the HUD User Data API but is not endorsed or certified by HUD User. HUD rent and income-limit figures describe HUD geographies and program thresholds, not a quote, appraisal, or eligibility decision for a specific home."
+          }
+        }
+      }
+    }
+  },
+  "pdf": {
+    "status": 500,
+    "contentType": "application/json",
+    "body": {
+      "error": "Failed to build dossier PDF"
+    }
+  }
+}

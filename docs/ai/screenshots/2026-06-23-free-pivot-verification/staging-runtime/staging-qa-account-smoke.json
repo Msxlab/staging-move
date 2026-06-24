@@ -1,0 +1,39 @@
+{
+  "base": "https://staging.locateflow.com",
+  "email": "mobile.qa@locateflow.com",
+  "startedAt": "2026-06-23T18:17:51.051Z",
+  "register": {
+    "status": 201,
+    "ok": true,
+    "emailVerified": true,
+    "requiresEmailVerification": false,
+    "code": null,
+    "error": null
+  },
+  "login": {
+    "status": 200,
+    "ok": true,
+    "mfaRequired": null,
+    "code": null,
+    "error": null
+  },
+  "me": {
+    "status": 200,
+    "ok": true,
+    "emailVerified": true,
+    "hasUser": true
+  },
+  "delete": {
+    "status": 200,
+    "ok": true,
+    "deletionStatus": "COMPLETED",
+    "message": "Account deletion completed.",
+    "code": null,
+    "error": null
+  },
+  "logout": {
+    "status": 403,
+    "ok": false
+  },
+  "finishedAt": "2026-06-23T18:17:53.061Z"
+}
