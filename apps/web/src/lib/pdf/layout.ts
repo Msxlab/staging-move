@@ -1,3 +1,7 @@
+// Side-effect import: hardens pdfkit's standard-font (.afm) loading so it works
+// in the Next.js standalone/prod build. MUST stay before any PDFDocument use.
+// See standard-font-data.ts for the root-cause writeup (dossier-pdf-500).
+import "@/lib/pdf/standard-font-data";
 import type PDFDocumentType from "pdfkit";
 
 /**
