@@ -62,21 +62,21 @@ const MAP_THEMES = {
     ],
   },
   light: {
-    // light-mode tokens: --sage #1F6F3E, --rose #2E5FB0
-    sage: "1F6F3E",
+    // light-mode tokens: --sage #0F6B50, --rose #2E5FB0 on warm greige paper
+    sage: "0F6B50",
     accent: "2E5FB0",
     styles: [
-      "element:geometry|color:0xEDF1F7",
-      "element:labels.text.fill|color:0x5B6B7E",
+      "element:geometry|color:0xEFEADF",
+      "element:labels.text.fill|color:0x4A5C75",
       "element:labels.text.stroke|color:0xFFFFFF",
       "element:labels.icon|visibility:off",
       "feature:water|element:geometry|color:0xC7D9EC",
       "feature:road|element:geometry|color:0xFFFFFF",
-      "feature:road|element:geometry.stroke|color:0xDCE3EC",
+      "feature:road|element:geometry.stroke|color:0xD8D0C3",
       "feature:poi|visibility:off",
       "feature:transit|visibility:off",
-      "feature:administrative|element:geometry|color:0xD8E0EA",
-      "feature:landscape.natural|element:geometry|color:0xE2EAF2",
+      "feature:administrative|element:geometry|color:0xD4D2C8",
+      "feature:landscape.natural|element:geometry|color:0xE7E1D4",
     ],
   },
 } as const;
