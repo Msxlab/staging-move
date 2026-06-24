@@ -206,13 +206,16 @@ const PIN_CORNER: Record<"top" | "bottom", Record<"left" | "right", { left: stri
 function MapLabel({
   text,
   className,
+  endpoint,
 }: {
   text: string;
   className: string;
+  endpoint: "from" | "to";
 }) {
   return (
     <span
-      className={`absolute max-w-[45%] truncate rounded-md border border-white/10 bg-black/70 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-white/70 backdrop-blur-sm ${className}`}
+      data-endpoint={endpoint}
+      className={`lf-route-map-label absolute max-w-[45%] truncate rounded-md px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] backdrop-blur-sm ${className}`}
     >
       {text}
     </span>
@@ -424,10 +427,12 @@ export function RouteMapCard({
             original old=bottom-left / new=top-right diagonal as the default. */}
         <MapLabel
           text={`${td("routeMap_oldHome")} · ${fromCity}`}
+          endpoint="from"
           className={corners ? LABEL_CORNER_CLASS[corners.from.y][corners.from.x] : "left-[8%] top-[79%]"}
         />
         <MapLabel
           text={`${td("routeMap_newHome")} · ${toCity}`}
+          endpoint="to"
           className={corners ? LABEL_CORNER_CLASS[corners.to.y][corners.to.x] : "right-[4%] top-[7%]"}
         />
 

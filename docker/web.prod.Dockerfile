@@ -97,7 +97,8 @@ COPY . .
 
 RUN node scripts/write-build-info.mjs \
  && pnpm --filter @locateflow/db exec prisma generate \
- && pnpm --filter @locateflow/web build
+ && pnpm --filter @locateflow/web build \
+ && node scripts/prepare-web-standalone.mjs
 
 # ── 3) runner: minimal image with standalone output ───────────────
 FROM node:22-bookworm-slim AS runner
