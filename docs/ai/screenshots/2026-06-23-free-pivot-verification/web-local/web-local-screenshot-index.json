@@ -1,0 +1,402 @@
+[
+  {
+    "slug": "home",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "url": "http://127.0.0.1:3102/",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\01-desktop-home.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "metrics": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": true,
+      "noSubscription": true,
+      "noCreditCard": true,
+      "affiliate": true,
+      "getStartedFree": true
+    }
+  },
+  {
+    "slug": "pricing",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "url": "http://127.0.0.1:3102/pricing",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\02-desktop-pricing.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/pricing",
+    "title": "Pricing | LocateFlow",
+    "metrics": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": true,
+      "noSubscription": true,
+      "noCreditCard": true,
+      "affiliate": true,
+      "getStartedFree": true
+    }
+  },
+  {
+    "slug": "why-free",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "url": "http://127.0.0.1:3102/why-free",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\03-desktop-why-free.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/why-free",
+    "title": "Why Free | LocateFlow",
+    "metrics": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": false,
+      "noCreditCard": true,
+      "affiliate": true,
+      "getStartedFree": true
+    }
+  },
+  {
+    "slug": "faq",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "url": "http://127.0.0.1:3102/faq",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\04-desktop-faq.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/faq",
+    "title": "Frequently Asked Questions | LocateFlow",
+    "metrics": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": false,
+      "noCreditCard": false,
+      "affiliate": true,
+      "getStartedFree": false
+    }
+  },
+  {
+    "slug": "billing-policy",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "url": "http://127.0.0.1:3102/billing-policy",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\05-desktop-billing-policy.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/billing-policy",
+    "title": "Billing Policy | LocateFlow",
+    "metrics": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": true,
+      "noCreditCard": false,
+      "affiliate": true,
+      "getStartedFree": false
+    }
+  },
+  {
+    "slug": "refund",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "url": "http://127.0.0.1:3102/refund",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\06-desktop-refund.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/refund",
+    "title": "Refund Policy | LocateFlow",
+    "metrics": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": true,
+      "noSubscription": false,
+      "noCreditCard": false,
+      "affiliate": true,
+      "getStartedFree": false
+    }
+  },
+  {
+    "slug": "sign-up",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "url": "http://127.0.0.1:3102/sign-up",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\07-desktop-sign-up.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/sign-up",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "metrics": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": false,
+      "noCreditCard": false,
+      "affiliate": false,
+      "getStartedFree": false
+    }
+  },
+  {
+    "slug": "sign-in",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "url": "http://127.0.0.1:3102/sign-in",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\08-desktop-sign-in.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/sign-in",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "metrics": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": false,
+      "noCreditCard": false,
+      "affiliate": false,
+      "getStartedFree": false
+    }
+  },
+  {
+    "slug": "home",
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:3102/",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\01-mobile-home.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "metrics": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": true,
+      "noSubscription": true,
+      "noCreditCard": true,
+      "affiliate": true,
+      "getStartedFree": true
+    }
+  },
+  {
+    "slug": "pricing",
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:3102/pricing",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\02-mobile-pricing.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/pricing",
+    "title": "Pricing | LocateFlow",
+    "metrics": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": true,
+      "noSubscription": true,
+      "noCreditCard": true,
+      "affiliate": true,
+      "getStartedFree": true
+    }
+  },
+  {
+    "slug": "why-free",
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:3102/why-free",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\03-mobile-why-free.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/why-free",
+    "title": "Why Free | LocateFlow",
+    "metrics": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": false,
+      "noCreditCard": true,
+      "affiliate": true,
+      "getStartedFree": true
+    }
+  },
+  {
+    "slug": "faq",
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:3102/faq",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\04-mobile-faq.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/faq",
+    "title": "Frequently Asked Questions | LocateFlow",
+    "metrics": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": false,
+      "noCreditCard": false,
+      "affiliate": true,
+      "getStartedFree": false
+    }
+  },
+  {
+    "slug": "billing-policy",
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:3102/billing-policy",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\05-mobile-billing-policy.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/billing-policy",
+    "title": "Billing Policy | LocateFlow",
+    "metrics": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": true,
+      "noCreditCard": false,
+      "affiliate": true,
+      "getStartedFree": false
+    }
+  },
+  {
+    "slug": "refund",
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:3102/refund",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\06-mobile-refund.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/refund",
+    "title": "Refund Policy | LocateFlow",
+    "metrics": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": true,
+      "noSubscription": false,
+      "noCreditCard": false,
+      "affiliate": true,
+      "getStartedFree": false
+    }
+  },
+  {
+    "slug": "sign-up",
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:3102/sign-up",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\07-mobile-sign-up.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/sign-up",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "metrics": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": false,
+      "noCreditCard": false,
+      "affiliate": false,
+      "getStartedFree": false
+    }
+  },
+  {
+    "slug": "sign-in",
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:3102/sign-in",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\web-local\\08-mobile-sign-in.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3102/sign-in",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "metrics": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "locateFlowIsFree": false,
+      "noSubscription": false,
+      "noCreditCard": false,
+      "affiliate": false,
+      "getStartedFree": false
+    }
+  }
+]

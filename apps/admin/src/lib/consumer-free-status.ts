@@ -12,17 +12,29 @@ import { CONSUMER_FREE_FLAG } from "@locateflow/shared";
  * admin chrome so the dashboard can show an honest status indicator without
  * touching the (dormant, kept-for-reversibility) billing infrastructure.
  *
- * Reversible by construction: if the flag row is missing or disabled, callers
- * fall back to the legacy subscription narrative — nothing is deleted.
+ * Reversible by construction: an explicit disabled flag or opt-out default can
+ * restore the legacy subscription narrative without deleting billing code.
  */
 
 export interface ConsumerFreeStatus {
-  /** True when the CONSUMER_FREE FeatureFlag exists and is enabled. */
+  /** True when the resolved CONSUMER_FREE feature flag is enabled. */
   consumerFreeEnabled: boolean;
   /** Affiliate commission already earned (APPROVED + PAID), in cents. */
   affiliateEarnedCents: number;
   /** Affiliate commission still pending network confirmation, in cents. */
   affiliatePendingCents: number;
+}
+
+function parseOptionalBoolean(value: string | undefined): boolean | null {
+  if (value == null || value.trim() === "") return null;
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return null;
+}
+
+function consumerFreeEnabledByDefault(): boolean {
+  return parseOptionalBoolean(process.env.CONSUMER_FREE_DEFAULT) ?? true;
 }
 
 /**
@@ -52,7 +64,7 @@ export async function getConsumerFreeStatus(): Promise<ConsumerFreeStatus> {
   const affiliatePendingCents = centsByStatus.get("PENDING") ?? 0;
 
   return {
-    consumerFreeEnabled: flag?.enabled === true,
+    consumerFreeEnabled: flag?.enabled ?? consumerFreeEnabledByDefault(),
     affiliateEarnedCents,
     affiliatePendingCents,
   };

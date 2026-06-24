@@ -1,0 +1,18 @@
+{
+  "login": {
+    "url": "https://admin-staging.locateflow.com/login",
+    "status": 200,
+    "ok": true,
+    "title": "LocateFlow Admin",
+    "htmlHasLogin": true
+  },
+  "screenshot": "admin-staging-login-1366x900.png",
+  "buildInfoUnauthenticated": {
+    "status": 401,
+    "ok": false,
+    "data": {
+      "error": "Unauthorized"
+    }
+  },
+  "authenticatedAdminPages": "not tested; admin QA credentials were not provided/approved"
+}

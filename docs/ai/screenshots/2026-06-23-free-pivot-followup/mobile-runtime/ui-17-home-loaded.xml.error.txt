@@ -1,0 +1,2 @@
+Command failed: C:\Users\Kutay\AppData\Local\Android\Sdk\platform-tools\adb.exe pull /sdcard/ui-17-home-loaded.xml C:\Users\Kutay\Documents\staging-move\docs\ai\screenshots\2026-06-23-free-pivot-followup\mobile-runtime\ui-17-home-loaded.xml
+adb: error: failed to stat remote object '/sdcard/ui-17-home-loaded.xml': No such file or directory

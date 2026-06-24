@@ -170,6 +170,10 @@ function SignInForm() {
                 {tCommon("signUp")}
               </Link>
             </p>
+            <div className="mt-3 flex gap-2 rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-xs leading-5 text-foreground">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <span>{tAuth("freeAccessPromise")}</span>
+            </div>
           </div>
 
         {error && (

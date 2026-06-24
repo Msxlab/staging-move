@@ -1,0 +1,123 @@
+{
+  "results": [
+    {
+      "label": "Home",
+      "hasDossier": false,
+      "hasNoCardCopy": false,
+      "labels": []
+    },
+    {
+      "label": "Addresses",
+      "selectedOrVisible": true,
+      "labels": [
+        "Addresses",
+        "2 · 1 services · $79",
+        "List view",
+        "Map view",
+        "Add address",
+        "ALL",
+        "ACTIVE",
+        "PAST",
+        "Move in progress · 0%. Austin Old · moving out. Denver New · current.",
+        "MOVE IN PROGRESS · 0%",
+        "Map of your relocation route from Austin to Denver",
+        "0%",
+        "Austin, TX",
+        "Denver, CO",
+        "Old · moving out",
+        "New · current",
+        "QA Denver Home",
+        "QA Austin Home",
+        "Zoom in",
+        "Zoom out",
+        "Home",
+        "Moving",
+        "Services",
+        "More"
+      ]
+    },
+    {
+      "label": "Moving",
+      "selectedOrVisible": true,
+      "labels": [
+        "MOVING",
+        "Moving",
+        "Start a move",
+        "Aug 15, 2026 · Austin → Denver",
+        "Austin To Denver",
+        "ACTIVE",
+        "Austin → Denver",
+        "Move date Aug 15, 2026",
+        "53 days left",
+        "Moving Plan",
+        "ROUTE",
+        "Migration",
+        "AUSTIN, TX",
+        "From",
+        "DENVER, CO",
+        "To",
+        "772 mi route preview",
+        "arrival in 53 days",
+        "1 active",
+        "Moves",
+        "0",
+        "53d",
+        "Completed",
+        "Move date",
+        "RISK LEVEL  ·  HIGH",
+        "1 Active",
+        "0 Completed",
+        "53",
+        "0% complete",
+        "0/1",
+        "Home",
+        "Addresses",
+        "Services",
+        "More"
+      ]
+    },
+    {
+      "label": "Services",
+      "selectedOrVisible": true,
+      "labels": [
+        "Services",
+        "QA Austin Home · 1 service · $79/mo",
+        "Add service",
+        "All",
+        "1",
+        "Active",
+        "Priced",
+        "0",
+        "Needs attention",
+        "Before the Move",
+        "0%",
+        "MONTHLY SERVICES",
+        "$79",
+        "1 tracked",
+        "/mo · 1 active",
+        "Internet · $79",
+        "INTERNET",
+        "Monthly total updates from the services listed for the selected address.",
+        "All addresses",
+        "QA Denver Home",
+        "QA Austin Home",
+        "Service health",
+        "Everything important is tracked cleanly.",
+        "100%",
+        "Home",
+        "Addresses",
+        "Moving",
+        "More"
+      ]
+    },
+    {
+      "label": "More",
+      "selectedOrVisible": false,
+      "labels": [
+        "Workspace",
+        "You're not part of any shared workspace yet. Join with an invite when a household is ready for you.",
+        "Have an invite? Join a workspace"
+      ]
+    }
+  ]
+}

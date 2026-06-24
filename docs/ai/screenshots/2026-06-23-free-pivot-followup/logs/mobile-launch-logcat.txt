@@ -1,0 +1,14 @@
+﻿06-23 14:35:02.687 15744 15798 I ReactNativeJS: Running "main" with {"rootTag":1,"initialProps":{},"fabric":true}
+06-23 14:35:03.895 15744 15798 I ReactNativeJS: '[API] mobile base URL', 'https://staging.locateflow.com/api'
+06-23 14:35:04.092 15744 15798 W ReactNativeJS: '[billing-flags] Android IAP is DISABLED. Subscription screen will render in read-only mode. Before Play submission set EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED=true.', { [Stack] name: 'Stack' }
+06-23 14:35:08.596 15744 15798 I ReactNativeJS: '[OAuthProviders] sign-in', { apiUrl: 'https://staging.locateflow.com/api',
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:   error: undefined,
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:   providers:
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:    { google:
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:       { configured: true,
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:         label: 'Google',
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:         message: 'Google sign-in is ready.' },
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:      apple:
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:       { configured: true,
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:         label: 'Apple',
+06-23 14:35:08.596 15744 15798 I ReactNativeJS:         message: 'Apple sign-in is ready.' } } }

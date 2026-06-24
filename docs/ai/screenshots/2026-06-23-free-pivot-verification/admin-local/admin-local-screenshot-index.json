@@ -1,0 +1,44 @@
+[
+  {
+    "slug": "admin-login",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "url": "http://127.0.0.1:3104/login",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\admin-local\\01-desktop-admin-login.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3104/login",
+    "title": "LocateFlow Admin",
+    "metrics": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "scrollWidth": 1440,
+      "clientWidth": 1440
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "hasAdminLogin": true
+    }
+  },
+  {
+    "slug": "admin-login",
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:3104/login",
+    "file": "C:\\Users\\Kutay\\Documents\\staging-move\\docs\\ai\\screenshots\\2026-06-23-free-pivot-verification\\admin-local\\01-mobile-admin-login.png",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3104/login",
+    "title": "LocateFlow Admin",
+    "metrics": {
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    "hasHorizontalOverflow": false,
+    "textChecks": {
+      "hasAdminLogin": true
+    }
+  }
+]

@@ -1,0 +1,1610 @@
+[
+  {
+    "slug": "home",
+    "url": "https://staging.locateflow.com/",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1351,
+    "h1": "Your entire move, handled.",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Start your move - free"
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "See how it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "See plans and pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started free"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://apps.apple.com/us/app/locateflow/id6771878736",
+        "text": "Download on theApp Store"
+      },
+      {
+        "href": "https://play.google.com/store/apps/details?id=com.locateflow.mobile",
+        "text": "Get it onGoogle Play"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      }
+    ],
+    "scrollWidth": 1351,
+    "textSample": "LocateFlow Features Why free Pricing Help Blog FAQ Sign In Get started RELOCATION INTELLIGENCE Your entire move, handled. LocateFlow tracks every utility, address and deadline, and briefs you on your new home before you arrive. One countdown. Zero surprises. No spreadsheets, no sticky notes, no missed transfer windows. Start your move - free See how it works 4.9 ON THE APP STORE FEMA, EPA AND NWS DATA WEB, IOS AND ANDROID Rough home Dream home 9:41 GOOD MORNING Liam Kutay Austin to New York - Aug 12 AI BRIEFING Updated now Internet renewal and renters insurance need attention before your transfer window closes. 48 days out 3 critical Needs prep MOVE COUNTDOWN 48days Austin to New York Aug 12 $284/mo WEATHER Mild AIR Good WATER Checked TRANSIT 18 min Home Moving Services Addresses More Buil",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "width": 1366,
+    "screenshot": "home-1366x900.png"
+  },
+  {
+    "slug": "home-mobile",
+    "url": "https://staging.locateflow.com/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "clientWidth": 375,
+    "h1": "Your entire move, handled.",
+    "height": 844,
+    "horizontalOverflow": true,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Start your move - free"
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "See how it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "See plans and pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started free"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://apps.apple.com/us/app/locateflow/id6771878736",
+        "text": "Download on theApp Store"
+      },
+      {
+        "href": "https://play.google.com/store/apps/details?id=com.locateflow.mobile",
+        "text": "Get it onGoogle Play"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      }
+    ],
+    "scrollWidth": 495,
+    "textSample": "LocateFlow Sign In Get started RELOCATION INTELLIGENCE Your entire move, handled. LocateFlow tracks every utility, address and deadline, and briefs you on your new home before you arrive. One countdown. Zero surprises. No spreadsheets, no sticky notes, no missed transfer windows. Start your move - free See how it works 4.9 ON THE APP STORE FEMA, EPA AND NWS DATA WEB, IOS AND ANDROID Rough home Dream home 9:41 GOOD MORNING Liam Kutay Austin to New York - Aug 12 AI BRIEFING Updated now Internet renewal and renters insurance need attention before your transfer window closes. 48 days out 3 critical Needs prep MOVE COUNTDOWN 48days Austin to New York Aug 12 $284/mo WEATHER Mild AIR Good WATER Checked TRANSIT 18 min Home Moving Services Addresses More Built for manual coordination Track each ste",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "width": 390,
+    "screenshot": "home-mobile-390x844.png"
+  },
+  {
+    "slug": "features",
+    "url": "https://staging.locateflow.com/features",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1351,
+    "h1": "Everything tied to the move, finally in one place.",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get the app"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why it is free"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms of Service"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/refund",
+        "text": "Refund policy"
+      }
+    ],
+    "scrollWidth": 1351,
+    "textSample": "LocateFlow Features Why free Pricing Help Blog FAQ Sign In Get started FEATURES Everything tied to the move, finally in one place. Bring moving plans, services, addresses, providers, search, dossiers, budgets, reminders, exports, and household collaboration into one calm workspace. Plan the move Moving command center Create a move plan, connect origin and destination addresses, and see the next tasks that need attention. Guided task flow Track government, utility, insurance, school, vehicle, mail, and logistics steps without hiding the manual confirmation work. Reminders Surface overdue, this-week, and upcoming tasks across web and mobile so the move does not rely on memory. Track the home Addresses and services Keep services attached to the right address, then see what is still tied to th",
+    "title": "Features | LocateFlow",
+    "width": 1366,
+    "screenshot": "features-1366x900.png"
+  },
+  {
+    "slug": "pricing",
+    "url": "https://staging.locateflow.com/pricing",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1351,
+    "h1": "LocateFlow is free for your whole move",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started free"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms of Service"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing policy"
+      }
+    ],
+    "scrollWidth": 1351,
+    "textSample": "LocateFlow Features Why free Pricing Help Blog FAQ Sign In Get started Free — every feature included LocateFlow is free for your whole move No subscription, no credit card. Every feature, for every move — Concierge and Business are on the way. FOR EVERYONE Everything included Free The complete LocateFlow experience — every home, every feature, no limits to unlock. $0/forever No credit card. No trial to expire. All your homes & addresses New Home Dossier: flood, schools, weather, hazards, radon, air & more AI move briefing — your move, explained Smart, data-checked provider suggestions (FCC broadband & utility data where available) FMCSA-registered mover suggestions & smart moving planner Real route maps, per-home budgets, reminders & checklists Shared household workspace, member roles & ch",
+    "title": "Pricing | LocateFlow",
+    "width": 1366,
+    "screenshot": "pricing-1366x900.png"
+  },
+  {
+    "slug": "pricing-mobile",
+    "url": "https://staging.locateflow.com/pricing",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "clientWidth": 375,
+    "h1": "LocateFlow is free for your whole move",
+    "height": 844,
+    "horizontalOverflow": true,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started free"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms of Service"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing policy"
+      }
+    ],
+    "scrollWidth": 495,
+    "textSample": "LocateFlow Sign In Get started Free — every feature included LocateFlow is free for your whole move No subscription, no credit card. Every feature, for every move — Concierge and Business are on the way. FOR EVERYONE Everything included Free The complete LocateFlow experience — every home, every feature, no limits to unlock. $0/forever No credit card. No trial to expire. All your homes & addresses New Home Dossier: flood, schools, weather, hazards, radon, air & more AI move briefing — your move, explained Smart, data-checked provider suggestions (FCC broadband & utility data where available) FMCSA-registered mover suggestions & smart moving planner Real route maps, per-home budgets, reminders & checklists Shared household workspace, member roles & child accounts New Home Dossier PDF + CSV/",
+    "title": "Pricing | LocateFlow",
+    "width": 390,
+    "screenshot": "pricing-mobile-390x844.png"
+  },
+  {
+    "slug": "why-free",
+    "url": "https://staging.locateflow.com/why-free",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1351,
+    "h1": "Free because the move should start before the checkout page.",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get the app"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "See features"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms of Service"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/refund",
+        "text": "Refund policy"
+      }
+    ],
+    "scrollWidth": 1351,
+    "textSample": "LocateFlow Features Why free Pricing Help Blog FAQ Sign In Get started WHY IT IS FREE Free because the move should start before the checkout page. Consumers can organize a move at no cost, while optional partner, concierge, and business surfaces can support the platform without locking the core workflow behind a paywall. $0 for the core move The consumer product is positioned around a free move workflow: address organization, provider tracking, reminders, checklists, and guides. Optional partner economics If a user chooses an eligible provider or future partner offer, LocateFlow may earn a referral. The user can still complete the move without taking an offer. No hidden account action LocateFlow does not secretly update accounts, sell a completed action, or pretend to be a provider. The us",
+    "title": "Why Free | LocateFlow",
+    "width": 1366,
+    "screenshot": "why-free-1366x900.png"
+  },
+  {
+    "slug": "why-free-mobile",
+    "url": "https://staging.locateflow.com/why-free",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "clientWidth": 375,
+    "h1": "Free because the move should start before the checkout page.",
+    "height": 844,
+    "horizontalOverflow": true,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get the app"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "See features"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms of Service"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/refund",
+        "text": "Refund policy"
+      }
+    ],
+    "scrollWidth": 495,
+    "textSample": "LocateFlow Sign In Get started WHY IT IS FREE Free because the move should start before the checkout page. Consumers can organize a move at no cost, while optional partner, concierge, and business surfaces can support the platform without locking the core workflow behind a paywall. $0 for the core move The consumer product is positioned around a free move workflow: address organization, provider tracking, reminders, checklists, and guides. Optional partner economics If a user chooses an eligible provider or future partner offer, LocateFlow may earn a referral. The user can still complete the move without taking an offer. No hidden account action LocateFlow does not secretly update accounts, sell a completed action, or pretend to be a provider. The user confirms every real account change. W",
+    "title": "Why Free | LocateFlow",
+    "width": 390,
+    "screenshot": "why-free-mobile-390x844.png"
+  },
+  {
+    "slug": "faq",
+    "url": "https://staging.locateflow.com/faq",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1351,
+    "h1": "Questions, answered.",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/refund",
+        "text": "Refund Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/ccpa-privacy-notice",
+        "text": "California Privacy Notice"
+      },
+      {
+        "href": "https://staging.locateflow.com/contact",
+        "text": "Contact page"
+      },
+      {
+        "href": "mailto:support@locateflow.com?subject=LocateFlow%20support%20request",
+        "text": "support@locateflow.com"
+      },
+      {
+        "href": "https://staging.locateflow.com/security",
+        "text": "Security overview"
+      },
+      {
+        "href": "https://staging.locateflow.com/contact",
+        "text": "Contact us"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      }
+    ],
+    "scrollWidth": 1351,
+    "textSample": "LocateFlow Features Why free Pricing Help Blog FAQ Sign In Get started FAQ Questions, answered. Answers to common product, billing, privacy, provider, mobile, and security questions. Policy pages control if any summary here differs. LAST UPDATED: JUNE 10, 2026 Product scope What does LocateFlow do? Is LocateFlow a provider marketplace? Are providers guaranteed or endorsed? Does LocateFlow provide legal, financial, insurance, tax, real estate, or moving advice? What is included in the free plan? Billing, trials, and refunds How does billing work? How do free trials and promotions work? How do I cancel? Are refunds available? How do App Store and Google Play subscriptions work? Data, privacy, and cookies What data does LocateFlow collect? Can I export or delete my data? How do cookies and an",
+    "title": "Frequently Asked Questions | LocateFlow",
+    "width": 1366,
+    "screenshot": "faq-1366x900.png"
+  },
+  {
+    "slug": "refund",
+    "url": "https://staging.locateflow.com/refund",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1351,
+    "h1": "Refund Policy",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "mailto:billing@locateflow.com?subject=LocateFlow%20refund%20request",
+        "text": "billing@locateflow.com"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms of Service"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/refund",
+        "text": "Refund policy"
+      }
+    ],
+    "scrollWidth": 1351,
+    "textSample": "LocateFlow Features Why free Pricing Help Blog FAQ Sign In Get started LEGAL Refund Policy This policy explains how refund requests are handled for LocateFlow subscriptions. It does not replace the final offer terms shown at checkout or mobile store rules. LAST UPDATED: JUNE 10, 2026 Cancellation is not always a refund Cancellation stops future renewal where supported. Refund eligibility is evaluated separately under this policy. Web purchases Stripe web purchases are reviewed by LocateFlow support under the request windows below. Mobile store purchases Apple App Store and Google Play purchases may require refund requests through the applicable store. Offer terms control Promotional terms shown at checkout may set additional eligibility rules or deadlines. Web subscription refunds For Stri",
+    "title": "Refund Policy | LocateFlow",
+    "width": 1366,
+    "screenshot": "refund-1366x900.png"
+  },
+  {
+    "slug": "billing-policy",
+    "url": "https://staging.locateflow.com/billing-policy",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1351,
+    "h1": "Billing Policy",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "mailto:billing@locateflow.com?subject=LocateFlow%20billing%20request",
+        "text": "billing@locateflow.com"
+      },
+      {
+        "href": "https://staging.locateflow.com/refund",
+        "text": "Refund Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms of Service"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/refund",
+        "text": "Refund policy"
+      }
+    ],
+    "scrollWidth": 1351,
+    "textSample": "LocateFlow Features Why free Pricing Help Blog FAQ Sign In Get started LEGAL Billing Policy How LocateFlow billing, trials, subscriptions, auto-renewal, cancellation, failed payments, taxes, and store purchases work. LAST UPDATED: JUNE 10, 2026 Trial and offer terms Trial length, price, renewal date, and today's due amount are shown at checkout before purchase. Stripe web billing Web subscriptions are created and managed through Stripe checkout and the in-app billing portal. Mobile stores iOS and Android subscriptions are managed by Apple App Store or Google Play when purchased there. Cancellation and refunds Cancellation stops future renewal where supported, but it does not automatically refund past charges. Free Access, trials, and promotions Free Access is a cardless access mode when of",
+    "title": "Billing Policy | LocateFlow",
+    "width": 1366,
+    "screenshot": "billing-policy-1366x900.png"
+  },
+  {
+    "slug": "terms",
+    "url": "https://staging.locateflow.com/terms",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1351,
+    "h1": "LocateFlow Terms of Service",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "mailto:legal@locateflow.com?subject=LocateFlow%20legal%20notice",
+        "text": "legal@locateflow.com"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/billing-policy",
+        "text": "Billing Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/refund",
+        "text": "Refund Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/acceptable-use",
+        "text": "Acceptable Use"
+      },
+      {
+        "href": "https://staging.locateflow.com/dpa",
+        "text": "DPA"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      }
+    ],
+    "scrollWidth": 1351,
+    "textSample": "LocateFlow Features Why free Pricing Help Blog FAQ Sign In Get started LEGAL LocateFlow Terms of Service LocateFlow is a SaaS relocation organization tool for addresses, service-provider records, moving tasks, reminders, documents, budgets, subscription access, and provider research. LAST UPDATED: JUNE 10, 2026 TERMS EFFECTIVE DATE: JUNE 10, 2026 Legal entity: AXTRA SOLUTIONS LLC Legal notices: legal@locateflow.com Mailing address: 188 Overmount Ave APT A Woodland Park, NJ 07424-3255 United States Platform scope LocateFlow is an organizational software product, not a law firm, tax preparer, insurance broker, lender, government agency, or regulated advisor. User responsibilities You are responsible for the accuracy, completeness, legality, and authority of every address, provider, billing, ",
+    "title": "LocateFlow Terms of Service | LocateFlow",
+    "width": 1366,
+    "screenshot": "terms-1366x900.png"
+  },
+  {
+    "slug": "privacy",
+    "url": "https://staging.locateflow.com/privacy",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1351,
+    "h1": "Privacy Policy",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Features"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Pricing"
+      },
+      {
+        "href": "https://staging.locateflow.com/help",
+        "text": "Help"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Get started"
+      },
+      {
+        "href": "mailto:privacy@locateflow.com?subject=LocateFlow%20privacy%20request",
+        "text": "privacy@locateflow.com"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/ccpa-privacy-notice",
+        "text": "California Privacy Notice"
+      },
+      {
+        "href": "mailto:privacy@locateflow.com?subject=LocateFlow%20privacy%20request",
+        "text": "privacy@locateflow.com"
+      },
+      {
+        "href": "https://staging.locateflow.com/about",
+        "text": "About"
+      },
+      {
+        "href": "https://staging.locateflow.com/features",
+        "text": "Everything that follows your address"
+      },
+      {
+        "href": "https://staging.locateflow.com/why-free",
+        "text": "Why free"
+      },
+      {
+        "href": "https://staging.locateflow.com/pricing",
+        "text": "Simple pricing. No surprises."
+      },
+      {
+        "href": "https://staging.locateflow.com/how-it-works",
+        "text": "How it works"
+      },
+      {
+        "href": "https://staging.locateflow.com/provider-coverage",
+        "text": "Provider coverage"
+      },
+      {
+        "href": "https://staging.locateflow.com/blog",
+        "text": "Blog"
+      },
+      {
+        "href": "https://staging.locateflow.com/faq",
+        "text": "FAQ"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms of Service"
+      },
+      {
+        "href": "https://staging.locateflow.com/cookie-policy",
+        "text": "Cookie Policy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      }
+    ],
+    "scrollWidth": 1351,
+    "textSample": "LocateFlow Features Why free Pricing Help Blog FAQ Sign In Get started LEGAL Privacy Policy This policy explains how LocateFlow uses data required to run account, address, service, moving, billing, support, analytics, mobile, and security features. LAST UPDATED: JUNE 10, 2026 Legal entity: AXTRA SOLUTIONS LLC Privacy contact: privacy@locateflow.com Mailing address: 188 Overmount Ave APT A Woodland Park, NJ 07424-3255 United States Data you create LocateFlow stores account, profile, address, service, moving, budget, document, support, and notification records you create or submit. Security and logs Authentication, access controls, audit logs, rate limits, and security logs help protect accounts and investigate abuse. Operational processors Payment, hosting, storage, email, analytics, mappin",
+    "title": "Privacy Policy | LocateFlow",
+    "width": 1366,
+    "screenshot": "privacy-1366x900.png"
+  },
+  {
+    "slug": "signin",
+    "url": "https://staging.locateflow.com/sign-in",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1366,
+    "h1": "Welcome back",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Sign Up"
+      },
+      {
+        "href": "https://staging.locateflow.com/forgot-password",
+        "text": "Forgot password?"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/contact",
+        "text": "Contact"
+      }
+    ],
+    "scrollWidth": 1366,
+    "textSample": "LocateFlow Welcome back Sign in to your account Secure access Sign In Don't have an account? Sign Up Continue with Google Continue with Apple WITH Email Password Forgot password? Sign In Terms Privacy Disclaimer Contact",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "width": 1366,
+    "screenshot": "signin-1366x900.png"
+  },
+  {
+    "slug": "signin-mobile",
+    "url": "https://staging.locateflow.com/sign-in",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "clientWidth": 390,
+    "h1": "Welcome back",
+    "height": 844,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-up",
+        "text": "Sign Up"
+      },
+      {
+        "href": "https://staging.locateflow.com/forgot-password",
+        "text": "Forgot password?"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/contact",
+        "text": "Contact"
+      }
+    ],
+    "scrollWidth": 390,
+    "textSample": "Sign In Don't have an account? Sign Up Continue with Google Continue with Apple WITH Email Password Forgot password? Sign In Terms Privacy Disclaimer Contact",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "width": 390,
+    "screenshot": "signin-mobile-390x844.png"
+  },
+  {
+    "slug": "signup",
+    "url": "https://staging.locateflow.com/sign-up",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "clientWidth": 1366,
+    "h1": "Create your account",
+    "height": 900,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/contact",
+        "text": "Contact"
+      }
+    ],
+    "scrollWidth": 1366,
+    "textSample": "LocateFlow Create your account Start managing every service tied to your address. Secure access Create your account Start managing every service tied to your address. Checkout terms shown before purchase Continue with Google Continue with Apple WITH First name Last name Email Password Pick a password with at least 12 characters, one uppercase, one lowercase, one digit, and one special character. You will review and accept LocateFlow Terms and Legal Disclaimer before using the app. Create Account Already have an account? Sign In Terms Privacy Disclaimer Contact",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "width": 1366,
+    "screenshot": "signup-1366x900.png"
+  },
+  {
+    "slug": "signup-mobile",
+    "url": "https://staging.locateflow.com/sign-up",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "clientWidth": 390,
+    "h1": "Create your account",
+    "height": 844,
+    "horizontalOverflow": false,
+    "links": [
+      {
+        "href": "https://staging.locateflow.com/",
+        "text": "LocateFlow"
+      },
+      {
+        "href": "https://staging.locateflow.com/sign-in",
+        "text": "Sign In"
+      },
+      {
+        "href": "https://staging.locateflow.com/terms",
+        "text": "Terms"
+      },
+      {
+        "href": "https://staging.locateflow.com/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "https://staging.locateflow.com/disclaimer",
+        "text": "Disclaimer"
+      },
+      {
+        "href": "https://staging.locateflow.com/contact",
+        "text": "Contact"
+      }
+    ],
+    "scrollWidth": 390,
+    "textSample": "Create your account Start managing every service tied to your address. Checkout terms shown before purchase Continue with Google Continue with Apple WITH First name Last name Email Password Pick a password with at least 12 characters, one uppercase, one lowercase, one digit, and one special character. You will review and accept LocateFlow Terms and Legal Disclaimer before using the app. Create Account Already have an account? Sign In Terms Privacy Disclaimer Contact",
+    "title": "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker",
+    "width": 390,
+    "screenshot": "signup-mobile-390x844.png"
+  }
+]
