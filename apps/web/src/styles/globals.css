@@ -321,11 +321,10 @@
 
 .light .app-shell-backdrop {
   background:
-    repeating-linear-gradient(90deg, rgba(20, 32, 47, 0.010) 0 1px, transparent 1px 72px),
-    repeating-linear-gradient(0deg, rgba(20, 32, 47, 0.007) 0 1px, transparent 1px 72px),
-    radial-gradient(ellipse 95% 58% at 50% -18%, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.24) 46%, transparent 72%),
-    linear-gradient(180deg, #F8F4EC 0%, #F2ECE1 48%, #EFEADF 100%);
-  opacity: 0.92;
+    repeating-linear-gradient(90deg, rgba(20, 32, 47, 0.018) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(20, 32, 47, 0.012) 0 1px, transparent 1px 72px),
+    radial-gradient(ellipse 120% 80% at 50% -20%, #EFEEEA 0%, #DEDCD3 68%, #D4D2C8 100%);
+  opacity: 1;
 }
 
 /* =========================================================================
