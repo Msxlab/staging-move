@@ -196,6 +196,20 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  try {
+    return await buildOnboardingBriefingResponse(userId, scope, apiKey);
+  } catch (error) {
+    console.error("Failed to build onboarding briefing:", error);
+    recordIntegrationOutcome("briefing", "gated");
+    return NextResponse.json({ configured: false });
+  }
+}
+
+async function buildOnboardingBriefingResponse(
+  userId: string,
+  scope: Awaited<ReturnType<typeof getRequestEntitlement>>["scope"],
+  apiKey: string,
+) {
   // ── Gather coarse, non-PII signals from the user's own data ──
   const [user, activePlan, activeServices, savedProviders] = await Promise.all([
     prisma.user.findUnique({
