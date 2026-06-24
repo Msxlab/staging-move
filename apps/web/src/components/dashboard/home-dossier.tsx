@@ -48,6 +48,10 @@ import { DossierAmbient, ambientForSection, useDossierCountUp } from "./dossier-
  * never throw into the dashboard — they collapse to the hidden state.
  */
 
+const DOSSIER_SHELL_CLASS = "lf-dossier-shell rounded-2xl border border-border backdrop-blur-xl overflow-hidden";
+const DOSSIER_ROW_CLASS = "lf-dossier-row relative isolate p-3 rounded-xl border border-border";
+const DOSSIER_STAT_CLASS = "lf-dossier-stat rounded-lg border border-border px-2.5 py-2";
+
 // ── Contract types (GET /api/addresses/{id}/dossier) ─────────────────────────
 
 export type DossierSectionStatus = "ok" | "no_location" | "error";
@@ -689,7 +693,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
   const forecastDateLabel = view.weather ? formatForecastDate(view.weather.forecastDate, locale) : "";
 
   return (
-    <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
+    <div className={DOSSIER_SHELL_CLASS}>
       <div className="flex items-baseline justify-between gap-3 px-5 pt-5 pb-3">
         <div className="flex items-center gap-2 min-w-0">
           <Compass className="h-4 w-4 shrink-0 text-tone-sky-fg" />
@@ -731,7 +735,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
             scene layer (aria-hidden, masked, under the content) whose
             parameters derive from the row's REAL data. */}
         {view.flood && (
-          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <DossierAmbient {...ambientForSection({ kind: "flood", isHighRisk: view.flood.isHighRisk })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center shrink-0">
@@ -766,7 +770,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (2) School district — NCES boundaries */}
         {view.school && (
-          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <DossierAmbient {...ambientForSection({ kind: "school" })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sage-bg border border-tone-sage-br flex items-center justify-center shrink-0">
@@ -786,7 +790,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         {/* (3) Moving-day weather — only when the API says "ok" (≤7 days out,
             destination address). "too_far" renders nothing by design. */}
         {view.weather && (
-          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <DossierAmbient
               {...ambientForSection({
                 kind: "weather",
@@ -818,7 +822,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         {/* (4) Natural hazard profile — FEMA National Risk Index. Per-risk
             pills; honey warn tone ONLY for "Relatively High"/"Very High". */}
         {view.hazards && (
-          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <DossierAmbient {...ambientForSection({ kind: "hazard", topRisks: view.hazards.topRisks })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-umber-bg border border-tone-umber-br flex items-center justify-center shrink-0">
@@ -854,7 +858,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (5) EPA radon zone — MANDATORY "test regardless of zone" fine print */}
         {view.radon && (
-          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <DossierAmbient {...ambientForSection({ kind: "radon", zone: view.radon.zone })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-slate-bg border border-tone-slate-br flex items-center justify-center shrink-0">
@@ -873,7 +877,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (6) Drinking water — EPA SDWIS; zero violations reads reassuring */}
         {view.water && (
-          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <DossierAmbient {...ambientForSection({ kind: "water", violations5y: view.water.violations5y })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center shrink-0">
@@ -905,7 +909,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (7) Air quality now — AirNow snapshot; hidden when not_configured */}
         {view.air && (
-          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <DossierAmbient {...ambientForSection({ kind: "air", aqi: view.air.aqi, category: view.air.category })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sage-bg border border-tone-sage-br flex items-center justify-center shrink-0">
@@ -928,7 +932,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (8) Housing affordability context - HUD User FMR / Income Limits. */}
         {view.housing && (
-          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <DossierAmbient
               {...ambientForSection({
                 kind: "housing",
@@ -960,7 +964,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
             <div className="mt-2 grid grid-cols-2 gap-2">
               {view.housing.medianIncome !== null && (
-                <div className="rounded-lg border border-border bg-foreground/[0.025] px-2.5 py-2">
+                <div className={DOSSIER_STAT_CLASS}>
                   <p className="text-[10px] text-muted-foreground">{td("dossier_housing_ami")}</p>
                   <p className="text-xs font-semibold text-foreground">
                     {formatUsd(view.housing.medianIncome, locale)}
@@ -968,7 +972,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                 </div>
               )}
               {view.housing.lowIncome4Person !== null && (
-                <div className="rounded-lg border border-border bg-foreground/[0.025] px-2.5 py-2">
+                <div className={DOSSIER_STAT_CLASS}>
                   <p className="text-[10px] text-muted-foreground">{td("dossier_housing_lowIncome")}</p>
                   <p className="text-xs font-semibold text-foreground">
                     {formatUsd(view.housing.lowIncome4Person, locale)}
@@ -986,7 +990,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (9) EV charging - NLR/AFDC public active stations near destination. */}
         {view.evCharging && (
-          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <DossierAmbient
               {...ambientForSection({
                 kind: "evCharging",
@@ -1029,7 +1033,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
             real area-median stat rows. The fine print is the honest core: these
             are tract medians, NOT a valuation of this specific home. */}
         {view.neighborhood?.locked === true && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className={DOSSIER_ROW_CLASS}>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-honey-bg border border-tone-honey-br flex items-center justify-center shrink-0">
                 <Home className="h-4 w-4 text-tone-honey-fg" />
@@ -1058,7 +1062,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         {view.neighborhood?.locked === false && (
           <div
             ref={nhoodCount.ref}
-            className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]"
+            className={DOSSIER_ROW_CLASS}
           >
             <DossierAmbient
               {...ambientForSection({ kind: "neighborhood", walkBand: view.neighborhood.walkBand })}
@@ -1184,7 +1188,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         )}
 
         {view.showLocationHint && (
-          <div className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-border bg-foreground/[0.02]">
+          <div className="lf-dossier-row flex items-center gap-3 p-3 rounded-xl border border-dashed border-border">
             <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
             <p className="text-xs text-muted-foreground">{td("dossier_hint_noLocation")}</p>
           </div>
@@ -1271,7 +1275,7 @@ const TEASER_ROWS = [
 export function HomeDossierTeaser({ place }: { place?: string }) {
   const td = useTranslations("dashboard");
   return (
-    <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
+    <div className={DOSSIER_SHELL_CLASS}>
       <div className="flex items-baseline justify-between gap-3 px-5 pt-5 pb-3">
         <div className="flex items-center gap-2 min-w-0">
           <Compass className="h-4 w-4 shrink-0 text-tone-sky-fg" />
@@ -1294,7 +1298,7 @@ export function HomeDossierTeaser({ place }: { place?: string }) {
         {TEASER_ROWS.slice(0, 4).map(({ Icon, boxClass, iconClass, titleKey, subKey }) => (
           <div
             key={titleKey}
-            className="flex items-center gap-3 p-3 rounded-xl border border-border bg-foreground/[0.02]"
+            className="lf-dossier-row flex items-center gap-3 p-3 rounded-xl border border-border"
           >
             <div
               className={`h-9 w-9 rounded-lg border flex items-center justify-center shrink-0 ${boxClass}`}
@@ -1326,7 +1330,7 @@ export function HomeDossierTeaser({ place }: { place?: string }) {
 
 function HomeDossierSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 space-y-3" aria-hidden="true">
+    <div className="lf-dossier-shell rounded-2xl border border-border backdrop-blur-xl p-5 space-y-3" aria-hidden="true">
       <div className="h-6 w-48 rounded-lg bg-foreground/5 motion-safe:animate-pulse" />
       <div className="h-16 w-full rounded-xl bg-foreground/5 motion-safe:animate-pulse" />
       <div className="h-16 w-full rounded-xl bg-foreground/5 motion-safe:animate-pulse" />
