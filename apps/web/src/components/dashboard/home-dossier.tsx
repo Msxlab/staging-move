@@ -873,6 +873,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
       dossierDeckPriority(b.ambient.intensity) - dossierDeckPriority(a.ambient.intensity) ||
       a.label.localeCompare(b.label, locale),
   );
+  const showDetailsGrid = dossierFull || sceneCards.length === 0;
 
   return (
     <div className={DOSSIER_SHELL_CLASS}>
@@ -983,7 +984,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         </>
       )}
 
-      <div className="lf-dossier-grid px-5 pb-5">
+      <div className="lf-dossier-grid px-5 pb-5" hidden={!showDetailsGrid}>
         {/* (1) Flood zone — FEMA. Each rendered row carries a DossierAmbient
             scene layer (aria-hidden, masked, under the content) whose
             parameters derive from the row's REAL data. */}

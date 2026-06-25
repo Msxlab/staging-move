@@ -560,6 +560,7 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).toContain("lf-dossier-source-band");
     expect(markup).toContain("lf-dossier-source-dots");
     expect(markup).toMatch(/class="lf-dossier-source-card"[^>]*style="[^"]*--ds-tone:/);
+    expect(markup).toContain('class="lf-dossier-grid px-5 pb-5" hidden=""');
     expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
     for (const sourceType of [
       "flood",

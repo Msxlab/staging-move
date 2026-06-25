@@ -330,12 +330,12 @@
   --muted: 38.57 41.18% 93.33%;
   --accent: 38.57 41.18% 93.33%;
   --surface-secondary: #F5F0E7;
-  --lf-app-bg: radial-gradient(ellipse 120% 80% at 50% -20%, #EFEEEA 0%, #DEDCD3 68%, #D4D2C8 100%);
+  --lf-app-bg: radial-gradient(ellipse 120% 80% at 50% -20%, #FFFFFF 0%, #F8F5EE 46%, #EFEADF 100%);
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.96);
   --lf-app-chrome-bg-strong: #FFFFFF;
-  --lf-app-panel-bg: rgba(255, 255, 255, 0.96);
-  --lf-app-panel-bg-strong: rgba(255, 255, 255, 0.985);
-  --lf-app-panel-bg-soft: color-mix(in srgb, #FFFFFF 88%, #F5F0E7 12%);
+  --lf-app-panel-bg: rgba(255, 255, 255, 0.98);
+  --lf-app-panel-bg-strong: #FFFFFF;
+  --lf-app-panel-bg-soft: color-mix(in srgb, #FFFFFF 94%, #F5F0E7 6%);
 }
 
 .light .app-shell-backdrop {

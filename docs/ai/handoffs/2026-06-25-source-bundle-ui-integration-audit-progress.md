@@ -21,7 +21,7 @@
 From `Move.dc.html`:
 
 - Light tokens: `bg #EFEADF`, `bg2 #E7E1D4`, `surface #FFFFFF`, `surface2 #F5F0E7`, `surface3 #ECE6DA`.
-- Light page background: radial gradient `#EFEEEA -> #DEDCD3 -> #D4D2C8`.
+- Source prototype light page background includes a warm radial paper gradient, but the `#D4D2C8` endpoint proved too muddy in the deployed dashboard context.
 - Dossier card stage: 82px dark animated stage `linear-gradient(180deg,#101b30,#0a1322)` even when the app theme is light.
 - Dossier layout: source deck with `View full` / `Swipe view`, horizontal swipe mode at `76%`, expanded wrap mode at `calc(50% - 6px)`.
 
@@ -34,12 +34,13 @@ From `Move.dc.html`:
 
 ## Changes Made In This Pass
 
-- Restored web light app background to the source paper/radial gradient:
+- Restored web light app background to a source-aligned paper gradient without the muddy dark endpoint:
   - `--background: 41.25 33.33% 90.59%`
-  - `--lf-app-bg: radial-gradient(... #EFEEEA ... #DEDCD3 ... #D4D2C8 ...)`
-- Kept web app chrome and dense dashboard panels white to avoid a muddy monochrome UI.
+- `--lf-app-bg: radial-gradient(... #FFFFFF ... #F8F5EE ... #EFEADF ...)`
+- Kept web app chrome and dense dashboard panels white to avoid the muddy monochrome UI seen on staging.
 - Restored light-mode dossier animated stages to the source dark stage background.
 - Strengthened source-scene ground visibility inside dark stages in light mode.
+- Made the source-style dossier deck the primary web presentation by hiding the legacy row grid until `View full` is selected; if there are no source cards, the legacy grid still shows as fallback.
 - Updated the dossier CSS regression test to pin both the source beige app canvas and dark animated dossier stage.
 
 ## Current Mobile Findings
@@ -69,6 +70,6 @@ From `Move.dc.html`:
 ## Remaining Work
 
 - Visually verify staging after deploy against the source screenshots/current browser state.
-- Decide whether to remove or collapse the secondary row-grid dossier fallback on web; source shows the deck as the primary dossier presentation.
+- Visually verify that the source deck is now primary and that `View full` reveals the legacy detail grid without overwhelming the first view.
 - Before any mobile edits, confirm with the user whether to implement the source deck treatment and free/entitlement copy cleanup on mobile.
 - Admin needs a separate decision: keep current light-capable admin or align closer to source dark-only admin.
