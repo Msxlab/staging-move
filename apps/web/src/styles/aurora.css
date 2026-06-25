@@ -128,8 +128,8 @@
 }
 
 /* Light-mode app glass: dark-first translucent utilities (`bg-foreground/5`,
-   `bg-card/70`, etc.) read muddy when source beige is used as a full app
-   canvas. Keep source beige opt-in and let app panels read as clean paper. */
+   `bg-card/70`, etc.) can read muddy over the source beige app canvas. Keep the
+   full source canvas, but let app panels read as clean paper. */
 .light .lf-aurora .bg-foreground\/5,
 .light .lf-aurora .bg-foreground\/\[0\.03\],
 .light .lf-aurora .bg-foreground\/\[0\.04\],
@@ -161,7 +161,7 @@
 }
 
 /* globals.css loads before this file, so repeat the app-shell glass decisions
-   with higher specificity. The shell keeps a clean lifted gradient while cards,
+   with higher specificity. The shell keeps the source warm paper while cards,
    headers, and section panes stay white. */
 .light .lf-aurora .lf-app-shell .bg-foreground\/5,
 .light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.05\] {

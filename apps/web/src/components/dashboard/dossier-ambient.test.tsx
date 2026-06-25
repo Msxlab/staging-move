@@ -246,7 +246,7 @@ describe("DossierAmbient rendering", () => {
     expect(missing).toEqual([]);
   });
 
-  it("keeps the source paper token opt-in, clean app surfaces, visible dark stages, and desktop source deck", () => {
+  it("keeps the source light paper canvas, clean white surfaces, visible dark stages, and desktop source deck", () => {
     const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
     const aurora = readFileSync(new URL("../../styles/aurora.css", import.meta.url), "utf8");
     const appStart = globals.indexOf(".light {");
@@ -269,8 +269,7 @@ describe("DossierAmbient rendering", () => {
     expect(desktopStart).toBeGreaterThan(-1);
     expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: linear-gradient(180deg, #FBFCFD 0%, #F7F9FC 58%, #F3F0E8 100%);");
-    expect(globals.slice(appStart, appEnd)).not.toContain("--lf-app-bg: #EFEADF;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #EFEADF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-head: #7E8EA6;");
