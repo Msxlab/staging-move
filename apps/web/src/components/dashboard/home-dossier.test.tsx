@@ -556,16 +556,17 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).toContain('data-expanded="false"');
     expect(markup).toContain('data-source-compact="true"');
     expect((markup.match(/lf-dossier-source-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
-    expect(markup).toContain("lf-move-rise");
+    expect(markup).toContain("lf-dossier-source-toolbar");
+    expect(markup).toContain("View full");
+    expect(markup).toContain('data-expanded="false"');
     expect(markup).toContain("lf-dossier-source-stage");
-    expect(markup).toContain("ds-root");
     expect(markup).toContain("lf-dossier-source-tag");
     expect(markup).toContain("lf-dossier-source-bars");
     expect(markup).toContain("lf-dossier-source-band");
     expect(markup).toContain("lf-dossier-source-dots");
     expect(markup).toContain('data-pause-offscreen="false"');
-    expect(markup).toContain("--ds-tone");
-    expect(markup).toMatch(/ds-(bob|breathe|pass|wave|mote|rain|stroll)/);
+    expect(markup).toMatch(/class="[^"]*\blf-dossier-source-card\b[^"]*"[^>]*style="[^"]*--ds-tone:/);
+    expect(markup).toContain('class="lf-dossier-grid px-5 pb-5" data-source-compact="true"');
     expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
     for (const sourceType of [
       "flood",
@@ -1148,26 +1149,25 @@ describe("dashboard wiring regression", () => {
     expect(dossierKeys(en).length).toBeGreaterThan(0);
   });
 
-  it("keeps the source dossier deck and does not hide the animated detail rows", () => {
-    const source = readWebSource("src/components/dashboard/home-dossier.tsx");
+  it("keeps the compact source animation deck as the desktop first view", () => {
     const css = readWebSource("src/styles/globals.css");
+    const source = readWebSource("src/components/dashboard/home-dossier.tsx");
 
-    expect(source).toContain('className="lf-dossier-source-toolbar px-5 pb-2"');
-    expect(source).toContain('data-expanded={dossierFull ? "true" : "false"}');
-    expect(source).toContain('showTag={false} pauseOffscreen={false}');
     expect(source).toContain('data-source-compact={hasSourceDeck ? "true" : "false"}');
-
+    expect(source).not.toContain("sceneCards.length > 0 && !dossierFull");
     expect(css).toContain('.lf-dossier-grid[data-source-compact="true"]');
-    expect(css).toContain("padding-top: 0.5rem;");
-    expect(css).not.toContain('.lf-dossier-grid[data-source-compact="true"] {\n  display: none;');
-    expect(css).toContain('.lf-dossier-source-deck:not([data-expanded="true"]) .lf-dossier-source-card');
-    expect(css).toContain("--lf-dossier-source-stage-h: 96px;");
-    expect(css).toContain(".lf-dossier-source-stage > .da-layer");
-    expect(css).toContain("width: 100% !important;");
-    expect(css).toContain("-webkit-mask-image: none;");
-    expect(css).toContain("@keyframes lf-mv-rise");
-    expect(css).toContain(".lf-move-rise");
-    expect(css).not.toContain(".lf-dossier-source-toolbar { display: none;");
-    expect(css).not.toContain(".lf-dossier-source-deck { display: none;");
+    expect(css).toMatch(
+      /\.lf-dossier-grid\[data-source-compact="true"\]\s*\{[\s\S]*?display:\s*none;/,
+    );
+    expect(css).not.toMatch(
+      /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-grid\[data-source-compact="true"\] \{[\s\S]*?display:\s*grid;/,
+    );
+    expect(css).toMatch(
+      /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/,
+    );
+    expect(css).toContain(".lf-dossier-source-deck:not([data-expanded=\"true\"]) .lf-dossier-source-card");
+    expect(css).not.toMatch(
+      /\.lf-dossier-source-toolbar,\s*\.lf-dossier-source-deck,\s*\.lf-dossier-source-dots\s*\{[\s\S]*?display:\s*none;/,
+    );
   });
 });

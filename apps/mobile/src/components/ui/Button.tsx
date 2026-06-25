@@ -81,7 +81,10 @@ export function Button({
   const trailingIcon = rightIcon || iconRight;
   // Real locked state (`.is-locked`): neutral fill, muted label, icons hidden
   // (the design swaps the arrow out entirely rather than ghosting it).
-  const neutralDisabled = disabledTone === "neutral" && disabled;
+  // A disabled gradient CTA dimmed to 0.5 opacity washes out illegibly on the
+  // light canvas (pale-on-pale). Treat any disabled gradient like the neutral
+  // "locked" state — a readable card-fill with muted label — instead.
+  const neutralDisabled = (disabledTone === "neutral" || variant === "gradient") && disabled;
 
   // Aurora shimmer sweep — a one-shot highlight strip that sweeps across
   // primary CTAs on press (Edition VII handoff, additions.css
@@ -190,23 +193,31 @@ export function Button({
           accessibilityLabel={accessibilityLabel || title}
           accessibilityHint={accessibilityHint}
           accessibilityState={{ disabled: disabled || loading }}
-          style={[(disabled || loading) && styles.disabled, style]}
+          style={
+            neutralDisabled && !loading
+              ? [styles.base, styles[`size_${size}`], fullWidth && styles.fullWidth, styles.disabledNeutral, style]
+              : [(disabled || loading) && styles.disabled, style]
+          }
         >
-          <LinearGradient
-            colors={[theme.colors.primary, theme.colors.accent]}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            onLayout={onShimmerLayout}
-            style={[
-              styles.base,
-              styles[`size_${size}`],
-              fullWidth && styles.fullWidth,
-              { ...theme.shadow.glow },
-            ]}
-          >
-            {content}
-            {shimmerOverlay}
-          </LinearGradient>
+          {neutralDisabled && !loading ? (
+            content
+          ) : (
+            <LinearGradient
+              colors={[theme.colors.primary, theme.colors.accent]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              onLayout={onShimmerLayout}
+              style={[
+                styles.base,
+                styles[`size_${size}`],
+                fullWidth && styles.fullWidth,
+                { ...theme.shadow.glow },
+              ]}
+            >
+              {content}
+              {shimmerOverlay}
+            </LinearGradient>
+          )}
         </TouchableOpacity>
       </Animated.View>
     );
