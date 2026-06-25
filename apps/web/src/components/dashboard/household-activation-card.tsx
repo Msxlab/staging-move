@@ -102,6 +102,10 @@ export function shouldShowHouseholdActivation(args: {
   return eligibleActivationWorkspace(args.plan, args.workspaces) !== null;
 }
 
+export function householdSetupInitialFocusTarget(): "email" {
+  return "email";
+}
+
 interface InviteFailure {
   email: string;
   error: string;
@@ -128,7 +132,6 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [result, setResult] = useState<SetupResult | null>(null);
   const autoOpenConsumedRef = useRef(false);
-  const nameInputRef = useRef<HTMLInputElement | null>(null);
   const firstEmailInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -223,8 +226,9 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
   useEffect(() => {
     if (!open || result || submitting) return;
     const raf = window.requestAnimationFrame(() => {
-      const targetInput = name.trim() ? firstEmailInputRef.current : nameInputRef.current;
-      targetInput?.focus();
+      if (householdSetupInitialFocusTarget() === "email") {
+        firstEmailInputRef.current?.focus();
+      }
     });
     return () => window.cancelAnimationFrame(raf);
   }, [open, result, submitting]);
@@ -255,8 +259,8 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
     if (submitting) return;
     setFormError(null);
 
-    const trimmedName = name.trim();
-    if (trimmedName.length < 1 || trimmedName.length > 60) {
+    const trimmedName = name.trim() || td("household_defaultName");
+    if (trimmedName.length > 60) {
       setFormError(td("household_nameInvalid"));
       return;
     }
@@ -455,12 +459,12 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
                   {td("household_nameLabel")}
                 </label>
                 <input
-                  ref={nameInputRef}
                   id="household-name"
                   name="householdName"
-                  autoComplete="organization"
+                  autoComplete="off"
                   value={name}
                   maxLength={60}
+                  placeholder={td("household_defaultName")}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
@@ -478,6 +482,7 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
                       ref={i === 0 ? firstEmailInputRef : undefined}
                       type="email"
                       name={`householdInviteEmail-${i + 1}`}
+                      autoFocus={i === 0}
                       autoComplete="email"
                       inputMode="email"
                       aria-label={td("household_emailFieldLabel", { index: i + 1 })}

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import "@/lib/pdf/standard-font-data";
+import { ensurePdfkitStandardFonts } from "@/lib/pdf/standard-font-data";
+
+ensurePdfkitStandardFonts();
 
 // Regression for dossier-pdf-500. In the Next standalone/prod build, Turbopack
 // bundles pdfkit and bakes an ABSOLUTE path for its standard-font metrics
@@ -37,5 +39,15 @@ describe("pdfkit standard-font data shim (dossier-pdf-500)", () => {
   it("still throws for a genuinely missing non-pdfkit file (no behavior change)", () => {
     const missing = path.join(process.cwd(), "definitely-not-a-real-file-xyz.txt");
     expect(() => fs.readFileSync(missing, "utf8")).toThrow();
+  });
+
+  it("is wired through used imports so standalone bundling keeps the shim", () => {
+    const layout = fs.readFileSync(new URL("./layout.ts", import.meta.url), "utf8");
+    const dossier = fs.readFileSync(new URL("./dossier-report.ts", import.meta.url), "utf8");
+
+    expect(layout).toContain('import { ensurePdfkitStandardFonts } from "@/lib/pdf/standard-font-data";');
+    expect(layout).toContain("ensurePdfkitStandardFonts();");
+    expect(dossier).toContain('import { ensurePdfkitStandardFonts } from "@/lib/pdf/standard-font-data";');
+    expect(dossier).toContain("ensurePdfkitStandardFonts();");
   });
 });
