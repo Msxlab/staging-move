@@ -171,7 +171,7 @@ type SourceSceneVariables = CSSProperties & {
   "--rc-pupil": string;
 };
 
-function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVariables {
+export function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVariables {
   const isBad =
     level === "bad" ||
     level === "storm" ||
@@ -204,7 +204,7 @@ function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVa
   };
 }
 
-function sourceSceneTag({ type, level }: SourceDossierSceneSpec): string {
+export function sourceSceneTag({ type, level }: SourceDossierSceneSpec): string {
   if (type === "housing") return "AREA";
   if (level === "good" || level === "sun") return "GOOD";
   if (level === "bad" || level === "storm" || level === "heat" || level === "cold") return "ALERT";
@@ -975,9 +975,10 @@ export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
  * Pause every scene animation while the layer is offscreen: toggles a
  * .da-paused class that sets animation-play-state: paused (globals.css).
  */
-function useAmbientPause(): MutableRefObject<HTMLDivElement | null> {
+function useAmbientPause(enabled = true): MutableRefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
+    if (!enabled) return;
     const node = ref.current;
     if (!node || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => {
@@ -986,7 +987,7 @@ function useAmbientPause(): MutableRefObject<HTMLDivElement | null> {
     });
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [enabled]);
   return ref;
 }
 
@@ -1075,12 +1076,16 @@ export function DossierAmbient({
   kind,
   intensity,
   variant,
+  showTag = true,
+  pauseOffscreen = true,
 }: {
   kind: AmbientKind;
   intensity: number;
   variant?: AmbientVariant;
+  showTag?: boolean;
+  pauseOffscreen?: boolean;
 }) {
-  const ref = useAmbientPause();
+  const ref = useAmbientPause(pauseOffscreen);
   const level = clampIntensity(intensity);
   const sourceScene = sourceDossierSceneFor({ kind, intensity: level, variant });
   const sourceSceneStyle = sourceSceneVars(sourceScene);
@@ -1090,6 +1095,7 @@ export function DossierAmbient({
       aria-hidden="true"
       data-kind={kind}
       data-intensity={level}
+      data-pause-offscreen={pauseOffscreen ? "true" : "false"}
       data-source-type={sourceScene.type}
       data-source-level={sourceScene.level}
       data-variant={variant}
@@ -1098,7 +1104,7 @@ export function DossierAmbient({
       style={{ zIndex: 0, ...sourceSceneStyle }}
       className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden rounded-r-xl"
     >
-      <span className="lf-dossier-scene-tag">{sourceSceneTag(sourceScene)}</span>
+      {showTag && <span className="lf-dossier-scene-tag">{sourceSceneTag(sourceScene)}</span>}
       <SourceDossierScene scene={sourceScene} />
     </div>
   );

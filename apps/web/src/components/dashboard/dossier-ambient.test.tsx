@@ -246,6 +246,54 @@ describe("DossierAmbient rendering", () => {
     expect(missing).toEqual([]);
   });
 
+  it("keeps the source DossierScene animation keyframes available", () => {
+    const css = readFileSync(new URL("../../styles/source-dossier-scene.css", import.meta.url), "utf8");
+    const expectedKeyframes = [
+      "ds-bob",
+      "ds-breathe",
+      "ds-heave",
+      "ds-pass",
+      "ds-wave",
+      "ds-leaf",
+      "ds-mote",
+      "ds-sip",
+      "ds-spark",
+      "ds-glow",
+      "ds-look",
+      "ds-rise",
+      "ds-sweat",
+      "ds-cloud",
+      "ds-ray",
+      "ds-tumble",
+      "ds-pop",
+      "ds-tug",
+      "ds-rain",
+      "ds-snow",
+      "ds-shiver",
+      "ds-fan",
+      "ds-lean",
+      "ds-flash",
+      "ds-puff",
+      "ds-streak",
+      "ds-heatline",
+      "ds-fogband",
+      "ds-cloud2",
+      "ds-umbrella",
+      "ds-cane",
+      "ds-kick",
+      "ds-acshake",
+      "ds-chase",
+      "ds-flicker",
+      "ds-run",
+      "ds-impact",
+      "ds-stroll",
+    ];
+
+    for (const keyframe of expectedKeyframes) {
+      expect(css).toContain(`@keyframes ${keyframe}`);
+    }
+  });
+
   it("renders an aria-hidden, pointer-events-none masked layer with data attributes", () => {
     const markup = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} />);
     expect(markup).toContain('aria-hidden="true"');

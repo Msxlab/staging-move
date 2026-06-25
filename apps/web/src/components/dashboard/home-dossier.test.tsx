@@ -550,9 +550,20 @@ describe("HomeDossierCard rendering", () => {
   it("wires every real data row to the source dossier scene stage", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
 
+    expect(markup).toContain("lf-dossier-source-toolbar");
+    expect(markup).toContain("View full");
+    expect(markup).toContain('aria-pressed="false"');
+    expect(markup).toContain('data-expanded="false"');
+    expect(markup).toContain('data-source-compact="true"');
     expect((markup.match(/lf-dossier-source-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
+    expect(markup).toContain("lf-move-rise");
     expect(markup).toContain("lf-dossier-source-stage");
+    expect(markup).toContain("lf-dossier-source-tag");
     expect(markup).toContain("lf-dossier-source-bars");
+    expect(markup).toContain("lf-dossier-source-band");
+    expect(markup).toContain("lf-dossier-source-dots");
+    expect(markup).toContain('data-pause-offscreen="false"');
+    expect(markup).toContain("--ds-tone");
     expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
     for (const sourceType of [
       "flood",
@@ -1133,5 +1144,23 @@ describe("dashboard wiring regression", () => {
       Object.keys(cat.dashboard).filter((k) => k.startsWith("dossier_") || k === "widget_homeDossier");
     expect(dossierKeys(en).sort()).toEqual(dossierKeys(es).sort());
     expect(dossierKeys(en).length).toBeGreaterThan(0);
+  });
+
+  it("keeps the source dossier deck as the primary view and preserves its controls", () => {
+    const source = readWebSource("src/components/dashboard/home-dossier.tsx");
+    const css = readWebSource("src/styles/globals.css");
+
+    expect(source).toContain('className="lf-dossier-source-toolbar px-5 pb-2"');
+    expect(source).toContain('data-expanded={dossierFull ? "true" : "false"}');
+    expect(source).toContain('showTag={false} pauseOffscreen={false}');
+    expect(source).toContain('data-source-compact={hasSourceDeck ? "true" : "false"}');
+
+    expect(css).toContain('.lf-dossier-grid[data-source-compact="true"]');
+    expect(css).toContain("display: none;");
+    expect(css).toContain('.lf-dossier-source-deck:not([data-expanded="true"]) .lf-dossier-source-card');
+    expect(css).toContain("@keyframes lf-mv-rise");
+    expect(css).toContain(".lf-move-rise");
+    expect(css).not.toContain(".lf-dossier-source-toolbar { display: none;");
+    expect(css).not.toContain(".lf-dossier-source-deck { display: none;");
   });
 });
