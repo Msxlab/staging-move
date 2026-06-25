@@ -268,7 +268,7 @@ describe("consumer-free pricing + affiliate contract", () => {
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-source-paper-bg:\s*#EFEADF;/);
-    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-bg:\s*#EFEADF;/);
+    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-bg:\s*#F8F5EE;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-chrome-bg-strong:\s*#FFFFFF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-panel-bg-strong:\s*#FFFFFF;/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*background-color:\s*var\(--lf-app-panel-bg\);/);
@@ -282,5 +282,6 @@ describe("consumer-free pricing + affiliate contract", () => {
     expect(globals).not.toContain("--lf-app-bg: var(--bg)");
     expect(globals).not.toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
     expect(globals).not.toContain("--lf-app-bg: #FAF7F0");
+    expect(globals).not.toContain("--lf-app-bg: #EFEADF");
   });
 });

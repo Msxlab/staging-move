@@ -321,17 +321,16 @@
 
 .light {
   /*
-   * Source Move.dc.html light theme:
-   *   bg #EFEADF, bg2 #E7E1D4, surface #FFFFFF, surface2 #F5F0E7.
-   * Keep the app canvas on the source paper color; card/chrome overrides below
-   * keep dense dashboard surfaces clean white instead of muddying the UI.
+   * Source Move.dc.html light theme keeps #EFEADF as the dossier/mobile paper.
+   * The web app shell needs a cleaner wash so transparent dashboard panes do
+   * not collapse into a muddy greige field on wide screens.
    */
-  --background: 41.25 33.33% 90.59%;
+  --background: 42 41.67% 95.29%;
   --muted: 38.57 41.18% 93.33%;
   --accent: 38.57 41.18% 93.33%;
   --lf-source-paper-bg: #EFEADF;
   --surface-secondary: #F5F0E7;
-  --lf-app-bg: #EFEADF;
+  --lf-app-bg: #F8F5EE;
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.96);
   --lf-app-chrome-bg-strong: #FFFFFF;
   --lf-app-panel-bg: rgba(255, 255, 255, 0.98);

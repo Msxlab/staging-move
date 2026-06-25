@@ -263,9 +263,9 @@ describe("DossierAmbient rendering", () => {
     expect(rowStart).toBeGreaterThan(-1);
     expect(sourceDesktopStart).toBeGreaterThan(-1);
     expect(desktopStart).toBeGreaterThan(-1);
-    expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
+    expect(globals.slice(appStart, appEnd)).toContain("--background: 42 41.67% 95.29%");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #EFEADF;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #F8F5EE;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
     expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none;[\s\S]*?opacity:\s*0;/);
