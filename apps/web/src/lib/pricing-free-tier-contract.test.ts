@@ -269,7 +269,7 @@ describe("consumer-free pricing + affiliate contract", () => {
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-source-paper-bg:\s*#EFEADF;/);
-    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-bg:\s*radial-gradient\(ellipse 120% 78% at 50% -18%,\s*#FFFFFF 0%,\s*#FAF8F3 38%,\s*#F3EFE6 78%,\s*#EFEADF 100%\);/);
+    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-bg:\s*#EFEADF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-chrome-bg-strong:\s*#FFFFFF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-panel-bg-strong:\s*#FFFFFF;/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*background-color:\s*var\(--lf-app-panel-bg\);/);

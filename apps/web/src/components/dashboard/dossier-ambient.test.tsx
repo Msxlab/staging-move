@@ -269,9 +269,7 @@ describe("DossierAmbient rendering", () => {
     expect(desktopStart).toBeGreaterThan(-1);
     expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
-    expect(globals.slice(appStart, appEnd)).toContain(
-      "--lf-app-bg: radial-gradient(ellipse 120% 78% at 50% -18%, #FFFFFF 0%, #FAF8F3 38%, #F3EFE6 78%, #EFEADF 100%);",
-    );
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #EFEADF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-head: #7E8EA6;");

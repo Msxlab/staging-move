@@ -2,15 +2,18 @@
 
 ## Context
 
-- User reported the latest staging light theme looked materially worse: the app shell read as a muddy beige wash.
+- User reported the latest staging light theme looked materially worse, then clarified the source beige dossier color is intended to be the full light app background.
 - External source bundle checked: `C:\Users\Windows\Downloads\New folder\Initial check requested-handoff (7)\initial-check-requested`.
-- Primary source file remains `project/Move.dc.html`; it uses a warm paper token for app surfaces, but not a flat full-desktop beige wash.
+- Primary source file remains `project/Move.dc.html`; its light theme token has `bg:'#EFEADF'`, white surfaces, and source Home Dossier cards with animated 82px `DossierScene` stages.
 
 ## Changes Made
 
-- Restored the web light app shell from a flat `#EFEADF` background to the prior white-to-warm-paper gradient:
-  - `#FFFFFF` / `#FAF8F3` / `#F3EFE6` / `#EFEADF`
+- Restored the web light app shell to the source paper background:
+  - `--lf-app-bg: #EFEADF`
 - Kept the source dossier paper token (`--lf-source-paper-bg: #EFEADF`) and dossier stage scene behavior intact.
+- Disabled offscreen animation pausing only for the compact source dossier deck:
+  - Row ambient scenes keep IntersectionObserver pausing.
+  - Source deck stages render with `data-pause-offscreen="false"` so first-view animations cannot stay frozen after initial layout.
 - Strengthened light-mode route map overlay labels:
   - White chip backgrounds.
   - Higher contrast border/shadow.
@@ -23,6 +26,7 @@
 - Mobile Home Dossier uses memory cache plus persisted offline cache via `home-dossier-cache.ts`, with a 30-minute default freshness window.
 - Mobile Home Dossier still renders row-based ambient scenes, not the source bundle's horizontal dossier source deck. Mobile source code was not modified in this pass.
 - Mobile plan comparison still contains the older paid ladder copy/feature matrix, including Free preview-only Home Dossier and paid full dossier/PDF/workspace capabilities. That needs a separate mobile entitlement/copy pass.
+- External source inventory includes dark marketing/admin pages, dark web onboarding/auth pages, and the main mobile/app prototype. The source light app theme is primarily in `Move.dc.html`, not the dark web marketing files.
 
 ## Tests Run
 

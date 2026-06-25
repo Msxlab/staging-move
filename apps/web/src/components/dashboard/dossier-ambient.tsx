@@ -975,10 +975,14 @@ export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
  * Pause every scene animation while the layer is offscreen: toggles a
  * .da-paused class that sets animation-play-state: paused (globals.css).
  */
-function useAmbientPause(): MutableRefObject<HTMLDivElement | null> {
+function useAmbientPause(enabled = true): MutableRefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const node = ref.current;
+    if (!enabled) {
+      node?.classList.remove("da-paused");
+      return;
+    }
     if (!node || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => {
       const entry = entries[entries.length - 1];
@@ -986,7 +990,7 @@ function useAmbientPause(): MutableRefObject<HTMLDivElement | null> {
     });
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [enabled]);
   return ref;
 }
 
@@ -1076,13 +1080,15 @@ export function DossierAmbient({
   intensity,
   variant,
   showTag = true,
+  pauseOffscreen = true,
 }: {
   kind: AmbientKind;
   intensity: number;
   variant?: AmbientVariant;
   showTag?: boolean;
+  pauseOffscreen?: boolean;
 }) {
-  const ref = useAmbientPause();
+  const ref = useAmbientPause(pauseOffscreen);
   const level = clampIntensity(intensity);
   const sourceScene = sourceDossierSceneFor({ kind, intensity: level, variant });
   const sourceSceneStyle = sourceSceneVars(sourceScene);
@@ -1092,6 +1098,7 @@ export function DossierAmbient({
       aria-hidden="true"
       data-kind={kind}
       data-intensity={level}
+      data-pause-offscreen={pauseOffscreen ? "true" : "false"}
       data-source-type={sourceScene.type}
       data-source-level={sourceScene.level}
       data-variant={variant}
