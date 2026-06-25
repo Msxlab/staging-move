@@ -34,6 +34,14 @@ Updated `apps/web/src/styles/globals.css` only:
 
 This keeps the wide page shell on the cleaner source `surface2` family, without returning to the muddy grey look.
 
+## Pull Request State
+
+- PR #58 was already merged into `main` before the final follow-up commits landed on `fix/ui-ux-remediation`.
+- Those follow-up commits were not present in `origin/staging`.
+- A new PR was opened directly against `staging`: https://github.com/Msxlab/staging-move/pull/59
+- PR #59 head at creation: `a281c0d7`.
+- Compare at creation: `fix/ui-ux-remediation` was 5 commits ahead of `staging` and 0 behind.
+
 ## Verification
 
 Passed:
