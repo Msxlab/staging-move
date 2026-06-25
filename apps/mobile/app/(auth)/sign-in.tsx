@@ -275,19 +275,21 @@ export default function SignInScreen() {
             </View>
 
             <View style={styles.oauthGroup}>
+              {appleReady && (
               <TouchableOpacity
                 onPress={() => openOAuth("apple")}
-                disabled={!appleReady || Boolean(oauthLoading)}
+                disabled={Boolean(oauthLoading)}
                 activeOpacity={0.78}
-                style={[styles.oauthButton, styles.oauthApple, (!appleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
+                style={[styles.oauthButton, styles.oauthApple, Boolean(oauthLoading) && styles.oauthDisabled]}
                 accessibilityLabel={t("auth.continueWithApple")}
                 accessibilityRole="button"
               >
                 <AppleLogoMark size={18} color="#fff" />
                 <Text style={styles.oauthAppleText}>
-                  {appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
+                  {t("auth.continueWithApple")}
                 </Text>
               </TouchableOpacity>
+              )}
               <TouchableOpacity
                 onPress={() => openOAuth("google")}
                 disabled={!googleReady || Boolean(oauthLoading)}
