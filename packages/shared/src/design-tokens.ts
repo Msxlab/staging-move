@@ -102,10 +102,10 @@ export const surfaceDark = {
 } as const;
 
 export const surfaceLight = {
-  background: "#EFEADF", // source prototype light page canvas
+  background: "#F8FAFC", // neutral app canvas; source paper is scoped to dossier surfaces
   surface: "#FFFFFF",
-  card: "#F5F0E7",
-  cardHover: "#ECE6DA",
+  card: "#F6F8FB",
+  cardHover: "#EEF2F7",
   elevated: "#FFFFFF",
 } as const;
 

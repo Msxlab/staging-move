@@ -80,7 +80,7 @@
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             41.25 33.33% 90.59%;
+    --background:             210 40% 98%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -320,7 +320,8 @@
 }
 
 .light {
-  --lf-app-bg: radial-gradient(ellipse 120% 78% at 50% -18%, #FFFFFF 0%, #FAF8F3 38%, #F3EFE6 78%, #EFEADF 100%);
+  --lf-source-paper-bg: #EFEADF;
+  --lf-app-bg: #F8FAFC;
 }
 
 .light .app-shell-backdrop {
@@ -389,7 +390,7 @@
    (DARK is untouched — utilities resolve to their authored alpha there).
    Decorative buckets /10–/30 (dividers, faint icons, disabled glyphs) are
    deliberately left alone so the visual hierarchy survives. Verified against
-   the source warm-paper --background (#EFEADF) and white card surfaces:
+   the neutral app canvas (#F8FAFC) and white card surfaces:
    /40 remains readable for secondary copy, while /45-/55 keep stronger body
    contrast. Mirrors the .text-white/NN remap above. */
 .light .text-foreground\/35 { color: hsl(var(--foreground) / 0.58); }

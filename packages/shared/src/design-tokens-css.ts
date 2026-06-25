@@ -314,11 +314,11 @@ const webRootDark: CssBlock = {
 const webLight: CssBlock = {
   selector: ".light",
   rows: [
-    v("bg", "#EFEADF"),
-    v("bg-deep", "#E7E1D4"),
+    v("bg", "#F8FAFC"),
+    v("bg-deep", "#EEF2F7"),
     v("surface", "#FFFFFF"),
-    v("surface-2", "#F5F0E7"),
-    v("surface-3", "#ECE6DA"),
+    v("surface-2", "#F6F8FB"),
+    v("surface-3", "#EEF2F7"),
     v("elevated", "#FFFFFF"),
     blank,
     v("fg", "#14202F"),
@@ -481,7 +481,7 @@ const webShadcnPlanRows: TokenRow[] = [
 const webShadcnLight: CssBlock = {
   selector: ".light",
   rows: [
-    v("background", "41.25 33.33% 90.59%"),
+    v("background", "210 40% 98%"),
     v("foreground", "213 39% 13%"),
     blank,
     v("card", "0 0% 100%"),
@@ -790,9 +790,9 @@ const webAuroraLight: CssBlock = {
     v("au-ink-2", "#4A5C75"),
     v("au-ink-3", "#7A8A9F"),
     v("au-ink-4", "#ABB6C5"),
-    v("au-base", "#EFEADF"),
+    v("au-base", "#F8FAFC"),
     v("au-base-2", "#FFFFFF"),
-    v("au-base-3", "#F5F0E7"),
+    v("au-base-3", "#F6F8FB"),
     v("au-pane", "rgba(255, 255, 255, 0.92)"),
     v("au-pane-2", "rgba(255, 255, 255, 0.98)"),
     v("au-pane-3", "#FFFFFF"),

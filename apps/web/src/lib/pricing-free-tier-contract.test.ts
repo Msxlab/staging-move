@@ -262,19 +262,22 @@ describe("consumer-free pricing + affiliate contract", () => {
     }
   });
 
-  it("keeps the light app canvas warm without muddying dashboard surfaces", () => {
+  it("keeps the light app canvas neutral and scopes source paper tone", () => {
     const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
     const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
+    const aurora = readRepoFile("apps", "web", "src", "styles", "aurora.css");
 
-    expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
-    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*radial-gradient\(ellipse 120% 78% at 50% -18%/);
-    expect(globals).toContain("#FFFFFF 0%");
-    expect(globals).toContain("#FAF8F3 38%");
-    expect(globals).toContain("#F3EFE6 78%");
-    expect(globals).toContain("#EFEADF 100%");
+    expect(tokens).toMatch(/--bg:\s*#F8FAFC;/);
+    expect(globals).toMatch(/--lf-source-paper-bg:\s*#EFEADF;/);
+    expect(globals).toMatch(/--lf-app-bg:\s*#F8FAFC;/);
+    expect(aurora).toMatch(/--background:\s*210 40% 98%;/);
+    expect(aurora).not.toContain("--background:           43.64 40.74% 94.71%");
+    expect(globals).not.toMatch(/--lf-app-bg:\s*radial-gradient/);
+    expect(globals).not.toContain("#FAF8F3 38%");
+    expect(globals).not.toContain("#F3EFE6 78%");
+    expect(globals).not.toContain("#EFEADF 100%");
     expect(globals).not.toContain("#DEDCD3");
     expect(globals).not.toContain("#D4D2C8");
-    expect(globals).not.toContain("#F8FAFC 100%");
     expect(globals).not.toContain("--lf-app-bg: var(--bg)");
     expect(globals).not.toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
     expect(globals).not.toContain("--lf-app-bg: #FAF7F0");

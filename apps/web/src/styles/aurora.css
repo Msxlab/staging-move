@@ -457,7 +457,7 @@
 
 /* --- Light theme overrides ----------------------------------------- */
 .light .lf-aurora {
-  --background:           43.64 40.74% 94.71%;
+  --background:           210 40% 98%;
   --foreground:           213 39% 13%;
   --card:                 0 0% 100%;
   --card-foreground:      213 39% 13%;
@@ -467,9 +467,9 @@
   --primary-foreground:   0 0% 100%;
   --secondary:            214 22% 38%;
   --secondary-foreground: 0 0% 100%;
-  --muted:                40 40.54% 92.75%;
+  --muted:                214 28% 93%;
   --muted-foreground:     213 18% 30%;
-  --accent:               45 44.44% 96.47%;
+  --accent:               214 28% 96%;
   --accent-foreground:    213 39% 13%;
   --destructive:          358 47% 43%;
   --destructive-foreground: 0 0% 100%;
