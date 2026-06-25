@@ -35,7 +35,7 @@ const COLORS = {
   border: "#1E2A3D",
   text: "#F2F5FA",
   textDim: "#8A98AC",
-  accent: "#CBA45E",
+  accent: "#5B8DEF",
   success: "#4FD1B5",
 } as const;
 

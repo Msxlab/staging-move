@@ -29,7 +29,7 @@
 
   .dark {
     /* Dark mode — unified Aurora navy canvas (D7): admin shares web's
-       #070B14 navy surfaces (graphite #171E2B dropped). Gold primary
+       #070B14 navy surfaces (graphite #171E2B dropped). Sapphire primary
        accent + cool navy panels; hairline borders, calm contrast steps. */
     --background:             222 48% 5%;
     --foreground:             220 16% 98%;
@@ -37,7 +37,7 @@
     --card-foreground:        220 16% 98%;
     --popover:                220 46% 10%;
     --popover-foreground:     220 16% 98%;
-    --primary:                38.53 51.17% 58.24%;
+    --primary:                219.73 82.22% 64.71%;
     --primary-foreground:     222 40% 8%;
     --secondary:              220 10% 82%;
     --secondary-foreground:   222 40% 8%;
@@ -49,6 +49,6 @@
     --destructive-foreground: 222 40% 8%;
     --border:                 223 45% 16%;
     --input:                  223 45% 16%;
-    --ring:                   38.53 51.17% 58.24%;
+    --ring:                   219.73 82.22% 64.71%;
   }
 }

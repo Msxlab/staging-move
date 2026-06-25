@@ -14,7 +14,7 @@
     --popover:                217 41% 9%;
     --popover-foreground:     214 36% 95%;
 
-    --primary:                38.53 51.17% 58.24%;
+    --primary:                219.73 82.22% 64.71%;
     --primary-foreground:     218 43% 6%;
 
     --secondary:              215 22% 72%;
@@ -29,13 +29,13 @@
     --destructive:            359 75% 75%;
     --destructive-foreground: 218 43% 6%;
 
-    --warning:                35 68% 62%;
+    --warning:                25.12 78.90% 57.25%;
     --success:                156 56% 70%;
     --info:                   183 57% 50%;
 
     --border:                 217 32% 18%;
     --input:                  217 32% 18%;
-    --ring:                   38.53 51.17% 58.24%;
+    --ring:                   219.73 82.22% 64.71%;
 
     --radius: 0.625rem; /* 10px */
 
@@ -49,11 +49,11 @@
   /* Plan classes are kept for legacy selectors, but all resolve to the
      canonical LocateFlow accent. Plan identity should be expressed by
      copy/badges, not by changing the global brand color. */
-  .plan-free { --primary: 38.53 51.17% 58.24%; --ring: 38.53 51.17% 58.24%; }
+  .plan-free { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
   .light .plan-free { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
-  .plan-family { --primary: 38.53 51.17% 58.24%; --ring: 38.53 51.17% 58.24%; }
+  .plan-family { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
   .light .plan-family { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
-  .plan-pro { --primary: 38.53 51.17% 58.24%; --ring: 38.53 51.17% 58.24%; }
+  .plan-pro { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
@@ -81,7 +81,7 @@
     --destructive:            358 47% 43%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning:                36.73 67.12% 28.63%;
+    --warning:                25.58 76.40% 34.90%;
     --success:                162 75% 24%;
     --info:                   184 66% 25%;
 

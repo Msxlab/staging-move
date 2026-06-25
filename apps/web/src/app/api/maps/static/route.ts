@@ -44,9 +44,9 @@ const DEFAULT_HEIGHT = 320;
 /** Aurora map palettes — hexes mirror web globals.css / mobile theme.ts. */
 const MAP_THEMES = {
   dark: {
-    // sage --sage #54CB7E, accent --rose / default --primary #CBA45E
+    // sage --sage #54CB7E, accent --rose / default --primary #5B8DEF
     sage: "54CB7E",
-    accent: "CBA45E",
+    accent: "5B8DEF",
     styles: [
       "element:geometry|color:0x0F1726",
       "element:labels.text.fill|color:0x8A99AD",
