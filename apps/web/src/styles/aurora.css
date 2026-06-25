@@ -167,6 +167,18 @@
 .light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.05\] {
   background-color: var(--lf-app-panel-bg-strong, #FFFFFF);
 }
+.light .lf-aurora .lf-app-shell .bg-gradient-to-br {
+  background-color: var(--lf-app-panel-bg, #FFFFFF);
+}
+.light .lf-aurora .lf-app-shell .lf-source-hero-panel {
+  background:
+    radial-gradient(ellipse 62% 76% at 92% -22%, color-mix(in srgb, hsl(var(--primary)) 10%, transparent), transparent 70%),
+    linear-gradient(135deg, #FFFFFF 0%, #F4EFE5 100%) !important;
+  border-color: rgba(203, 164, 94, 0.26) !important;
+  box-shadow:
+    0 18px 42px rgba(20, 32, 47, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
 .light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.02\],
 .light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.03\],
 .light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.04\],

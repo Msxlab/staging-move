@@ -286,11 +286,12 @@ function StylizedCanvas({
       >
         <path
           d="M84 224 C 170 240, 220 150, 320 152 S 500 92, 556 78"
+          className="lf-route-map-dash"
           fill="none"
           stroke="hsl(var(--primary))"
           strokeWidth={3}
           strokeLinecap="round"
-          strokeDasharray="1 9"
+          strokeDasharray="9 9"
         />
       </svg>
 

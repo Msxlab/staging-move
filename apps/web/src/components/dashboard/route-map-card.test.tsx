@@ -241,6 +241,16 @@ describe("route map light chrome", () => {
     expect(block).toContain("#F5F0E7");
     expect(block).not.toContain("rgba(10, 15, 28");
   });
+
+  it("keeps the stylized fallback route animated like the source map", () => {
+    const markup = renderToStaticMarkup(<RouteMapCard fromCity="Wayne" toCity="Irvine" realMap={false} />);
+    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
+
+    expect(markup).toContain("lf-route-map-dash");
+    expect(markup).toContain('stroke-dasharray="9 9"');
+    expect(globals).toContain("@keyframes lf-route-map-dash");
+    expect(globals).toContain(".lf-route-map-dash");
+  });
 });
 
 describe("RouteMapCard markup", () => {

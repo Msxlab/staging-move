@@ -946,7 +946,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
               return (
                 <article
                   key={card.key}
-                  className="lf-dossier-source-card"
+                  className="lf-dossier-source-card lf-move-rise"
                   data-dossier-scene={card.key}
                   style={sceneVars}
                 >
