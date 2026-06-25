@@ -33,6 +33,63 @@ const MUTED = "#5a6478";
 const FAINT = "#94a0b4";
 const ACCENT = "#2563eb";
 
+/* --------------------------- delight accent CSS --------------------------- */
+
+/**
+ * Scoped @keyframes for the two peripheral "delight" glyphs (EV bolt pulse,
+ * AQI leaf sway). Inlined as a single <style> so the file stays dependency-free
+ * and renders under renderToStaticMarkup (a plain <style> string is valid SSR
+ * markup and never touches the DOM API).
+ *
+ * prefers-reduced-motion: EVERY animation here lives inside
+ * `@media (prefers-reduced-motion: no-preference)`, so under a reduced-motion
+ * preference the glyphs freeze to a clean static mark. No information is carried
+ * by motion — the number / band / bars already convey the full data state, so
+ * freezing loses nothing.
+ *
+ * Motion is pure transform/opacity (GPU-friendly) with a small amplitude; the
+ * gauge/meter readout stays the hero and the glyph is peripheral only.
+ */
+const ACCENT_KEYFRAMES = `
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes lf-ev-bolt-pulse {
+    0%, 100% { opacity: 0.78; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.12); }
+  }
+  .lf-ev-bolt--live { animation: lf-ev-bolt-pulse 2s ease-in-out infinite; will-change: transform, opacity; }
+  @keyframes lf-aqi-leaf-sway {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-1.5px) rotate(5deg); }
+  }
+  @keyframes lf-aqi-leaf-flutter {
+    0%, 100% { transform: translateY(0) rotate(-7deg); }
+    25% { transform: translateY(-1px) rotate(6deg); }
+    50% { transform: translateY(-2px) rotate(-4deg); }
+    75% { transform: translateY(-1px) rotate(7deg); }
+  }
+  .lf-aqi-leaf--sway { animation: lf-aqi-leaf-sway 3s ease-in-out infinite; will-change: transform; }
+  .lf-aqi-leaf--flutter { animation: lf-aqi-leaf-flutter 2.1s ease-in-out infinite; will-change: transform; }
+}
+`;
+
+/** Charging-bolt glyph (inline SVG) — brand-accent EV delight mark. */
+function BoltGlyph({ color, size = 15 }: { color: string; size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill={color} aria-hidden="true" focusable="false">
+      <path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13z" />
+    </svg>
+  );
+}
+
+/** Leaf glyph (inline SVG) — band-colored AQI delight mark. */
+function LeafGlyph({ color, size = 15 }: { color: string; size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill={color} aria-hidden="true" focusable="false">
+      <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z" />
+    </svg>
+  );
+}
+
 /* ------------------------------- AQI gauge -------------------------------- */
 
 const AQI_COLORS = ["#16a34a", "#ca8a04", "#ea580c", "#dc2626", "#7c3aed", "#881337"];
@@ -120,8 +177,14 @@ export function AqiGauge({ aqi, category }: { aqi: number | null; category?: str
   const within = hasReading ? Math.min(Math.max((Math.min(aqi as number, hi) - lo) / (hi - lo), 0), 1) : 0.5;
   const pos = ((band.i + within) / 6) * 100;
 
+  // Worse bands (orange/red/purple/maroon → index >= 2) get a slightly edgier,
+  // faster flutter; good/moderate get the gentle 3s sway. Motion stays small and
+  // is purely peripheral — the AQI number + band label remain the hero.
+  const leafFlutter = band.i >= 2;
+
   return (
     <div data-testid="aqi-gauge" data-aqi-band={band.band} style={{ width: "100%" }}>
+      <style dangerouslySetInnerHTML={{ __html: ACCENT_KEYFRAMES }} />
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, justifyContent: "flex-end", marginBottom: 8 }}>
         {hasReading && (
           <span
@@ -130,6 +193,13 @@ export function AqiGauge({ aqi, category }: { aqi: number | null; category?: str
             {aqi}
           </span>
         )}
+        <span
+          aria-hidden="true"
+          className={leafFlutter ? "lf-aqi-leaf--flutter" : "lf-aqi-leaf--sway"}
+          style={{ display: "inline-flex", alignSelf: "center", lineHeight: 0, transformOrigin: "50% 85%" }}
+        >
+          <LeafGlyph color={band.color} />
+        </span>
         <span style={{ fontSize: 12.5, fontWeight: 700, color: band.color }}>{band.label}</span>
       </div>
       <div style={{ position: "relative" }}>
@@ -178,7 +248,24 @@ export function EvMeter({ count }: { count: number | null }) {
   const tone = dead ? FAINT : ACCENT;
   return (
     <div data-testid="ev-meter" data-ev-bars={bars} style={{ width: "100%" }}>
+      <style dangerouslySetInnerHTML={{ __html: ACCENT_KEYFRAMES }} />
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, justifyContent: "flex-end", marginBottom: 8 }}>
+        {/* Charging-bolt delight glyph in the label corner — never overlaps the
+            number. In the empty "Charging desert" state it is muted/dim with NO
+            pulse, so the animation itself reinforces the data state. */}
+        <span
+          aria-hidden="true"
+          className={dead ? undefined : "lf-ev-bolt--live"}
+          style={{
+            display: "inline-flex",
+            alignSelf: "center",
+            lineHeight: 0,
+            opacity: dead ? 0.4 : 1,
+            transformOrigin: "50% 50%",
+          }}
+        >
+          <BoltGlyph color={dead ? FAINT : ACCENT} />
+        </span>
         <span style={{ fontSize: 30, fontWeight: 800, lineHeight: 1, color: tone, fontVariantNumeric: "tabular-nums" }}>
           {safeCount}
         </span>
