@@ -135,7 +135,7 @@ export const viewport: Viewport = {
   // Mirror admin: declare both schemes so the UA paints form controls and
   // scrollbars correctly in either theme. The per-scheme browser-chrome color
   // is set via the media-aware <meta name="theme-color"> tags in <head> below,
-  // sourced from the canonical dark token and the cleaned light app canvas.
+  // sourced from the canonical dark token and neutral light app canvas.
   colorScheme: "dark light",
 };
 

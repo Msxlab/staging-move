@@ -279,7 +279,7 @@ describe("consumer-free pricing + affiliate contract", () => {
     expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\] \.app-shell-backdrop\s*\{[\s\S]*background:\s*none !important;[\s\S]*opacity:\s*0 !important;/);
     expect(aurora).toMatch(/\.light \.lf-aurora\s*\{[\s\S]*--background:\s*210 40% 98\.04%;/);
     expect(aurora).toMatch(/\.light \.lf-aurora\s*\{[\s\S]*--au-base:\s*#F8FAFC;/);
-    expect(aurora).toMatch(/\.light \.lf-aurora \.bg-background\\\/55[\s\S]*background-color:\s*rgba\(255,\s*255,\s*255,\s*0\.94\);/);
+    expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.bg-background\\\/55[\s\S]*background-color:\s*var\(--lf-app-panel-bg,\s*#FFFFFF\);/);
     expect(globals).not.toContain("#F8F5EE 46%");
     expect(globals).not.toContain("--lf-app-bg: #F8F5EE");
     expect(globals).toContain("--lf-app-bg: #F8FAFC");

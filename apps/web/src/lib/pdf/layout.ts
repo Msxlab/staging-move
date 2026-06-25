@@ -1,8 +1,10 @@
-// Side-effect import: hardens pdfkit's standard-font (.afm) loading so it works
-// in the Next.js standalone/prod build. MUST stay before any PDFDocument use.
+// Explicit call: Turbopack can drop side-effect-only imports in the standalone
+// route bundle, so keep this as a used value import.
 // See standard-font-data.ts for the root-cause writeup (dossier-pdf-500).
-import "@/lib/pdf/standard-font-data";
+import { ensurePdfkitStandardFonts } from "@/lib/pdf/standard-font-data";
 import type PDFDocumentType from "pdfkit";
+
+ensurePdfkitStandardFonts();
 
 /**
  * Shared layout helpers for the server-side PDF generators.
