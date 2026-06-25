@@ -42,11 +42,12 @@ export function MoveRaccoon({ size = 80, mood = "calm", head, mask, ear, eye, pu
 
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100">
-      {/* ears */}
-      <Path d="M18 40 L12 8 L34 24Z" fill={H} />
-      <Path d="M19 37 L15 14 L30 24Z" fill={E} opacity={0.9} />
-      <Path d="M82 40 L88 8 L66 24Z" fill={H} />
-      <Path d="M81 37 L85 14 L70 24Z" fill={E} opacity={0.9} />
+      {/* ears — small, rounded raccoon ears (not the pointy cat triangles from
+          Raccoon.dc.html); tucked atop the head so they read as a raccoon. */}
+      <Ellipse cx={30} cy={27} rx={11} ry={13} fill={H} />
+      <Ellipse cx={30} cy={29} rx={6} ry={7.5} fill={E} opacity={0.9} />
+      <Ellipse cx={70} cy={27} rx={11} ry={13} fill={H} />
+      <Ellipse cx={70} cy={29} rx={6} ry={7.5} fill={E} opacity={0.9} />
       {/* head + soft highlights */}
       <Ellipse cx={50} cy={58} rx={36} ry={31} fill={H} />
       <Ellipse cx={50} cy={45} rx={24} ry={14} fill="#B8C2D0" opacity={0.42} />
