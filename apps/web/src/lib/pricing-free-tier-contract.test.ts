@@ -269,17 +269,15 @@ describe("consumer-free pricing + affiliate contract", () => {
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-source-paper-bg:\s*#EFEADF;/);
-    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-bg:\s*#EFEADF;/);
+    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-bg:\s*radial-gradient\(ellipse 120% 78% at 50% -18%,\s*#FFFFFF 0%,\s*#FAF8F3 38%,\s*#F3EFE6 78%,\s*#EFEADF 100%\);/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-chrome-bg-strong:\s*#FFFFFF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-panel-bg-strong:\s*#FFFFFF;/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*background-color:\s*var\(--lf-app-panel-bg\);/);
-    expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*background:\s*none;[\s\S]*opacity:\s*0;/);
+    expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*radial-gradient\(circle at 16% -4%[\s\S]*opacity:\s*0\.07;/);
     expect(aurora).toMatch(/\.light \.lf-aurora\s*\{[\s\S]*--background:\s*41\.25 33\.33% 90\.59%;/);
     expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.bg-background\\\/55[\s\S]*background-color:\s*var\(--lf-app-panel-bg,\s*#FFFFFF\);/);
     expect(globals).not.toContain("#F8F5EE 46%");
     expect(globals).not.toContain("--lf-app-bg: #F8F5EE");
-    expect(globals).not.toContain("#FAF8F3 38%");
-    expect(globals).not.toContain("#F3EFE6 78%");
     expect(globals).not.toContain("#DEDCD3");
     expect(globals).not.toContain("#D4D2C8");
     expect(globals).not.toContain("#F8FAFC 100%");

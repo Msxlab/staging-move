@@ -269,13 +269,14 @@ describe("DossierAmbient rendering", () => {
     expect(desktopStart).toBeGreaterThan(-1);
     expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #EFEADF;");
+    expect(globals.slice(appStart, appEnd)).toContain("#FAF8F3 38%");
+    expect(globals.slice(appStart, appEnd)).toContain("#F3EFE6 78%");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
     expect(aurora.slice(auroraLightStart, auroraLightEnd)).toContain("--background:           41.25 33.33% 90.59%;");
-    expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none;[\s\S]*?opacity:\s*0;/);
-    expect(globals).toMatch(/\.light \.lf-app-shell \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none !important;[\s\S]*?opacity:\s*0 !important;/);
-    expect(globals).toMatch(/\.light \.lf-app-shell \.bg-gradient-to-br\s*\{[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
+    expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?radial-gradient\(circle at 16% -4%[\s\S]*?opacity:\s*0\.07;/);
+    expect(globals).toMatch(/\.light \.lf-app-shell \.app-shell-backdrop\s*\{[\s\S]*?radial-gradient\(circle at 16% -4%[\s\S]*?opacity:\s*0\.07 !important;/);
+    expect(globals).not.toMatch(/\.light \.lf-app-shell \.bg-gradient-to-br\s*\{[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.lf-source-hero-panel\s*\{[\s\S]*?linear-gradient\(135deg,\s*#FFFFFF 0%,\s*#F4EFE5 100%\) !important;/);
     expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.lf-source-hero-panel\s*\{[\s\S]*?linear-gradient\(135deg,\s*#FFFFFF 0%,\s*#F4EFE5 100%\) !important;/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
