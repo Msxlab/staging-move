@@ -320,17 +320,17 @@
 }
 
 .light {
-  --lf-app-bg: #EFEADF;
+  --lf-app-bg: #F5F0E7;
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.48) 0%, transparent 30%),
-    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.018) 0%, transparent 26%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.08) 42%, rgba(203, 164, 94, 0.028) 100%),
-    repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.006) 0 1px, transparent 1px 80px),
-    repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.005) 0 1px, transparent 1px 80px);
-  opacity: 0.32;
+    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.58) 0%, transparent 32%),
+    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.012) 0%, transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.06) 48%, rgba(239, 234, 223, 0.10) 100%),
+    repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.004) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.0035) 0 1px, transparent 1px 80px);
+  opacity: 0.24;
 }
 
 /* =========================================================================

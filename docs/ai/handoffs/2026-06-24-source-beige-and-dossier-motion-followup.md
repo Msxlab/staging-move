@@ -29,7 +29,8 @@
   - Regenerated from the shared token source.
 - `apps/web/src/styles/globals.css`
   - Updated the inline light block via `pnpm tokens:emit`.
-  - Restored `--lf-app-bg` to `#EFEADF`.
+  - Restored the token-level light background to the source beige family, then softened the authenticated app shell canvas to source `surface2` (`#F5F0E7`) after staging showed the full-viewport `#EFEADF` treatment was too heavy.
+  - Reduced the light app shell backdrop/grid opacity so the dashboard reads as warm paper instead of a muddy beige wash.
   - Kept the row content above right-side dossier scenes so labels remain readable.
 - `apps/web/src/components/marketing/dossier-showcase.tsx`
   - Replaced single sample-derived ambient states with a reduced-motion-safe demo cycle.
@@ -63,5 +64,6 @@ All commands passed locally.
 ## Recommended next action
 
 1. Let Dokploy deploy the pushed branch/PR merge, then re-check staging CSS for `#EFEADF` and absence of `#FAF7F0`.
-2. Capture same-state light dashboard and dossier screenshots against the source target before calling visual QA passed.
-3. Before changing mobile, review the light-mode `HomeDossierCard` row background and dossier scene contrast with device screenshots.
+2. Re-check the authenticated dashboard shell for `#F5F0E7` canvas and reduced backdrop opacity after deployment.
+3. Capture same-state light dashboard and dossier screenshots against the source target before calling visual QA passed.
+4. Before changing mobile, review the light-mode `HomeDossierCard` row background and dossier scene contrast with device screenshots.
