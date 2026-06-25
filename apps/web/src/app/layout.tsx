@@ -135,7 +135,7 @@ export const viewport: Viewport = {
   // Mirror admin: declare both schemes so the UA paints form controls and
   // scrollbars correctly in either theme. The per-scheme browser-chrome color
   // is set via the media-aware <meta name="theme-color"> tags in <head> below,
-  // sourced from the canonical dark token and source light warm-paper canvas.
+  // sourced from the canonical dark token and clean warm light app canvas.
   colorScheme: "dark light",
 };
 
@@ -167,11 +167,11 @@ export default async function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         {/*
          * Media-aware browser-chrome color so the address bar / status bar
-         * tracks the active theme. Light value mirrors the source warm-paper
-         * app canvas; dark keeps the existing brand deep-navy. A bare fallback
+         * tracks the active theme. Light value mirrors the clean warm app
+         * canvas; dark keeps the existing brand deep-navy. A bare fallback
          * follows for UAs that ignore `media`.
          */}
-        <meta name="theme-color" content="#EFEADF" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#FBFAF6" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#0A0F18" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#0A0F18" />
         <meta name="mobile-web-app-capable" content="yes" />
