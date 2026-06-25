@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 // Renamed import: a bare `Map` would shadow the global Map constructor used
 // by resolveActiveRouteCoords below.
@@ -24,9 +24,9 @@ import { useTheme } from "@/components/theme-provider";
  * unconfigured, the addresses have no coordinates, or the proxy errors — the
  * EXISTING CSS/SVG-stylized canvas renders instead. Never a broken image.
  *
- * The canvas area is INTENTIONALLY DARK-FIXED in its fallback form (same
- * decision as mobile's AddressesMap stylized canvas); the real map follows
- * the app theme via the proxy's Aurora dark/light style sets.
+ * The real map follows the app theme via the proxy's Aurora dark/light style
+ * sets. The stylized fallback uses source-map light/dark variables too, so
+ * staging never flashes a dark tile inside the light dashboard.
  */
 
 export type RouteCoord = { lat: number; lng: number };
@@ -201,6 +201,11 @@ const PIN_CORNER: Record<"top" | "bottom", Record<"left" | "right", { left: stri
   top: { left: { left: "13%", top: "27%" }, right: { left: "87%", top: "27%" } },
   bottom: { left: { left: "13%", top: "76%" }, right: { left: "87%", top: "76%" } },
 };
+const FALLBACK_ROUTE_PATH = "M84 224 C 170 240, 220 150, 320 152 S 500 92, 556 78";
+const FALLBACK_ROUTE_TRAVEL_STYLE: CSSProperties = {
+  offsetPath: `path("${FALLBACK_ROUTE_PATH}")`,
+  offsetRotate: "0deg",
+};
 
 /** Mono uppercase label chip pinned onto the canvas. */
 function MapLabel({
@@ -257,14 +262,14 @@ function StylizedCanvas({
         className="absolute inset-0"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(0deg, transparent, transparent 34px, rgba(255,255,255,0.05) 34px, rgba(255,255,255,0.05) 35px), repeating-linear-gradient(90deg, transparent, transparent 46px, rgba(255,255,255,0.05) 46px, rgba(255,255,255,0.05) 47px)",
+            "repeating-linear-gradient(0deg, transparent, transparent 34px, var(--lf-route-map-grid) 34px, var(--lf-route-map-grid) 35px), repeating-linear-gradient(90deg, transparent, transparent 46px, var(--lf-route-map-grid) 46px, var(--lf-route-map-grid) 47px)",
         }}
       />
       {/* city blocks + parks */}
-      <div className="absolute left-[6%] top-[10%] h-12 w-20 rounded-[5px] bg-white/[0.03]" />
-      <div className="absolute left-[30%] top-[6%] h-20 w-16 rounded-[5px] bg-white/[0.03]" />
-      <div className="absolute left-[52%] top-[40%] h-14 w-20 rounded-[5px] bg-white/[0.03]" />
-      <div className="absolute left-[70%] top-[12%] h-16 w-24 rounded-[5px] bg-white/[0.03]" />
+      <div className="absolute left-[6%] top-[10%] h-12 w-20 rounded-[5px]" style={{ background: "var(--lf-route-map-block)" }} />
+      <div className="absolute left-[30%] top-[6%] h-20 w-16 rounded-[5px]" style={{ background: "var(--lf-route-map-block)" }} />
+      <div className="absolute left-[52%] top-[40%] h-14 w-20 rounded-[5px]" style={{ background: "var(--lf-route-map-block)" }} />
+      <div className="absolute left-[70%] top-[12%] h-16 w-24 rounded-[5px]" style={{ background: "var(--lf-route-map-block)" }} />
       <div
         className="absolute left-[12%] top-[48%] h-16 w-28 rounded-[14px]"
         style={{ background: "color-mix(in srgb, var(--sage) 8%, transparent)" }}
@@ -274,8 +279,14 @@ function StylizedCanvas({
         style={{ background: "color-mix(in srgb, var(--sage) 8%, transparent)" }}
       />
       {/* avenues */}
-      <div className="absolute left-0 top-[72%] h-0.5 w-[64%] -rotate-[7deg] origin-top-left bg-white/[0.07]" />
-      <div className="absolute left-[38%] top-0 h-[120%] w-0.5 rotate-[14deg] origin-top-left bg-white/[0.07]" />
+      <div
+        className="absolute left-0 top-[72%] h-0.5 w-[64%] -rotate-[7deg] origin-top-left"
+        style={{ background: "var(--lf-route-map-road)" }}
+      />
+      <div
+        className="absolute left-[38%] top-0 h-[120%] w-0.5 rotate-[14deg] origin-top-left"
+        style={{ background: "var(--lf-route-map-road)" }}
+      />
 
       {/* dashed accent route — plan accent flows via .plan-* (--primary) */}
       <svg
@@ -285,7 +296,14 @@ function StylizedCanvas({
         aria-hidden="true"
       >
         <path
-          d="M84 224 C 170 240, 220 150, 320 152 S 500 92, 556 78"
+          d={FALLBACK_ROUTE_PATH}
+          fill="none"
+          stroke="var(--lf-route-map-route-base)"
+          strokeWidth={11}
+          strokeLinecap="round"
+        />
+        <path
+          d={FALLBACK_ROUTE_PATH}
           className="lf-route-map-dash"
           fill="none"
           stroke="hsl(var(--primary))"
@@ -293,6 +311,15 @@ function StylizedCanvas({
           strokeLinecap="round"
           strokeDasharray="9 9"
         />
+        <g className="lf-route-map-traveler" style={FALLBACK_ROUTE_TRAVEL_STYLE}>
+          <g transform="translate(-8,-7)">
+            <ellipse className="lf-route-map-traveler-shadow" cx="7" cy="11.5" rx="8" ry="1.6" />
+            <rect x="0" y="2" width="9.5" height="8" rx="1.5" fill="hsl(var(--primary))" />
+            <rect className="lf-route-map-traveler-cargo" x="9" y="4" width="5" height="6" rx="1" />
+            <circle className="lf-route-map-traveler-wheel" cx="3" cy="11" r="1.8" />
+            <circle className="lf-route-map-traveler-wheel" cx="11" cy="11" r="1.8" />
+          </g>
+        </g>
       </svg>
 
       {/* pins — origin in sage, destination in the plan accent (each anchored
@@ -393,7 +420,7 @@ export function RouteMapCard({
       </div>
 
       {/* Map canvas — real basemap once loaded, stylized fallback otherwise */}
-      <div className="relative mx-4 mb-4 h-56 overflow-hidden rounded-xl border border-border bg-black">
+      <div className="lf-route-map-canvas relative mx-4 mb-4 h-56 overflow-hidden rounded-xl border border-border">
         {showStylized && <StylizedCanvas corners={corners} />}
 
         {src && imgState !== "failed" && (
