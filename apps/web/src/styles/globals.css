@@ -323,20 +323,19 @@
   /*
    * Source Move.dc.html light theme:
    *   bg #EFEADF, bg2 #E7E1D4, surface #FFFFFF, surface2 #F5F0E7.
-   * The raw paper token is too heavy across the wide web dashboard, so keep
-   * that warmth as the page undertone while the shell chrome and panels stay
-   * crisp enough for dense product screens.
+   * The full raw paper wash is too heavy across the wide web dashboard, so keep
+   * the warm source hue as a quiet undertone while chrome and panels stay crisp.
    */
-  --background: 40 45% 97%;
-  --muted: 39 39% 94%;
-  --accent: 39 39% 94%;
+  --background: 42 40% 98%;
+  --muted: 40 35% 96%;
+  --accent: 40 35% 96%;
   --surface-secondary: #F7F1E8;
-  --lf-app-bg: #FAF7F0;
+  --lf-app-bg: #FBFAF6;
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.96);
   --lf-app-chrome-bg-strong: #FFFFFF;
   --lf-app-panel-bg: rgba(255, 255, 255, 0.96);
   --lf-app-panel-bg-strong: rgba(255, 255, 255, 0.985);
-  --lf-app-panel-bg-soft: color-mix(in srgb, #FFFFFF 88%, #F5F0E7 12%);
+  --lf-app-panel-bg-soft: color-mix(in srgb, #FFFFFF 94%, #F5F0E7 6%);
 }
 
 .light .app-shell-backdrop {
@@ -1395,21 +1394,21 @@ html[data-embed="mobile"] .install-prompt {
   color: color-mix(in srgb, hsl(var(--primary)) 22%, rgba(239, 243, 250, 0.92) 78%);
 }
 .light .lf-route-map-label {
-  background: rgba(255, 255, 255, 0.94);
-  border-color: rgba(16, 29, 45, 0.18);
-  color: rgba(16, 29, 45, 0.9);
-  box-shadow: 0 8px 18px rgba(20, 32, 47, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  background: color-mix(in srgb, #FFFFFF 88%, #F5F0E7 12%);
+  border-color: rgba(16, 29, 45, 0.16);
+  color: #101D2D;
+  box-shadow: 0 6px 14px rgba(20, 32, 47, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.98);
   text-shadow: none;
 }
 .light .lf-route-map-label[data-endpoint="from"] {
-  background: color-mix(in srgb, var(--sage) 7%, rgba(255, 255, 255, 0.92) 93%);
-  border-color: color-mix(in srgb, var(--sage) 26%, rgba(16, 29, 45, 0.14));
-  color: color-mix(in srgb, var(--sage) 42%, #101D2D 58%);
+  background: color-mix(in srgb, var(--sage) 8%, #FFFFFF 92%);
+  border-color: color-mix(in srgb, var(--sage) 30%, rgba(16, 29, 45, 0.13));
+  color: color-mix(in srgb, var(--sage) 38%, #101D2D 62%);
 }
 .light .lf-route-map-label[data-endpoint="to"] {
-  background: color-mix(in srgb, hsl(var(--primary)) 7%, rgba(255, 255, 255, 0.92) 93%);
-  border-color: color-mix(in srgb, hsl(var(--primary)) 26%, rgba(16, 29, 45, 0.14));
-  color: color-mix(in srgb, hsl(var(--primary)) 44%, #101D2D 56%);
+  background: color-mix(in srgb, hsl(var(--primary)) 8%, #FFFFFF 92%);
+  border-color: color-mix(in srgb, hsl(var(--primary)) 30%, rgba(16, 29, 45, 0.13));
+  color: color-mix(in srgb, hsl(var(--primary)) 40%, #101D2D 60%);
 }
 
 .lf-dossier-grid {
@@ -1752,35 +1751,44 @@ html[data-embed="mobile"] .install-prompt {
 }
 .light .lf-dossier-source-stage {
   border-color: rgba(16, 29, 45, 0.13);
+  background:
+    radial-gradient(ellipse 68% 90% at 70% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 18%, transparent), transparent 66%),
+    linear-gradient(180deg, #F3F6FA, #E2EAF2);
 }
 .light .lf-dossier-source-stage > .da-layer {
   background:
-    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 22%, transparent), transparent 68%),
-    linear-gradient(180deg, #101B30, #0A1322);
-  filter: saturate(1.28) contrast(1.1);
+    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 28%, transparent), transparent 68%),
+    linear-gradient(180deg, #F3F6FA, #E2EAF2);
+  filter: saturate(1.16) contrast(1.08);
 }
 .light .lf-dossier-source-stage > .da-layer::before {
   background:
-    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.045), transparent 68%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%);
-  opacity: 0.24;
+    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.42), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.30), transparent 48%);
+  opacity: 0.32;
+}
+.light .lf-dossier-source-tag {
+  border: 1px solid color-mix(in srgb, var(--ds-tone, var(--foil-b)) 30%, rgba(16, 29, 45, 0.10));
+  background: color-mix(in srgb, var(--ds-tone, var(--foil-b)) 14%, rgba(255, 255, 255, 0.86));
+  color: color-mix(in srgb, var(--ds-tone, var(--foil-b)) 70%, #101D2D 30%);
 }
 .light .lf-dossier-scene-card > .da-layer {
   border-color: rgba(16, 29, 45, 0.13);
   background:
-    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 22%, transparent), transparent 68%),
-    linear-gradient(180deg, #101B30, #0A1322);
-  filter: saturate(1.28) contrast(1.1);
+    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 28%, transparent), transparent 68%),
+    linear-gradient(180deg, #F3F6FA, #E2EAF2);
+  filter: saturate(1.16) contrast(1.08);
 }
 .light .lf-dossier-scene-card > .da-layer::before {
   background:
-    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.045), transparent 68%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%);
-  opacity: 0.24;
+    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.42), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.30), transparent 48%);
+  opacity: 0.32;
 }
 .light .lf-dossier-scene-card .lf-dossier-scene-tag {
-  background: color-mix(in srgb, var(--ds-tone) 18%, rgba(12, 19, 34, 0.74));
-  color: var(--ds-tone);
+  border-color: color-mix(in srgb, var(--ds-tone) 30%, rgba(16, 29, 45, 0.10));
+  background: color-mix(in srgb, var(--ds-tone) 14%, rgba(255, 255, 255, 0.86));
+  color: color-mix(in srgb, var(--ds-tone) 70%, #101D2D 30%);
 }
 .light .lf-dossier-scene-card > .da-layer .ds-ground,
 .light .lf-dossier-scene-card > .da-layer .ds-ground-warn,

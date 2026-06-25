@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -226,6 +227,19 @@ describe("route map catalog", () => {
     expect(routeMapKeys(en)).toEqual(routeMapKeys(es));
     expect(routeMapKeys(en)).toContain("routeMap_imageAlt");
     expect(en.dashboard.routeMap_imageAlt).toContain("{from}");
+  });
+});
+
+describe("route map light chrome", () => {
+  it("uses light paper labels instead of dark overlay labels in light mode", () => {
+    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
+    const start = globals.indexOf(".light .lf-route-map-label {");
+    const end = globals.indexOf(".light .lf-route-map-label[data-endpoint=\"from\"]", start);
+    const block = globals.slice(start, end);
+
+    expect(start).toBeGreaterThan(-1);
+    expect(block).toContain("#F5F0E7");
+    expect(block).not.toContain("rgba(10, 15, 28");
   });
 });
 
