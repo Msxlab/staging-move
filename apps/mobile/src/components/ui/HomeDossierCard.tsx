@@ -742,6 +742,7 @@ const makeStyles = (theme: Theme) =>
     subtitle: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
     row: {
       position: "relative",
+      minHeight: 148,
       flexDirection: "row",
       gap: 10,
       marginTop: 10,
