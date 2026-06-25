@@ -125,7 +125,7 @@ function StaggeredReveal({ children }: { children: React.ReactNode }) {
         showsHorizontalScrollIndicator={false}
         snapToInterval={CARD_W + GAP}
         decelerationRate="fast"
-        contentContainerStyle={{ gap: GAP, paddingRight: 16, paddingBottom: 2 }}
+        contentContainerStyle={{ gap: GAP, paddingRight: 16, paddingBottom: 2, alignItems: "flex-start" }}
         onMomentumScrollEnd={(e) =>
           setActive(Math.round(e.nativeEvent.contentOffset.x / (CARD_W + GAP)))
         }
