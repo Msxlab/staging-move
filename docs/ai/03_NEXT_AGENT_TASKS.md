@@ -1,11 +1,26 @@
 # Next Agent Tasks
 
-Updated: 2026-06-24
+Updated: 2026-06-25
 
 ## Current Staging Thread Note
 
+Use [[handoffs/2026-06-25-source-greige-dossier-scene-deck]] as the latest
+web UI/theme correction handoff for the staging regression thread. Branch:
+`fix/ui-ux-remediation`.
+
+Immediate follow-up from the 2026-06-25 source-greige/dossier pass:
+
+1. Deploy the latest `fix/ui-ux-remediation` commit to staging and hard-refresh `/dashboard`.
+2. Compare the fresh staging dashboard against `project/Move.dc.html`: light page should read as source radial greige with white surfaces, not a flat muddy beige overlay.
+3. Verify Home Dossier shows the new source-style scene deck above detailed rows and that the detailed rows still render honest disclaimers/data.
+4. Re-test Route Map light-mode labels on a light basemap.
+5. Re-test `/api/addresses/{id}/dossier/pdf`; if it still returns 500, pull Dokploy logs for `Failed to build dossier PDF` with `code`, `message`, and `stack`.
+6. Do not edit mobile dossier/theme parity until the user explicitly approves mobile changes.
+
+Previous staging regression context:
+
 Use [[handoffs/2026-06-24-source-bundle-theme-audit-and-inline-token-fix]] as
-the latest UI/theme correction handoff for the 2026-06-24 staging regression
+the prior UI/theme correction handoff for the 2026-06-24 staging regression
 batch. It identifies the stale inline shadcn light token block in
 `apps/web/src/styles/globals.css` as the dashboard gray/muddy light-mode cause
 and adds the generator/check guard. Branch: `fix/ui-ux-remediation`. Earlier

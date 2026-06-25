@@ -550,6 +550,9 @@ describe("HomeDossierCard rendering", () => {
   it("wires every real data row to the source dossier scene stage", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
 
+    expect((markup.match(/lf-dossier-source-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
+    expect(markup).toContain("lf-dossier-source-stage");
+    expect(markup).toContain("lf-dossier-source-bars");
     expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
     for (const sourceType of [
       "flood",

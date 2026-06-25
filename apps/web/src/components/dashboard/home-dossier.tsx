@@ -52,6 +52,19 @@ const DOSSIER_SHELL_CLASS = "lf-dossier-shell rounded-2xl border border-border b
 const DOSSIER_ROW_CLASS = "lf-dossier-row relative isolate p-3 rounded-xl border border-border";
 const DOSSIER_SCENE_ROW_CLASS = "lf-dossier-row lf-dossier-scene-card relative isolate p-3 rounded-xl border border-border";
 const DOSSIER_STAT_CLASS = "lf-dossier-stat rounded-lg border border-border px-2.5 py-2";
+const DOSSIER_SOURCE_BAR_COUNT = 5;
+
+type DossierSceneDeckCard = {
+  key: string;
+  label: string;
+  value: string;
+  sub: string;
+  ambient: ReturnType<typeof ambientForSection>;
+};
+
+function activeDossierDeckBars(intensity: number): number {
+  return intensity >= 2 ? 5 : intensity >= 1 ? 3 : 2;
+}
 
 // ── Contract types (GET /api/addresses/{id}/dossier) ─────────────────────────
 
@@ -692,6 +705,148 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
     }
   }
   const forecastDateLabel = view.weather ? formatForecastDate(view.weather.forecastDate, locale) : "";
+  const sceneCards: DossierSceneDeckCard[] = [];
+
+  if (view.flood) {
+    sceneCards.push({
+      key: "flood",
+      label: td("dossier_flood_title"),
+      value: td(floodLabelKey(view.flood.isHighRisk), { zone: view.flood.zone }),
+      sub: view.flood.isHighRisk === true ? td("dossier_flood_highPill") : td("dossier_flood_disclaimer"),
+      ambient: ambientForSection({ kind: "flood", isHighRisk: view.flood.isHighRisk }),
+    });
+  }
+  if (view.school) {
+    sceneCards.push({
+      key: "school",
+      label: td("dossier_school_title"),
+      value: td("dossier_school_served", { district: view.school.districtName }),
+      sub: td("dossier_school_disclaimer"),
+      ambient: ambientForSection({ kind: "school" }),
+    });
+  }
+  if (view.weather) {
+    sceneCards.push({
+      key: "weather",
+      label: forecastDateLabel
+        ? td("dossier_weather_movingDay", { date: forecastDateLabel })
+        : td("dossier_weather_title"),
+      value: [view.weather.summary, weatherStats.join(" · ")].filter(Boolean).join(" — "),
+      sub: td("dossier_weather_disclaimer"),
+      ambient: ambientForSection({
+        kind: "weather",
+        summary: view.weather.summary,
+        precipChancePct: view.weather.precipChancePct,
+        tempHighF: view.weather.tempHighF,
+        tempLowF: view.weather.tempLowF,
+      }),
+    });
+  }
+  if (view.hazards) {
+    sceneCards.push({
+      key: "hazards",
+      label: td("dossier_hazards_title"),
+      value: view.hazards.overallRating
+        ? td("dossier_hazards_overall", { rating: view.hazards.overallRating })
+        : `${view.hazards.topRisks[0]?.hazard ?? ""} · ${view.hazards.topRisks[0]?.rating ?? ""}`.trim(),
+      sub: view.hazards.topRisks.map((risk) => `${risk.hazard} · ${risk.rating}`).join(" / "),
+      ambient: ambientForSection({ kind: "hazard", topRisks: view.hazards.topRisks }),
+    });
+  }
+  if (view.radon) {
+    sceneCards.push({
+      key: "radon",
+      label: td("dossier_radon_title"),
+      value: td(radonZoneLabelKey(view.radon.zone)),
+      sub: td("dossier_radon_disclaimer"),
+      ambient: ambientForSection({ kind: "radon", zone: view.radon.zone }),
+    });
+  }
+  if (view.water) {
+    sceneCards.push({
+      key: "water",
+      label: td("dossier_water_title"),
+      value: td(waterLabelKey(view.water.violations5y), {
+        system: view.water.systemName,
+        count: view.water.violations5y,
+      }),
+      sub: td("dossier_water_disclaimer"),
+      ambient: ambientForSection({ kind: "water", violations5y: view.water.violations5y }),
+    });
+  }
+  if (view.air) {
+    sceneCards.push({
+      key: "air",
+      label: td("dossier_air_title"),
+      value:
+        view.air.aqi !== null && view.air.category
+          ? td("dossier_air_now", { aqi: view.air.aqi, category: view.air.category })
+          : view.air.aqi !== null
+            ? td("dossier_air_nowNoCategory", { aqi: view.air.aqi })
+            : td("dossier_air_categoryOnly", { category: view.air.category ?? "" }),
+      sub: td("dossier_air_disclaimer"),
+      ambient: ambientForSection({ kind: "air", aqi: view.air.aqi, category: view.air.category }),
+    });
+  }
+  if (view.housing) {
+    sceneCards.push({
+      key: "housing",
+      label: td("dossier_housing_title"),
+      value:
+        view.housing.twoBedroomFmr !== null
+          ? td("dossier_housing_fmr", { amount: formatUsd(view.housing.twoBedroomFmr, locale) })
+          : view.housing.medianIncome !== null
+            ? td("dossier_housing_income", { amount: formatUsd(view.housing.medianIncome, locale) })
+            : view.housing.areaName || view.housing.countyName || td("dossier_housing_area_fallback"),
+      sub: view.housing.areaName ? td("dossier_housing_area", { area: view.housing.areaName }) : td("dossier_housing_disclaimer"),
+      ambient: ambientForSection({
+        kind: "housing",
+        twoBedroomFmr: view.housing.twoBedroomFmr,
+        medianIncome: view.housing.medianIncome,
+        lowIncome4Person: view.housing.lowIncome4Person,
+      }),
+    });
+  }
+  if (view.evCharging) {
+    sceneCards.push({
+      key: "ev-charging",
+      label: td("dossier_ev_title"),
+      value: td("dossier_ev_summary", {
+        count: view.evCharging.stationCount,
+        radius: view.evCharging.radiusMiles,
+      }),
+      sub: td("dossier_ev_ports", {
+        level2: view.evCharging.level2PortCount,
+        dcFast: view.evCharging.dcFastPortCount,
+      }),
+      ambient: ambientForSection({
+        kind: "evCharging",
+        stationCount: view.evCharging.stationCount,
+        dcFastPortCount: view.evCharging.dcFastPortCount,
+        level2PortCount: view.evCharging.level2PortCount,
+      }),
+    });
+  }
+  if (view.neighborhood?.locked === false) {
+    sceneCards.push({
+      key: "neighborhood",
+      label: td("dossier_neighborhood_title"),
+      value:
+        view.neighborhood.walkScore !== null
+          ? view.neighborhood.walkBand
+            ? td("dossier_neighborhood_walkValue", {
+                score: view.neighborhood.walkScore,
+                label: td(walkBandLabelKey(view.neighborhood.walkBand)),
+              })
+            : td("dossier_neighborhood_walkScoreOnly", { score: view.neighborhood.walkScore })
+          : td("dossier_neighborhood_subtitle"),
+      sub:
+        view.neighborhood.schools.length > 0
+          ? view.neighborhood.schools.map((school) => school.name).join(" / ")
+          : td("dossier_neighborhood_disclaimer"),
+      ambient: ambientForSection({ kind: "neighborhood", walkBand: view.neighborhood.walkBand }),
+    });
+  }
 
   return (
     <div className={DOSSIER_SHELL_CLASS}>
@@ -730,6 +885,31 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
           )}
         </div>
       </div>
+
+      {sceneCards.length > 0 && (
+        <div className="lf-dossier-source-deck px-5 pb-4" aria-hidden="true">
+          {sceneCards.map((card) => {
+            const activeBars = activeDossierDeckBars(card.ambient.intensity);
+            return (
+              <article key={card.key} className="lf-dossier-source-card" data-dossier-scene={card.key}>
+                <div className="lf-dossier-source-stage">
+                  <DossierAmbient {...card.ambient} />
+                </div>
+                <div className="lf-dossier-source-body">
+                  <p className="lf-dossier-source-label">{card.label}</p>
+                  <p className="lf-dossier-source-value">{card.value}</p>
+                  <p className="lf-dossier-source-sub">{card.sub}</p>
+                  <div className="lf-dossier-source-bars">
+                    {Array.from({ length: DOSSIER_SOURCE_BAR_COUNT }).map((_, index) => (
+                      <span key={index} className={index < activeBars ? "is-active" : undefined} />
+                    ))}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
 
       <div className="lf-dossier-grid px-5 pb-5">
         {/* (1) Flood zone — FEMA. Each rendered row carries a DossierAmbient

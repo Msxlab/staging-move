@@ -13,9 +13,10 @@ Evidence rules: existing repo memory/docs were not used as product evidence. Fin
 
 ## Current Web Findings
 
-- Light app shell had drifted too far into beige after the previous fix. The latest patch changes only the authenticated shell surface to `#FFFFFF -> #F8FAFC` while preserving `#EFEADF` as a source token.
+- Light app shell had drifted too far into a flat/muddy beige after the previous fix. The latest patch uses the source-style radial greige page background (`#EFEEEA -> #DEDCD3 -> #D4D2C8`) while keeping dashboard cards/surfaces white for contrast.
 - Route map labels in light mode were too translucent for a light basemap. The latest patch makes them more opaque and higher contrast.
 - Dossier scene wiring exists in code: `home-dossier.tsx` renders `lf-dossier-scene-card`, `dossier-ambient.tsx` renders source-style scene markup, and `source-dossier-scene.css` is imported globally.
+- The latest patch adds a source-style `lf-dossier-source-deck` above the detailed rows so the animated scenes appear as scene-first cards instead of only faint row decoration.
 - Visual parity is still not proven because the available staging screenshots show the old/non-prominent scene treatment, and this environment could not capture a fresh staging screenshot.
 
 ## Cache Findings
@@ -48,18 +49,25 @@ Evidence rules: existing repo memory/docs were not used as product evidence. Fin
 ## Latest Patch
 
 - `apps/web/src/styles/globals.css`
-  - Cleaned authenticated light shell background.
-  - Reduced light shell backdrop opacity.
-  - Improved light route-map label contrast.
+  - Restored the authenticated light shell to a source-style radial greige page background with white surfaces.
+  - Reduced light shell backdrop/grid wash.
+  - Added source-style Home Dossier scene deck styling.
 - `apps/web/src/lib/pricing-free-tier-contract.test.ts`
-  - Updated guard so source beige remains a token but cannot flood the authenticated shell.
+  - Updated guard so the light shell stays on the source greige radial and rejects previous flat/incorrect backgrounds.
+- `apps/web/src/components/dashboard/home-dossier.tsx`
+  - Added a source-style visual scene deck built from the same real derived dossier data.
+- `apps/web/src/components/dashboard/home-dossier.test.tsx`
+  - Added render guards for the source deck/stage/bars.
 
 ## Verification
 
 - `pnpm tokens:check`
-- `pnpm --filter @locateflow/web test -- pricing-free-tier-contract home-dossier dossier-ambient route-map-card standard-font-data`
+- `pnpm --filter @locateflow/web test -- home-dossier`
+- `pnpm --filter @locateflow/web test -- pricing-free-tier-contract`
+- `pnpm --filter @locateflow/web test -- dossier-ambient route-map-card standard-font-data`
 - `pnpm --filter @locateflow/web test -- "src/app/api/addresses/[id]/dossier/pdf/route.test.ts"`
 - `pnpm --filter @locateflow/web test -- workspace-routes`
-- `pnpm --filter @locateflow/mobile test -- HomeDossier home-dossier`
+- `pnpm --filter @locateflow/web lint`
+- `pnpm --filter @locateflow/web build`
 
 Note: all commands warn that local Node is `v24.13.0` while the repo requests Node `22.x`.
