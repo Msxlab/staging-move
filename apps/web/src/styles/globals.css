@@ -405,7 +405,7 @@
   --accent: 38.57 41.18% 93.33%;
   --lf-source-paper-bg: #EFEADF;
   --surface-secondary: #F5F0E7;
-  --lf-app-bg: #F8F4EC;
+  --lf-app-bg: #EFEADF;
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.98);
   --lf-app-chrome-bg-strong: #FFFFFF;
   --lf-app-panel-bg: #FFFFFF;
@@ -509,7 +509,7 @@
 }
 
 .lf-app-shell[data-lf-theme="light"] {
-  background: var(--lf-app-bg, #F8F4EC) !important;
+  background: var(--lf-app-bg, #EFEADF) !important;
 }
 
 .lf-app-shell[data-lf-theme="light"] .app-shell-backdrop {

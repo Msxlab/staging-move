@@ -2,21 +2,21 @@
 
 ## Trigger
 
-User reported the deployed light dashboard became visually worse after the source-beige canvas change. Screenshot showed the app-level canvas reading as a muddy beige/gray wash.
+User reported the deployed light dashboard became visually worse after the intermediate light-canvas adjustment. Screenshot showed the app-level canvas reading as a muddy beige/gray wash.
 
 ## Verified Source Context
 
 - External source bundle keeps `#EFEADF` as the source paper token.
-- Current product shell has sidebar/header/card chrome that is not a direct one-screen clone of the source prototype, so applying the source paper token globally made the app canvas too heavy.
+- Current product shell has sidebar/header/card chrome that is not a direct one-screen clone of the source prototype, so the source paper token needs white chrome/panel separation and the light backdrop disabled.
 
 ## Changes Made
 
 - Kept `--lf-source-paper-bg: #EFEADF` for source/dossier paper surfaces.
-- Moved app-level light canvas to `--lf-app-bg: #F8F4EC`.
+- Restored app-level light canvas to the source paper token, `--lf-app-bg: #EFEADF`.
 - Made light app panels opaque white instead of translucent white over beige.
 - Added `data-lf-theme="light"` on `AppShell` so light shell CSS does not depend only on the document class cascade.
 - Added `data-lf-theme` CSS rules to force the app shell backdrop/grid off in light mode and keep sidebar/header/card chrome clean.
-- Reduced Aurora light base/pane overlay tokens to match the lighter app canvas.
+- Kept Aurora light base on the source paper token while using white pane tokens and reduced overlays.
 - Kept the source dossier animated deck as the primary view in both swipe and full modes.
 
 ## Files Changed
@@ -48,7 +48,7 @@ User reported the deployed light dashboard became visually worse after the sourc
 ## Next QA
 
 1. After deploy, hard refresh `/dashboard` in light mode.
-2. Confirm the main canvas is a very light warm paper, not gray/yellow.
+2. Confirm the main canvas matches the source warm paper (`#EFEADF`) without a gray/yellow wash.
 3. Confirm the sidebar/header remain clean white.
 4. Confirm the dashboard cards no longer look like translucent gray overlays.
 5. Open a home dossier and confirm the source animated card deck remains visible in swipe and full modes.
