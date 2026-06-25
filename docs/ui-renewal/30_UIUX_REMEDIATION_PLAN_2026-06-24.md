@@ -126,9 +126,15 @@ churn was chasing an issue that is now resolved.
 | Dossier deepening — flood (1/5) | **NEW** — `flood` is now a first-class scene type with a dedicated `FloodSourceScene` (drifting parallax water bands that rise toward the raccoon with risk) + `ds-flood*` CSS. 31/31 vitest, `tsc` clean, verified live. Pattern template for radon/school/EV/neighborhood. |
 | Scene-tone color bug | **FIXED (real bug)** — `--info`/`--warning`/`--success` are shadcn HSL triplets (`184 66% 25%`), not full colors; `--ds-tone: var(--info)` rendered **transparent**. Wrapped as `hsl(var(--info))` in `sourceSceneVars` — also un-hid the latent water-good / transit-good scene tones that were silently invisible. |
 
+| Dossier deepening (5/5) | **DONE** — `flood`/`radon`/`school`/`ev`/`hood` are now first-class scene types with dedicated `*SourceScene` components + `ds-*` CSS (water bands, gas bubbles, kid silhouettes, charge bolt/nodes, lit skyline). Replaces the generic area/water/air stand-ins. |
+| Dossier positioning | **DONE** — row text lifted above the scene (`.lf-dossier-row > .da-layer ~ *` z-index) so captions stay readable; raccoon shifted right (`.ds-char margin-left:15%`) into the empty zone; scene tag fixed to a top-right chip; raccoon `z-index:5` above decorations. Assessed via dark-theme screenshots. |
+| Dossier demo cycle | **DONE (showcase only)** — each row rotates through its scene states every 3s, staggered by row index (top→bottom ripple, mixed cascade); motion-safe (0 under reduced-motion / SSR → honest sample). `dossier-showcase.tsx` useDemoCycle/cycleAmbient. |
+| Dead `da-*` removal | **DONE (TSX)** — removed ~580 lines of the never-rendered da-* scene system (the source of the `RADON_BUBBLES`/`HOOD_BUILDINGS` collisions). Dead da-* CSS in globals.css is orphaned/harmless, left for a follow-up. |
+
 **Net:** the recurring "theme still broken" was largely a non-issue (theme is healthy); the
 real defects were the dossier **data→scene logic errors** (now fixed) and an a11y gap.
-Several audit items were already-fixed or intentional product decisions.
+Several audit items were already-fixed or intentional product decisions. The dossier
+feature scenes, positioning, demo cycle, and dead-code cleanup are complete and committed.
 
 **Working tree:** changes uncommitted on `fix/ui-ux-remediation`
 (`dossier-ambient.tsx`, `dossier-ambient.test.tsx`, `landing-theme-toggle.tsx`,
