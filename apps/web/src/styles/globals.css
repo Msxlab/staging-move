@@ -320,7 +320,13 @@
 }
 
 .light {
-  --lf-app-bg: #EFEADF;
+  /*
+   * Source Move.dc.html uses #EFEADF for the phone-sized light app canvas.
+   * On the wider web dashboard that read as a flat grey veil, especially where
+   * translucent widgets let the canvas show through. Keep the same source
+   * family, but use its warmer secondary paper as the full-page shell.
+   */
+  --lf-app-bg: #F5F0E7;
 }
 
 .light .app-shell-backdrop {
@@ -331,7 +337,7 @@
 .light .lf-app-shell .from-primary\/5,
 .light .lf-app-shell .from-primary\/10,
 .light .lf-app-shell .from-primary\/15 {
-  --tw-gradient-from: rgba(255, 255, 255, 0.72) var(--tw-gradient-from-position);
+  --tw-gradient-from: rgba(255, 255, 255, 0.96) var(--tw-gradient-from-position);
   --tw-gradient-to: rgba(255, 255, 255, 0) var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
@@ -339,7 +345,24 @@
 .light .lf-app-shell .via-primary\/5,
 .light .lf-app-shell .via-foreground\/\[0\.03\] {
   --tw-gradient-to: rgba(255, 255, 255, 0) var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), rgba(255, 255, 255, 0.78) var(--tw-gradient-via-position), var(--tw-gradient-to);
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(255, 255, 255, 0.92) var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
+.light .lf-app-shell .from-primary\/5.to-transparent,
+.light .lf-app-shell .from-primary\/10.to-transparent,
+.light .lf-app-shell .from-primary\/15.to-transparent {
+  --tw-gradient-to: rgba(255, 255, 255, 0.76) var(--tw-gradient-to-position);
+}
+
+.light .lf-app-shell .bg-foreground\/5,
+.light .lf-app-shell .bg-foreground\/\[0\.05\] {
+  background-color: rgba(255, 255, 255, 0.96);
+}
+
+.light .lf-app-shell .bg-foreground\/\[0\.02\],
+.light .lf-app-shell .bg-foreground\/\[0\.03\],
+.light .lf-app-shell .bg-foreground\/\[0\.04\] {
+  background-color: rgba(255, 255, 255, 0.88);
 }
 
 /* =========================================================================
