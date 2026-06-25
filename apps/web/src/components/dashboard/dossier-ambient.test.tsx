@@ -265,7 +265,7 @@ describe("DossierAmbient rendering", () => {
     expect(desktopStart).toBeGreaterThan(-1);
     expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: linear-gradient(180deg, #FFFFFF");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #EFEADF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
     expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none;[\s\S]*?opacity:\s*0;/);
@@ -274,7 +274,7 @@ describe("DossierAmbient rendering", () => {
     expect(globals.slice(stageStart, stageEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
     expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
     expect(globals.slice(desktopStart, desktopEnd)).toContain("inset: 0 0 0 auto !important");
-    expect(globals.slice(desktopStart, desktopEnd)).toContain("width: 78% !important");
+    expect(globals.slice(desktopStart, desktopEnd)).toContain("width: 86% !important");
     expect(globals).toContain(".lf-dossier-source-deck:not([data-expanded=\"true\"]) .lf-dossier-source-card");
     expect(globals).not.toMatch(
       /\.lf-dossier-source-toolbar,\s*\.lf-dossier-source-deck,\s*\.lf-dossier-source-dots\s*\{[\s\S]*?display:\s*none;/,
