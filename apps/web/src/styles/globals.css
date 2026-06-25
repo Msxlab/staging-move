@@ -321,17 +321,17 @@
 }
 
 .light {
-  --lf-app-bg: #F4EFE5;
+  --lf-app-bg: #FAF7F0;
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.34) 0%, transparent 28%),
-    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.018) 0%, transparent 24%),
-    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(255, 255, 255, 0.30) 0%, rgba(245, 240, 231, 0.16) 58%, rgba(239, 234, 223, 0.04) 100%),
+    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.48) 0%, transparent 30%),
+    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.018) 0%, transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.08) 42%, rgba(203, 164, 94, 0.028) 100%),
     repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.006) 0 1px, transparent 1px 80px),
     repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.005) 0 1px, transparent 1px 80px);
-  opacity: 0.48;
+  opacity: 0.32;
 }
 
 /* =========================================================================
@@ -377,7 +377,7 @@
    (DARK is untouched — utilities resolve to their authored alpha there).
    Decorative buckets /10–/30 (dividers, faint icons, disabled glyphs) are
    deliberately left alone so the visual hierarchy survives. Verified against
-   the source warm-paper --background (#EFEADF) and white card surfaces:
+   the warm-paper --background (#FAF7F0) and white card surfaces:
    /40 remains readable for secondary copy, while /45-/55 keep stronger body
    contrast. Mirrors the .text-white/NN remap above. */
 .light .text-foreground\/35 { color: hsl(var(--foreground) / 0.58); }
@@ -397,16 +397,16 @@
 
 .light .bg-foreground\/5,
 .light .bg-foreground\/\[0\.05\] {
-  background-color: rgba(255, 255, 255, 0.78);
+  background-color: rgba(255, 255, 255, 0.88);
 }
 .light .bg-foreground\/\[0\.02\],
 .light .bg-foreground\/\[0\.03\],
 .light .bg-foreground\/\[0\.04\] {
-  background-color: rgba(255, 255, 255, 0.62);
+  background-color: rgba(255, 255, 255, 0.74);
 }
 .light .bg-foreground\/\[0\.06\],
 .light .bg-foreground\/\[0\.08\] {
-  background-color: rgba(255, 255, 255, 0.86);
+  background-color: rgba(255, 255, 255, 0.94);
 }
 
 .light .hover\:bg-white\/5:hover { background-color: rgba(20, 32, 47, 0.06); }
@@ -419,7 +419,7 @@
 .light .hover\:bg-foreground\/\[0\.05\]:hover,
 .light .hover\:bg-foreground\/\[0\.06\]:hover,
 .light .hover\:bg-foreground\/\[0\.08\]:hover {
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: rgba(255, 255, 255, 0.98);
 }
 
 .light .group:hover .group-hover\:bg-orange-500 { background-color: var(--rose); }
