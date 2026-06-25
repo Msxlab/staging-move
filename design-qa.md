@@ -18,13 +18,18 @@ findings:
 
 - [P1] Staging is still behind the PR branch that contains the visual fixes.
   Location: git remote state.
-  Evidence: after `git fetch origin staging fix/ui-ux-remediation`, `origin/staging` remained at `775c0e6f`, while `fix/ui-ux-remediation` was at `06a8aeda` before the latest keyframe patch. User screenshots from `staging.locateflow.com` can therefore still show the older, worse light theme and non-source dossier behavior.
+  Evidence: after `git fetch origin staging fix/ui-ux-remediation`, `origin/staging` remained at `775c0e6f`, while `origin/fix/ui-ux-remediation` was at `c4272084` before the latest light chrome patch. User screenshots from `staging.locateflow.com` can therefore still show the older, worse light theme and non-source dossier behavior.
   Fix status: not deployable from this agent. PR branch must be merged to staging and Dokploy must build that resulting staging commit.
 
 - [P1] The previous light shell tone was visually too muddy on the wide authenticated dashboard.
   Location: `apps/web/src/styles/globals.css`, `.light` and light shell gradient utilities.
   Evidence: source `Move.dc.html` defines `bg: #EFEADF` and `surface2: #F5F0E7`; applying the heavier warm paper to the full wide shell plus translucent dashboard panels made the UI read greyed-out in the user's screenshot.
   Fix made: keep the wide web light shell on the cleaner source `surface2` tone `#F5F0E7` and reduce the light overlay wash so dashboard panels do not look disabled.
+
+- [P2] Light navigation chrome was still reading as separate white panels instead of part of the warm-paper theme.
+  Location: `apps/web/src/styles/globals.css`, `.light .lf-app-shell > aside`, `.light .lf-app-shell header`, `.light .lf-app-shell nav.fixed`.
+  Evidence: source `Move.dc.html` keeps the app canvas in the warm-paper token family, while the web app shell used `var(--surface)` / white-tinted chrome for the sidebar and header. In the user's dashboard screenshot this made the left rail and top bar look disconnected from the beige theme.
+  Fix made: add source-family chrome tokens derived from `#F5F0E7` and apply them to light-mode sidebar, header, and mobile nav surfaces.
 
 - [P1] Home Dossier source scene deck was not using the source interaction model until the PR branch changes.
   Location: `apps/web/src/components/dashboard/home-dossier.tsx`, `apps/web/src/styles/globals.css`.
@@ -48,7 +53,7 @@ findings:
 
 patches made in the active PR branch:
 
-- `apps/web/src/styles/globals.css`: light shell tone correction, route-map label light-mode styling, source deck styling.
+- `apps/web/src/styles/globals.css`: light shell tone correction, warm-paper header/sidebar/mobile-nav chrome, route-map label light-mode styling, source deck styling.
 - `apps/web/src/components/dashboard/home-dossier.tsx`: source-like Home Dossier deck behavior and controls.
 - `apps/web/src/components/dashboard/dossier-ambient.tsx`: source scene tag and scene variable helpers.
 - `apps/web/src/styles/source-dossier-scene.css`: source keyframe parity for `ds-fan`.
@@ -58,7 +63,7 @@ patches made in the active PR branch:
 
 verification:
 
-- `pnpm --filter @locateflow/web test -- dossier-ambient home-dossier` passed.
+- `pnpm --filter @locateflow/web test -- route-map-card home-dossier dossier-ambient` passed.
 - `pnpm --filter @locateflow/web lint` passed.
 - `pnpm --filter @locateflow/web build` passed.
 

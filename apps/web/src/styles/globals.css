@@ -327,11 +327,23 @@
    * family, but use its warmer secondary paper as the full-page shell.
    */
   --lf-app-bg: #F5F0E7;
+  --lf-app-chrome-bg: color-mix(in srgb, #F5F0E7 88%, #FFFFFF 12%);
+  --lf-app-chrome-bg-strong: color-mix(in srgb, #F5F0E7 94%, #FFFFFF 6%);
 }
 
 .light .app-shell-backdrop {
   background: none;
   opacity: 0;
+}
+
+.light .lf-app-shell > aside,
+.light .lf-app-shell header,
+.light .lf-app-shell nav.fixed {
+  background: var(--lf-app-chrome-bg) !important;
+}
+
+.light .lf-app-shell > aside {
+  background: var(--lf-app-chrome-bg-strong) !important;
 }
 
 .light .lf-app-shell .from-primary\/5,
@@ -495,9 +507,9 @@
   color: rgba(20, 32, 47, 0.35);
 }
 
-/* Sidebar stays dark in light mode for contrast (per design doc rule). */
+/* Keep global light navigation on the same warm-paper family as the app shell. */
 .light aside {
-  background: var(--surface);
+  background: var(--lf-app-chrome-bg-strong, var(--surface-secondary));
 }
 .light aside .text-white,
 .light aside .text-white\/80,
