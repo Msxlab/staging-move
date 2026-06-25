@@ -1158,9 +1158,10 @@ describe("dashboard wiring regression", () => {
     expect(source).toContain('data-source-compact={hasSourceDeck ? "true" : "false"}');
 
     expect(css).toContain('.lf-dossier-grid[data-source-compact="true"]');
-    expect(css).toContain("padding-top: 0.25rem;");
+    expect(css).toContain("padding-top: 0.5rem;");
     expect(css).not.toContain('.lf-dossier-grid[data-source-compact="true"] {\n  display: none;');
     expect(css).toContain('.lf-dossier-source-deck:not([data-expanded="true"]) .lf-dossier-source-card');
+    expect(css).toContain("--lf-dossier-source-stage-h: 96px;");
     expect(css).toContain(".lf-dossier-source-stage > .da-layer");
     expect(css).toContain("width: 100% !important;");
     expect(css).toContain("-webkit-mask-image: none;");

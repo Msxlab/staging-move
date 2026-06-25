@@ -269,7 +269,7 @@ describe("consumer-free pricing + affiliate contract", () => {
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
     expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*var\(--bg\);/);
     expect(globals).toContain(".light .bg-foreground\\/5,");
-    expect(globals).toContain("background-color: rgba(255, 255, 255, 0.88);");
+    expect(globals).toContain("background-color: rgba(255, 255, 255, 0.96);");
     expect(globals).not.toContain("--lf-app-bg: radial-gradient");
     expect(globals).not.toContain("--lf-app-bg: #FBFAF7");
     expect(globals).not.toContain("#FFFFFF 0%");
