@@ -246,7 +246,7 @@ describe("DossierAmbient rendering", () => {
     expect(missing).toEqual([]);
   });
 
-  it("keeps the source light app canvas, compact dark stage, and desktop row strip", () => {
+  it("keeps a clean light app canvas, compact dark stage, and desktop row strip", () => {
     const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
     const appStart = globals.indexOf(".light {");
     const appEnd = globals.indexOf(".light .app-shell-backdrop", appStart);
@@ -262,7 +262,10 @@ describe("DossierAmbient rendering", () => {
     expect(rowStart).toBeGreaterThan(-1);
     expect(desktopStart).toBeGreaterThan(-1);
     expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #EFEADF;");
+    expect(globals.slice(appStart, appEnd)).toContain(
+      "--lf-app-bg: linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 58%, #F6F2EA 100%);",
+    );
+    expect(globals.slice(appStart, appEnd)).not.toContain("--lf-app-bg: #EFEADF;");
     expect(globals).toMatch(/\.lf-dossier-source-stage\s*\{[\s\S]*?height:\s*92px;/);
     expect(globals.slice(stageStart, stageEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
     expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
