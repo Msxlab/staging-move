@@ -147,6 +147,21 @@ feature scenes, positioning, demo cycle, and dead-code cleanup are complete and 
 - Extra landing sections (stats, risk grid, bilingual, early-access, pricing) — free-model/SEO product decisions.
 - Sidebar+header web app shell (not phone frame) — expected web adaptation.
 - Richer footer / nav link set, compliance-rich dossier fact rows.
+- Mobile bottom-nav = Dashboard/Addresses/Moving/Services/Settings + a header hamburger for
+  overflow (Providers/Budget/Notifications/…), vs the design's Home/Moving/Services/Addresses/
+  **More** tab — intentional IA (hamburger-for-overflow is a standard mobile pattern). The
+  filled-accent active state (vs the design's color-only) is a deliberate, clearer touch
+  affordance. `mobile-nav.tsx`. (SHELL-02/03 — verified live, documented, not changed.)
+- Onboarding move-plan validation (the 2026-06-23 audit's "rejects a visibly filled
+  destination/date form") was already FIXED post-audit: `validateMovingForm` back-fills
+  city/state/zip from the autocomplete/typed address via `deriveMovingDestinationFields`
+  (`onboarding-client.tsx`); `onboarding-move-validation.test.ts` passes 6/6. Not a current bug.
+- **Web↔mobile dossier parity (DOSSIER-01):** mobile is NOT missing anything — its
+  `apps/mobile/src/components/ui/DossierAmbient.tsx` is a full 1496-line RN implementation
+  (react-native-reanimated + react-native-svg) with its OWN feature scenes (flood waves, kid
+  walkers, etc.). Web (`ds-*` raccoon vignettes) and mobile (kind-axis abstract ambient) are
+  two complete-but-different systems. True visual parity = a large rewrite of one platform —
+  an optional design-consistency project, NOT a bug. Deferred; both platforms work today.
 
 ## Verification protocol per fix
 

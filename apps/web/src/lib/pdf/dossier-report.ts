@@ -1,6 +1,6 @@
-// Must precede the pdfkit import: installs the standard-font (.afm) shim that
-// makes pdfkit work in the standalone/prod build (root cause of dossier-pdf-500).
-import "@/lib/pdf/standard-font-data";
+// Used value import: Turbopack can drop side-effect-only imports in standalone.
+// Call before creating PDFDocument so pdfkit's baked /ROOT font reads are patched.
+import { ensurePdfkitStandardFonts } from "@/lib/pdf/standard-font-data";
 import PDFDocument from "pdfkit";
 import {
   drawFooter,
@@ -33,6 +33,8 @@ export async function generateDossierReportPdf(
   dossier: PdfDossier,
   userName: string,
 ): Promise<Buffer> {
+  ensurePdfkitStandardFonts();
+
   const location = `${dossier?.address?.city ?? ""}, ${dossier?.address?.state ?? ""}`.replace(/^, |, $/g, "");
   const doc = new PDFDocument({
     size: "LETTER",

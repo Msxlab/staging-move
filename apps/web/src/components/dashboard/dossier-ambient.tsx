@@ -171,7 +171,7 @@ type SourceSceneVariables = CSSProperties & {
   "--rc-pupil": string;
 };
 
-function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVariables {
+export function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVariables {
   const isBad =
     level === "bad" ||
     level === "storm" ||
@@ -196,15 +196,15 @@ function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVa
   return {
     "--ds-tone": tone,
     "--ds-glow": `color-mix(in srgb, ${tone} 22%, transparent)`,
-    "--rc-head": "#8C9AB2",
-    "--rc-mask": "#0C1525",
+    "--rc-head": "var(--lf-rc-head, #8C9AB2)",
+    "--rc-mask": "var(--lf-rc-mask, #0C1525)",
     "--rc-ear": "#C4A090",
-    "--rc-eye": "var(--foil-b)",
-    "--rc-pupil": "#04080F",
+    "--rc-eye": "var(--lf-rc-eye, var(--foil-b))",
+    "--rc-pupil": "var(--lf-rc-pupil, #04080F)",
   };
 }
 
-function sourceSceneTag({ type, level }: SourceDossierSceneSpec): string {
+export function sourceSceneTag({ type, level }: SourceDossierSceneSpec): string {
   if (type === "housing") return "AREA";
   if (level === "good" || level === "sun") return "GOOD";
   if (level === "bad" || level === "storm" || level === "heat" || level === "cold") return "ALERT";
@@ -975,10 +975,14 @@ export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
  * Pause every scene animation while the layer is offscreen: toggles a
  * .da-paused class that sets animation-play-state: paused (globals.css).
  */
-function useAmbientPause(): MutableRefObject<HTMLDivElement | null> {
+function useAmbientPause(enabled = true): MutableRefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const node = ref.current;
+    if (!enabled) {
+      node?.classList.remove("da-paused");
+      return;
+    }
     if (!node || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => {
       const entry = entries[entries.length - 1];
@@ -986,7 +990,7 @@ function useAmbientPause(): MutableRefObject<HTMLDivElement | null> {
     });
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [enabled]);
   return ref;
 }
 
@@ -1075,12 +1079,16 @@ export function DossierAmbient({
   kind,
   intensity,
   variant,
+  showTag = true,
+  pauseOffscreen = true,
 }: {
   kind: AmbientKind;
   intensity: number;
   variant?: AmbientVariant;
+  showTag?: boolean;
+  pauseOffscreen?: boolean;
 }) {
-  const ref = useAmbientPause();
+  const ref = useAmbientPause(pauseOffscreen);
   const level = clampIntensity(intensity);
   const sourceScene = sourceDossierSceneFor({ kind, intensity: level, variant });
   const sourceSceneStyle = sourceSceneVars(sourceScene);
@@ -1090,6 +1098,7 @@ export function DossierAmbient({
       aria-hidden="true"
       data-kind={kind}
       data-intensity={level}
+      data-pause-offscreen={pauseOffscreen ? "true" : "false"}
       data-source-type={sourceScene.type}
       data-source-level={sourceScene.level}
       data-variant={variant}
@@ -1098,7 +1107,7 @@ export function DossierAmbient({
       style={{ zIndex: 0, ...sourceSceneStyle }}
       className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden rounded-r-xl"
     >
-      <span className="lf-dossier-scene-tag">{sourceSceneTag(sourceScene)}</span>
+      {showTag && <span className="lf-dossier-scene-tag">{sourceSceneTag(sourceScene)}</span>}
       <SourceDossierScene scene={sourceScene} />
     </div>
   );

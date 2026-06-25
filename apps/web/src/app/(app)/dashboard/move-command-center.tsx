@@ -226,7 +226,7 @@ export function MoveCommandCenter({
     const hiddenSteps = Math.max(0, freePreview.checklist.totalItems - freePreview.steps.length);
 
     return (
-      <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
+      <div className="lf-move-rise lf-source-hero-panel relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
         <div className="flex flex-col gap-5">
           <div className="flex flex-col sm:flex-row sm:items-start gap-5">
             <div className="h-14 w-14 shrink-0 rounded-2xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center">
@@ -295,7 +295,7 @@ export function MoveCommandCenter({
   // branch, keep the user on the full move-plan path instead of a billing page.
   if (!activePlan && !isPremium) {
     return (
-      <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
+      <div className="lf-move-rise lf-source-hero-panel relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
           <div className="h-14 w-14 shrink-0 rounded-2xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center">
             <PackageCheck className="h-7 w-7 text-tone-orange-fg" />
@@ -325,7 +325,7 @@ export function MoveCommandCenter({
   // ── NO-PLAN: warm "start your move" hero (paid users) ─────────────────────
   if (!activePlan) {
     return (
-      <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
+      <div className="lf-move-rise lf-source-hero-panel relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
           <div className="h-14 w-14 shrink-0 rounded-2xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center">
             <Rocket className="h-7 w-7 text-tone-orange-fg" />
@@ -402,7 +402,7 @@ export function MoveCommandCenter({
   const isCelebration = countdown.phase === "today" || readiness >= 100;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-7">
+    <div className="lf-move-rise lf-source-hero-panel relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-7">
       {burst && <ConfettiBurst />}
       <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
         {/* Countdown block */}

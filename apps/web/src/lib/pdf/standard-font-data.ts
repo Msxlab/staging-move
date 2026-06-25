@@ -142,6 +142,7 @@ export function ensurePdfkitStandardFonts(): void {
   } as typeof fs.existsSync;
 }
 
-// Install on import so a simple `import "@/lib/pdf/standard-font-data"` (or any
-// re-export through layout) is enough to harden every PDF generator.
+// Keep import-time install for dev/tests and legacy callers. Production
+// generators still call `ensurePdfkitStandardFonts()` explicitly so standalone
+// bundling cannot drop this module as an unused side-effect import.
 ensurePdfkitStandardFonts();

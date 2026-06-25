@@ -19,7 +19,14 @@ import {
   Wind,
   Zap,
 } from "lucide-react";
-import { DossierAmbient, ambientForSection, useDossierCountUp } from "./dossier-ambient";
+import {
+  DossierAmbient,
+  ambientForSection,
+  sourceDossierSceneFor,
+  sourceSceneVars,
+  sourceSceneTag,
+  useDossierCountUp,
+} from "./dossier-ambient";
 
 /**
  * NEW HOME DOSSIER — Aurora dashboard widget.
@@ -52,6 +59,31 @@ const DOSSIER_SHELL_CLASS = "lf-dossier-shell rounded-2xl border border-border b
 const DOSSIER_ROW_CLASS = "lf-dossier-row relative isolate p-3 rounded-xl border border-border";
 const DOSSIER_SCENE_ROW_CLASS = "lf-dossier-row lf-dossier-scene-card relative isolate p-3 rounded-xl border border-border";
 const DOSSIER_STAT_CLASS = "lf-dossier-stat rounded-lg border border-border px-2.5 py-2";
+const DOSSIER_SOURCE_BAR_COUNT = 5;
+
+type DossierSceneDeckCard = {
+  key: string;
+  label: string;
+  value: string;
+  sub: string;
+  ambient: ReturnType<typeof ambientForSection>;
+};
+
+function dossierDeckPriority(intensity: number): number {
+  return intensity >= 2 ? 3 : intensity >= 1 ? 2 : 1;
+}
+
+function activeDossierDeckBars(intensity: number): number {
+  return intensity >= 2 ? 5 : intensity >= 1 ? 3 : 2;
+}
+
+function dossierDeckBandKey(intensity: number): "dossier_deck_bandGood" | "dossier_deck_bandCheck" | "dossier_deck_bandAlert" {
+  return intensity >= 2
+    ? "dossier_deck_bandAlert"
+    : intensity >= 1
+      ? "dossier_deck_bandCheck"
+      : "dossier_deck_bandGood";
+}
 
 // ── Contract types (GET /api/addresses/{id}/dossier) ─────────────────────────
 
@@ -655,6 +687,8 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
   const td = useTranslations("dashboard");
   const locale = useLocale();
   const view = deriveDossierView(data);
+  const [dossierFull, setDossierFull] = useState(false);
+  const [dossierDeckIndex, setDossierDeckIndex] = useState(0);
 
   // Neighborhood medians count up (~800ms ease-out) when the row first enters
   // the viewport. The hook's first render returns the FINAL figures, so SSR
@@ -692,6 +726,157 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
     }
   }
   const forecastDateLabel = view.weather ? formatForecastDate(view.weather.forecastDate, locale) : "";
+  const sceneCards: DossierSceneDeckCard[] = [];
+
+  if (view.flood) {
+    sceneCards.push({
+      key: "flood",
+      label: td("dossier_flood_title"),
+      value: td(floodLabelKey(view.flood.isHighRisk), { zone: view.flood.zone }),
+      sub: view.flood.isHighRisk === true ? td("dossier_flood_highPill") : td("dossier_flood_disclaimer"),
+      ambient: ambientForSection({ kind: "flood", isHighRisk: view.flood.isHighRisk }),
+    });
+  }
+  if (view.school) {
+    sceneCards.push({
+      key: "school",
+      label: td("dossier_school_title"),
+      value: td("dossier_school_served", { district: view.school.districtName }),
+      sub: td("dossier_school_disclaimer"),
+      ambient: ambientForSection({ kind: "school" }),
+    });
+  }
+  if (view.weather) {
+    sceneCards.push({
+      key: "weather",
+      label: forecastDateLabel
+        ? td("dossier_weather_movingDay", { date: forecastDateLabel })
+        : td("dossier_weather_title"),
+      value: [view.weather.summary, weatherStats.join(" · ")].filter(Boolean).join(" — "),
+      sub: td("dossier_weather_disclaimer"),
+      ambient: ambientForSection({
+        kind: "weather",
+        summary: view.weather.summary,
+        precipChancePct: view.weather.precipChancePct,
+        tempHighF: view.weather.tempHighF,
+        tempLowF: view.weather.tempLowF,
+      }),
+    });
+  }
+  if (view.hazards) {
+    sceneCards.push({
+      key: "hazards",
+      label: td("dossier_hazards_title"),
+      value: view.hazards.overallRating
+        ? td("dossier_hazards_overall", { rating: view.hazards.overallRating })
+        : `${view.hazards.topRisks[0]?.hazard ?? ""} · ${view.hazards.topRisks[0]?.rating ?? ""}`.trim(),
+      sub: view.hazards.topRisks.map((risk) => `${risk.hazard} · ${risk.rating}`).join(" / "),
+      ambient: ambientForSection({ kind: "hazard", topRisks: view.hazards.topRisks }),
+    });
+  }
+  if (view.radon) {
+    sceneCards.push({
+      key: "radon",
+      label: td("dossier_radon_title"),
+      value: td(radonZoneLabelKey(view.radon.zone)),
+      sub: td("dossier_radon_disclaimer"),
+      ambient: ambientForSection({ kind: "radon", zone: view.radon.zone }),
+    });
+  }
+  if (view.water) {
+    sceneCards.push({
+      key: "water",
+      label: td("dossier_water_title"),
+      value: td(waterLabelKey(view.water.violations5y), {
+        system: view.water.systemName,
+        count: view.water.violations5y,
+      }),
+      sub: td("dossier_water_disclaimer"),
+      ambient: ambientForSection({ kind: "water", violations5y: view.water.violations5y }),
+    });
+  }
+  if (view.air) {
+    sceneCards.push({
+      key: "air",
+      label: td("dossier_air_title"),
+      value:
+        view.air.aqi !== null && view.air.category
+          ? td("dossier_air_now", { aqi: view.air.aqi, category: view.air.category })
+          : view.air.aqi !== null
+            ? td("dossier_air_nowNoCategory", { aqi: view.air.aqi })
+            : td("dossier_air_categoryOnly", { category: view.air.category ?? "" }),
+      sub: td("dossier_air_disclaimer"),
+      ambient: ambientForSection({ kind: "air", aqi: view.air.aqi, category: view.air.category }),
+    });
+  }
+  if (view.housing) {
+    sceneCards.push({
+      key: "housing",
+      label: td("dossier_housing_title"),
+      value:
+        view.housing.twoBedroomFmr !== null
+          ? td("dossier_housing_fmr", { amount: formatUsd(view.housing.twoBedroomFmr, locale) })
+          : view.housing.medianIncome !== null
+            ? td("dossier_housing_income", { amount: formatUsd(view.housing.medianIncome, locale) })
+            : view.housing.areaName || view.housing.countyName || td("dossier_housing_area_fallback"),
+      sub: view.housing.areaName ? td("dossier_housing_area", { area: view.housing.areaName }) : td("dossier_housing_disclaimer"),
+      ambient: ambientForSection({
+        kind: "housing",
+        twoBedroomFmr: view.housing.twoBedroomFmr,
+        medianIncome: view.housing.medianIncome,
+        lowIncome4Person: view.housing.lowIncome4Person,
+      }),
+    });
+  }
+  if (view.evCharging) {
+    sceneCards.push({
+      key: "ev-charging",
+      label: td("dossier_ev_title"),
+      value: td("dossier_ev_summary", {
+        count: view.evCharging.stationCount,
+        radius: view.evCharging.radiusMiles,
+      }),
+      sub: td("dossier_ev_ports", {
+        level2: view.evCharging.level2PortCount,
+        dcFast: view.evCharging.dcFastPortCount,
+      }),
+      ambient: ambientForSection({
+        kind: "evCharging",
+        stationCount: view.evCharging.stationCount,
+        dcFastPortCount: view.evCharging.dcFastPortCount,
+        level2PortCount: view.evCharging.level2PortCount,
+      }),
+    });
+  }
+  if (view.neighborhood?.locked === false) {
+    sceneCards.push({
+      key: "neighborhood",
+      label: td("dossier_neighborhood_title"),
+      value:
+        view.neighborhood.walkScore !== null
+          ? view.neighborhood.walkBand
+            ? td("dossier_neighborhood_walkValue", {
+                score: view.neighborhood.walkScore,
+                label: td(walkBandLabelKey(view.neighborhood.walkBand)),
+              })
+            : td("dossier_neighborhood_walkScoreOnly", { score: view.neighborhood.walkScore })
+          : td("dossier_neighborhood_subtitle"),
+      sub:
+        view.neighborhood.schools.length > 0
+          ? view.neighborhood.schools.map((school) => school.name).join(" / ")
+          : td("dossier_neighborhood_disclaimer"),
+      ambient: ambientForSection({ kind: "neighborhood", walkBand: view.neighborhood.walkBand }),
+    });
+  }
+  sceneCards.sort(
+    (a, b) =>
+      dossierDeckPriority(b.ambient.intensity) - dossierDeckPriority(a.ambient.intensity) ||
+      a.label.localeCompare(b.label, locale),
+  );
+  // Source Move.dc.html keeps the animated dossier card deck as the primary
+  // experience in both swipe and full modes; full mode wraps the same cards
+  // instead of dropping back to the older row-list layout.
+  const hasSourceDeck = sceneCards.length > 0;
 
   return (
     <div className={DOSSIER_SHELL_CLASS}>
@@ -731,7 +916,81 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         </div>
       </div>
 
-      <div className="lf-dossier-grid px-5 pb-5">
+      {sceneCards.length > 0 && (
+        <>
+          <div className="lf-dossier-source-toolbar px-5 pb-2">
+            <button
+              type="button"
+              className="lf-dossier-source-toggle"
+              onClick={() => setDossierFull((value) => !value)}
+              aria-pressed={dossierFull}
+            >
+              {td(dossierFull ? "dossier_deck_swipeView" : "dossier_deck_viewFull")}
+            </button>
+          </div>
+          <div
+            className="lf-dossier-source-deck px-5 pb-4"
+            data-expanded={dossierFull ? "true" : "false"}
+            onScroll={(event) => {
+              if (dossierFull) return;
+              const el = event.currentTarget;
+              const card = el.querySelector<HTMLElement>(".lf-dossier-source-card");
+              if (!card) return;
+              const step = card.offsetWidth + 12;
+              const next = Math.max(0, Math.min(sceneCards.length - 1, Math.round(el.scrollLeft / step)));
+              if (next !== dossierDeckIndex) setDossierDeckIndex(next);
+            }}
+          >
+            {sceneCards.map((card) => {
+              const activeBars = activeDossierDeckBars(card.ambient.intensity);
+              const bandKey = dossierDeckBandKey(card.ambient.intensity);
+              const sourceScene = sourceDossierSceneFor(card.ambient);
+              const sceneVars = sourceSceneVars(sourceScene);
+              return (
+                <article
+                  key={card.key}
+                  className="lf-dossier-source-card lf-move-rise"
+                  data-dossier-scene={card.key}
+                  style={sceneVars}
+                >
+                  <div className="lf-dossier-source-stage">
+                    <DossierAmbient {...card.ambient} showTag={false} pauseOffscreen={false} />
+                    <span className="lf-dossier-source-tag">{sourceSceneTag(sourceScene)}</span>
+                  </div>
+                  <div className="lf-dossier-source-body">
+                    <p className="lf-dossier-source-label">{card.label}</p>
+                    <p className="lf-dossier-source-value">{card.value}</p>
+                    <p className="lf-dossier-source-sub">{card.sub}</p>
+                    <div className="lf-dossier-source-meter">
+                      <div className="lf-dossier-source-bars">
+                        {Array.from({ length: DOSSIER_SOURCE_BAR_COUNT }).map((_, index) => (
+                          <span key={index} className={index < activeBars ? "is-active" : undefined} />
+                        ))}
+                      </div>
+                      <span className="lf-dossier-source-band">{td(bandKey)}</span>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+          {!dossierFull && sceneCards.length > 1 && (
+            <div className="lf-dossier-source-dots" aria-hidden="true">
+              {sceneCards.map((card, index) => (
+                <span
+                  key={card.key}
+                  data-active={index === dossierDeckIndex ? "true" : "false"}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      <div
+        className="lf-dossier-grid px-5 pb-5"
+        data-source-compact={hasSourceDeck ? "true" : "false"}
+      >
         {/* (1) Flood zone — FEMA. Each rendered row carries a DossierAmbient
             scene layer (aria-hidden, masked, under the content) whose
             parameters derive from the row's REAL data. */}
