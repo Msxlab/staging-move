@@ -72,13 +72,14 @@ On `origin/codex/staging-clean-dashboard-canvas` / PR #62:
 
 There are three competing states:
 
-1. Source bundle says light Greige background is `#EFEADF`.
-2. `origin/staging` applies a global warm radial background ending in `#EFEADF`, which caused the muddy dashboard screenshot.
-3. The corrected web mapping should make the app shell use the source paper token directly: `--lf-app-bg: var(--bg)` where light `--bg` is `#EFEADF`.
+1. Source bundle says light Greige token `--bg` is `#EFEADF`.
+2. `origin/staging` applied a global warm radial background ending in `#EFEADF`, which caused the muddy dashboard screenshot.
+3. Follow-up visual QA showed raw `#EFEADF` across the whole app shell is still too heavy for dense dashboard surfaces.
+4. The corrected web mapping should keep `#EFEADF` as the source paper token for scoped surfaces/accents, while the authenticated app shell uses a cleaner warm paper canvas: `--lf-app-bg: #FBFAF7`.
 
 Conclusion: source fidelity and dashboard readability need a controlled token mapping, not another blind global color swap. The intended end state is:
 
-- source paper tone `#EFEADF` as the light theme app background;
+- clean warm paper shell `#FBFAF7` with source `#EFEADF` retained as the scoped Greige/source token;
 - white or near-white cards and controls;
 - no heavy radial beige overlay over dense dashboard content;
 - source dossier/card surfaces should keep the paper feel;
@@ -128,10 +129,10 @@ These require either a code screenshot audit or targeted source-to-implementatio
    - Impact: fixes may exist in a branch but do not affect staging.
    - Fix: either merge the remediation branch after review or backport its dossier-specific subset into a clean staging PR.
 
-3. P1 - Light theme direction is unresolved at token level.
-   - Evidence: source says `#EFEADF`; staging used a muddy radial. The code must not replace that with neutral `#F8FAFC` if the desired design is source beige.
+3. P1 - Light theme direction is resolved as a two-layer mapping.
+   - Evidence: source says `#EFEADF`; staging used a muddy radial; raw `#EFEADF` across the full authenticated shell also reads too heavy in dense dashboard screenshots.
    - Impact: repeated color reversions can keep breaking dashboard readability and source fidelity.
-   - Fix: map web light `--lf-app-bg` directly to `var(--bg)` / `#EFEADF`, keep cards white, and avoid heavy radial overlays. Then run desktop and mobile screenshot QA.
+   - Fix: map web light `--lf-app-bg` to clean warm paper `#FBFAF7`, keep `#EFEADF` available as the source Greige token for scoped surfaces/accents, keep cards white, and avoid heavy radial overlays. Then run desktop and mobile screenshot QA.
 
 4. P2 - Source motion keyframe parity is incomplete on staging.
    - Evidence: source `DossierScene.dc.html` has 37 keyframes; `origin/staging` is missing `ds-fan`.
@@ -157,7 +158,8 @@ These require either a code screenshot audit or targeted source-to-implementatio
    - Run targeted web tests for `home-dossier`, `dossier-ambient`, and token contracts.
 
 2. Light theme decision second.
-   - Use source `#EFEADF` as the web light app background.
+   - Use clean warm paper `#FBFAF7` as the authenticated web shell background.
+   - Retain source `#EFEADF` as the Greige/source paper token for scoped surfaces and accents.
    - Avoid radial beige overlays on dense dashboard surfaces.
    - Test dashboard, dossier, route map, settings, and marketing in light/dark.
 

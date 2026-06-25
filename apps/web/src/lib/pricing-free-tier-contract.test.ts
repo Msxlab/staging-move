@@ -262,12 +262,13 @@ describe("consumer-free pricing + affiliate contract", () => {
     }
   });
 
-  it("keeps the light app canvas on the source beige paper token without muddy overlays", () => {
+  it("keeps the light app canvas warm without flooding the shell with raw source beige", () => {
     const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
     const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
-    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*var\(--bg\);/);
+    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*#FBFAF7;/);
+    expect(globals).not.toMatch(/--lf-app-bg:\s*var\(--bg\);/);
     expect(globals).not.toContain("--lf-app-bg: radial-gradient");
     expect(globals).not.toContain("#FFFFFF 0%");
     expect(globals).not.toContain("#FAF8F3 38%");

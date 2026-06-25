@@ -35,23 +35,23 @@ Blocked for the same reason. The code-level checks prove wiring and token intent
 
 - [P1] Visual parity is not yet proven from rendered evidence.
   Location: web authenticated dashboard / Home Dossier.
-  Evidence: source file requires source beige light background, `View full` / `Swipe view`, source dossier cards, dots, and `DossierScene` animations. PR #63 now implements and tests these code paths, but no rendered screenshot was captured.
+  Evidence: source file requires source Greige/paper tokens, `View full` / `Swipe view`, source dossier cards, dots, and `DossierScene` animations. PR #63 now implements and tests these code paths, but no rendered screenshot was captured.
   Impact: code can be correct while final browser output still has spacing, contrast, font, clipping, or animation issues.
   Fix: after PR #63 is deployed or run locally, capture the dashboard Home Dossier in light theme at matching desktop and mobile-web widths. Compare against the source/reference screenshot in the same view.
 
 - [P1] Staging will continue to look wrong until PR #63 is merged and Dokploy deploys it.
   Location: `staging.locateflow.com`.
-  Evidence: PR #63 is open, not merged. Earlier staging screenshots therefore cannot show the new source beige canvas or dossier deck changes.
+  Evidence: PR #63 is open, not merged. Earlier staging screenshots therefore cannot show the new clean warm paper canvas or dossier deck changes.
   Impact: refreshing staging before merge/deploy will keep showing the old behavior.
   Fix: merge PR #63 to `staging`, let Dokploy finish, then re-test the live URL.
 
 ## Patches Made Since Previous QA Pass
 
 - Closed superseded PR #62, which used a neutral light canvas interpretation.
-- Updated PR #63 so `.light` maps `--lf-app-bg` to `var(--bg)` / `#EFEADF`.
+- Updated PR #63 so `.light` maps `--lf-app-bg` to clean warm paper `#FBFAF7` while retaining source `#EFEADF` as the scoped Greige/paper token.
 - Kept white/near-white card surfaces for contrast.
 - Restored source dossier deck controls, dots, cards, scene tags, and `ds-fan` keyframe.
-- Added regression coverage for the beige light canvas and dossier source deck.
+- Added regression coverage for the warm light canvas and dossier source deck.
 
 ## Required Follow-Up
 
