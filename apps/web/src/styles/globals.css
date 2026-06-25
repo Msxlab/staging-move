@@ -405,12 +405,12 @@
   --accent: 38.57 41.18% 93.33%;
   --lf-source-paper-bg: #EFEADF;
   --surface-secondary: #F5F0E7;
-  --lf-app-bg: #EFEADF;
+  --lf-app-bg: #F8F4EC;
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.98);
   --lf-app-chrome-bg-strong: #FFFFFF;
-  --lf-app-panel-bg: rgba(255, 255, 255, 0.97);
+  --lf-app-panel-bg: #FFFFFF;
   --lf-app-panel-bg-strong: #FFFFFF;
-  --lf-app-panel-bg-soft: rgba(255, 255, 255, 0.9);
+  --lf-app-panel-bg-soft: #F5F0E7;
   --lf-rc-head: #7E8EA6;
   --lf-rc-mask: #0F1D2D;
   --lf-rc-eye: hsl(var(--primary));
@@ -506,6 +506,54 @@
 .light .lf-app-shell .hover\:bg-white\/\[0\.05\]:hover,
 .light .lf-app-shell .hover\:bg-white\/\[0\.07\]:hover {
   background-color: #FFFFFF;
+}
+
+.lf-app-shell[data-lf-theme="light"] {
+  background: var(--lf-app-bg, #F8F4EC) !important;
+}
+
+.lf-app-shell[data-lf-theme="light"] .app-shell-backdrop {
+  background: none !important;
+  opacity: 0 !important;
+}
+
+.lf-app-shell[data-lf-theme="light"] > aside,
+.lf-app-shell[data-lf-theme="light"] header,
+.lf-app-shell[data-lf-theme="light"] nav.fixed {
+  background: var(--lf-app-chrome-bg, #FFFFFF) !important;
+}
+
+.lf-app-shell[data-lf-theme="light"] > aside {
+  background: var(--lf-app-chrome-bg-strong, #FFFFFF) !important;
+}
+
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/5,
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.05\],
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.06\],
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.08\],
+.lf-app-shell[data-lf-theme="light"] .bg-white\/5,
+.lf-app-shell[data-lf-theme="light"] .bg-white\/10,
+.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.02\],
+.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.03\],
+.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.05\],
+.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.07\],
+.lf-app-shell[data-lf-theme="light"] .bg-background,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/30,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/35,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/40,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/45,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/55,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/60,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/70,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/75,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/95 {
+  background-color: var(--lf-app-panel-bg, #FFFFFF);
+}
+
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.02\],
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.03\],
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.04\] {
+  background-color: var(--lf-app-panel-bg-soft, #F5F0E7);
 }
 
 /* =========================================================================

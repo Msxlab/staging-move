@@ -1146,6 +1146,10 @@ describe("dashboard wiring regression", () => {
 
   it("keeps the compact source animation deck as the desktop first view", () => {
     const css = readWebSource("src/styles/globals.css");
+    const source = readWebSource("src/components/dashboard/home-dossier.tsx");
+
+    expect(source).toContain('data-source-compact={hasSourceDeck ? "true" : "false"}');
+    expect(source).not.toContain("sceneCards.length > 0 && !dossierFull");
     expect(css).toContain('.lf-dossier-grid[data-source-compact="true"]');
     expect(css).toMatch(
       /\.lf-dossier-grid\[data-source-compact="true"\]\s*\{[\s\S]*?display:\s*none;/,

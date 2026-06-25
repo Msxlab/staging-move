@@ -496,6 +496,17 @@
 
 /* --- Light theme overrides ----------------------------------------- */
 .light .lf-aurora {
+  --au-base:              #F8F4EC;
+  --au-base-2:            #FFFFFF;
+  --au-base-3:            #F5F0E7;
+  --au-pane:              #FFFFFF;
+  --au-pane-2:            #FFFFFF;
+  --au-pane-3:            #FFFFFF;
+  --au-aurora-1:          rgba(46, 95, 176, 0.06);
+  --au-aurora-2:          rgba(46, 95, 176, 0.04);
+  --au-aurora-3:          rgba(15, 107, 80, 0.035);
+  --au-aurora-4:          rgba(162, 59, 63, 0.025);
+
   --background:           41.25 33.33% 90.59%;
   --foreground:           213 39% 13%;
   --card:                 0 0% 100%;

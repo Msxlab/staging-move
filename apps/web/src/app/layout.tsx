@@ -171,7 +171,7 @@ export default async function RootLayout({
          * app canvas; dark keeps the existing brand deep-navy. A bare fallback
          * follows for UAs that ignore `media`.
          */}
-        <meta name="theme-color" content="#EFEADF" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#F8F4EC" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#0A0F18" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#0A0F18" />
         <meta name="mobile-web-app-capable" content="yes" />
