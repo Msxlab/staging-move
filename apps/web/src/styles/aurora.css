@@ -128,14 +128,14 @@
 }
 
 /* Light-mode app glass: dark-first translucent utilities (`bg-foreground/5`,
-   `bg-card/70`, etc.) looked muddy over the source warm paper canvas. Keep
-   the source beige on the page, but let app panels read as clean paper/glass. */
+   `bg-card/70`, etc.) can read muddy over warm canvases. Keep the app canvas
+   neutral and let panels read as white paper. */
 .light .lf-aurora .bg-foreground\/5,
 .light .lf-aurora .bg-foreground\/\[0\.03\],
 .light .lf-aurora .bg-foreground\/\[0\.04\],
 .light .lf-aurora .bg-foreground\/\[0\.05\],
 .light .lf-aurora .bg-foreground\/\[0\.06\] {
-  background-color: rgba(255, 255, 255, 0.76);
+  background-color: rgba(255, 255, 255, 0.9);
 }
 .light .lf-aurora .hover\:bg-foreground\/\[0\.06\]:hover,
 .light .lf-aurora .hover\:bg-foreground\/\[0\.07\]:hover,
@@ -150,14 +150,45 @@
 .light .lf-aurora .bg-card\/80,
 .light .lf-aurora .bg-card\/85,
 .light .lf-aurora .bg-card\/90 {
-  background-color: rgba(255, 255, 255, 0.84);
+  background-color: rgba(255, 255, 255, 0.94);
 }
 .light .lf-aurora .bg-background\/30,
 .light .lf-aurora .bg-background\/40,
 .light .lf-aurora .bg-background\/55,
 .light .lf-aurora .bg-background\/60,
 .light .lf-aurora .bg-background\/70 {
-  background-color: color-mix(in srgb, var(--surface) 78%, var(--bg) 22%);
+  background-color: rgba(255, 255, 255, 0.94);
+}
+
+/* globals.css loads before this file, so repeat the app-shell glass decisions
+   with higher specificity. The shell keeps the neutral app canvas while cards,
+   headers, and section panes stay white. */
+.light .lf-aurora .lf-app-shell .bg-foreground\/5,
+.light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.05\] {
+  background-color: var(--lf-app-panel-bg-strong, #FFFFFF);
+}
+.light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.02\],
+.light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.03\],
+.light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.04\],
+.light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.06\],
+.light .lf-aurora .lf-app-shell .bg-card\/40,
+.light .lf-aurora .lf-app-shell .bg-card\/60,
+.light .lf-aurora .lf-app-shell .bg-card\/65,
+.light .lf-aurora .lf-app-shell .bg-card\/70,
+.light .lf-aurora .lf-app-shell .bg-card\/75,
+.light .lf-aurora .lf-app-shell .bg-card\/80,
+.light .lf-aurora .lf-app-shell .bg-card\/85,
+.light .lf-aurora .lf-app-shell .bg-card\/90,
+.light .lf-aurora .lf-app-shell .bg-background\/30,
+.light .lf-aurora .lf-app-shell .bg-background\/35,
+.light .lf-aurora .lf-app-shell .bg-background\/40,
+.light .lf-aurora .lf-app-shell .bg-background\/45,
+.light .lf-aurora .lf-app-shell .bg-background\/55,
+.light .lf-aurora .lf-app-shell .bg-background\/60,
+.light .lf-aurora .lf-app-shell .bg-background\/70,
+.light .lf-aurora .lf-app-shell .bg-background\/75,
+.light .lf-aurora .lf-app-shell .bg-background\/95 {
+  background-color: var(--lf-app-panel-bg, #FFFFFF);
 }
 .lf-aurora[data-mode="lite"] .au-card {
   -webkit-backdrop-filter: none;
@@ -457,7 +488,18 @@
 
 /* --- Light theme overrides ----------------------------------------- */
 .light .lf-aurora {
-  --background:           43.64 40.74% 94.71%;
+  --au-base:              #F8FAFC;
+  --au-base-2:            #FFFFFF;
+  --au-base-3:            #EEF2F7;
+  --au-pane:              #FFFFFF;
+  --au-pane-2:            #FFFFFF;
+  --au-pane-3:            #FFFFFF;
+  --au-aurora-1:          rgba(46, 95, 176, 0.06);
+  --au-aurora-2:          rgba(46, 95, 176, 0.04);
+  --au-aurora-3:          rgba(15, 107, 80, 0.035);
+  --au-aurora-4:          rgba(162, 59, 63, 0.025);
+
+  --background:           210 40% 98.04%;
   --foreground:           213 39% 13%;
   --card:                 0 0% 100%;
   --card-foreground:      213 39% 13%;
@@ -467,17 +509,17 @@
   --primary-foreground:   0 0% 100%;
   --secondary:            214 22% 38%;
   --secondary-foreground: 0 0% 100%;
-  --muted:                40 40.54% 92.75%;
+  --muted:                210 40% 96.08%;
   --muted-foreground:     213 18% 30%;
-  --accent:               45 44.44% 96.47%;
+  --accent:               210 40% 96.08%;
   --accent-foreground:    213 39% 13%;
   --destructive:          358 47% 43%;
   --destructive-foreground: 0 0% 100%;
   --warning:              36.73 67.12% 28.63%;
   --success:              162 75% 24%;
   --info:                 184 66% 25%;
-  --border:               40 17% 76%;
-  --input:                40 17% 76%;
+  --border:               214 24% 82%;
+  --input:                214 24% 82%;
   --ring:                 217.38 58.56% 43.53%;
 
   --tone-foil-fg:         #244C90;

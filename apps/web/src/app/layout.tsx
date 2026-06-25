@@ -167,11 +167,11 @@ export default async function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         {/*
          * Media-aware browser-chrome color so the address bar / status bar
-         * tracks the active theme. Light value mirrors the cleaned warm-paper
-         * app canvas; dark keeps the existing brand
-         * deep-navy. A bare fallback follows for UAs that ignore `media`.
+         * tracks the active theme. Light value mirrors the neutral app
+         * canvas; dark keeps the existing brand deep-navy. A bare fallback
+         * follows for UAs that ignore `media`.
          */}
-        <meta name="theme-color" content="#F6F3EC" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#0A0F18" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#0A0F18" />
         <meta name="mobile-web-app-capable" content="yes" />

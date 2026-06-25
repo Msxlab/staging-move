@@ -80,7 +80,7 @@
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             41.25 33.33% 90.59%;
+    --background:             210 40% 98.04%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -95,10 +95,10 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  38.57 41.18% 93.33%;
+    --muted:                  210 40% 96.08%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 38.57 41.18% 93.33%;
+    --accent:                 210 40% 96.08%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
@@ -114,8 +114,8 @@
 
     --radius:                 0.625rem;
 
-    /* Legacy short surface tokens — warm paper canvas */
-    --surface-secondary:      #F5F0E7;
+    /* Legacy short surface tokens - neutral app canvas with source paper accents */
+    --surface-secondary:      #F1F5F9;
     --text-primary:           rgba(20, 32, 47, 1);
     --text-secondary:         rgba(20, 32, 47, 0.72);
     --text-tertiary:          rgba(20, 32, 47, 0.50);
@@ -320,16 +320,41 @@
 }
 
 .light {
-  --lf-app-bg: radial-gradient(ellipse 120% 78% at 50% -18%, #FFFFFF 0%, #FAF8F3 38%, #F3EFE6 78%, #EFEADF 100%);
+  --background: 210 40% 98.04%;
+  --muted: 210 40% 96.08%;
+  --accent: 210 40% 96.08%;
+  --lf-source-paper-bg: #EFEADF;
+  --surface-secondary: #F1F5F9;
+  --lf-app-bg: #F8FAFC;
+  --lf-app-chrome-bg: rgba(255, 255, 255, 0.98);
+  --lf-app-chrome-bg-strong: #FFFFFF;
+  --lf-app-panel-bg: #FFFFFF;
+  --lf-app-panel-bg-strong: #FFFFFF;
+  --lf-app-panel-bg-soft: #F6F8FB;
+  --lf-rc-head: #7E8EA6;
+  --lf-rc-mask: #0F1D2D;
+  --lf-rc-eye: hsl(var(--primary));
+  --lf-rc-pupil: #06101E;
 }
 
 .light .app-shell-backdrop {
-  background:
-    radial-gradient(circle at 16% -4%, rgba(255, 255, 255, 0.42) 0%, transparent 32%),
-    radial-gradient(circle at 78% 2%, rgba(46, 95, 176, 0.018) 0%, transparent 36%),
-    repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.006) 0 1px, transparent 1px 88px),
-    repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.005) 0 1px, transparent 1px 88px);
-  opacity: 0.07;
+  background: none;
+  opacity: 0;
+}
+
+.light .lf-app-shell .app-shell-backdrop {
+  background: none !important;
+  opacity: 0 !important;
+}
+
+.light .lf-app-shell > aside,
+.light .lf-app-shell header,
+.light .lf-app-shell nav.fixed {
+  background: var(--lf-app-chrome-bg) !important;
+}
+
+.light .lf-app-shell > aside {
+  background: var(--lf-app-chrome-bg-strong) !important;
 }
 
 .light .lf-app-shell .from-primary\/5,
@@ -346,51 +371,83 @@
   --tw-gradient-stops: var(--tw-gradient-from), rgba(255, 255, 255, 0.78) var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
-/* =========================================================================
-   LIGHT MODE — comprehensive overrides for utilities authored in dark-first
-   Tailwind. Inverts white/* alphas to Aurora-ink-on-paper alphas
-   (rgba(20, 32, 47, …) — the Aurora ink ramp).
-   ========================================================================= */
-.light .text-white { color: rgba(20, 32, 47, 1); }
-.light .text-white\/90 { color: rgba(20, 32, 47, 0.9); }
-.light .text-white\/85 { color: rgba(20, 32, 47, 0.85); }
-.light .text-white\/80 { color: rgba(20, 32, 47, 0.8); }
-.light .text-white\/70 { color: rgba(20, 32, 47, 0.7); }
-.light .text-white\/60 { color: rgba(20, 32, 47, 0.68); }
-.light .text-white\/55 { color: rgba(20, 32, 47, 0.64); }
-.light .text-white\/50 { color: rgba(20, 32, 47, 0.62); }
-.light .text-white\/45 { color: rgba(20, 32, 47, 0.58); }
-.light .text-white\/40 { color: rgba(20, 32, 47, 0.56); }
-.light .text-white\/35 { color: rgba(20, 32, 47, 0.52); }
-.light .text-white\/30 { color: rgba(20, 32, 47, 0.48); }
-.light .text-white\/25 { color: rgba(20, 32, 47, 0.44); }
-.light .text-white\/20 { color: rgba(20, 32, 47, 0.4); }
-.light .text-white\/15 { color: rgba(20, 32, 47, 0.36); }
-.light .text-white\/10 { color: rgba(20, 32, 47, 0.32); }
+.light .lf-app-shell .bg-foreground\/5,
+.light .lf-app-shell .bg-foreground\/\[0\.05\] {
+  background-color: var(--lf-app-panel-bg-strong);
+}
 
-.light .hover\:text-white:hover { color: rgba(20, 32, 47, 1); }
-.light .hover\:text-white\/80:hover { color: rgba(20, 32, 47, 0.8); }
-.light .hover\:text-white\/70:hover { color: rgba(20, 32, 47, 0.7); }
-.light .hover\:text-white\/60:hover { color: rgba(20, 32, 47, 0.68); }
-.light .hover\:text-white\/40:hover { color: rgba(20, 32, 47, 0.56); }
-.light .group:hover .group-hover\:text-white { color: rgba(20, 32, 47, 1); }
+.light .lf-app-shell .bg-foreground\/\[0\.02\],
+.light .lf-app-shell .bg-foreground\/\[0\.03\],
+.light .lf-app-shell .bg-foreground\/\[0\.04\],
+.light .lf-app-shell .bg-white\/5,
+.light .lf-app-shell .bg-white\/10,
+.light .lf-app-shell .bg-white\/\[0\.02\],
+.light .lf-app-shell .bg-white\/\[0\.03\],
+.light .lf-app-shell .bg-white\/\[0\.05\],
+.light .lf-app-shell .bg-white\/\[0\.07\],
+.light .lf-app-shell .bg-background,
+.light .lf-app-shell .bg-background\/30,
+.light .lf-app-shell .bg-background\/35,
+.light .lf-app-shell .bg-background\/40,
+.light .lf-app-shell .bg-background\/45,
+.light .lf-app-shell .bg-background\/55,
+.light .lf-app-shell .bg-background\/60,
+.light .lf-app-shell .bg-background\/70,
+.light .lf-app-shell .bg-background\/75,
+.light .lf-app-shell .bg-background\/95 {
+  background-color: var(--lf-app-panel-bg);
+}
 
-.light .placeholder\:text-white\/30::placeholder { color: rgba(20, 32, 47, 0.48); }
-.light .placeholder\:text-white\/25::placeholder { color: rgba(20, 32, 47, 0.44); }
+.lf-app-shell[data-lf-theme="light"] {
+  background: var(--lf-app-bg, #F8FAFC) !important;
+}
 
-/* ── Light-mode foreground-opacity floor ──────────────────────────────────
-   Dark-first Tailwind leans on `text-foreground/40`–`/55` for the bulk of
-   readable secondary copy (captions, labels, helper text, empty-state lines,
-   form hints). On the DARK surface the bright --foreground at those alphas is
-   legible; on the LIGHT paper the dark-navy --foreground (213 39% 13%) at the
-   same alphas composites to only ~2.4–3.7:1 — failing WCAG AA and producing
-   the "most text unreadable / grey wash" the owner reported. These overrides
-   lift the readable buckets to a contrast-passing ink in LIGHT mode ONLY
-   (DARK is untouched — utilities resolve to their authored alpha there).
-   Decorative buckets /10–/30 (dividers, faint icons, disabled glyphs) are
-   deliberately left alone so the visual hierarchy survives. Verified against
-   the source warm-paper --background (#EFEADF) and white card surfaces:
-   /40 remains readable for secondary copy, while /45-/55 keep stronger body
+.lf-app-shell[data-lf-theme="light"] .app-shell-backdrop {
+  background: none !important;
+  opacity: 0 !important;
+}
+
+.lf-app-shell[data-lf-theme="light"] > aside,
+.lf-app-shell[data-lf-theme="light"] header,
+.lf-app-shell[data-lf-theme="light"] nav.fixed {
+  background: var(--lf-app-chrome-bg, #FFFFFF) !important;
+}
+
+.lf-app-shell[data-lf-theme="light"] > aside {
+  background: var(--lf-app-chrome-bg-strong, #FFFFFF) !important;
+}
+
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/5,
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.05\],
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.06\],
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.08\],
+.lf-app-shell[data-lf-theme="light"] .bg-white\/5,
+.lf-app-shell[data-lf-theme="light"] .bg-white\/10,
+.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.02\],
+.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.03\],
+.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.05\],
+.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.07\],
+.lf-app-shell[data-lf-theme="light"] .bg-background,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/30,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/35,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/40,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/45,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/55,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/60,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/70,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/75,
+.lf-app-shell[data-lf-theme="light"] .bg-background\/95 {
+  background-color: var(--lf-app-panel-bg, #FFFFFF);
+}
+
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.02\],
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.03\],
+.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.04\] {
+  background-color: var(--lf-app-panel-bg, #FFFFFF);
+}
+
+/* Light mode neutral shell: the dashboard canvas uses #F8FAFC, source dossier
+   paper accents keep #EFEADF, panels stay white. /40 remains readable for secondary copy, while /45-/55 keep stronger body
    contrast. Mirrors the .text-white/NN remap above. */
 .light .text-foreground\/35 { color: hsl(var(--foreground) / 0.58); }
 .light .text-foreground\/40 { color: hsl(var(--foreground) / 0.66); }

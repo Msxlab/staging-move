@@ -102,11 +102,10 @@ export const surfaceDark = {
 } as const;
 
 export const surfaceLight = {
-  background: "#EFEADF", // source prototype light page canvas
+  background: "#F8FAFC",
   surface: "#FFFFFF",
-  card: "#F5F0E7",
-  cardHover: "#ECE6DA",
-  elevated: "#FFFFFF",
+  card: "#F6F8FB",
+  cardHover: "#EEF2F7",  elevated: "#FFFFFF",
 } as const;
 
 // ────────────────────────────────────────────────────────────────────

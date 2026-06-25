@@ -10,6 +10,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { PendingInvitationsBanner } from "@/components/layout/pending-invitations-banner";
 import { Sidebar } from "@/components/layout/sidebar";
 import { InstallPrompt } from "@/components/shared/install-prompt";
+import { useTheme } from "@/components/theme-provider";
 
 type AppShellProps = {
   children: ReactNode;
@@ -61,6 +62,7 @@ export function AppShell({
   consumerFree = false,
 }: AppShellProps) {
   const tCommon = useTranslations("common");
+  const { theme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const embedMode = useEmbedMode();
   // Plan class hook consumed by globals.css. The classes are now Sapphire
@@ -100,8 +102,18 @@ export function AppShell({
 
   if (embedShell) return embedShell;
 
+  const shellTheme = theme === "light" ? "light" : "dark";
+  const shellBackground =
+    shellTheme === "light"
+      ? "var(--lf-app-bg, #F8FAFC)"
+      : "var(--lf-app-bg, var(--bg))";
+
   return (
-    <div className={`lf-app-shell flex min-h-screen relative ${planClass}`} style={{ background: "var(--lf-app-bg, var(--bg))" }}>
+    <div
+      className={`lf-app-shell flex min-h-screen relative ${planClass}`}
+      data-lf-theme={shellTheme}
+      style={{ background: shellBackground }}
+    >
       <div className="app-shell-backdrop fixed inset-0 pointer-events-none z-0" aria-hidden="true" />
       <a
         href="#main-content"

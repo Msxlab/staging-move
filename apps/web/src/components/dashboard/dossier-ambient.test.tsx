@@ -246,6 +246,43 @@ describe("DossierAmbient rendering", () => {
     expect(missing).toEqual([]);
   });
 
+  it("keeps the neutral app canvas, source paper accents, white surfaces, and visible dark stages", () => {
+    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
+    const aurora = readFileSync(new URL("../../styles/aurora.css", import.meta.url), "utf8");
+    const appStart = globals.indexOf(".light {");
+    const appEnd = globals.indexOf(".light .app-shell-backdrop", appStart);
+    const auroraLightStart = aurora.indexOf(".light .lf-aurora {");
+    const auroraLightEnd = aurora.indexOf("/* --- Aurora-flavored chrome upgrades", auroraLightStart);
+    const rowStart = globals.indexOf(".light .lf-dossier-scene-card > .da-layer");
+    const rowEnd = globals.indexOf(".light .lf-dossier-scene-card > .da-layer::before", rowStart);
+
+    expect(appStart).toBeGreaterThan(-1);
+    expect(rowStart).toBeGreaterThan(-1);
+    expect(auroraLightStart).toBeGreaterThan(-1);
+    expect(globals.slice(appStart, appEnd)).toContain("--background: 210 40% 98.04%");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #F8FAFC;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg: #FFFFFF;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-head: #7E8EA6;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-eye: hsl(var(--primary));");
+    expect(aurora.slice(auroraLightStart, auroraLightEnd)).toContain("--background:           210 40% 98.04%;");
+    expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none;[\s\S]*?opacity:\s*0;/);
+    expect(globals).toMatch(/\.light \.lf-app-shell \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none !important;[\s\S]*?opacity:\s*0 !important;/);
+    expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\]\s*\{[\s\S]*?background:\s*var\(--lf-app-bg,\s*#F8FAFC\) !important;/);
+    expect(globals).toMatch(/\.light \.lf-app-shell \.bg-foreground\\\/5,[\s\S]*?background-color:\s*var\(--lf-app-panel-bg-strong\);/);
+    expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\] \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none !important;[\s\S]*?opacity:\s*0 !important;/);
+    expect(globals).not.toMatch(/\.light \.lf-app-shell \.bg-gradient-to-br\s*\{[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
+    expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
+    expect(aurora).toMatch(/\.light \.lf-aurora \.bg-background\\\/55[\s\S]*?background-color:\s*rgba\(255,\s*255,\s*255,\s*0\.94\);/);
+    expect(aurora).toMatch(/\.light \.lf-aurora \.bg-card\\\/70[\s\S]*?background-color:\s*rgba\(255,\s*255,\s*255,\s*0\.94\);/);
+    expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
+    expect(globals.slice(rowStart, rowEnd)).not.toMatch(/#F3F6FA|#E2EAF2/i);
+    expect(globals).not.toContain("radial-gradient(ellipse 120% 78% at 50% -18%");
+    expect(globals).not.toContain("--lf-app-bg: #EFEADF");
+  });
+
   it("renders an aria-hidden, pointer-events-none masked layer with data attributes", () => {
     const markup = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} />);
     expect(markup).toContain('aria-hidden="true"');
