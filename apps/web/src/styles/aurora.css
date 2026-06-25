@@ -128,14 +128,14 @@
 }
 
 /* Light-mode app glass: dark-first translucent utilities (`bg-foreground/5`,
-   `bg-card/70`, etc.) looked muddy over the source warm paper canvas. Keep
-   the source beige on the page, but let app panels read as clean paper/glass. */
+   `bg-card/70`, etc.) read muddy when source beige is used as a full app
+   canvas. Keep source beige opt-in and let app panels read as clean paper. */
 .light .lf-aurora .bg-foreground\/5,
 .light .lf-aurora .bg-foreground\/\[0\.03\],
 .light .lf-aurora .bg-foreground\/\[0\.04\],
 .light .lf-aurora .bg-foreground\/\[0\.05\],
 .light .lf-aurora .bg-foreground\/\[0\.06\] {
-  background-color: rgba(255, 255, 255, 0.76);
+  background-color: rgba(255, 255, 255, 0.9);
 }
 .light .lf-aurora .hover\:bg-foreground\/\[0\.06\]:hover,
 .light .lf-aurora .hover\:bg-foreground\/\[0\.07\]:hover,
@@ -150,7 +150,7 @@
 .light .lf-aurora .bg-card\/80,
 .light .lf-aurora .bg-card\/85,
 .light .lf-aurora .bg-card\/90 {
-  background-color: rgba(255, 255, 255, 0.84);
+  background-color: rgba(255, 255, 255, 0.94);
 }
 .light .lf-aurora .bg-background\/30,
 .light .lf-aurora .bg-background\/40,
@@ -161,8 +161,8 @@
 }
 
 /* globals.css loads before this file, so repeat the app-shell glass decisions
-   with higher specificity. The shell keeps a lifted warm gradient while cards,
-   headers, and section panes stay clean white. */
+   with higher specificity. The shell keeps a clean lifted gradient while cards,
+   headers, and section panes stay white. */
 .light .lf-aurora .lf-app-shell .bg-foreground\/5,
 .light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.05\] {
   background-color: var(--lf-app-panel-bg-strong, #FFFFFF);

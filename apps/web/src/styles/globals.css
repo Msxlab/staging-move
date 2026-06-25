@@ -372,12 +372,12 @@
   --accent: 38.57 41.18% 93.33%;
   --lf-source-paper-bg: #EFEADF;
   --surface-secondary: #F5F0E7;
-  --lf-app-bg: #EFEADF;
+  --lf-app-bg: linear-gradient(180deg, #FBFCFD 0%, #F7F9FC 58%, #F3F0E8 100%);
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.98);
   --lf-app-chrome-bg-strong: #FFFFFF;
-  --lf-app-panel-bg: rgba(255, 255, 255, 0.94);
+  --lf-app-panel-bg: rgba(255, 255, 255, 0.97);
   --lf-app-panel-bg-strong: #FFFFFF;
-  --lf-app-panel-bg-soft: rgba(255, 255, 255, 0.82);
+  --lf-app-panel-bg-soft: rgba(255, 255, 255, 0.9);
   --lf-rc-head: #7E8EA6;
   --lf-rc-mask: #0F1D2D;
   --lf-rc-eye: hsl(var(--primary));
@@ -605,7 +605,7 @@
   color: rgba(20, 32, 47, 0.35);
 }
 
-/* Keep global light navigation on the same warm-paper family as the app shell. */
+/* Keep global light navigation crisp while source-paper panels stay opt-in. */
 .light aside {
   background: var(--lf-app-chrome-bg-strong, var(--surface-secondary));
 }
