@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
   TouchableOpacity,
 } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import { Mail, Lock, ArrowRight } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -199,13 +200,13 @@ export default function SignInScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.authPanel}>
-          <View style={styles.hero}>
+          <Animated.View style={styles.hero} entering={FadeInDown.duration(480)}>
             <View style={styles.brandBadge}>
               <MoveRaccoon size={62} mood="calm" />
             </View>
             <Text style={styles.title}>{t("auth.signIn")}</Text>
             <Text style={styles.subtitle}>{t("auth.signIn_title")}</Text>
-          </View>
+          </Animated.View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
