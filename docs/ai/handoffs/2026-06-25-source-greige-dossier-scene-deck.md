@@ -2,7 +2,7 @@
 
 ## Scope
 
-User rejected the previous light dashboard color as visually worse and reiterated that the source bundle's light theme should drive the app. This pass focused on web only:
+User rejected the follow-up light dashboard color as visually worse and reiterated that the source bundle's light theme should drive the app. This pass focused on web only:
 
 - Source bundle inspected: `C:\Users\Windows\Downloads\New folder\Initial check requested-handoff (7)\initial-check-requested`
 - Primary source files: `project/Move.dc.html`, `project/DossierScene.dc.html`
@@ -11,7 +11,7 @@ User rejected the previous light dashboard color as visually worse and reiterate
 
 ## Source Findings
 
-- `Move.dc.html` uses a greige radial page background for light mode, not a flat beige page wash.
+- `Move.dc.html` defines the light page canvas as source Greige/paper `#EFEADF` through the `--bg` token.
 - Source surfaces/cards remain white against that page background.
 - Source Home Dossier uses scene-first cards with an 82px animated scene band.
 - `DossierScene.dc.html` contains the animated scene matrix for weather/air/water/area/transit/cost/housing plus weather state variants.
@@ -19,8 +19,8 @@ User rejected the previous light dashboard color as visually worse and reiterate
 ## Changes Made
 
 - `apps/web/src/styles/globals.css`
-  - Set `.light --lf-app-bg` to the source-style radial greige gradient: `#EFEEEA -> #DEDCD3 -> #D4D2C8`.
-  - Kept light dossier/dashboard surfaces white and reduced backdrop/grid wash.
+  - Set `.light --lf-app-bg` back to the source `--bg` token (`#EFEADF` in generated tokens).
+  - Kept light dossier/dashboard surfaces white and reduced backdrop/grid wash so low-alpha dark-first surfaces do not turn muddy.
   - Added `lf-dossier-source-deck` / `lf-dossier-source-card` styling for visible scene-first cards.
 - `apps/web/src/components/dashboard/home-dossier.tsx`
   - Added a visual Home Dossier scene deck above detailed rows.
@@ -28,7 +28,7 @@ User rejected the previous light dashboard color as visually worse and reiterate
 - `apps/web/src/components/dashboard/home-dossier.test.tsx`
   - Added render guards for the scene deck/stage/bars.
 - `apps/web/src/lib/pricing-free-tier-contract.test.ts`
-  - Updated the theme guard to require the source radial greige shell and reject previous incorrect flat backgrounds.
+  - Updated the theme guard to require the source beige paper token and clean white light-mode surfaces.
 - `design-qa.md`
   - Updated status and findings. Final result remains blocked until fresh browser screenshot comparison is available.
 - `docs/ai/2026-06-25-source-theme-dossier-audit.md`

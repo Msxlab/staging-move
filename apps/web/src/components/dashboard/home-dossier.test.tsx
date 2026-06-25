@@ -558,12 +558,14 @@ describe("HomeDossierCard rendering", () => {
     expect((markup.match(/lf-dossier-source-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
     expect(markup).toContain("lf-move-rise");
     expect(markup).toContain("lf-dossier-source-stage");
+    expect(markup).toContain("ds-root");
     expect(markup).toContain("lf-dossier-source-tag");
     expect(markup).toContain("lf-dossier-source-bars");
     expect(markup).toContain("lf-dossier-source-band");
     expect(markup).toContain("lf-dossier-source-dots");
     expect(markup).toContain('data-pause-offscreen="false"');
     expect(markup).toContain("--ds-tone");
+    expect(markup).toMatch(/ds-(bob|breathe|pass|wave|mote|rain|stroll)/);
     expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
     for (const sourceType of [
       "flood",

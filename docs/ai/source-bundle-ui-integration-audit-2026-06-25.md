@@ -64,8 +64,8 @@ On `origin/fix/ui-ux-remediation`:
 On `origin/codex/staging-clean-dashboard-canvas` / PR #62:
 
 - Only the light dashboard canvas hotfix is applied.
-- `--lf-app-bg` is neutralized to `#F8FAFC`.
-- `--lf-source-paper-bg: #EFEADF` is retained as a scoped source paper variable.
+- `--lf-app-bg` was neutralized to `#F8FAFC`.
+- `--lf-source-paper-bg: #EFEADF` was retained as a scoped source paper variable.
 - This branch does not complete dossier deck parity.
 
 ## Current Theme State
@@ -74,12 +74,12 @@ There are three competing states:
 
 1. Source bundle says light Greige token `--bg` is `#EFEADF`.
 2. `origin/staging` applied a global warm radial background ending in `#EFEADF`, which caused the muddy dashboard screenshot.
-3. Follow-up visual QA showed raw `#EFEADF` across the whole app shell is still too heavy for dense dashboard surfaces.
-4. The corrected web mapping should keep `#EFEADF` as the source paper token for scoped surfaces/accents, while the authenticated app shell uses a cleaner warm paper canvas: `--lf-app-bg: #FBFAF7`.
+3. Follow-up visual QA showed the problem is not the source `#EFEADF` token alone; muddy dense dashboard cards come from translucent dark-first surfaces and heavy overlays on top of that canvas.
+4. The corrected web mapping should keep the authenticated app shell on source paper (`--lf-app-bg: var(--bg)`) and remap dark-first low-alpha foreground surfaces to clean white cards in light mode.
 
 Conclusion: source fidelity and dashboard readability need a controlled token mapping, not another blind global color swap. The intended end state is:
 
-- clean warm paper shell `#FBFAF7` with source `#EFEADF` retained as the scoped Greige/source token;
+- source warm paper shell `#EFEADF` via `--bg`;
 - white or near-white cards and controls;
 - no heavy radial beige overlay over dense dashboard content;
 - source dossier/card surfaces should keep the paper feel;
@@ -129,10 +129,10 @@ These require either a code screenshot audit or targeted source-to-implementatio
    - Impact: fixes may exist in a branch but do not affect staging.
    - Fix: either merge the remediation branch after review or backport its dossier-specific subset into a clean staging PR.
 
-3. P1 - Light theme direction is resolved as a two-layer mapping.
-   - Evidence: source says `#EFEADF`; staging used a muddy radial; raw `#EFEADF` across the full authenticated shell also reads too heavy in dense dashboard screenshots.
+3. P1 - Light theme direction is resolved as source paper plus clean light surfaces.
+   - Evidence: source says `#EFEADF`; staging used a muddy radial and dark-first translucent surfaces that made dense dashboard cards look gray.
    - Impact: repeated color reversions can keep breaking dashboard readability and source fidelity.
-   - Fix: map web light `--lf-app-bg` to clean warm paper `#FBFAF7`, keep `#EFEADF` available as the source Greige token for scoped surfaces/accents, keep cards white, and avoid heavy radial overlays. Then run desktop and mobile screenshot QA.
+   - Fix: map web light `--lf-app-bg` to `var(--bg)` / `#EFEADF`, keep cards white or near-white by remapping low-alpha foreground backgrounds, and avoid heavy radial overlays. Then run desktop and mobile screenshot QA.
 
 4. P2 - Source motion keyframe parity is incomplete on staging.
    - Evidence: source `DossierScene.dc.html` has 37 keyframes; `origin/staging` is missing `ds-fan`.
@@ -158,8 +158,8 @@ These require either a code screenshot audit or targeted source-to-implementatio
    - Run targeted web tests for `home-dossier`, `dossier-ambient`, and token contracts.
 
 2. Light theme decision second.
-   - Use clean warm paper `#FBFAF7` as the authenticated web shell background.
-   - Retain source `#EFEADF` as the Greige/source paper token for scoped surfaces and accents.
+   - Use source warm paper `#EFEADF` as the authenticated web shell background through `--bg`.
+   - Keep low-alpha dashboard surfaces white or near-white in light mode.
    - Avoid radial beige overlays on dense dashboard surfaces.
    - Test dashboard, dossier, route map, settings, and marketing in light/dark.
 

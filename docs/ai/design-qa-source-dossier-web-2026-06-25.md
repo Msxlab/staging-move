@@ -41,15 +41,15 @@ Blocked for the same reason. The code-level checks prove wiring and token intent
 
 - [P1] Staging will continue to look wrong until PR #63 is merged and Dokploy deploys it.
   Location: `staging.locateflow.com`.
-  Evidence: PR #63 is open, not merged. Earlier staging screenshots therefore cannot show the new clean warm paper canvas or dossier deck changes.
+  Evidence: PR #63 is open, not merged. Earlier staging screenshots therefore cannot show the corrected source beige canvas, light surface remaps, or dossier deck changes.
   Impact: refreshing staging before merge/deploy will keep showing the old behavior.
   Fix: merge PR #63 to `staging`, let Dokploy finish, then re-test the live URL.
 
 ## Patches Made Since Previous QA Pass
 
 - Closed superseded PR #62, which used a neutral light canvas interpretation.
-- Updated PR #63 so `.light` maps `--lf-app-bg` to clean warm paper `#FBFAF7` while retaining source `#EFEADF` as the scoped Greige/paper token.
-- Kept white/near-white card surfaces for contrast.
+- Updated PR #63 so `.light` maps `--lf-app-bg` to source paper `var(--bg)` / `#EFEADF`.
+- Kept white/near-white card surfaces for contrast by remapping low-alpha foreground backgrounds in light mode.
 - Restored source dossier deck controls, dots, cards, scene tags, and `ds-fan` keyframe.
 - Added regression coverage for the warm light canvas and dossier source deck.
 
