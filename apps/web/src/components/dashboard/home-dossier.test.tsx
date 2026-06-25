@@ -1161,6 +1161,9 @@ describe("dashboard wiring regression", () => {
     expect(css).toContain("padding-top: 0.25rem;");
     expect(css).not.toContain('.lf-dossier-grid[data-source-compact="true"] {\n  display: none;');
     expect(css).toContain('.lf-dossier-source-deck:not([data-expanded="true"]) .lf-dossier-source-card');
+    expect(css).toContain(".lf-dossier-source-stage > .da-layer");
+    expect(css).toContain("width: 100% !important;");
+    expect(css).toContain("-webkit-mask-image: none;");
     expect(css).toContain("@keyframes lf-mv-rise");
     expect(css).toContain(".lf-move-rise");
     expect(css).not.toContain(".lf-dossier-source-toolbar { display: none;");
