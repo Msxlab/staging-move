@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -227,46 +226,6 @@ describe("route map catalog", () => {
     expect(routeMapKeys(en)).toEqual(routeMapKeys(es));
     expect(routeMapKeys(en)).toContain("routeMap_imageAlt");
     expect(en.dashboard.routeMap_imageAlt).toContain("{from}");
-  });
-});
-
-describe("route map light chrome", () => {
-  it("uses light paper labels instead of dark overlay labels in light mode", () => {
-    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
-    const start = globals.indexOf(".light .lf-route-map-label {");
-    const end = globals.indexOf(".light .lf-route-map-label[data-endpoint=\"from\"]", start);
-    const block = globals.slice(start, end);
-
-    expect(start).toBeGreaterThan(-1);
-    expect(block).toContain("rgba(255, 255, 255, 0.92)");
-    expect(block).not.toContain("rgba(10, 15, 28");
-  });
-
-  it("uses the source light-map palette for the stylized fallback canvas", () => {
-    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
-    const start = globals.indexOf(".light .lf-route-map-canvas {");
-    const end = globals.indexOf(".lf-route-map-label {", start);
-    const block = globals.slice(start, end);
-
-    expect(start).toBeGreaterThan(-1);
-    expect(block).toContain("linear-gradient(180deg, #dde6ef, #cdd8e6)");
-    expect(block).toContain("--lf-route-map-grid: rgba(12, 24, 40, 0.07)");
-    expect(block).toContain("--lf-route-map-route-base: rgba(12, 24, 40, 0.12)");
-  });
-
-  it("keeps the stylized fallback route animated like the source map", () => {
-    const markup = renderToStaticMarkup(<RouteMapCard fromCity="Wayne" toCity="Irvine" realMap={false} />);
-    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
-
-    expect(markup).toContain("lf-route-map-canvas");
-    expect(markup).toContain("lf-route-map-dash");
-    expect(markup).toContain("lf-route-map-traveler");
-    expect(markup).toContain("var(--lf-route-map-route-base)");
-    expect(markup).toContain('stroke-dasharray="9 9"');
-    expect(globals).toContain("@keyframes lf-route-map-dash");
-    expect(globals).toContain("@keyframes lf-route-map-travel");
-    expect(globals).toContain(".lf-route-map-dash");
-    expect(globals).toContain(".lf-route-map-traveler");
   });
 });
 

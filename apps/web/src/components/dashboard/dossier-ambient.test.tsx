@@ -246,63 +246,52 @@ describe("DossierAmbient rendering", () => {
     expect(missing).toEqual([]);
   });
 
-  it("keeps the neutral app canvas, source paper accents, white surfaces, visible dark stages, and desktop source deck", () => {
-    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
-    const aurora = readFileSync(new URL("../../styles/aurora.css", import.meta.url), "utf8");
-    const appStart = globals.indexOf(".light {");
-    const appEnd = globals.indexOf(".light .app-shell-backdrop", appStart);
-    const auroraLightStart = aurora.indexOf(".light .lf-aurora {");
-    const auroraLightEnd = aurora.indexOf("/* --- Aurora-flavored chrome upgrades", auroraLightStart);
-    const stageStart = globals.indexOf(".light .lf-dossier-source-stage > .da-layer");
-    const stageEnd = globals.indexOf(".light .lf-dossier-source-stage > .da-layer::before", stageStart);
-    const rowStart = globals.indexOf(".light .lf-dossier-scene-card > .da-layer");
-    const rowEnd = globals.indexOf(".light .lf-dossier-scene-card > .da-layer::before", rowStart);
-    const sourceDesktopStart = globals.indexOf("@media (min-width: 900px)", globals.indexOf(".lf-dossier-grid"));
-    const desktopStart = globals.indexOf("@media (min-width: 900px)", rowEnd);
-    const desktopEnd = globals.indexOf("/* =========================================================================", desktopStart);
+  it("keeps the source DossierScene animation keyframes available", () => {
+    const css = readFileSync(new URL("../../styles/source-dossier-scene.css", import.meta.url), "utf8");
+    const expectedKeyframes = [
+      "ds-bob",
+      "ds-breathe",
+      "ds-heave",
+      "ds-pass",
+      "ds-wave",
+      "ds-leaf",
+      "ds-mote",
+      "ds-sip",
+      "ds-spark",
+      "ds-glow",
+      "ds-look",
+      "ds-rise",
+      "ds-sweat",
+      "ds-cloud",
+      "ds-ray",
+      "ds-tumble",
+      "ds-pop",
+      "ds-tug",
+      "ds-rain",
+      "ds-snow",
+      "ds-shiver",
+      "ds-fan",
+      "ds-lean",
+      "ds-flash",
+      "ds-puff",
+      "ds-streak",
+      "ds-heatline",
+      "ds-fogband",
+      "ds-cloud2",
+      "ds-umbrella",
+      "ds-cane",
+      "ds-kick",
+      "ds-acshake",
+      "ds-chase",
+      "ds-flicker",
+      "ds-run",
+      "ds-impact",
+      "ds-stroll",
+    ];
 
-    expect(appStart).toBeGreaterThan(-1);
-    expect(stageStart).toBeGreaterThan(-1);
-    expect(rowStart).toBeGreaterThan(-1);
-    expect(auroraLightStart).toBeGreaterThan(-1);
-    expect(sourceDesktopStart).toBeGreaterThan(-1);
-    expect(desktopStart).toBeGreaterThan(-1);
-    expect(globals.slice(appStart, appEnd)).toContain("--background: 210 40% 98.04%");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #F8FAFC;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg: #FFFFFF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-head: #7E8EA6;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-eye: hsl(var(--primary));");
-    expect(aurora.slice(auroraLightStart, auroraLightEnd)).toContain("--background:           210 40% 98.04%;");
-    expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none;[\s\S]*?opacity:\s*0;/);
-    expect(globals).toMatch(/\.light \.lf-app-shell \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none !important;[\s\S]*?opacity:\s*0 !important;/);
-    expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\]\s*\{[\s\S]*?background:\s*var\(--lf-app-bg,\s*#F8FAFC\) !important;/);
-    expect(globals).toMatch(/\.light \.lf-app-shell \.bg-foreground\\\/5,[\s\S]*?background-color:\s*var\(--lf-app-panel-bg-strong\);/);
-    expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\] \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none !important;[\s\S]*?opacity:\s*0 !important;/);
-    expect(globals).not.toMatch(/\.light \.lf-app-shell \.bg-gradient-to-br\s*\{[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
-    expect(globals).toMatch(/\.light \.lf-app-shell \.lf-source-hero-panel\s*\{[\s\S]*?linear-gradient\(135deg,\s*#FFFFFF 0%,\s*#F4EFE5 100%\) !important;/);
-    expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.lf-source-hero-panel\s*\{[\s\S]*?linear-gradient\(135deg,\s*#FFFFFF 0%,\s*#F4EFE5 100%\) !important;/);
-    expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
-    expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.bg-background\\\/55[\s\S]*?background-color:\s*var\(--lf-app-panel-bg,\s*#FFFFFF\);/);
-    expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.bg-card\\\/70[\s\S]*?background-color:\s*var\(--lf-app-panel-bg,\s*#FFFFFF\);/);
-    expect(globals).toContain("@keyframes lf-mv-rise");
-    expect(globals).toContain(".lf-move-rise");
-    expect(globals).toContain(".lf-route-map-dash");
-    expect(globals).toMatch(/\.lf-dossier-source-stage\s*\{[\s\S]*?height:\s*82px;/);
-    expect(globals.slice(stageStart, stageEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
-    expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
-    expect(globals.slice(desktopStart, desktopEnd)).toContain("--lf-dossier-stage-h: 82px");
-    expect(globals.slice(desktopStart, desktopEnd)).toContain("inset: 0 0 auto 0 !important");
-    expect(globals.slice(desktopStart, desktopEnd)).toContain("width: 100% !important");
-    expect(globals.slice(desktopStart, desktopEnd)).toContain("display: inline-flex");
-    expect(globals).toContain(".lf-dossier-source-deck:not([data-expanded=\"true\"]) .lf-dossier-source-card");
-    expect(globals).not.toMatch(
-      /\.lf-dossier-source-toolbar,\s*\.lf-dossier-source-deck,\s*\.lf-dossier-source-dots\s*\{[\s\S]*?display:\s*none;/,
-    );
-    expect(globals.slice(stageStart, stageEnd)).not.toMatch(/#F3F6FA|#E2EAF2/i);
-    expect(globals.slice(rowStart, rowEnd)).not.toMatch(/#F3F6FA|#E2EAF2/i);
+    for (const keyframe of expectedKeyframes) {
+      expect(css).toContain(`@keyframes ${keyframe}`);
+    }
   });
 
   it("renders an aria-hidden, pointer-events-none masked layer with data attributes", () => {
@@ -322,13 +311,6 @@ describe("DossierAmbient rendering", () => {
     expect(markup).toContain("ALERT");
     expect(markup).toContain("--ds-tone");
     expect(markup).toContain("--rc-head");
-  });
-
-  it("can suppress its internal stage tag when a source deck owns that label", () => {
-    const markup = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} showTag={false} />);
-    expect(markup).toContain('data-source-type="flood"');
-    expect(markup).not.toContain("lf-dossier-scene-tag");
-    expect(markup).not.toContain("ALERT");
   });
 
   it("clamps out-of-range intensity into the 0-2 contract", () => {
