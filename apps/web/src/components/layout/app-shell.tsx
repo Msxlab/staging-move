@@ -105,7 +105,7 @@ export function AppShell({
   const shellTheme = theme === "light" ? "light" : "dark";
   const shellBackground =
     shellTheme === "light"
-      ? "var(--lf-app-bg, #EFEADF)"
+      ? "var(--lf-app-bg, #FBFAF6)"
       : "var(--lf-app-bg, var(--bg))";
 
   return (
