@@ -4,10 +4,13 @@ Updated: 2026-06-24
 
 ## Current Staging Thread Note
 
-Use [[handoffs/2026-06-24-source-beige-dossier-visibility-correction]] as the
-latest UI/theme correction handoff for the 2026-06-24 staging regression batch.
-It supersedes the earlier clean-canvas direction for light mode. Branch:
-`fix/ui-ux-remediation`. Earlier source-fix handoffs remain:
+Use [[handoffs/2026-06-24-source-bundle-theme-audit-and-inline-token-fix]] as
+the latest UI/theme correction handoff for the 2026-06-24 staging regression
+batch. It identifies the stale inline shadcn light token block in
+`apps/web/src/styles/globals.css` as the dashboard gray/muddy light-mode cause
+and adds the generator/check guard. Branch: `fix/ui-ux-remediation`. Earlier
+source-fix handoffs remain:
+[[handoffs/2026-06-24-source-beige-dossier-visibility-correction]],
 [[handoffs/2026-06-24-staging-regression-audit-fixes]] and
 [[handoffs/2026-06-24-dossier-theme-map-pdf-followup]].
 

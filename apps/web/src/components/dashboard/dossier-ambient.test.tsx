@@ -213,15 +213,15 @@ describe("sourceDossierSceneFor", () => {
       level: "snow",
     });
     expect(sourceDossierSceneFor({ kind: "evCharging", intensity: 2 })).toEqual({
-      type: "transit",
+      type: "ev",
       level: "good",
     });
     expect(sourceDossierSceneFor({ kind: "evCharging", intensity: 0 })).toEqual({
-      type: "transit",
+      type: "ev",
       level: "bad",
     });
     expect(sourceDossierSceneFor({ kind: "neighborhood", intensity: 2 })).toEqual({
-      type: "area",
+      type: "hood",
       level: "good",
     });
   });
@@ -274,7 +274,7 @@ describe("DossierAmbient rendering", () => {
     );
   });
 
-  it("maps flood to its dedicated flood scene and radon to air (not the area crime/streetlight scenes)", () => {
+  it("maps flood and radon to their dedicated scenes (not the area crime/streetlight scenes)", () => {
     const flood = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} />);
     expect(flood).toContain('data-ds-type="flood"');
     expect(flood).toContain('data-ds-level="bad"');
@@ -283,20 +283,23 @@ describe("DossierAmbient rendering", () => {
     expect(flood).not.toContain("ds-chase-pack");
 
     const radon = renderToStaticMarkup(<DossierAmbient kind="radon" intensity={0} />);
-    expect(radon).toContain('data-ds-type="air"');
+    expect(radon).toContain('data-ds-type="radon"');
     expect(radon).toContain('data-ds-level="good"');
+    expect(radon).toContain("ds-radon-bubble");
   });
 
   it("never renders the area crime/chase scene for school or low-walkability neighborhood", () => {
-    // School is informational: calm, well-lit area scene.
+    // School is informational: dedicated kids/flag scene (never the crime/chase area scene).
     const school = renderToStaticMarkup(<DossierAmbient kind="school" intensity={1} />);
-    expect(school).toContain('data-ds-type="area"');
+    expect(school).toContain('data-ds-type="school"');
+    expect(school).toContain("ds-kid");
     expect(school).toContain('data-ds-level="good"');
 
     // Walkability is not a safety signal: a low walk band must clamp to "mid", never "bad".
     const lowWalk = renderToStaticMarkup(<DossierAmbient kind="neighborhood" intensity={0} />);
-    expect(lowWalk).toContain('data-ds-type="area"');
+    expect(lowWalk).toContain('data-ds-type="hood"');
     expect(lowWalk).toContain('data-ds-level="mid"');
+    expect(lowWalk).toContain("ds-hood-skyline");
     expect(lowWalk).not.toContain("ds-chase-pack");
   });
 
@@ -325,15 +328,17 @@ describe("DossierAmbient rendering", () => {
     ).toContain('data-ds-level="wind"');
   });
 
-  it("renders the source transit availability bands", () => {
+  it("renders the source EV charging density bands", () => {
     const frequent = renderToStaticMarkup(<DossierAmbient kind="evCharging" intensity={2} />);
-    expect(frequent).toContain('data-ds-type="transit"');
+    expect(frequent).toContain('data-ds-type="ev"');
     expect(frequent).toContain('data-ds-level="good"');
-    expect(frequent.match(/ds-vehicle/g)).not.toBeNull();
+    expect(frequent).toContain("ds-ev-bolt");
+    expect(frequent.match(/ds-ev-node/g)).not.toBeNull();
 
     const none = renderToStaticMarkup(<DossierAmbient kind="evCharging" intensity={0} />);
     expect(none).toContain('data-ds-level="bad"');
-    expect(none).toContain("ds-sign");
+    expect(none).toContain("ds-charger");
+    expect(none).not.toContain("ds-ev-bolt");
   });
 
   it("renders the source air extras at their bands", () => {
@@ -387,11 +392,11 @@ describe("DossierAmbient rendering", () => {
     ).toContain("ds-streak");
   });
 
-  it("renders neighborhood as the source area confidence scene", () => {
+  it("renders neighborhood as the source skyline scene", () => {
     const markup = renderToStaticMarkup(<DossierAmbient kind="neighborhood" intensity={2} />);
-    expect(markup).toContain('data-ds-type="area"');
+    expect(markup).toContain('data-ds-type="hood"');
     expect(markup).toContain('data-ds-level="good"');
-    expect(markup).toContain("ds-lamp-glow");
-    expect(markup).toContain("ds-badge");
+    expect(markup).toContain("ds-hood-skyline");
+    expect(markup).toContain("ds-walker");
   });
 });

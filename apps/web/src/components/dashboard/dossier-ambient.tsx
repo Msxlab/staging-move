@@ -67,7 +67,11 @@ export type SourceDossierSceneType =
   | "transit"
   | "cost"
   | "housing"
-  | "flood";
+  | "flood"
+  | "radon"
+  | "school"
+  | "ev"
+  | "hood";
 
 export type SourceDossierSceneLevel =
   | "good"
@@ -133,17 +137,17 @@ export function sourceDossierSceneFor({ kind, intensity, variant }: AmbientSpec)
     case "housing":
       return { type: "housing", level: "mid" };
     case "evCharging":
-      return { type: "transit", level: positiveSourceLevel(intensity) };
+      // Dedicated EV scene: charging post + a pulsing bolt + charge nodes (denser with
+      // more stations); the empty/"bad" state simply drops the bolt and nodes.
+      return { type: "ev", level: positiveSourceLevel(intensity) };
     case "neighborhood":
-      // Walkability is NOT a safety signal. The area "bad" scene is a crime/chase
-      // vignette (shady figures) - never render it for a low walk band. Clamp to the
-      // safe (good) / neutral (mid) area scenes only.
-      return { type: "area", level: intensity === 2 ? "good" : "mid" };
+      // Dedicated neighbourhood scene: a lit skyline + a stroller whose liveliness tracks
+      // walkability. Never an alarming state (walkability is not a risk signal).
+      return { type: "hood", level: intensity === 2 ? "good" : "mid" };
     case "school":
-      // No education scene exists in the source type set; "area" is the closest
-      // (a neighbourhood attribute). Use the calm, well-lit (good) area scene rather
-      // than the dim "glancing" mid - a school district carries no risk signal.
-      return { type: "area", level: "good" };
+      // Dedicated school scene: kid silhouettes strolling a path past a flag. A school
+      // district carries no risk signal, so it always reads as the calm, friendly state.
+      return { type: "school", level: "good" };
     case "hazard":
       return { type: "weather", level: weatherSourceLevel(variant) };
     case "flood":
@@ -151,10 +155,9 @@ export function sourceDossierSceneFor({ kind, intensity, variant }: AmbientSpec)
       // toward the raccoon as risk climbs (calm at low risk, alert + rain at high).
       return { type: "flood", level: riskSourceLevel(intensity) };
     case "radon":
-      // Radon is an airborne hazard -> air scenes: clean breeze (zone 3) -> light haze
-      // (zone 2) -> heavy haze + mask (zone 1). Bubbles would be ideal but the source
-      // type set has no gas scene; air is the honest thematic match.
-      return { type: "air", level: riskSourceLevel(intensity) };
+      // Dedicated radon scene: gas bubbles rising from the ground, density scaling with
+      // the EPA zone (zone 3 calm -> zone 1 dense + alert).
+      return { type: "radon", level: riskSourceLevel(intensity) };
   }
 }
 
@@ -447,6 +450,99 @@ function FloodSourceScene({ level }: { level: SourceDossierSceneLevel }) {
   );
 }
 
+const RADON_BUBBLE_SPECS = [
+  { left: "20%", dur: "3.2s", delay: "0s" },
+  { left: "38%", dur: "3.8s", delay: "-1.2s" },
+  { left: "56%", dur: "3.4s", delay: "-2s" },
+  { left: "70%", dur: "4s", delay: "-0.6s" },
+  { left: "84%", dur: "3.6s", delay: "-1.6s" },
+] as const;
+
+function RadonSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  const count = level === "bad" ? 5 : level === "mid" ? 3 : 2;
+  const mood: DossierRaccoonMood = level === "bad" ? "alert" : level === "good" ? "happy" : "thinking";
+  return (
+    <>
+      <div className="ds-radon-haze" />
+      {RADON_BUBBLE_SPECS.slice(0, count).map((b) => (
+        <span
+          key={b.left}
+          className="ds-radon-bubble"
+          style={{ left: b.left, animationDuration: b.dur, animationDelay: b.delay }}
+        />
+      ))}
+      {level === "bad" && <span className="ds-alert-symbol">!</span>}
+      <SourceCharacter mood={mood} style={{ left: "40%", animation: "ds-bob 3s ease-in-out infinite" }}>
+        <div className="ds-detector" />
+      </SourceCharacter>
+    </>
+  );
+}
+
+const HOOD_BUILDING_SPECS = [
+  { h: 14, win: false },
+  { h: 22, win: true },
+  { h: 12, win: false },
+  { h: 19, win: true },
+  { h: 16, win: true },
+] as const;
+
+function NeighborhoodSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  const lively = level === "good";
+  const mood: DossierRaccoonMood = lively ? "approved" : "happy";
+  return (
+    <>
+      <div className="ds-radial" />
+      <div className="ds-hood-skyline">
+        {HOOD_BUILDING_SPECS.map((b, i) => (
+          <div key={i} className="ds-hood-bld" style={{ height: b.h }}>
+            {b.win && <span className="ds-hood-win" style={{ animationDelay: `${i * 0.5}s` }} />}
+          </div>
+        ))}
+      </div>
+      {lively && <div className="ds-walker" style={{ animation: "ds-stroll 11s linear infinite" }} />}
+      <SourceCharacter mood={mood} style={{ left: "20%", animation: "ds-bob 3s ease-in-out infinite" }} />
+    </>
+  );
+}
+
+const EV_NODE_SPECS = [
+  { right: "40%", bottom: 30, delay: "0s" },
+  { right: "52%", bottom: 22, delay: "-0.5s" },
+  { right: "64%", bottom: 34, delay: "-1s" },
+] as const;
+
+function EvSourceScene({ level }: { level: SourceDossierSceneLevel }) {
+  const active = level !== "bad";
+  const nodeCount = level === "good" ? 3 : level === "mid" ? 2 : 0;
+  const mood: DossierRaccoonMood = level === "good" ? "approved" : level === "mid" ? "happy" : "calm";
+  return (
+    <>
+      <div className="ds-radial" />
+      <div className="ds-charger" />
+      {active && <span className="ds-ev-bolt" />}
+      {EV_NODE_SPECS.slice(0, nodeCount).map((n, i) => (
+        <span key={i} className="ds-ev-node" style={{ right: n.right, bottom: n.bottom, animationDelay: n.delay }} />
+      ))}
+      <SourceCharacter mood={mood} style={{ left: "20%", animation: "ds-bob 3s ease-in-out infinite" }} />
+    </>
+  );
+}
+
+function SchoolSourceScene() {
+  return (
+    <>
+      <div className="ds-schoolpath" />
+      <div className="ds-flag" />
+      <div className="ds-kid" style={{ left: "6%", animationDuration: "9s" }} />
+      <div className="ds-kid" style={{ left: "6%", animationDuration: "11s", animationDelay: "-5s" }} />
+      <SourceCharacter mood="happy" style={{ left: "46%", animation: "ds-bob 3s ease-in-out infinite" }}>
+        <div className="ds-arm ds-wave-arm" style={{ right: 1, bottom: 12, transformOrigin: "left center" }} />
+      </SourceCharacter>
+    </>
+  );
+}
+
 function AreaSourceScene({ level }: { level: SourceDossierSceneLevel }) {
   if (level === "bad") {
     return (
@@ -659,6 +755,10 @@ function SourceDossierScene({ scene }: { scene: SourceDossierSceneSpec }) {
       {scene.type === "air" && <AirSourceScene level={scene.level} />}
       {scene.type === "water" && <WaterSourceScene level={scene.level} />}
       {scene.type === "flood" && <FloodSourceScene level={scene.level} />}
+      {scene.type === "radon" && <RadonSourceScene level={scene.level} />}
+      {scene.type === "school" && <SchoolSourceScene />}
+      {scene.type === "hood" && <NeighborhoodSourceScene level={scene.level} />}
+      {scene.type === "ev" && <EvSourceScene level={scene.level} />}
       {scene.type === "area" && <AreaSourceScene level={scene.level} />}
       {scene.type === "cost" && <CostSourceScene level={scene.level} />}
       {scene.type === "housing" && <HousingSourceScene />}
