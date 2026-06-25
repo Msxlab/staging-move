@@ -262,18 +262,15 @@ describe("consumer-free pricing + affiliate contract", () => {
     }
   });
 
-  it("uses the source beige paper token as a softened light app canvas without muddy grid overlays", () => {
+  it("uses the source beige paper token as the light app canvas without muddy grid overlays", () => {
     const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
     const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
-    expect(globals).toMatch(
-      /\.light\s*\{\s*--lf-app-bg:\s*color-mix\(in srgb,\s*var\(--bg\)\s*38%,\s*#FFFFFF\s*62%\);/,
-    );
+    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*var\(--bg\);/);
     expect(globals).toContain(".light .bg-foreground\\/5,");
     expect(globals).toContain("background-color: rgba(255, 255, 255, 0.96);");
     expect(globals).not.toContain("--lf-app-bg: radial-gradient");
-    expect(globals).not.toContain("--lf-app-bg: var(--bg)");
     expect(globals).not.toContain("--lf-app-bg: #FBFAF7");
     expect(globals).not.toContain("#FFFFFF 0%");
     expect(globals).not.toContain("#FAF8F3 38%");
@@ -282,6 +279,12 @@ describe("consumer-free pricing + affiliate contract", () => {
     expect(globals).not.toContain("#D4D2C8");
     expect(globals).not.toContain("#F8FAFC 100%");
     expect(globals).not.toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
+    expect(globals).not.toContain("color-mix(in srgb, var(--bg) 38%, #FFFFFF 62%)");
     expect(globals).not.toContain("--lf-app-bg: #FAF7F0");
+    expect(globals).toContain("rgba(255, 255, 255, 0.40) 0%");
+    expect(globals).toContain("rgba(134, 99, 26, 0.006)");
+    expect(globals).toContain("opacity: 0.34;");
+    expect(globals).toContain("filter: saturate(1.42) contrast(1.12);");
+    expect(globals).toContain("rgba(255, 255, 255, 0.10)");
   });
 });
