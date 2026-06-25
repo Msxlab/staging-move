@@ -74,11 +74,11 @@ There are three competing states:
 
 1. Source bundle says light Greige background is `#EFEADF`.
 2. `origin/staging` applies a global warm radial background ending in `#EFEADF`, which caused the muddy dashboard screenshot.
-3. PR #62 neutralizes the app shell to `#F8FAFC` to stop the immediate staging regression.
+3. The corrected web mapping should make the app shell use the source paper token directly: `--lf-app-bg: var(--bg)` where light `--bg` is `#EFEADF`.
 
-Conclusion: source fidelity and dashboard readability need a controlled token mapping, not another blind global color swap. The likely intended end state is:
+Conclusion: source fidelity and dashboard readability need a controlled token mapping, not another blind global color swap. The intended end state is:
 
-- source paper tone `#EFEADF` available as the light theme foundation;
+- source paper tone `#EFEADF` as the light theme app background;
 - white or near-white cards and controls;
 - no heavy radial beige overlay over dense dashboard content;
 - source dossier/card surfaces should keep the paper feel;
@@ -129,9 +129,9 @@ These require either a code screenshot audit or targeted source-to-implementatio
    - Fix: either merge the remediation branch after review or backport its dossier-specific subset into a clean staging PR.
 
 3. P1 - Light theme direction is unresolved at token level.
-   - Evidence: source says `#EFEADF`; staging used a muddy radial; PR #62 uses neutral `#F8FAFC`.
-   - Impact: repeated color reversions can keep breaking dashboard readability.
-   - Fix: define a final light-mode mapping: source paper background plus white surfaces, with no muddy overlay. Then run desktop and mobile screenshot QA.
+   - Evidence: source says `#EFEADF`; staging used a muddy radial. The code must not replace that with neutral `#F8FAFC` if the desired design is source beige.
+   - Impact: repeated color reversions can keep breaking dashboard readability and source fidelity.
+   - Fix: map web light `--lf-app-bg` directly to `var(--bg)` / `#EFEADF`, keep cards white, and avoid heavy radial overlays. Then run desktop and mobile screenshot QA.
 
 4. P2 - Source motion keyframe parity is incomplete on staging.
    - Evidence: source `DossierScene.dc.html` has 37 keyframes; `origin/staging` is missing `ds-fan`.
@@ -157,7 +157,7 @@ These require either a code screenshot audit or targeted source-to-implementatio
    - Run targeted web tests for `home-dossier`, `dossier-ambient`, and token contracts.
 
 2. Light theme decision second.
-   - Reconcile source `#EFEADF` with desktop dashboard readability.
+   - Use source `#EFEADF` as the web light app background.
    - Avoid radial beige overlays on dense dashboard surfaces.
    - Test dashboard, dossier, route map, settings, and marketing in light/dark.
 
@@ -179,4 +179,3 @@ Safe to do without touching mobile:
 - Add source deck expanded/swipe state and labels to `apps/web/src/components/dashboard/home-dossier.tsx`.
 - Add `data-source-compact` so the legacy grid does not visually compete with the source deck.
 - Add tests that assert source deck is visible, toggle exists, legacy grid is compacted, and all source keyframes are present.
-

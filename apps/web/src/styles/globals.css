@@ -341,7 +341,7 @@
 }
 
 .light {
-  --lf-app-bg: radial-gradient(ellipse 120% 78% at 50% -18%, #FFFFFF 0%, #FAF8F3 38%, #F3EFE6 78%, #EFEADF 100%);
+  --lf-app-bg: var(--bg);
 }
 
 .light .app-shell-backdrop {

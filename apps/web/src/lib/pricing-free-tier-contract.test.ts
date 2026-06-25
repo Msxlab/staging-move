@@ -262,20 +262,19 @@ describe("consumer-free pricing + affiliate contract", () => {
     }
   });
 
-  it("keeps the light app canvas warm without muddying dashboard surfaces", () => {
+  it("keeps the light app canvas on the source beige paper token without muddy overlays", () => {
     const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
     const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
-    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*radial-gradient\(ellipse 120% 78% at 50% -18%/);
-    expect(globals).toContain("#FFFFFF 0%");
-    expect(globals).toContain("#FAF8F3 38%");
-    expect(globals).toContain("#F3EFE6 78%");
-    expect(globals).toContain("#EFEADF 100%");
+    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*var\(--bg\);/);
+    expect(globals).not.toContain("--lf-app-bg: radial-gradient");
+    expect(globals).not.toContain("#FFFFFF 0%");
+    expect(globals).not.toContain("#FAF8F3 38%");
+    expect(globals).not.toContain("#F3EFE6 78%");
     expect(globals).not.toContain("#DEDCD3");
     expect(globals).not.toContain("#D4D2C8");
     expect(globals).not.toContain("#F8FAFC 100%");
-    expect(globals).not.toContain("--lf-app-bg: var(--bg)");
     expect(globals).not.toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
     expect(globals).not.toContain("--lf-app-bg: #FAF7F0");
   });
