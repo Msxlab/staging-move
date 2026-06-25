@@ -320,28 +320,31 @@
 }
 
 .light {
-  --lf-app-bg: #EFEADF;
+  --lf-app-bg: #FAF7F0;
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(ellipse 78% 52% at 50% -16%, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.18) 52%, transparent 76%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, transparent 48%);
-  opacity: 0.44;
+    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.58) 0%, transparent 32%),
+    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.012) 0%, transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.06) 48%, rgba(239, 234, 223, 0.10) 100%),
+    repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.004) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.0035) 0 1px, transparent 1px 80px);
+  opacity: 0.18;
 }
 
 .light .lf-app-shell .from-primary\/5,
 .light .lf-app-shell .from-primary\/10,
 .light .lf-app-shell .from-primary\/15 {
-  --tw-gradient-from: rgba(255, 255, 255, 0.78) var(--tw-gradient-from-position);
+  --tw-gradient-from: rgba(255, 255, 255, 0.72) var(--tw-gradient-from-position);
   --tw-gradient-to: rgba(255, 255, 255, 0) var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
 .light .lf-app-shell .via-primary\/5,
 .light .lf-app-shell .via-foreground\/\[0\.03\] {
-  --tw-gradient-to: rgba(244, 239, 229, 0) var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), rgba(244, 239, 229, 0.92) var(--tw-gradient-via-position), var(--tw-gradient-to);
+  --tw-gradient-to: rgba(255, 255, 255, 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(255, 255, 255, 0.78) var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
 /* =========================================================================
@@ -1331,21 +1334,21 @@ html[data-embed="mobile"] .install-prompt {
   color: color-mix(in srgb, hsl(var(--primary)) 22%, rgba(239, 243, 250, 0.92) 78%);
 }
 .light .lf-route-map-label {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(16, 29, 45, 0.12);
-  color: rgba(16, 29, 45, 0.82);
-  box-shadow: 0 6px 18px rgba(20, 32, 47, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.74);
+  border-color: rgba(16, 29, 45, 0.14);
+  color: rgba(16, 29, 45, 0.74);
+  box-shadow: 0 4px 12px rgba(20, 32, 47, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.82);
   text-shadow: none;
 }
 .light .lf-route-map-label[data-endpoint="from"] {
-  background: color-mix(in srgb, var(--sage) 7%, rgba(255, 255, 255, 0.94) 93%);
-  border-color: color-mix(in srgb, var(--sage) 24%, rgba(16, 29, 45, 0.10));
-  color: color-mix(in srgb, var(--sage) 60%, #101D2D 40%);
+  background: color-mix(in srgb, var(--sage) 5%, rgba(255, 255, 255, 0.76) 95%);
+  border-color: color-mix(in srgb, var(--sage) 18%, rgba(16, 29, 45, 0.12));
+  color: color-mix(in srgb, var(--sage) 46%, #101D2D 54%);
 }
 .light .lf-route-map-label[data-endpoint="to"] {
-  background: color-mix(in srgb, hsl(var(--primary)) 6%, rgba(255, 255, 255, 0.94) 94%);
-  border-color: color-mix(in srgb, hsl(var(--primary)) 24%, rgba(16, 29, 45, 0.10));
-  color: color-mix(in srgb, hsl(var(--primary)) 58%, #101D2D 42%);
+  background: color-mix(in srgb, hsl(var(--primary)) 5%, rgba(255, 255, 255, 0.76) 95%);
+  border-color: color-mix(in srgb, hsl(var(--primary)) 18%, rgba(16, 29, 45, 0.12));
+  color: color-mix(in srgb, hsl(var(--primary)) 48%, #101D2D 52%);
 }
 
 .lf-dossier-grid {

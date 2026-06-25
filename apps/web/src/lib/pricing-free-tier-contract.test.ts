@@ -233,4 +233,32 @@ describe("consumer-free pricing + affiliate contract", () => {
       'dossier showcase renders a standalone "Pro" badge — relabel it (e.g. "Included") under the free model',
     ).toBe(false);
   });
+
+  it("keeps the marketing dossier demo wired to the source scene matrix", () => {
+    const dossierShowcase = readRepoFile(
+      "apps",
+      "web",
+      "src",
+      "components",
+      "marketing",
+      "dossier-showcase.tsx",
+    );
+
+    expect((dossierShowcase.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(
+      2,
+    );
+    for (const variant of [
+      "sun",
+      "cloud",
+      "rain",
+      "snow",
+      "storm",
+      "fog",
+      "wind",
+      "heat",
+      "cold",
+    ]) {
+      expect(dossierShowcase).toContain(`variant: "${variant}"`);
+    }
+  });
 });

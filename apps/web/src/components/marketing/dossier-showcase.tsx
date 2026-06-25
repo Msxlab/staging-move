@@ -103,7 +103,7 @@ function DemoRow({
   children?: ReactNode;
 }) {
   return (
-    <div className="lf-dossier-row relative isolate p-3 rounded-xl border border-border">
+    <div className="lf-dossier-row lf-dossier-scene-card relative isolate p-3 rounded-xl border border-border">
       <DossierAmbient {...ambient} />
       <div className="flex items-center gap-3">
         <div
@@ -145,6 +145,10 @@ const WEATHER_CYCLE: readonly AmbientSpec[] = [
   { kind: "weather", intensity: 1, variant: "rain" },
   { kind: "weather", intensity: 2, variant: "snow" },
   { kind: "weather", intensity: 2, variant: "storm" },
+  { kind: "weather", intensity: 1, variant: "fog" },
+  { kind: "weather", intensity: 2, variant: "wind" },
+  { kind: "weather", intensity: 2, variant: "heat" },
+  { kind: "weather", intensity: 2, variant: "cold" },
 ];
 const HAZARD_CYCLE: readonly AmbientSpec[] = [
   { kind: "hazard", intensity: 1, variant: "winter" },
@@ -347,7 +351,7 @@ export function DossierShowcase() {
                 feature). */}
             <div
               ref={counts.ref}
-              className="lf-dossier-row relative isolate p-3 rounded-xl border border-border"
+              className="lf-dossier-row lf-dossier-scene-card relative isolate p-3 rounded-xl border border-border"
             >
               <DossierAmbient {...cycleAmbient(HOOD_CYCLE, tick, 6)} />
               <div className="flex items-center gap-3">
