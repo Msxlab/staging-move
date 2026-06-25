@@ -19,6 +19,7 @@
 @keyframes ds-rain { 0% { transform: translateY(-6px); opacity: 0; } 15% { opacity: .8; } 100% { transform: translateY(54px); opacity: 0; } }
 @keyframes ds-snow { 0% { transform: translate(0,-6px); opacity: 0; } 15% { opacity: .95; } 100% { transform: translate(var(--dx,6px),58px); opacity: 0; } }
 @keyframes ds-shiver { 0%,100% { transform: translateX(-0.8px); } 50% { transform: translateX(0.8px); } }
+@keyframes ds-fan { 0%,100% { transform: rotate(-22deg); } 50% { transform: rotate(18deg); } }
 @keyframes ds-lean { 0%,100% { transform: rotate(-9deg); } 50% { transform: rotate(-13deg); } }
 @keyframes ds-flash { 0%,92%,100% { opacity: 0; } 94%,97% { opacity: .85; } }
 @keyframes ds-puff { 0% { transform: translate(0,0) scale(.5); opacity: 0; } 30% { opacity: .6; } 100% { transform: translate(10px,-7px) scale(1.3); opacity: 0; } }
