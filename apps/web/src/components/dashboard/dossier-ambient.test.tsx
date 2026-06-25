@@ -246,7 +246,7 @@ describe("DossierAmbient rendering", () => {
     expect(missing).toEqual([]);
   });
 
-  it("keeps the clean warm light canvas, source paper accents, white surfaces, visible dark stages, and desktop source deck", () => {
+  it("keeps the neutral light canvas, source paper accents, white surfaces, visible dark stages, and desktop source deck", () => {
     const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
     const aurora = readFileSync(new URL("../../styles/aurora.css", import.meta.url), "utf8");
     const appStart = globals.indexOf(".light {");
@@ -267,18 +267,18 @@ describe("DossierAmbient rendering", () => {
     expect(auroraLightStart).toBeGreaterThan(-1);
     expect(sourceDesktopStart).toBeGreaterThan(-1);
     expect(desktopStart).toBeGreaterThan(-1);
-    expect(globals.slice(appStart, appEnd)).toContain("--background: 48 38.46% 97.45%");
+    expect(globals.slice(appStart, appEnd)).toContain("--background: 210 40% 98.04%");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #FBFAF6;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #F8FAFC;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-head: #7E8EA6;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-eye: hsl(var(--primary));");
-    expect(aurora.slice(auroraLightStart, auroraLightEnd)).toContain("--background:           48 38.46% 97.45%;");
+    expect(aurora.slice(auroraLightStart, auroraLightEnd)).toContain("--background:           210 40% 98.04%;");
     expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none;[\s\S]*?opacity:\s*0;/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none !important;[\s\S]*?opacity:\s*0 !important;/);
-    expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\]\s*\{[\s\S]*?background:\s*var\(--lf-app-bg,\s*#FBFAF6\) !important;/);
+    expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\]\s*\{[\s\S]*?background:\s*var\(--lf-app-bg,\s*#F8FAFC\) !important;/);
     expect(globals).not.toContain("--lf-app-bg: #EFEADF;");
     expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\] \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none !important;[\s\S]*?opacity:\s*0 !important;/);
     expect(globals).not.toMatch(/\.light \.lf-app-shell \.bg-gradient-to-br\s*\{[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
