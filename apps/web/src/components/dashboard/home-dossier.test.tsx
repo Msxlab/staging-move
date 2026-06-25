@@ -562,19 +562,26 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).toContain('data-pause-offscreen="false"');
     expect(markup).toMatch(/class="[^"]*\blf-dossier-source-card\b[^"]*"[^>]*style="[^"]*--ds-tone:/);
     expect(markup).toContain('class="lf-dossier-grid px-5 pb-5" data-source-compact="true"');
-    expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
+    // AIR and EV no longer render the masked ambient scene-card in the grid —
+    // they show the foreground AQI gauge / EV meter indicators instead, so the
+    // remaining ambient scene-cards (flood, school, weather, hazards, radon,
+    // water, housing) number seven.
+    expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(7);
     for (const sourceType of [
       "flood",
       "school",
       "weather",
       "radon",
       "water",
-      "air",
       "housing",
-      "ev",
     ]) {
       expect(markup).toContain(`data-ds-type="${sourceType}"`);
     }
+    // AIR and EV are now clear foreground indicators, not ambient scenes.
+    expect(markup).toContain('data-testid="aqi-gauge"');
+    expect(markup).toContain('data-testid="ev-meter"');
+    expect(markup).not.toContain('data-ds-type="air"');
+    expect(markup).not.toContain('data-ds-type="ev"');
   });
 
   it("renders the honest no-location hint instead of fabricated rows", () => {
@@ -716,6 +723,32 @@ describe("HomeDossierCard — extended rows rendering", () => {
   it("renders current air quality with AQI and category", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={dossier({ air: { aqi: 42, category: "Good" } })} />);
     expect(markup).toContain("Air quality now: AQI 42 (Good)");
+  });
+
+  it("shows the foreground AQI gauge whose band tracks the reading", () => {
+    const moderate = renderToStaticMarkup(<HomeDossierCard data={dossier({ air: { aqi: 75, category: "Moderate" } })} />);
+    expect(moderate).toContain('data-testid="aqi-gauge"');
+    expect(moderate).toContain('data-aqi-band="moderate"');
+    expect(moderate).not.toContain('data-aqi-band="good"');
+
+    const good = renderToStaticMarkup(<HomeDossierCard data={dossier({ air: { aqi: 30, category: "Good" } })} />);
+    expect(good).toContain('data-aqi-band="good"');
+    expect(good).not.toContain('data-aqi-band="moderate"');
+  });
+
+  it("shows the foreground EV meter whose bar count tracks density", () => {
+    const dense = renderToStaticMarkup(
+      <HomeDossierCard data={dossier({ evCharging: { totalResults: 90, stationCount: 20 } })} />,
+    );
+    const empty = renderToStaticMarkup(
+      <HomeDossierCard data={dossier({ evCharging: { totalResults: 0, stationCount: 0 } })} />,
+    );
+    const bars = (m: string) =>
+      Math.max(0, ...[...m.matchAll(/data-ev-bars="(\d+)"/g)].map((x) => Number(x[1])));
+    expect(dense).toContain('data-testid="ev-meter"');
+    expect(empty).toContain('data-testid="ev-meter"');
+    expect(bars(dense)).toBeGreaterThan(bars(empty));
+    expect(empty).toContain('data-ev-bars="0"');
   });
 
   it("renders AQI without a category when the category is missing", () => {

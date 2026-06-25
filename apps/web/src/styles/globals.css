@@ -1481,6 +1481,26 @@ html[data-embed="mobile"] .install-prompt {
 .lf-dossier-source-stage .ds-root {
   min-height: 0;
 }
+/* Indicator stage (AIR / EV): the AQI gauge and EV meter are FOREGROUND
+   content, not a masked ambient — so the stage drops the dark scene canvas,
+   the overflow clip, and the fixed height, and gives the indicator a legible
+   light surface with breathing room. Tuned for the LIGHT theme default. */
+.lf-dossier-source-stage--indicator {
+  height: auto;
+  min-height: var(--lf-dossier-source-stage-h);
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, white), var(--surface));
+}
+.lf-dossier-indicator-wrap {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  color: #0b1422;
+}
 .lf-dossier-source-tag {
   position: absolute;
   top: 0.5rem;
