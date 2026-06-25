@@ -372,6 +372,8 @@ export default function SignUpScreen() {
           />
 
           <Button
+            variant="gradient"
+            fullWidth
             title={loading ? t("common.loading") : t("auth.signUp")}
             onPress={handleSubmit}
             disabled={loading || !email || !password || !passwordPolicyMet || !legalAccepted}

@@ -193,9 +193,9 @@ export function Button({
           style={[(disabled || loading) && styles.disabled, style]}
         >
           <LinearGradient
-            colors={[theme.colors.primary, theme.colors.accent]}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
+            colors={[theme.colors.primaryLight, theme.colors.primary, theme.colors.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             onLayout={onShimmerLayout}
             style={[
               styles.base,
