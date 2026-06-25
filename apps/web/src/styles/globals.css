@@ -341,17 +341,17 @@
 }
 
 .light {
-  --lf-app-bg: var(--bg);
+  --lf-app-bg: color-mix(in srgb, var(--bg) 56%, #FFFFFF 44%);
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(circle at 16% -10%, rgba(255, 248, 232, 0.20) 0%, transparent 30%),
-    radial-gradient(circle at 84% 2%, rgba(203, 164, 94, 0.045) 0%, transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.18) 45%, rgba(255, 255, 255, 0.03) 100%),
-    repeating-linear-gradient(90deg, rgba(134, 99, 26, 0.006) 0 1px, transparent 1px 72px),
-    repeating-linear-gradient(0deg, rgba(134, 99, 26, 0.004) 0 1px, transparent 1px 72px);
-  opacity: 0.34;
+    radial-gradient(circle at 16% -10%, rgba(255, 250, 240, 0.16) 0%, transparent 30%),
+    radial-gradient(circle at 84% 2%, rgba(203, 164, 94, 0.030) 0%, transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0.34) 46%, rgba(255, 255, 255, 0.12) 100%),
+    repeating-linear-gradient(90deg, rgba(134, 99, 26, 0.004) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(134, 99, 26, 0.003) 0 1px, transparent 1px 72px);
+  opacity: 0.28;
 }
 
 .light .lf-app-shell .from-primary\/5,
