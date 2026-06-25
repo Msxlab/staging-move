@@ -268,8 +268,9 @@ describe("consumer-free pricing + affiliate contract", () => {
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
     expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*linear-gradient\(/);
-    expect(globals).toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
+    expect(globals).toContain("#F8FAFC 100%");
     expect(globals).not.toContain("--lf-app-bg: var(--bg)");
+    expect(globals).not.toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
     expect(globals).not.toContain("--lf-app-bg: #FAF7F0");
   });
 });
