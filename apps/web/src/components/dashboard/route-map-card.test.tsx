@@ -238,7 +238,7 @@ describe("route map light chrome", () => {
     const block = globals.slice(start, end);
 
     expect(start).toBeGreaterThan(-1);
-    expect(block).toContain("#F5F0E7");
+    expect(block).toContain("rgba(255, 255, 255, 0.92)");
     expect(block).not.toContain("rgba(10, 15, 28");
   });
 

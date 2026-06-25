@@ -372,7 +372,7 @@
   --accent: 38.57 41.18% 93.33%;
   --lf-source-paper-bg: #EFEADF;
   --surface-secondary: #F5F0E7;
-  --lf-app-bg: #EFEADF;
+  --lf-app-bg: radial-gradient(ellipse 120% 78% at 50% -18%, #FFFFFF 0%, #FAF8F3 38%, #F3EFE6 78%, #EFEADF 100%);
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.98);
   --lf-app-chrome-bg-strong: #FFFFFF;
   --lf-app-panel-bg: rgba(255, 255, 255, 0.94);
@@ -1462,21 +1462,21 @@ html[data-embed="mobile"] .install-prompt {
   color: color-mix(in srgb, hsl(var(--primary)) 22%, rgba(239, 243, 250, 0.92) 78%);
 }
 .light .lf-route-map-label {
-  background: color-mix(in srgb, #FFFFFF 88%, #F5F0E7 12%);
-  border-color: rgba(16, 29, 45, 0.16);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(16, 29, 45, 0.22);
   color: #101D2D;
-  box-shadow: 0 6px 14px rgba(20, 32, 47, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  box-shadow: 0 8px 18px rgba(20, 32, 47, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.98);
   text-shadow: none;
 }
 .light .lf-route-map-label[data-endpoint="from"] {
-  background: color-mix(in srgb, var(--sage) 8%, #FFFFFF 92%);
-  border-color: color-mix(in srgb, var(--sage) 30%, rgba(16, 29, 45, 0.13));
-  color: color-mix(in srgb, var(--sage) 38%, #101D2D 62%);
+  background: rgba(255, 255, 255, 0.94);
+  border-color: color-mix(in srgb, var(--sage) 42%, rgba(16, 29, 45, 0.18));
+  color: #101D2D;
 }
 .light .lf-route-map-label[data-endpoint="to"] {
-  background: color-mix(in srgb, hsl(var(--primary)) 8%, #FFFFFF 92%);
-  border-color: color-mix(in srgb, hsl(var(--primary)) 30%, rgba(16, 29, 45, 0.13));
-  color: color-mix(in srgb, hsl(var(--primary)) 40%, #101D2D 60%);
+  background: rgba(255, 255, 255, 0.94);
+  border-color: color-mix(in srgb, hsl(var(--primary)) 44%, rgba(16, 29, 45, 0.18));
+  color: #101D2D;
 }
 
 .lf-dossier-grid {
