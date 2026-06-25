@@ -21,7 +21,7 @@
 From `Move.dc.html`:
 
 - Light tokens: `bg #EFEADF`, `bg2 #E7E1D4`, `surface #FFFFFF`, `surface2 #F5F0E7`, `surface3 #ECE6DA`.
-- Source prototype light page background includes a warm radial paper gradient, but the `#D4D2C8` endpoint proved too muddy in the deployed dashboard context.
+- Source prototype light theme uses `bg #EFEADF` as the app canvas and `surface #FFFFFF` for cards/panels. The prototype also has optional `lightPage()` radial variants, but the user clarified the dossier beige should be the whole light theme background.
 - Dossier card stage: 82px dark animated stage `linear-gradient(180deg,#101b30,#0a1322)` even when the app theme is light.
 - Dossier layout: source deck with `View full` / `Swipe view`, horizontal swipe mode at `76%`, expanded wrap mode at `calc(50% - 6px)`.
 
@@ -34,18 +34,20 @@ From `Move.dc.html`:
 
 ## Changes Made In This Pass
 
-- Restored web light app background to a source-aligned paper gradient without the muddy dark endpoint:
+- Restored web light app background to the source canvas color:
   - `--background: 41.25 33.33% 90.59%`
-- `--lf-app-bg: radial-gradient(... #FFFFFF ... #F8F5EE ... #EFEADF ...)`
+- `--lf-app-bg: #EFEADF`
 - Kept web app chrome and dense dashboard panels white to avoid the muddy monochrome UI seen on staging.
 - Restored light-mode dossier animated stages to the source dark stage background.
 - Strengthened source-scene ground visibility inside dark stages in light mode.
+- Increased the source-style dossier deck stage from 82px to 92px so the animated scene has enough vertical room on web.
 - Made the source-style dossier deck the primary web presentation by hiding the legacy row grid until `View full` is selected; if there are no source cards, the legacy grid still shows as fallback.
 - Updated the dossier CSS regression test to pin both the source beige app canvas and dark animated dossier stage.
 
 ## Current Mobile Findings
 
 - Mobile theme tokens already consume `surfaceLight.background = #EFEADF` from shared tokens.
+- Mobile `ThemeProvider` still defaults first launch to `"dark"` when no saved preference is provided, despite its comment describing a system/default flow.
 - Mobile Home Dossier remains a row/list presentation, not the source deck/full-swipe dossier treatment.
 - Mobile Home Dossier comments and gating still describe paid-plan unlock behavior (`entitled:false`, `upgradeRequired`, teaser), which conflicts with the affiliate/free-for-all direction unless server-side consumer-free always resolves the user to an entitled plan.
 - Mobile dossier cache is device-side memory + AsyncStorage with a 30-minute fresh TTL and a gate-boundary epoch to avoid stale gated payloads after consumer-free flips.

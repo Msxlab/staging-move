@@ -259,7 +259,8 @@ describe("DossierAmbient rendering", () => {
     expect(stageStart).toBeGreaterThan(-1);
     expect(rowStart).toBeGreaterThan(-1);
     expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
-    expect(globals.slice(appStart, appEnd)).toContain("#FFFFFF 0%, #F8F5EE 46%, #EFEADF 100%");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #EFEADF;");
+    expect(globals).toMatch(/\.lf-dossier-source-stage\s*\{[\s\S]*?height:\s*92px;/);
     expect(globals.slice(stageStart, stageEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
     expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
     expect(globals.slice(stageStart, stageEnd)).not.toMatch(/#F3F6FA|#E2EAF2/i);
