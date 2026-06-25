@@ -61,10 +61,13 @@ From `Move.dc.html`:
   - 4 files passed, 125 tests passed.
 - `git diff --check`
   - passed with the existing line-ending warning for `apps/web/src/styles/globals.css`.
+- `pnpm --filter @locateflow/web lint`
+  - passed.
+- `pnpm --filter @locateflow/web build`
+  - passed with existing warnings: local Node v24.13.0 does not match the repo's expected Node 22.x, Next middleware convention warning, Prisma CommonJS re-export warning, and Edge runtime static-generation warnings.
 
 ## Remaining Work
 
-- Run full web lint/build after this patch.
 - Visually verify staging after deploy against the source screenshots/current browser state.
 - Decide whether to remove or collapse the secondary row-grid dossier fallback on web; source shows the deck as the primary dossier presentation.
 - Before any mobile edits, confirm with the user whether to implement the source deck treatment and free/entitlement copy cleanup on mobile.
