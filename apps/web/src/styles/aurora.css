@@ -128,8 +128,8 @@
 }
 
 /* Light-mode app glass: dark-first translucent utilities (`bg-foreground/5`,
-   `bg-card/70`, etc.) can read muddy over a warm app canvas. Keep the wide
-   desktop canvas clean, and let panels read as white paper. */
+   `bg-card/70`, etc.) can read muddy over the source beige app canvas. Keep the
+   full source canvas, but let app panels read as clean paper. */
 .light .lf-aurora .bg-foreground\/5,
 .light .lf-aurora .bg-foreground\/\[0\.03\],
 .light .lf-aurora .bg-foreground\/\[0\.04\],
@@ -161,7 +161,7 @@
 }
 
 /* globals.css loads before this file, so repeat the app-shell glass decisions
-   with higher specificity. The shell keeps a clean warm canvas while cards,
+   with higher specificity. The shell keeps the source warm paper while cards,
    headers, and section panes stay white. */
 .light .lf-aurora .lf-app-shell .bg-foreground\/5,
 .light .lf-aurora .lf-app-shell .bg-foreground\/\[0\.05\] {
@@ -496,9 +496,9 @@
 
 /* --- Light theme overrides ----------------------------------------- */
 .light .lf-aurora {
-  --au-base:              #FBFAF6;
+  --au-base:              #EFEADF;
   --au-base-2:            #FFFFFF;
-  --au-base-3:            #F7F3EA;
+  --au-base-3:            #F5F0E7;
   --au-pane:              #FFFFFF;
   --au-pane-2:            #FFFFFF;
   --au-pane-3:            #FFFFFF;
@@ -507,7 +507,7 @@
   --au-aurora-3:          rgba(15, 107, 80, 0.035);
   --au-aurora-4:          rgba(162, 59, 63, 0.025);
 
-  --background:           48 38% 97%;
+  --background:           41.25 33.33% 90.59%;
   --foreground:           213 39% 13%;
   --card:                 0 0% 100%;
   --card-foreground:      213 39% 13%;
@@ -517,9 +517,9 @@
   --primary-foreground:   0 0% 100%;
   --secondary:            214 22% 38%;
   --secondary-foreground: 0 0% 100%;
-  --muted:                39 35% 94%;
+  --muted:                38.57 41.18% 93.33%;
   --muted-foreground:     213 18% 30%;
-  --accent:               39 35% 94%;
+  --accent:               38.57 41.18% 93.33%;
   --accent-foreground:    213 39% 13%;
   --destructive:          358 47% 43%;
   --destructive-foreground: 0 0% 100%;

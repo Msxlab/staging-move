@@ -205,11 +205,11 @@
 }
 
 .light {
-  --bg:                 #FBFAF6;
-  --bg-deep:            #F3EEE4;
+  --bg:                 #EFEADF;
+  --bg-deep:            #E7E1D4;
   --surface:            #FFFFFF;
-  --surface-2:          #F7F3EA;
-  --surface-3:          #EEE7DA;
+  --surface-2:          #F5F0E7;
+  --surface-3:          #ECE6DA;
   --elevated:           #FFFFFF;
 
   --fg:                 #14202F;
