@@ -560,7 +560,7 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).toContain("lf-dossier-source-band");
     expect(markup).toContain("lf-dossier-source-dots");
     expect(markup).toMatch(/class="lf-dossier-source-card"[^>]*style="[^"]*--ds-tone:/);
-    expect(markup).toContain('class="lf-dossier-grid px-5 pb-5" hidden=""');
+    expect(markup).toContain('class="lf-dossier-grid px-5 pb-5" data-source-compact="true"');
     expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
     for (const sourceType of [
       "flood",
@@ -1141,5 +1141,16 @@ describe("dashboard wiring regression", () => {
       Object.keys(cat.dashboard).filter((k) => k.startsWith("dossier_") || k === "widget_homeDossier");
     expect(dossierKeys(en).sort()).toEqual(dossierKeys(es).sort());
     expect(dossierKeys(en).length).toBeGreaterThan(0);
+  });
+
+  it("shows the row/list dossier on desktop while keeping the source deck for compact screens", () => {
+    const css = readWebSource("src/styles/globals.css");
+    expect(css).toContain('.lf-dossier-grid[data-source-compact="true"]');
+    expect(css).toMatch(
+      /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-grid\[data-source-compact="true"\] \{[\s\S]*?display: grid;/,
+    );
+    expect(css).toMatch(
+      /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-source-toolbar,[\s\S]*?\.lf-dossier-source-deck,[\s\S]*?\.lf-dossier-source-dots \{[\s\S]*?display: none;/,
+    );
   });
 });

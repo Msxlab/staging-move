@@ -35,6 +35,7 @@ From `Move.dc.html`:
 - Route map light labels already have a light-mode CSS override; if staging still shows dark labels, the browser/server is serving an older deployed asset or cached CSS.
 - The PDF route has a real-generator regression test for the current dossier payload, so a continuing staging 500 should be checked in server runtime logs for the concrete logged `Failed to build dossier PDF` error shape.
 - The household activation modal can open for an already-existing household where the user's next action is invite email, but the prior focus decision could still land on the household name input.
+- The source `Move.dc.html` mobile app uses a source deck/swipe dossier pattern, while the user-provided web reference image shows the desktop dashboard dossier as a full row/list. Treating the source deck as the only primary web view hid the desktop row/list target.
 
 ## Changes Made In This Pass
 
@@ -51,6 +52,10 @@ From `Move.dc.html`:
 - Added a `showTag` switch to `DossierAmbient` and used it in the source deck so the deck renders one `GOOD/CHECK/ALERT` label instead of stacking the ambient scene's internal label under the deck label.
 - Changed household activation modal initial focus so an existing household opens on the first invite email field; only the no-workspace create flow starts on household name.
 - Added focused tests for both the suppressed dossier internal tag and household setup focus target.
+- Adjusted web Home Dossier responsive behavior:
+  - Compact/mobile keeps the source deck/swipe presentation.
+  - Desktop (`min-width: 900px`) hides the source deck controls/cards and shows the row/list dossier by default, matching the provided web reference image.
+  - Added a regression test that pins this desktop row/list + compact source deck split.
 
 ## Current Mobile Findings
 
@@ -59,12 +64,14 @@ From `Move.dc.html`:
 - Mobile Home Dossier remains a row/list presentation, not the source deck/full-swipe dossier treatment.
 - Mobile Home Dossier comments and gating still describe paid-plan unlock behavior (`entitled:false`, `upgradeRequired`, teaser), which conflicts with the affiliate/free-for-all direction unless server-side consumer-free always resolves the user to an entitled plan.
 - Mobile dossier cache is device-side memory + AsyncStorage with a 30-minute fresh TTL and a gate-boundary epoch to avoid stale gated payloads after consumer-free flips.
+- Mobile was inspected only; no mobile files were modified because the user explicitly asked to be told before any mobile changes.
 
 ## Current Admin Findings
 
 - Source `Admin.dc.html` is dark-only.
 - Current admin app has both light and dark token scopes; its default `:root` light token set is not a direct source match.
 - No admin code was changed in this pass because changing admin theming is a broader surface than the active web dossier/theme fix.
+- Admin was inspected only; aligning it to the source dark-only operations console would be a separate UI decision.
 
 ## Verification
 
@@ -87,6 +94,14 @@ From `Move.dc.html`:
   - `pnpm --filter @locateflow/web test -- dossier-ambient home-dossier household-activation-card route-map-card pricing-free-tier-contract`
     - 6 files passed, 152 tests passed.
     - Local warning: Node v24.13.0 does not match repo expected Node 22.x.
+- Follow-up desktop row/list dossier patch:
+  - `pnpm --filter @locateflow/web test -- home-dossier dossier-ambient route-map-card household-activation-card pricing-free-tier-contract`
+    - 6 files passed, 153 tests passed.
+    - Local warning: Node v24.13.0 does not match repo expected Node 22.x.
+  - `pnpm --filter @locateflow/web lint`
+    - passed with the same local Node engine warning.
+  - `git diff --check`
+    - passed with the existing CRLF warning for `apps/web/src/styles/globals.css`.
 
 ## Remaining Work
 

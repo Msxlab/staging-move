@@ -1416,9 +1416,20 @@ html[data-embed="mobile"] .install-prompt {
   grid-template-columns: minmax(0, 1fr);
   gap: 0.625rem;
 }
+.lf-dossier-grid[data-source-compact="true"] {
+  display: none;
+}
 @media (min-width: 900px) {
   .lf-dossier-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lf-dossier-grid[data-source-compact="true"] {
+    display: grid;
+  }
+  .lf-dossier-source-toolbar,
+  .lf-dossier-source-deck,
+  .lf-dossier-source-dots {
+    display: none;
   }
 }
 
