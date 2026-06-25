@@ -262,12 +262,14 @@ describe("consumer-free pricing + affiliate contract", () => {
     }
   });
 
-  it("keeps the light app shell on the source beige token, not a local off-white override", () => {
+  it("keeps the source beige token without flooding the light app shell with raw beige", () => {
     const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
     const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
-    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*var\(--bg\);/);
+    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*linear-gradient\(/);
+    expect(globals).toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
+    expect(globals).not.toContain("--lf-app-bg: var(--bg)");
     expect(globals).not.toContain("--lf-app-bg: #FAF7F0");
   });
 });
