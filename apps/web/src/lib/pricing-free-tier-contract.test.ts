@@ -233,4 +233,44 @@ describe("consumer-free pricing + affiliate contract", () => {
       'dossier showcase renders a standalone "Pro" badge — relabel it (e.g. "Included") under the free model',
     ).toBe(false);
   });
+
+  it("keeps the marketing dossier demo wired to the source scene matrix", () => {
+    const dossierShowcase = readRepoFile(
+      "apps",
+      "web",
+      "src",
+      "components",
+      "marketing",
+      "dossier-showcase.tsx",
+    );
+
+    expect((dossierShowcase.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(
+      2,
+    );
+    for (const variant of [
+      "sun",
+      "cloud",
+      "rain",
+      "snow",
+      "storm",
+      "fog",
+      "wind",
+      "heat",
+      "cold",
+    ]) {
+      expect(dossierShowcase).toContain(`variant: "${variant}"`);
+    }
+  });
+
+  it("keeps the source beige token without flooding the light app shell with raw beige", () => {
+    const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
+    const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
+
+    expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
+    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*linear-gradient\(/);
+    expect(globals).toContain("#F8FAFC 100%");
+    expect(globals).not.toContain("--lf-app-bg: var(--bg)");
+    expect(globals).not.toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
+    expect(globals).not.toContain("--lf-app-bg: #FAF7F0");
+  });
 });

@@ -595,6 +595,9 @@
   },
   "dashboard": {
     "welcome": "Welcome back",
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
     "subtitle": "Here's what's happening across your addresses.",
     "stat_addresses": "Addresses",
     "stat_services": "Active services",

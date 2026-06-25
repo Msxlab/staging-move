@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 
@@ -21,6 +21,9 @@ export function LandingThemeToggle({
   const t = useTranslations("theme");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // framer-motion layout animations are JS-driven and do NOT honor the CSS
+  // prefers-reduced-motion @media query on their own — gate the spring explicitly.
+  const reduceMotion = useReducedMotion();
 
   const fullOptions: Option[] = [
     { value: "system", label: t("match_system"), icon: Monitor },
@@ -68,7 +71,7 @@ export function LandingThemeToggle({
                 layoutId={layoutId}
                 aria-hidden="true"
                 className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-transparent ring-1 ring-primary/40 shadow-[0_0_18px_-4px_rgba(127,182,232,0.5)]"
-                transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 32 }}
               />
             )}
             <Icon

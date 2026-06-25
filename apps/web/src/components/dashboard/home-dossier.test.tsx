@@ -547,6 +547,24 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).not.toMatch(/bg-tone-honey-bg[^>]*>Riverine Flooding · Relatively Moderate/);
   });
 
+  it("wires every real data row to the source dossier scene stage", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
+
+    expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
+    for (const sourceType of [
+      "flood",
+      "school",
+      "weather",
+      "radon",
+      "water",
+      "air",
+      "housing",
+      "ev",
+    ]) {
+      expect(markup).toContain(`data-ds-type="${sourceType}"`);
+    }
+  });
+
   it("renders the honest no-location hint instead of fabricated rows", () => {
     const markup = renderToStaticMarkup(
       <HomeDossierCard

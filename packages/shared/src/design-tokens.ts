@@ -90,7 +90,7 @@ export const foilScale = {
 export const orangeScale = roseScale;
 
 // ────────────────────────────────────────────────────────────────────
-// Surfaces - deep navy on dark, soft sky on light
+// Surfaces - deep navy on dark, warm greige paper on light
 // ────────────────────────────────────────────────────────────────────
 
 export const surfaceDark = {
@@ -102,10 +102,10 @@ export const surfaceDark = {
 } as const;
 
 export const surfaceLight = {
-  background: "#EFEADF", // warm greige canvas (Step 2, D9 — was cool #F2F4F8)
+  background: "#EFEADF", // source prototype light page canvas
   surface: "#FFFFFF",
-  card: "#F5F0E7", // surface-2 warm paper (Step 2 — was #EAEEF4)
-  cardHover: "#E2E7EE", // au-base-3
+  card: "#F5F0E7",
+  cardHover: "#ECE6DA",
   elevated: "#FFFFFF",
 } as const;
 

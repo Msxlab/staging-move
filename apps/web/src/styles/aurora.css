@@ -126,6 +126,39 @@
     0 1px 0 rgba(20, 32, 47, 0.04),
     0 12px 28px -16px rgba(20, 32, 47, 0.18);
 }
+
+/* Light-mode app glass: dark-first translucent utilities (`bg-foreground/5`,
+   `bg-card/70`, etc.) looked muddy over the source warm paper canvas. Keep
+   the source beige on the page, but let app panels read as clean paper/glass. */
+.light .lf-aurora .bg-foreground\/5,
+.light .lf-aurora .bg-foreground\/\[0\.03\],
+.light .lf-aurora .bg-foreground\/\[0\.04\],
+.light .lf-aurora .bg-foreground\/\[0\.05\],
+.light .lf-aurora .bg-foreground\/\[0\.06\] {
+  background-color: rgba(255, 255, 255, 0.76);
+}
+.light .lf-aurora .hover\:bg-foreground\/\[0\.06\]:hover,
+.light .lf-aurora .hover\:bg-foreground\/\[0\.07\]:hover,
+.light .lf-aurora .hover\:bg-foreground\/\[0\.08\]:hover {
+  background-color: rgba(255, 255, 255, 0.92);
+}
+.light .lf-aurora .bg-card\/40,
+.light .lf-aurora .bg-card\/60,
+.light .lf-aurora .bg-card\/65,
+.light .lf-aurora .bg-card\/70,
+.light .lf-aurora .bg-card\/75,
+.light .lf-aurora .bg-card\/80,
+.light .lf-aurora .bg-card\/85,
+.light .lf-aurora .bg-card\/90 {
+  background-color: rgba(255, 255, 255, 0.84);
+}
+.light .lf-aurora .bg-background\/30,
+.light .lf-aurora .bg-background\/40,
+.light .lf-aurora .bg-background\/55,
+.light .lf-aurora .bg-background\/60,
+.light .lf-aurora .bg-background\/70 {
+  background-color: color-mix(in srgb, var(--surface) 78%, var(--bg) 22%);
+}
 .lf-aurora[data-mode="lite"] .au-card {
   -webkit-backdrop-filter: none;
           backdrop-filter: none;
@@ -424,7 +457,7 @@
 
 /* --- Light theme overrides ----------------------------------------- */
 .light .lf-aurora {
-  --background:           41.25 33.33% 90.59%;
+  --background:           43.64 40.74% 94.71%;
   --foreground:           213 39% 13%;
   --card:                 0 0% 100%;
   --card-foreground:      213 39% 13%;
@@ -434,9 +467,9 @@
   --primary-foreground:   0 0% 100%;
   --secondary:            214 22% 38%;
   --secondary-foreground: 0 0% 100%;
-  --muted:                41.05 28.36% 86.86%;
+  --muted:                40 40.54% 92.75%;
   --muted-foreground:     213 18% 30%;
-  --accent:               40 32.14% 89.02%;
+  --accent:               45 44.44% 96.47%;
   --accent-foreground:    213 39% 13%;
   --destructive:          358 47% 43%;
   --destructive-foreground: 0 0% 100%;

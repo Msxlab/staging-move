@@ -12,11 +12,10 @@ import {
   Waves,
   Wind,
 } from "lucide-react";
-import type { ComponentType, ReactNode } from "react";
+import { type ComponentType, type ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DossierAmbient,
-  ambientForSection,
   useDossierCountUp,
   type AmbientSpec,
 } from "@/components/dashboard/dossier-ambient";
@@ -25,10 +24,10 @@ import {
  * Dossier showcase — homepage marketing section for the "New home dossier".
  *
  * Presents a DEMO dossier card with SAMPLE data (Wayne, NJ-style figures) and
- * the same data-driven ambient scenes the real dashboard card renders
- * (dossier-ambient.tsx) — every scene's intensity is derived from the sample
- * row's figure via the same ambientForSection mapper the product uses, so the
- * marketing demo moves exactly like the real thing.
+ * the same source-style ambient scene system the real dashboard card renders
+ * (dossier-ambient.tsx). Because this is an explicitly labelled demo, rows
+ * cycle through their possible scene states so visitors can see the animation
+ * range rather than one frozen sample reading.
  *
  * HONESTY RULES (Edition VII, owner-ratified):
  *  - the card is labelled an EXAMPLE three times over (kicker, body copy, and
@@ -104,7 +103,7 @@ function DemoRow({
   children?: ReactNode;
 }) {
   return (
-    <div className="lf-dossier-row relative isolate p-3 rounded-xl border border-border">
+    <div className="lf-dossier-row lf-dossier-scene-card relative isolate p-3 rounded-xl border border-border">
       <DossierAmbient {...ambient} />
       <div className="flex items-center gap-3">
         <div
@@ -124,6 +123,80 @@ function DemoRow({
   );
 }
 
+// ── Demo cycle ────────────────────────────────────────────────────────────────
+// The showcase card is a DEMO, so each row rotates through its possible scene
+// states — a visitor sees the full range of dossier animations rather than one
+// frozen reading. Each state holds ~3s; rows are staggered by their index (1s)
+// so the change ripples top -> bottom and reads as a lively, mixed cascade. Under
+// prefers-reduced-motion (and during SSR / first paint) the tick stays 0, so every
+// row shows state[0] — the honest sample reading that matches its copy.
+
+const DEMO_INTERVAL_S = 3;
+
+const FLOOD_CYCLE: readonly AmbientSpec[] = [
+  { kind: "flood", intensity: 0 },
+  { kind: "flood", intensity: 1 },
+  { kind: "flood", intensity: 2 },
+];
+const SCHOOL_CYCLE: readonly AmbientSpec[] = [{ kind: "school", intensity: 1 }];
+const WEATHER_CYCLE: readonly AmbientSpec[] = [
+  { kind: "weather", intensity: 0, variant: "sun" },
+  { kind: "weather", intensity: 1, variant: "cloud" },
+  { kind: "weather", intensity: 1, variant: "rain" },
+  { kind: "weather", intensity: 2, variant: "snow" },
+  { kind: "weather", intensity: 2, variant: "storm" },
+  { kind: "weather", intensity: 1, variant: "fog" },
+  { kind: "weather", intensity: 2, variant: "wind" },
+  { kind: "weather", intensity: 2, variant: "heat" },
+  { kind: "weather", intensity: 2, variant: "cold" },
+];
+const HAZARD_CYCLE: readonly AmbientSpec[] = [
+  { kind: "hazard", intensity: 1, variant: "winter" },
+  { kind: "hazard", intensity: 2, variant: "wind" },
+  { kind: "hazard", intensity: 2, variant: "lightning" },
+];
+const RADON_CYCLE: readonly AmbientSpec[] = [
+  { kind: "radon", intensity: 1 },
+  { kind: "radon", intensity: 0 },
+  { kind: "radon", intensity: 2 },
+];
+const AIR_CYCLE: readonly AmbientSpec[] = [
+  { kind: "air", intensity: 0 },
+  { kind: "air", intensity: 1 },
+  { kind: "air", intensity: 2 },
+];
+const HOOD_CYCLE: readonly AmbientSpec[] = [
+  { kind: "neighborhood", intensity: 0 },
+  { kind: "neighborhood", intensity: 2 },
+  { kind: "neighborhood", intensity: 1 },
+];
+
+/** Seconds counter that ticks once per second on the client; stays 0 under
+ *  prefers-reduced-motion and during SSR so the demo is fully motion-safe. */
+function useDemoCycle(): number {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    const id = window.setInterval(() => setTick((t) => t + 1), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return tick;
+}
+
+/** The row's current demo state: each state holds DEMO_INTERVAL_S seconds and the
+ *  rows are offset by rowIndex, so the cascade ripples top -> bottom. */
+function cycleAmbient(states: readonly AmbientSpec[], tick: number, rowIndex: number): AmbientSpec {
+  if (states.length <= 1) return states[0];
+  const step = Math.max(0, Math.floor((tick - rowIndex) / DEMO_INTERVAL_S));
+  return states[step % states.length];
+}
+
 // ── Section ───────────────────────────────────────────────────────────────────
 
 export function DossierShowcase() {
@@ -136,6 +209,8 @@ export function DossierShowcase() {
     SAMPLE.neighborhood.medianHouseholdIncome,
     SAMPLE.neighborhood.ownerOccupiedPct,
   ]);
+  // Drives the demo state rotation for every row (motion-safe; 0 means "honest sample").
+  const tick = useDemoCycle();
 
   return (
     <section className="container py-20 border-t md:py-28">
@@ -171,8 +246,8 @@ export function DossierShowcase() {
         </div>
 
         {/* Demo card — same chrome as the dashboard HomeDossierCard, with the
-            glass-card + hairline marketing finish. Ambient scene parameters
-            derive from the sample figures via the product's own mapper. */}
+            glass-card + hairline marketing finish. Ambient states rotate through
+            the scene matrix while the visible copy stays sample-data honest. */}
         <div className="lf-dossier-shell glass-card hairline overflow-hidden">
           <div className="flex items-baseline justify-between gap-3 px-5 pt-5 pb-3">
             <div className="flex items-center gap-2 min-w-0">
@@ -194,7 +269,7 @@ export function DossierShowcase() {
           <div className="px-5 pb-5 space-y-2">
             {/* Flood — Zone X => calm cool waves (intensity 0) */}
             <DemoRow
-              ambient={ambientForSection({ kind: "flood", isHighRisk: SAMPLE.flood.isHighRisk })}
+              ambient={cycleAmbient(FLOOD_CYCLE, tick, 0)}
               icon={Waves}
               boxClass="bg-tone-sky-bg border-tone-sky-br"
               iconClass="text-tone-sky-fg"
@@ -205,7 +280,7 @@ export function DossierShowcase() {
 
             {/* School district — fixed moderate ambience (walking silhouettes) */}
             <DemoRow
-              ambient={ambientForSection({ kind: "school" })}
+              ambient={cycleAmbient(SCHOOL_CYCLE, tick, 1)}
               icon={GraduationCap}
               boxClass="bg-tone-sage-bg border-tone-sage-br"
               iconClass="text-tone-sage-fg"
@@ -216,11 +291,7 @@ export function DossierShowcase() {
 
             {/* Moving-day weather — 20% precip + sunny summary => sun scene */}
             <DemoRow
-              ambient={ambientForSection({
-                kind: "weather",
-                summary: SAMPLE.weather.summary,
-                precipChancePct: SAMPLE.weather.precipChancePct,
-              })}
+              ambient={cycleAmbient(WEATHER_CYCLE, tick, 2)}
               icon={CloudSun}
               boxClass="bg-tone-cyan-bg border-tone-cyan-br"
               iconClass="text-tone-cyan-fg"
@@ -231,7 +302,7 @@ export function DossierShowcase() {
 
             {/* Hazards — top risk "Winter weather · Relatively moderate" => snow */}
             <DemoRow
-              ambient={ambientForSection({ kind: "hazard", topRisks: SAMPLE.hazards.topRisks })}
+              ambient={cycleAmbient(HAZARD_CYCLE, tick, 3)}
               icon={Mountain}
               boxClass="bg-tone-umber-bg border-tone-umber-br"
               iconClass="text-tone-umber-fg"
@@ -253,7 +324,7 @@ export function DossierShowcase() {
 
             {/* Radon — zone 2 => moderate Sapphire bubbles */}
             <DemoRow
-              ambient={ambientForSection({ kind: "radon", zone: SAMPLE.radon.zone })}
+              ambient={cycleAmbient(RADON_CYCLE, tick, 4)}
               icon={FlaskConical}
               boxClass="bg-tone-slate-bg border-tone-slate-br"
               iconClass="text-tone-slate-fg"
@@ -264,7 +335,7 @@ export function DossierShowcase() {
 
             {/* Air — AQI 42 (Good) => calm mint breeze + tumbling leaf */}
             <DemoRow
-              ambient={ambientForSection({ kind: "air", aqi: SAMPLE.air.aqi })}
+              ambient={cycleAmbient(AIR_CYCLE, tick, 5)}
               icon={Wind}
               boxClass="bg-tone-sage-bg border-tone-sage-br"
               iconClass="text-tone-sage-fg"
@@ -280,14 +351,9 @@ export function DossierShowcase() {
                 feature). */}
             <div
               ref={counts.ref}
-              className="lf-dossier-row relative isolate p-3 rounded-xl border border-border"
+              className="lf-dossier-row lf-dossier-scene-card relative isolate p-3 rounded-xl border border-border"
             >
-              <DossierAmbient
-                {...ambientForSection({
-                  kind: "neighborhood",
-                  walkBand: SAMPLE.neighborhood.walkBand,
-                })}
-              />
+              <DossierAmbient {...cycleAmbient(HOOD_CYCLE, tick, 6)} />
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-tone-foil-bg border border-tone-foil-br flex items-center justify-center shrink-0">
                   <Home className="h-4 w-4 text-tone-foil-fg" />

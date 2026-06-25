@@ -1,0 +1,45 @@
+{
+  "ds-umbrella": {
+    "width": 42,
+    "height": 30,
+    "display": "block",
+    "opacity": "1",
+    "background": "rgba(0, 0, 0, 0)"
+  },
+  "ds-lightning": {
+    "width": 13,
+    "height": 20,
+    "display": "block",
+    "opacity": "1",
+    "background": "rgba(0, 0, 0, 0)"
+  },
+  "ds-mask": {
+    "width": 15,
+    "height": 8,
+    "display": "block",
+    "opacity": "1",
+    "background": "rgb(238, 242, 246)"
+  },
+  "ds-glass": {
+    "width": 13,
+    "height": 16,
+    "display": "block",
+    "opacity": "1",
+    "background": "rgba(255, 255, 255, 0.14)"
+  },
+  "ds-vehicle": {
+    "width": 50,
+    "height": 20,
+    "display": "block",
+    "opacity": "1",
+    "background": "rgba(0, 0, 0, 0)"
+  },
+  "ds-lamp-glow": {
+    "width": 41,
+    "height": 47,
+    "display": "block",
+    "opacity": "0.611897",
+    "background": "rgba(0, 0, 0, 0)"
+  },
+  "ds-chase-pack": null
+}

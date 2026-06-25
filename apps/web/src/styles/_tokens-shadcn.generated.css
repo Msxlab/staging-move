@@ -72,10 +72,10 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  41.05 28.36% 86.86%;
+    --muted:                  38.57 41.18% 93.33%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 40 32.14% 89.02%;
+    --accent:                 38.57 41.18% 93.33%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
@@ -85,14 +85,14 @@
     --success:                162 75% 24%;
     --info:                   184 66% 25%;
 
-    --border:                 40 17% 76%;
-    --input:                  40 17% 76%;
+    --border:                 214 24% 82%;
+    --input:                  214 24% 82%;
     --ring:                   217.38 58.56% 43.53%;
 
     --radius:                 0.625rem;
 
-    /* Legacy short surface tokens — Aurora greige paper */
-    --surface-secondary:      #FFFFFF;
+    /* Legacy short surface tokens — warm paper canvas */
+    --surface-secondary:      #F5F0E7;
     --text-primary:           rgba(20, 32, 47, 1);
     --text-secondary:         rgba(20, 32, 47, 0.72);
     --text-tertiary:          rgba(20, 32, 47, 0.50);

@@ -68,3 +68,4 @@ node-compile-cache/
 apps/mobile/dist/
 apps/web/test-results/
 apps/*/test-results/
+packages/db/prisma/create-dev-user.ts

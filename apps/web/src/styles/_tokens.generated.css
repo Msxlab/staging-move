@@ -226,9 +226,9 @@
   --border-strong:      rgba(20, 32, 47, 0.14);
   --border-focus:       rgba(46, 95, 176, 0.55);
 
-  --glass-bg:           rgba(255, 255, 255, 0.55);
+  --glass-bg:           rgba(255, 255, 255, 0.78);
   --glass-border:       rgba(20, 32, 47, 0.06);
-  --glass-hover:        rgba(255, 255, 255, 0.92);
+  --glass-hover:        rgba(255, 255, 255, 0.96);
 
   /* Accents: Sapphire on light paper; dark mode remaps these tokens to Gold. */
   --rose:               #2E5FB0;
