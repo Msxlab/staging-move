@@ -90,7 +90,7 @@ export const foilScale = {
 export const orangeScale = roseScale;
 
 // ────────────────────────────────────────────────────────────────────
-// Surfaces - deep navy on dark, neutral paper on light
+// Surfaces - deep navy on dark, source paper on light
 // ────────────────────────────────────────────────────────────────────
 
 export const surfaceDark = {
@@ -102,10 +102,10 @@ export const surfaceDark = {
 } as const;
 
 export const surfaceLight = {
-  background: "#F8FAFC",
+  background: "#EFEADF",
   surface: "#FFFFFF",
-  card: "#F6F8FB",
-  cardHover: "#EEF2F7",
+  card: "#FFFFFF",
+  cardHover: "#F5F0E7",
   elevated: "#FFFFFF",
 } as const;
 

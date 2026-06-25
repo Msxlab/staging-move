@@ -160,7 +160,7 @@
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             210 40% 98.04%;
+    --background:             41.25 33.33% 90.59%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -175,10 +175,10 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  210 40% 96.08%;
+    --muted:                  38.57 41.18% 93.33%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 210 40% 96.08%;
+    --accent:                 38.57 41.18% 93.33%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
@@ -194,8 +194,8 @@
 
     --radius:                 0.625rem;
 
-    /* Legacy short surface tokens — neutral app canvas with opt-in source paper accents */
-    --surface-secondary:      #F1F5F9;
+    /* Legacy short surface tokens — source paper canvas with white app surfaces */
+    --surface-secondary:      #F5F0E7;
     --text-primary:           rgba(20, 32, 47, 1);
     --text-secondary:         rgba(20, 32, 47, 0.72);
     --text-tertiary:          rgba(20, 32, 47, 0.50);
@@ -400,17 +400,17 @@
 }
 
 .light {
-  --background: 210 40% 98.04%;
-  --muted: 210 40% 96.08%;
-  --accent: 210 40% 96.08%;
+  --background: 41.25 33.33% 90.59%;
+  --muted: 38.57 41.18% 93.33%;
+  --accent: 38.57 41.18% 93.33%;
   --lf-source-paper-bg: #EFEADF;
-  --surface-secondary: #F1F5F9;
-  --lf-app-bg: #F8FAFC;
+  --surface-secondary: #F5F0E7;
+  --lf-app-bg: #EFEADF;
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.98);
   --lf-app-chrome-bg-strong: #FFFFFF;
   --lf-app-panel-bg: #FFFFFF;
   --lf-app-panel-bg-strong: #FFFFFF;
-  --lf-app-panel-bg-soft: #F1F5F9;
+  --lf-app-panel-bg-soft: #F5F0E7;
   --lf-rc-head: #7E8EA6;
   --lf-rc-mask: #0F1D2D;
   --lf-rc-eye: hsl(var(--primary));
@@ -509,7 +509,7 @@
 }
 
 .lf-app-shell[data-lf-theme="light"] {
-  background: var(--lf-app-bg, #F8FAFC) !important;
+  background: var(--lf-app-bg, #EFEADF) !important;
 }
 
 .lf-app-shell[data-lf-theme="light"] .app-shell-backdrop {
@@ -599,8 +599,8 @@
    (DARK is untouched — utilities resolve to their authored alpha there).
    Decorative buckets /10–/30 (dividers, faint icons, disabled glyphs) are
    deliberately left alone so the visual hierarchy survives. Verified against
-   the neutral app canvas (#F8FAFC), source paper accents (#EFEADF),
-   and white card surfaces:
+   the source paper canvas (#EFEADF), soft source secondary paper (#F5F0E7),
+   and solid white card surfaces:
    /40 remains readable for secondary copy, while /45-/55 keep stronger body
    contrast. Mirrors the .text-white/NN remap above. */
 .light .text-foreground\/35 { color: hsl(var(--foreground) / 0.58); }
@@ -1803,7 +1803,7 @@ html[data-embed="mobile"] .install-prompt {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 .light .lf-dossier-row {
-  background: color-mix(in srgb, #FFFFFF 88%, #EEF2F7 12%);
+  background: color-mix(in srgb, #FFFFFF 88%, #F5F0E7 12%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.98);
 }
 .lf-dossier-stat {
@@ -1973,7 +1973,7 @@ html[data-embed="mobile"] .install-prompt {
   opacity: 0.86;
 }
 .light .lf-dossier-stat {
-  background: color-mix(in srgb, #FFFFFF 78%, var(--surface-2) 22%);
+  background: color-mix(in srgb, #FFFFFF 82%, var(--surface-2) 18%);
   border-color: rgba(20, 32, 47, 0.10);
 }
 
