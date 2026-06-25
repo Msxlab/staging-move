@@ -171,7 +171,7 @@ type SourceSceneVariables = CSSProperties & {
   "--rc-pupil": string;
 };
 
-function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVariables {
+export function sourceSceneVars({ type, level }: SourceDossierSceneSpec): SourceSceneVariables {
   const isBad =
     level === "bad" ||
     level === "storm" ||

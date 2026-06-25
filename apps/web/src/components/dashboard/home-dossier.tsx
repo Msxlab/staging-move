@@ -19,7 +19,13 @@ import {
   Wind,
   Zap,
 } from "lucide-react";
-import { DossierAmbient, ambientForSection, useDossierCountUp } from "./dossier-ambient";
+import {
+  DossierAmbient,
+  ambientForSection,
+  sourceDossierSceneFor,
+  sourceSceneVars,
+  useDossierCountUp,
+} from "./dossier-ambient";
 
 /**
  * NEW HOME DOSSIER — Aurora dashboard widget.
@@ -890,8 +896,14 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         <div className="lf-dossier-source-deck px-5 pb-4" aria-hidden="true">
           {sceneCards.map((card) => {
             const activeBars = activeDossierDeckBars(card.ambient.intensity);
+            const sceneVars = sourceSceneVars(sourceDossierSceneFor(card.ambient));
             return (
-              <article key={card.key} className="lf-dossier-source-card" data-dossier-scene={card.key}>
+              <article
+                key={card.key}
+                className="lf-dossier-source-card"
+                data-dossier-scene={card.key}
+                style={sceneVars}
+              >
                 <div className="lf-dossier-source-stage">
                   <DossierAmbient {...card.ambient} />
                 </div>
