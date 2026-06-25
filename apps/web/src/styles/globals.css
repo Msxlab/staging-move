@@ -1398,11 +1398,11 @@ html[data-embed="mobile"] .install-prompt {
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
   opacity: 0.38;
 }
-.lf-dossier-scene-card .lf-dossier-scene-tag {
+.lf-dossier-scene-tag {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  z-index: 4;
+  z-index: 6;
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, var(--ds-tone) 28%, transparent);
   background: color-mix(in srgb, var(--ds-tone) 14%, rgba(12, 19, 34, 0.72));

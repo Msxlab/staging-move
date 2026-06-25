@@ -50,6 +50,7 @@ This handoff records source-code evidence only. Existing repository docs/memory 
 - Adjusted the web app canvas to the lighter source paper end (`#F4EFE5`) so the whole page stays warm without looking muddy.
 - Reduced the app shell grid/gradient overlay opacity and ink density.
 - Raised flood scene bands in `source-dossier-scene.css` so the flood animation is visible inside the 82px dossier scene stage.
+- Raised dossier scene character/tag stacking so the source animation details do not sit behind row overlays.
 
 ## Mobile Findings
 

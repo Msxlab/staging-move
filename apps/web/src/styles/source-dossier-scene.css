@@ -50,7 +50,7 @@
 .ds-ground-dark { background: linear-gradient(180deg,#191622,#0d0a13); }
 .ds-road { position: absolute; left: 0; right: 0; bottom: 6px; height: 1.5px; background: repeating-linear-gradient(90deg,var(--rc-eye) 0,var(--rc-eye) 7px,transparent 7px,transparent 15px); opacity: .5; }
 .ds-road-mid,.ds-road-warn { background: repeating-linear-gradient(90deg,var(--ds-tone) 0,var(--ds-tone) 6px,transparent 6px,transparent 16px); opacity: .42; }
-.ds-char { position: absolute; bottom: 13px; width: 34px; display: flex; flex-direction: column; align-items: center; }
+.ds-char { position: absolute; bottom: 13px; width: 34px; display: flex; flex-direction: column; align-items: center; z-index: 5; }
 .ds-hd { position: relative; z-index: 2; line-height: 0; }
 .ds-bd { position: relative; z-index: 1; width: 26px; height: 17px; margin-top: -9px; border-radius: 11px 11px 9px 9px; background: var(--rc-head); }
 .ds-belly { position: absolute; left: 50%; top: 5px; width: 13px; height: 10px; border-radius: 50%; background: #cdd5e0; opacity: .3; transform: translateX(-50%); }
