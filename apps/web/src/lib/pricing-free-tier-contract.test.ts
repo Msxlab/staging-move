@@ -264,16 +264,20 @@ describe("consumer-free pricing + affiliate contract", () => {
 
   it("keeps the source paper token with clean white web surfaces", () => {
     const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
+    const aurora = readRepoFile("apps", "web", "src", "styles", "aurora.css");
     const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-source-paper-bg:\s*#EFEADF;/);
-    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-bg:\s*#F8F5EE;/);
+    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-bg:\s*#EFEADF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-chrome-bg-strong:\s*#FFFFFF;/);
     expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-panel-bg-strong:\s*#FFFFFF;/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*background-color:\s*var\(--lf-app-panel-bg\);/);
     expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*background:\s*none;[\s\S]*opacity:\s*0;/);
+    expect(aurora).toMatch(/\.light \.lf-aurora\s*\{[\s\S]*--background:\s*41\.25 33\.33% 90\.59%;/);
+    expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.bg-background\\\/55[\s\S]*background-color:\s*var\(--lf-app-panel-bg,\s*#FFFFFF\);/);
     expect(globals).not.toContain("#F8F5EE 46%");
+    expect(globals).not.toContain("--lf-app-bg: #F8F5EE");
     expect(globals).not.toContain("#FAF8F3 38%");
     expect(globals).not.toContain("#F3EFE6 78%");
     expect(globals).not.toContain("#DEDCD3");
@@ -282,6 +286,5 @@ describe("consumer-free pricing + affiliate contract", () => {
     expect(globals).not.toContain("--lf-app-bg: var(--bg)");
     expect(globals).not.toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
     expect(globals).not.toContain("--lf-app-bg: #FAF7F0");
-    expect(globals).not.toContain("--lf-app-bg: #EFEADF");
   });
 });

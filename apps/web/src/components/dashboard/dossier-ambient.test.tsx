@@ -248,8 +248,11 @@ describe("DossierAmbient rendering", () => {
 
   it("keeps the source light canvas, clean white surfaces, compact dark stage, and desktop source deck", () => {
     const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
+    const aurora = readFileSync(new URL("../../styles/aurora.css", import.meta.url), "utf8");
     const appStart = globals.indexOf(".light {");
     const appEnd = globals.indexOf(".light .app-shell-backdrop", appStart);
+    const auroraLightStart = aurora.indexOf(".light .lf-aurora {");
+    const auroraLightEnd = aurora.indexOf("/* --- Aurora-flavored chrome upgrades", auroraLightStart);
     const stageStart = globals.indexOf(".light .lf-dossier-source-stage > .da-layer");
     const stageEnd = globals.indexOf(".light .lf-dossier-source-stage > .da-layer::before", stageStart);
     const rowStart = globals.indexOf(".light .lf-dossier-scene-card > .da-layer");
@@ -261,15 +264,18 @@ describe("DossierAmbient rendering", () => {
     expect(appStart).toBeGreaterThan(-1);
     expect(stageStart).toBeGreaterThan(-1);
     expect(rowStart).toBeGreaterThan(-1);
+    expect(auroraLightStart).toBeGreaterThan(-1);
     expect(sourceDesktopStart).toBeGreaterThan(-1);
     expect(desktopStart).toBeGreaterThan(-1);
-    expect(globals.slice(appStart, appEnd)).toContain("--background: 42 41.67% 95.29%");
+    expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #F8F5EE;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #EFEADF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
+    expect(aurora.slice(auroraLightStart, auroraLightEnd)).toContain("--background:           41.25 33.33% 90.59%;");
     expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none;[\s\S]*?opacity:\s*0;/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
+    expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.bg-background\\\/55[\s\S]*?background-color:\s*var\(--lf-app-panel-bg,\s*#FFFFFF\);/);
     expect(globals).toMatch(/\.lf-dossier-source-stage\s*\{[\s\S]*?height:\s*92px;/);
     expect(globals.slice(stageStart, stageEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
     expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
