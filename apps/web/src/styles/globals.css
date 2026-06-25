@@ -323,19 +323,19 @@
   /*
    * Source Move.dc.html light theme:
    *   bg #EFEADF, bg2 #E7E1D4, surface #FFFFFF, surface2 #F5F0E7.
-   * The full raw paper wash is too heavy across the wide web dashboard, so keep
-   * the warm source hue as a quiet undertone while chrome and panels stay crisp.
+   * Keep the source paper as the actual app canvas; chrome and panels stay
+   * white so the dashboard does not turn into a muddy monochrome sheet.
    */
-  --background: 42 40% 98%;
-  --muted: 40 35% 96%;
-  --accent: 40 35% 96%;
-  --surface-secondary: #F7F1E8;
-  --lf-app-bg: #FBFAF6;
+  --background: 41.25 33.33% 90.59%;
+  --muted: 38.57 41.18% 93.33%;
+  --accent: 38.57 41.18% 93.33%;
+  --surface-secondary: #F5F0E7;
+  --lf-app-bg: radial-gradient(ellipse 120% 80% at 50% -20%, #EFEEEA 0%, #DEDCD3 68%, #D4D2C8 100%);
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.96);
   --lf-app-chrome-bg-strong: #FFFFFF;
   --lf-app-panel-bg: rgba(255, 255, 255, 0.96);
   --lf-app-panel-bg-strong: rgba(255, 255, 255, 0.985);
-  --lf-app-panel-bg-soft: color-mix(in srgb, #FFFFFF 94%, #F5F0E7 6%);
+  --lf-app-panel-bg-soft: color-mix(in srgb, #FFFFFF 88%, #F5F0E7 12%);
 }
 
 .light .app-shell-backdrop {
@@ -1753,43 +1753,46 @@ html[data-embed="mobile"] .install-prompt {
   border-color: rgba(16, 29, 45, 0.13);
   background:
     radial-gradient(ellipse 68% 90% at 70% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 18%, transparent), transparent 66%),
-    linear-gradient(180deg, #F3F6FA, #E2EAF2);
+    linear-gradient(180deg, #101B30, #0A1322);
 }
 .light .lf-dossier-source-stage > .da-layer {
   background:
-    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 28%, transparent), transparent 68%),
-    linear-gradient(180deg, #F3F6FA, #E2EAF2);
-  filter: saturate(1.16) contrast(1.08);
+    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 24%, transparent), transparent 68%),
+    linear-gradient(180deg, #101B30, #0A1322);
+  filter: saturate(1.28) contrast(1.1);
 }
 .light .lf-dossier-source-stage > .da-layer::before {
   background:
-    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.42), transparent 68%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.30), transparent 48%);
-  opacity: 0.32;
+    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
+  opacity: 0.34;
 }
 .light .lf-dossier-source-tag {
-  border: 1px solid color-mix(in srgb, var(--ds-tone, var(--foil-b)) 30%, rgba(16, 29, 45, 0.10));
-  background: color-mix(in srgb, var(--ds-tone, var(--foil-b)) 14%, rgba(255, 255, 255, 0.86));
-  color: color-mix(in srgb, var(--ds-tone, var(--foil-b)) 70%, #101D2D 30%);
+  border: 1px solid color-mix(in srgb, var(--ds-tone, var(--foil-b)) 26%, transparent);
+  background: color-mix(in srgb, var(--ds-tone, var(--foil-b)) 14%, rgba(10, 19, 34, 0.74));
+  color: var(--ds-tone, var(--foil-b));
 }
 .light .lf-dossier-scene-card > .da-layer {
   border-color: rgba(16, 29, 45, 0.13);
   background:
-    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 28%, transparent), transparent 68%),
-    linear-gradient(180deg, #F3F6FA, #E2EAF2);
-  filter: saturate(1.16) contrast(1.08);
+    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 24%, transparent), transparent 68%),
+    linear-gradient(180deg, #101B30, #0A1322);
+  filter: saturate(1.28) contrast(1.1);
 }
 .light .lf-dossier-scene-card > .da-layer::before {
   background:
-    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.42), transparent 68%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.30), transparent 48%);
-  opacity: 0.32;
+    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
+  opacity: 0.34;
 }
 .light .lf-dossier-scene-card .lf-dossier-scene-tag {
-  border-color: color-mix(in srgb, var(--ds-tone) 30%, rgba(16, 29, 45, 0.10));
-  background: color-mix(in srgb, var(--ds-tone) 14%, rgba(255, 255, 255, 0.86));
-  color: color-mix(in srgb, var(--ds-tone) 70%, #101D2D 30%);
+  border-color: color-mix(in srgb, var(--ds-tone) 26%, transparent);
+  background: color-mix(in srgb, var(--ds-tone) 14%, rgba(10, 19, 34, 0.74));
+  color: var(--ds-tone);
 }
+.light .lf-dossier-source-stage > .da-layer .ds-ground,
+.light .lf-dossier-source-stage > .da-layer .ds-ground-warn,
+.light .lf-dossier-source-stage > .da-layer .ds-ground-dark,
 .light .lf-dossier-scene-card > .da-layer .ds-ground,
 .light .lf-dossier-scene-card > .da-layer .ds-ground-warn,
 .light .lf-dossier-scene-card > .da-layer .ds-ground-dark {

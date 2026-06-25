@@ -246,19 +246,24 @@ describe("DossierAmbient rendering", () => {
     expect(missing).toEqual([]);
   });
 
-  it("keeps light source-scene stages on a light map canvas", () => {
+  it("keeps the source light app background and dark animated dossier stage", () => {
     const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
+    const appStart = globals.indexOf(".light {");
+    const appEnd = globals.indexOf(".light .app-shell-backdrop", appStart);
     const stageStart = globals.indexOf(".light .lf-dossier-source-stage > .da-layer");
     const stageEnd = globals.indexOf(".light .lf-dossier-source-stage > .da-layer::before", stageStart);
     const rowStart = globals.indexOf(".light .lf-dossier-scene-card > .da-layer");
     const rowEnd = globals.indexOf(".light .lf-dossier-scene-card > .da-layer::before", rowStart);
 
+    expect(appStart).toBeGreaterThan(-1);
     expect(stageStart).toBeGreaterThan(-1);
     expect(rowStart).toBeGreaterThan(-1);
-    expect(globals.slice(stageStart, stageEnd)).toContain("linear-gradient(180deg, #F3F6FA, #E2EAF2)");
-    expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #F3F6FA, #E2EAF2)");
-    expect(globals.slice(stageStart, stageEnd)).not.toMatch(/#101B30|#0A1322/i);
-    expect(globals.slice(rowStart, rowEnd)).not.toMatch(/#101B30|#0A1322/i);
+    expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
+    expect(globals.slice(appStart, appEnd)).toContain("#EFEEEA 0%, #DEDCD3 68%, #D4D2C8 100%");
+    expect(globals.slice(stageStart, stageEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
+    expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
+    expect(globals.slice(stageStart, stageEnd)).not.toMatch(/#F3F6FA|#E2EAF2/i);
+    expect(globals.slice(rowStart, rowEnd)).not.toMatch(/#F3F6FA|#E2EAF2/i);
   });
 
   it("renders an aria-hidden, pointer-events-none masked layer with data attributes", () => {
