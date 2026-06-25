@@ -320,17 +320,28 @@
 }
 
 .light {
-  --lf-app-bg: #F5F0E7;
+  --lf-app-bg: #EFEADF;
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.58) 0%, transparent 32%),
-    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.012) 0%, transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.06) 48%, rgba(239, 234, 223, 0.10) 100%),
-    repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.004) 0 1px, transparent 1px 80px),
-    repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.0035) 0 1px, transparent 1px 80px);
-  opacity: 0.24;
+    radial-gradient(ellipse 78% 52% at 50% -16%, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.18) 52%, transparent 76%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, transparent 48%);
+  opacity: 0.44;
+}
+
+.light .lf-app-shell .from-primary\/5,
+.light .lf-app-shell .from-primary\/10,
+.light .lf-app-shell .from-primary\/15 {
+  --tw-gradient-from: rgba(255, 255, 255, 0.78) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgba(255, 255, 255, 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.light .lf-app-shell .via-primary\/5,
+.light .lf-app-shell .via-foreground\/\[0\.03\] {
+  --tw-gradient-to: rgba(244, 239, 229, 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(244, 239, 229, 0.92) var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
 /* =========================================================================
