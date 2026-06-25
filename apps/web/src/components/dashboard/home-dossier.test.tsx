@@ -562,22 +562,30 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).toContain('data-pause-offscreen="false"');
     expect(markup).toMatch(/class="[^"]*\blf-dossier-source-card\b[^"]*"[^>]*style="[^"]*--ds-tone:/);
     expect(markup).toContain('class="lf-dossier-grid px-5 pb-5" data-source-compact="true"');
-    // AIR and EV no longer render the masked ambient scene-card in the grid —
-    // they show the foreground AQI gauge / EV meter indicators instead, so the
-    // remaining ambient scene-cards (flood, school, weather, hazards, radon,
-    // water, housing) number seven.
-    expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(7);
+    // WEATHER, AIR and EV no longer render the masked ambient scene-card in the
+    // grid — they show foreground indicators (animated Meteocons weather glyph /
+    // AQI gauge / EV meter) instead, so the remaining ambient scene-cards
+    // (flood, school, hazards, radon, water, housing) number six.
+    expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(6);
     for (const sourceType of [
       "flood",
       "school",
-      "weather",
       "radon",
       "water",
       "housing",
     ]) {
       expect(markup).toContain(`data-ds-type="${sourceType}"`);
     }
-    // AIR and EV are now clear foreground indicators, not ambient scenes.
+    // WEATHER, AIR and EV are now clear foreground indicators, not ambient scenes.
+    // The weather row renders the animated Meteocons glyph (Sunny → clear-day)
+    // with a stable test hook carrying the resolved ambient variant. (Note: the
+    // hazard scene legitimately reuses the "weather" SOURCE scene type for its
+    // lightning/winter art, so data-ds-type="weather" may still appear from
+    // that card — we assert the weather ROW no longer wires a DossierAmbient by
+    // checking the glyph hook is present instead.)
+    expect(markup).toContain('data-testid="weather-glyph"');
+    expect(markup).toContain('data-weather-variant="sun"');
+    expect(markup).toContain('data-weather-icon="clearDay"');
     expect(markup).toContain('data-testid="aqi-gauge"');
     expect(markup).toContain('data-testid="ev-meter"');
     expect(markup).not.toContain('data-ds-type="air"');

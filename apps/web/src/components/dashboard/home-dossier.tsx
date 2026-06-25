@@ -28,7 +28,7 @@ import {
   useDossierCountUp,
   type SceneDetail,
 } from "./dossier-ambient";
-import { AqiGauge, EvMeter } from "./dossier-indicators";
+import { AqiGauge, EvMeter, WeatherGlyph } from "./dossier-indicators";
 
 /**
  * NEW HOME DOSSIER — Aurora dashboard widget.
@@ -981,11 +981,14 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
               const bandKey = dossierDeckBandKey(card.ambient.intensity);
               const sourceScene = sourceDossierSceneFor(card.ambient);
               const sceneVars = sourceSceneVars(sourceScene);
-              // AIR and EV render a clear foreground indicator (AQI gauge / EV
-              // density meter) in place of the decorative ambient scene; all
-              // other kinds keep the masked <DossierAmbient> background.
+              // WEATHER, AIR and EV render a clear foreground indicator (animated
+              // Meteocons weather glyph / AQI gauge / EV density meter) in place
+              // of the decorative ambient scene; all other kinds keep the masked
+              // <DossierAmbient> background.
               const isIndicatorCard =
-                (card.key === "air" && view.air) || (card.key === "ev-charging" && view.evCharging);
+                (card.key === "weather" && view.weather) ||
+                (card.key === "air" && view.air) ||
+                (card.key === "ev-charging" && view.evCharging);
               return (
                 <article
                   key={card.key}
@@ -1000,7 +1003,11 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                         : "lf-dossier-source-stage"
                     }
                   >
-                    {card.key === "air" && view.air ? (
+                    {card.key === "weather" && view.weather ? (
+                      <div className="lf-dossier-indicator-wrap">
+                        <WeatherGlyph variant={card.ambient.variant} size={64} />
+                      </div>
+                    ) : card.key === "air" && view.air ? (
                       <div className="lf-dossier-indicator-wrap">
                         <AqiGauge aqi={view.air.aqi} category={view.air.category} />
                       </div>
@@ -1106,18 +1113,12 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         )}
 
         {/* (3) Moving-day weather — only when the API says "ok" (≤7 days out,
-            destination address). "too_far" renders nothing by design. */}
+            destination address). "too_far" renders nothing by design. The
+            decorative ambient is replaced by a clear, animated foreground
+            Meteocons weather glyph for this row (no overflow mask / absolute
+            scene to clip it), same direction as the AIR and EV indicators. */}
         {view.weather && (
-          <div className={DOSSIER_SCENE_ROW_CLASS}>
-            <DossierAmbient
-              {...ambientForSection({
-                kind: "weather",
-                summary: view.weather.summary,
-                precipChancePct: view.weather.precipChancePct,
-                tempHighF: view.weather.tempHighF,
-                tempLowF: view.weather.tempLowF,
-              })}
-            />
+          <div className={DOSSIER_ROW_CLASS}>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-cyan-bg border border-tone-cyan-br flex items-center justify-center shrink-0">
                 <CloudSun className="h-4 w-4 text-tone-cyan-fg" />
@@ -1132,6 +1133,19 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                   {[view.weather.summary, weatherStats.join(" · ")].filter(Boolean).join(" — ")}
                 </p>
               </div>
+            </div>
+            <div className="mt-3 lf-dossier-indicator-wrap">
+              <WeatherGlyph
+                variant={
+                  ambientForSection({
+                    kind: "weather",
+                    summary: view.weather.summary,
+                    precipChancePct: view.weather.precipChancePct,
+                    tempHighF: view.weather.tempHighF,
+                    tempLowF: view.weather.tempLowF,
+                  }).variant
+                }
+              />
             </div>
             <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{td("dossier_weather_disclaimer")}</p>
           </div>

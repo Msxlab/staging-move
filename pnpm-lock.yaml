@@ -371,6 +371,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@bybas/weather-icons':
+        specifier: ^2.0.0
+        version: 2.0.0
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1265,6 +1268,9 @@ packages:
 
   '@bacons/xcode@1.0.0-alpha.32':
     resolution: {integrity: sha512-OGpH7+yMbWC2cgYZon5B+VVadH9HsB2V/abtEiplA65XnSuV4GAYAVixOCDc5k182WkfoakfdM0zW6U9cbcsbw==}
+
+  '@bybas/weather-icons@2.0.0':
+    resolution: {integrity: sha512-sUcp8kbQZYoYgTpHkQ1vrxKVSHdc4SxzXLuluVZYa5u8Nqq/GhDYOtWrWLqgN/GhwsZ74dja8TlMvyTll4yl0Q==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -9560,6 +9566,8 @@ snapshots:
       uuid: 8.3.2
     transitivePeerDependencies:
       - supports-color
+
+  '@bybas/weather-icons@2.0.0': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:

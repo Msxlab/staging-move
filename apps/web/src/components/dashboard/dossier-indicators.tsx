@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { METEOCONS_FILL, type MeteoconsKey } from "./meteocons-data";
+
 /**
  * Foreground dossier indicators for the AIR and EV rows.
  *
@@ -198,6 +201,82 @@ export function EvMeter({ count }: { count: number | null }) {
       <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 700, color: tone, marginTop: 8 }}>
         {EV_LABELS[bars]}
       </div>
+    </div>
+  );
+}
+
+/* ----------------------------- weather glyph ------------------------------ */
+
+/**
+ * Foreground Meteocons weather glyph for the dossier WEATHER row — the same
+ * clean-indicator direction as AqiGauge / EvMeter (a legible, animated mark in
+ * place of the decorative masked ambient scene).
+ *
+ * The weather ambient `variant` (sun|cloud|rain|snow|storm|fog|wind|heat|cold,
+ * from ambientForSection) maps to a Meteocons "fill" icon; null/unknown falls
+ * back to a sensible clear-day default. The icons are SMIL-animated SVGs
+ * inlined verbatim (see meteocons-data.ts) — SMIL plays when the markup is in
+ * the DOM, which a plain <img src> would not do, so we inject the raw string.
+ *
+ * prefers-reduced-motion: no information is conveyed by motion (the variant is
+ * the signal, identical when frozen), so we freeze the SVG's SMIL timeline via
+ * the SVG DOM `pauseAnimations()` after mount. SSR / no-JS render the first
+ * animation frame statically, which is already a complete, legible icon.
+ */
+const WEATHER_VARIANT_ICON: Record<string, MeteoconsKey> = {
+  sun: "clearDay",
+  cloud: "cloudy",
+  rain: "rain",
+  snow: "snow",
+  storm: "thunderstormsRain",
+  fog: "fog",
+  wind: "wind",
+  heat: "thermometerWarmer",
+  cold: "thermometerColder",
+};
+
+const WEATHER_DEFAULT_ICON: MeteoconsKey = "clearDay";
+
+/** Resolve a weather ambient variant to its Meteocons icon key (default: clear-day). */
+export function weatherGlyphIconKey(variant: string | null | undefined): MeteoconsKey {
+  return (typeof variant === "string" && WEATHER_VARIANT_ICON[variant]) || WEATHER_DEFAULT_ICON;
+}
+
+export function WeatherGlyph({ variant, size = 56 }: { variant?: string | null; size?: number }) {
+  const iconKey = weatherGlyphIconKey(variant);
+  // The markup is a static, build-time-embedded Meteocons SVG (vendored MIT
+  // asset, never user input) — dangerouslySetInnerHTML carries no XSS surface.
+  const svg = METEOCONS_FILL[iconKey];
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const reduce =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce) return;
+    // Freeze the SMIL timeline at its first frame — the icon stays a complete,
+    // legible mark; no essential meaning is lost (the variant is the signal).
+    const el = ref.current?.querySelector("svg") as (SVGSVGElement & { pauseAnimations?: () => void }) | null;
+    if (el && typeof el.pauseAnimations === "function") {
+      el.setCurrentTime?.(0);
+      el.pauseAnimations();
+    }
+  }, [iconKey]);
+
+  return (
+    <div
+      data-testid="weather-glyph"
+      data-weather-variant={typeof variant === "string" && variant ? variant : "default"}
+      data-weather-icon={iconKey}
+      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", minHeight: size }}
+    >
+      <span
+        ref={ref}
+        aria-hidden="true"
+        style={{ display: "inline-flex", width: size, height: size, lineHeight: 0 }}
+        dangerouslySetInnerHTML={{ __html: svg }}
+      />
     </div>
   );
 }
