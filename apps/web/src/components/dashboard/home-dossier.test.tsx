@@ -551,8 +551,14 @@ describe("HomeDossierCard rendering", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
 
     expect((markup.match(/lf-dossier-source-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
+    expect(markup).toContain("lf-dossier-source-toolbar");
+    expect(markup).toContain("View full");
+    expect(markup).toContain('data-expanded="false"');
     expect(markup).toContain("lf-dossier-source-stage");
+    expect(markup).toContain("lf-dossier-source-tag");
     expect(markup).toContain("lf-dossier-source-bars");
+    expect(markup).toContain("lf-dossier-source-band");
+    expect(markup).toContain("lf-dossier-source-dots");
     expect(markup).toMatch(/class="lf-dossier-source-card"[^>]*style="[^"]*--ds-tone:/);
     expect((markup.match(/lf-dossier-scene-card/g) ?? []).length).toBeGreaterThanOrEqual(9);
     for (const sourceType of [

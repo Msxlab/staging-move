@@ -204,7 +204,7 @@ export function sourceSceneVars({ type, level }: SourceDossierSceneSpec): Source
   };
 }
 
-function sourceSceneTag({ type, level }: SourceDossierSceneSpec): string {
+export function sourceSceneTag({ type, level }: SourceDossierSceneSpec): string {
   if (type === "housing") return "AREA";
   if (level === "good" || level === "sun") return "GOOD";
   if (level === "bad" || level === "storm" || level === "heat" || level === "cold") return "ALERT";

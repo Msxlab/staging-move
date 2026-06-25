@@ -24,6 +24,7 @@ import {
   ambientForSection,
   sourceDossierSceneFor,
   sourceSceneVars,
+  sourceSceneTag,
   useDossierCountUp,
 } from "./dossier-ambient";
 
@@ -68,8 +69,20 @@ type DossierSceneDeckCard = {
   ambient: ReturnType<typeof ambientForSection>;
 };
 
+function dossierDeckPriority(intensity: number): number {
+  return intensity >= 2 ? 3 : intensity >= 1 ? 2 : 1;
+}
+
 function activeDossierDeckBars(intensity: number): number {
   return intensity >= 2 ? 5 : intensity >= 1 ? 3 : 2;
+}
+
+function dossierDeckBandKey(intensity: number): "dossier_deck_bandGood" | "dossier_deck_bandCheck" | "dossier_deck_bandAlert" {
+  return intensity >= 2
+    ? "dossier_deck_bandAlert"
+    : intensity >= 1
+      ? "dossier_deck_bandCheck"
+      : "dossier_deck_bandGood";
 }
 
 // ── Contract types (GET /api/addresses/{id}/dossier) ─────────────────────────
@@ -674,6 +687,8 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
   const td = useTranslations("dashboard");
   const locale = useLocale();
   const view = deriveDossierView(data);
+  const [dossierFull, setDossierFull] = useState(false);
+  const [dossierDeckIndex, setDossierDeckIndex] = useState(0);
 
   // Neighborhood medians count up (~800ms ease-out) when the row first enters
   // the viewport. The hook's first render returns the FINAL figures, so SSR
@@ -853,6 +868,11 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
       ambient: ambientForSection({ kind: "neighborhood", walkBand: view.neighborhood.walkBand }),
     });
   }
+  sceneCards.sort(
+    (a, b) =>
+      dossierDeckPriority(b.ambient.intensity) - dossierDeckPriority(a.ambient.intensity) ||
+      a.label.localeCompare(b.label, locale),
+  );
 
   return (
     <div className={DOSSIER_SHELL_CLASS}>
@@ -893,34 +913,74 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
       </div>
 
       {sceneCards.length > 0 && (
-        <div className="lf-dossier-source-deck px-5 pb-4" aria-hidden="true">
-          {sceneCards.map((card) => {
-            const activeBars = activeDossierDeckBars(card.ambient.intensity);
-            const sceneVars = sourceSceneVars(sourceDossierSceneFor(card.ambient));
-            return (
-              <article
-                key={card.key}
-                className="lf-dossier-source-card"
-                data-dossier-scene={card.key}
-                style={sceneVars}
-              >
-                <div className="lf-dossier-source-stage">
-                  <DossierAmbient {...card.ambient} />
-                </div>
-                <div className="lf-dossier-source-body">
-                  <p className="lf-dossier-source-label">{card.label}</p>
-                  <p className="lf-dossier-source-value">{card.value}</p>
-                  <p className="lf-dossier-source-sub">{card.sub}</p>
-                  <div className="lf-dossier-source-bars">
-                    {Array.from({ length: DOSSIER_SOURCE_BAR_COUNT }).map((_, index) => (
-                      <span key={index} className={index < activeBars ? "is-active" : undefined} />
-                    ))}
+        <>
+          <div className="lf-dossier-source-toolbar px-5 pb-2">
+            <button
+              type="button"
+              className="lf-dossier-source-toggle"
+              onClick={() => setDossierFull((value) => !value)}
+              aria-pressed={dossierFull}
+            >
+              {td(dossierFull ? "dossier_deck_swipeView" : "dossier_deck_viewFull")}
+            </button>
+          </div>
+          <div
+            className="lf-dossier-source-deck px-5 pb-4"
+            data-expanded={dossierFull ? "true" : "false"}
+            onScroll={(event) => {
+              if (dossierFull) return;
+              const el = event.currentTarget;
+              const card = el.querySelector<HTMLElement>(".lf-dossier-source-card");
+              if (!card) return;
+              const step = card.offsetWidth + 12;
+              const next = Math.max(0, Math.min(sceneCards.length - 1, Math.round(el.scrollLeft / step)));
+              if (next !== dossierDeckIndex) setDossierDeckIndex(next);
+            }}
+          >
+            {sceneCards.map((card) => {
+              const activeBars = activeDossierDeckBars(card.ambient.intensity);
+              const bandKey = dossierDeckBandKey(card.ambient.intensity);
+              const sourceScene = sourceDossierSceneFor(card.ambient);
+              const sceneVars = sourceSceneVars(sourceScene);
+              return (
+                <article
+                  key={card.key}
+                  className="lf-dossier-source-card"
+                  data-dossier-scene={card.key}
+                  style={sceneVars}
+                >
+                  <div className="lf-dossier-source-stage">
+                    <DossierAmbient {...card.ambient} />
+                    <span className="lf-dossier-source-tag">{sourceSceneTag(sourceScene)}</span>
                   </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+                  <div className="lf-dossier-source-body">
+                    <p className="lf-dossier-source-label">{card.label}</p>
+                    <p className="lf-dossier-source-value">{card.value}</p>
+                    <p className="lf-dossier-source-sub">{card.sub}</p>
+                    <div className="lf-dossier-source-meter">
+                      <div className="lf-dossier-source-bars">
+                        {Array.from({ length: DOSSIER_SOURCE_BAR_COUNT }).map((_, index) => (
+                          <span key={index} className={index < activeBars ? "is-active" : undefined} />
+                        ))}
+                      </div>
+                      <span className="lf-dossier-source-band">{td(bandKey)}</span>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+          {!dossierFull && sceneCards.length > 1 && (
+            <div className="lf-dossier-source-dots" aria-hidden="true">
+              {sceneCards.map((card, index) => (
+                <span
+                  key={card.key}
+                  data-active={index === dossierDeckIndex ? "true" : "false"}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <div className="lf-dossier-grid px-5 pb-5">

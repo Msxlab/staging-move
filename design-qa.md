@@ -1,56 +1,57 @@
-# Design QA - Source Greige Shell and Dossier Scene Deck
+# Design QA - Source Warm Paper and Dossier Scene Deck
 
 final result: blocked
 
-source visual truth path: `C:/Users/Windows/Downloads/New folder/Initial check requested-handoff (7)/initial-check-requested/project/Move.dc.html`
+source visual truth path: `C:/Users/Windows/Downloads/New folder/Initial check requested-handoff (7)/initial-check-requested/project/Move.dc.html` and `C:/Users/Windows/Downloads/New folder/Initial check requested-handoff (7)/initial-check-requested/project/DossierScene.dc.html`
 
-implementation screenshot path: `C:/Users/Windows/AppData/Local/Temp/codex-clipboard-9dbdcdd0-3602-412c-8ab7-ed161994ff13.png`
+implementation screenshot path: blocked. No fresh rendered implementation screenshot was captured after the latest patch.
 
-viewport: desktop browser screenshot from user; exact viewport not verified in tooling.
+viewport: blocked. The source is a 390x844 mobile prototype; the implementation target is the authenticated web dashboard, which still needs a same-state desktop and mobile-web capture after deploy.
 
-state: light-mode authenticated dashboard.
+state: light-mode authenticated dashboard, Home Dossier visible.
 
-full-view comparison evidence: blocked. The user-provided staging screenshot shows the authenticated dashboard shell looking too muddy/grey-beige after the prior beige app-shell correction. This session could inspect source/code and the supplied screenshot, but the current toolset did not expose a controllable Chrome/browser capture for a fresh same-state side-by-side comparison after the new patch.
+full-view comparison evidence: blocked. Code/source comparison was completed, but Product Design QA requires a visible source + rendered implementation comparison in the same input before claiming visual pass.
 
-focused region comparison evidence: blocked. The affected areas are the dashboard shell/background, route-map labels on light maps, and the Home Dossier visual scene treatment. A fresh staging screenshot after deploy is still needed before a pass can be claimed.
+focused region comparison evidence: blocked. The focused regions are the light app canvas, Home Dossier source deck, dossier animation stages, and source card controls. No fresh staging/browser screenshot exists for the latest patch.
 
 findings:
 
-- [P1] Light dashboard background was over-tinted.
+- [P1] Light dashboard background had drifted from the source app canvas.
   Location: `apps/web/src/styles/globals.css`, `.light` and `.light .app-shell-backdrop`.
-  Evidence: source keeps a greige page gradient in `Move.dc.html`; a flat beige/wash made the authenticated dashboard look muddy in the supplied screenshot.
-  Fix made: set the authenticated light shell to the source-style radial greige gradient (`#EFEEEA -> #DEDCD3 -> #D4D2C8`) while keeping cards/surfaces white and reducing the backdrop/grid wash.
+  Evidence: source `Move.dc.html` defines the light app interior as `bg: #EFEADF`; the darker greige radial belongs to the outer prototype page. A muddy radial/grid wash on the authenticated shell made the dashboard look greyed out.
+  Fix made: set the light app shell to `#EFEADF` and disable the light shell backdrop/grid overlay.
 
-- [P2] Route map labels needed stronger light-mode contrast.
-  Location: `apps/web/src/styles/globals.css`, `.light .lf-route-map-label`.
-  Evidence: light basemaps make semi-transparent labels low contrast.
-  Fix made: label chips are now more opaque, darker, and use stronger border/shadow in light mode.
+- [P1] Home Dossier source scene deck was not using the source interaction model.
+  Location: `apps/web/src/components/dashboard/home-dossier.tsx`, `apps/web/src/styles/globals.css`.
+  Evidence: source `Move.dc.html` uses a priority-ordered horizontal scene-card deck with `View full / Swipe view`, stage tags, 5-segment bars, band labels, and dots. Production had source scene markup, but the deck was fixed-order, lacked source controls/tags/band labels, and desktop CSS converted it straight to a grid.
+  Fix made: sort scene cards by source-style priority, keep default swipe mode, add `View full / Swipe view`, stage tags, band labels, and dots, and use expanded mode for wrapped full view.
 
-- [P1] Home Dossier source parity is still not visually proven.
-  Location: `apps/web/src/components/dashboard/home-dossier.tsx`, `apps/web/src/components/dashboard/dossier-ambient.tsx`, `apps/web/src/styles/source-dossier-scene.css`.
-  Evidence: source `Move.dc.html` uses a prominent horizontal scene-card treatment; current web renders source scene animations inside the production data-row/grid pattern. Code wiring exists and tests prove source scene markup renders, but fresh visual proof on staging is blocked.
-  Fix made: add a visual source-style scene deck above the detailed rows, using the same real `deriveDossierView` data and existing `DossierAmbient` scene matrix, so the animations read as scene-first cards instead of faint row decoration.
+- [P2] Source scene tone variables were applied too low in the DOM.
+  Location: `apps/web/src/components/dashboard/home-dossier.tsx`, `apps/web/src/components/dashboard/dossier-ambient.tsx`.
+  Evidence: card-level accents and bar segments read `--ds-tone`, but the variable previously lived only inside the nested scene layer.
+  Fix made: export and apply `sourceSceneVars` on each source card parent.
 
-patches made in this follow-up:
+- [P1] Mobile dossier parity is not implemented.
+  Location: `apps/mobile/src/components/ui/HomeDossierCard.tsx`.
+  Evidence: mobile renders row-based `DossierAmbient` layers, not the source horizontal scene-card deck. Mobile light tokens already use `#EFEADF`, and mobile cache is device-side memory + offline disk cache.
+  Fix status: not changed. User asked to be notified before mobile edits.
 
-- `apps/web/src/components/dashboard/home-dossier.tsx`: source-style visual scene deck added above the detailed rows.
-- `apps/web/src/styles/globals.css`: source radial greige light shell restored with white surfaces; source deck styling added.
-- `apps/web/src/components/dashboard/home-dossier.test.tsx`: guard added for the source scene deck markup.
-- `apps/web/src/lib/pricing-free-tier-contract.test.ts`: guard updated so the light shell stays on the source greige radial gradient and rejects previous flat/incorrect backgrounds.
+patches made since previous QA pass:
+
+- `apps/web/src/components/dashboard/home-dossier.tsx`: source-like priority deck, swipe/full toggle, source tags, band labels, dots, parent scene variables.
+- `apps/web/src/components/dashboard/dossier-ambient.tsx`: export source scene tag and scene variable helpers.
+- `apps/web/src/styles/globals.css`: source warm-paper light shell, no light backdrop wash, and source deck CSS.
+- `apps/web/src/i18n/messages/en.json`: deck labels.
+- `apps/web/src/i18n/messages/es.json`: deck labels.
+- `apps/web/src/components/dashboard/home-dossier.test.tsx`: regression coverage for source deck controls and visual markers.
 
 verification:
 
-- `pnpm tokens:check` passed.
 - `pnpm --filter @locateflow/web test -- home-dossier` passed.
-- `pnpm --filter @locateflow/web test -- pricing-free-tier-contract` passed.
-- `pnpm --filter @locateflow/web test -- dossier-ambient route-map-card standard-font-data` passed.
-- `pnpm --filter @locateflow/web test -- "src/app/api/addresses/[id]/dossier/pdf/route.test.ts"` passed.
-- `pnpm --filter @locateflow/web test -- workspace-routes` passed.
+- `pnpm --filter @locateflow/web test -- dossier-ambient` passed.
 - `pnpm --filter @locateflow/web lint` passed.
 - `pnpm --filter @locateflow/web build` passed.
 
-remaining blockers:
+remaining blocker:
 
-- Fresh staging/browser screenshot after deploy.
-- Dokploy runtime logs for the still-reported dossier PDF 500; browser JSON only says `Failed to build dossier PDF`, while code now logs the real `code/message/stack`.
-- Runtime config check for `WORKSPACE_MODEL_ENABLED=true`; code shows workspace creation/invites are still intentionally gated by that flag even when `CONSUMER_FREE` resolves consumers to PRO.
+- Capture fresh staging or local browser screenshots after the latest commit, place them next to the source visual, and compare the light canvas + dossier deck before this can be marked `passed`.
