@@ -144,12 +144,12 @@
 /* Flood: drifting parallax water bands; rise toward the raccoon with risk. */
 .ds-flood { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; overflow: hidden; }
 .ds-flood-band { position: absolute; left: -14%; right: -14%; height: 16px; border-radius: 46% 46% 0 0 / 100% 100% 0 0; background: var(--ds-tone); }
-.ds-flood-band-1 { bottom: -6px; opacity: .5; animation: ds-floatband 4.5s ease-in-out infinite; }
-.ds-flood-band-2 { bottom: -3px; opacity: .34; animation: ds-floatband 6.5s ease-in-out infinite; animation-delay: -2s; }
-.ds-flood-band-3 { bottom: 0; opacity: .2; animation: ds-floatband 8.5s ease-in-out infinite; animation-delay: -4s; }
-.ds-flood-bad .ds-flood-band-1 { bottom: 6px; }
-.ds-flood-bad .ds-flood-band-2 { bottom: 10px; }
-.ds-flood-bad .ds-flood-band-3 { bottom: 14px; }
+.ds-flood-band-1 { bottom: 0; opacity: .6; animation: ds-floatband 4.5s ease-in-out infinite; }
+.ds-flood-band-2 { bottom: 4px; opacity: .4; animation: ds-floatband 6.5s ease-in-out infinite; animation-delay: -2s; }
+.ds-flood-band-3 { bottom: 8px; opacity: .24; animation: ds-floatband 8.5s ease-in-out infinite; animation-delay: -4s; }
+.ds-flood-bad .ds-flood-band-1 { bottom: 9px; }
+.ds-flood-bad .ds-flood-band-2 { bottom: 13px; }
+.ds-flood-bad .ds-flood-band-3 { bottom: 17px; }
 @keyframes ds-floatband { 0%,100% { transform: translateX(-5px); } 50% { transform: translateX(5px); } }
 .light .ds-ground,.light .ds-ground-warn,.light .ds-ground-dark { opacity: .58; }
 .light .ds-road { opacity: .46; }

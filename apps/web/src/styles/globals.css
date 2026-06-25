@@ -80,7 +80,7 @@
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             220 33% 97%;
+    --background:             41.25 33.33% 90.59%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -95,10 +95,10 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  216 31% 94%;
+    --muted:                  38.57 41.18% 93.33%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 216 31% 94%;
+    --accent:                 38.57 41.18% 93.33%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
@@ -114,8 +114,8 @@
 
     --radius:                 0.625rem;
 
-    /* Legacy short surface tokens — clean light canvas */
-    --surface-secondary:      #FFFFFF;
+    /* Legacy short surface tokens — warm paper canvas */
+    --surface-secondary:      #F5F0E7;
     --text-primary:           rgba(20, 32, 47, 1);
     --text-secondary:         rgba(20, 32, 47, 0.72);
     --text-tertiary:          rgba(20, 32, 47, 0.50);
@@ -321,17 +321,17 @@
 }
 
 .light {
-  --lf-app-bg: #F8F5EF;
+  --lf-app-bg: #F4EFE5;
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.72) 0%, transparent 28%),
-    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.045) 0%, transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, transparent 58%),
-    repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.018) 0 1px, transparent 1px 80px),
-    repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.012) 0 1px, transparent 1px 80px);
-  opacity: 0.52;
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.34) 0%, transparent 28%),
+    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.018) 0%, transparent 24%),
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(255, 255, 255, 0.30) 0%, rgba(245, 240, 231, 0.16) 58%, rgba(239, 234, 223, 0.04) 100%),
+    repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.006) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.005) 0 1px, transparent 1px 80px);
+  opacity: 0.48;
 }
 
 /* =========================================================================
@@ -376,9 +376,10 @@
    lift the readable buckets to a contrast-passing ink in LIGHT mode ONLY
    (DARK is untouched — utilities resolve to their authored alpha there).
    Decorative buckets /10–/30 (dividers, faint icons, disabled glyphs) are
-   deliberately left alone so the visual hierarchy survives. Verified on both
-   --background (220 23% 96%) and --card (218 21% 92%): /40→5.1:1, /45–/55→
-   ≥4.6:1, /35→~3.9:1 (large/secondary). Mirrors the .text-white/NN remap above. */
+   deliberately left alone so the visual hierarchy survives. Verified against
+   the source warm-paper --background (#EFEADF) and white card surfaces:
+   /40 remains readable for secondary copy, while /45-/55 keep stronger body
+   contrast. Mirrors the .text-white/NN remap above. */
 .light .text-foreground\/35 { color: hsl(var(--foreground) / 0.58); }
 .light .text-foreground\/40 { color: hsl(var(--foreground) / 0.66); }
 .light .text-foreground\/45 { color: hsl(var(--foreground) / 0.66); }
