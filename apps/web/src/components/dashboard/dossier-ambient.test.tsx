@@ -264,10 +264,12 @@ describe("DossierAmbient rendering", () => {
     expect(sourceDesktopStart).toBeGreaterThan(-1);
     expect(desktopStart).toBeGreaterThan(-1);
     expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #EFEADF;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: linear-gradient(180deg, #FFFFFF");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
     expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none;[\s\S]*?opacity:\s*0;/);
+    expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
     expect(globals).toMatch(/\.lf-dossier-source-stage\s*\{[\s\S]*?height:\s*92px;/);
     expect(globals.slice(stageStart, stageEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
     expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
