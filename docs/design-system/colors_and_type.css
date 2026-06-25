@@ -1,5 +1,20 @@
 /* =========================================================================
-   LocateFlow — Colors & Type foundations
+   ⚠️ DEPRECATED / STALE — DO NOT USE AS A REFERENCE (2026-06-24)
+   ---------------------------------------------------------------------------
+   This file documents the PRE-RENEWAL system (orange #f97316 + Inter/JetBrains,
+   near-black #0a0a0f). The LIVE design system is Edition VIII — Gold/Sapphire
+   accent + Playfair/DM Sans/DM Mono, with a beige (#EFEADF) light canvas.
+
+   SINGLE SOURCE OF TRUTH: packages/shared/src/design-tokens-css.ts
+   (run `pnpm tokens:emit` → apps/web/src/styles/_tokens.generated.css).
+
+   The orange/Inter values below are kept ONLY so the legacy
+   docs/design-system/preview/*.html swatch pages still render. They are NOT
+   the product's colors. Do not "fix" the app toward these values.
+   See docs/ui-renewal/30_UIUX_REMEDIATION_PLAN_2026-06-24.md.
+   =========================================================================
+
+   LocateFlow — Colors & Type foundations (LEGACY)
    Source: apps/web/src/styles/globals.css, apps/mobile/src/lib/theme.ts,
            apps/web/tailwind.config.ts, apps/mobile/tailwind.config.ts
    Dark-first: both web and mobile default to a near-black background with
