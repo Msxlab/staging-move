@@ -1148,7 +1148,7 @@ describe("dashboard wiring regression", () => {
     expect(dossierKeys(en).length).toBeGreaterThan(0);
   });
 
-  it("keeps the source dossier deck as the primary view and preserves its controls", () => {
+  it("keeps the source dossier deck and does not hide the animated detail rows", () => {
     const source = readWebSource("src/components/dashboard/home-dossier.tsx");
     const css = readWebSource("src/styles/globals.css");
 
@@ -1158,7 +1158,8 @@ describe("dashboard wiring regression", () => {
     expect(source).toContain('data-source-compact={hasSourceDeck ? "true" : "false"}');
 
     expect(css).toContain('.lf-dossier-grid[data-source-compact="true"]');
-    expect(css).toContain("display: none;");
+    expect(css).toContain("padding-top: 0.25rem;");
+    expect(css).not.toContain('.lf-dossier-grid[data-source-compact="true"] {\n  display: none;');
     expect(css).toContain('.lf-dossier-source-deck:not([data-expanded="true"]) .lf-dossier-source-card');
     expect(css).toContain("@keyframes lf-mv-rise");
     expect(css).toContain(".lf-move-rise");

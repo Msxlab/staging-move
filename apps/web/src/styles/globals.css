@@ -341,15 +341,15 @@
 }
 
 .light {
-  --lf-app-bg: #FBFAF7;
+  --lf-app-bg: var(--bg);
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(circle at 18% -8%, rgba(239, 234, 223, 0.58) 0%, transparent 30%),
-    radial-gradient(circle at 82% 0%, rgba(46, 95, 176, 0.025) 0%, transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.16) 48%, transparent 100%);
-  opacity: 0.36;
+    radial-gradient(circle at 18% -8%, rgba(255, 255, 255, 0.42) 0%, transparent 30%),
+    radial-gradient(circle at 82% 0%, rgba(46, 95, 176, 0.018) 0%, transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, transparent 56%);
+  opacity: 0.28;
 }
 
 .light .lf-app-shell .from-primary\/5,
@@ -1376,7 +1376,7 @@ html[data-embed="mobile"] .install-prompt {
   gap: 0.625rem;
 }
 .lf-dossier-grid[data-source-compact="true"] {
-  display: none;
+  padding-top: 0.25rem;
 }
 @media (min-width: 900px) {
   .lf-dossier-grid {
