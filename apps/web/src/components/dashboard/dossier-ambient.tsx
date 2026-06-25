@@ -196,11 +196,11 @@ export function sourceSceneVars({ type, level }: SourceDossierSceneSpec): Source
   return {
     "--ds-tone": tone,
     "--ds-glow": `color-mix(in srgb, ${tone} 22%, transparent)`,
-    "--rc-head": "#8C9AB2",
-    "--rc-mask": "#0C1525",
+    "--rc-head": "var(--lf-rc-head, #8C9AB2)",
+    "--rc-mask": "var(--lf-rc-mask, #0C1525)",
     "--rc-ear": "#C4A090",
-    "--rc-eye": "var(--foil-b)",
-    "--rc-pupil": "#04080F",
+    "--rc-eye": "var(--lf-rc-eye, var(--foil-b))",
+    "--rc-pupil": "var(--lf-rc-pupil, #04080F)",
   };
 }
 

@@ -1143,11 +1143,14 @@ describe("dashboard wiring regression", () => {
     expect(dossierKeys(en).length).toBeGreaterThan(0);
   });
 
-  it("keeps the source animation deck visible on desktop alongside the row/list dossier", () => {
+  it("keeps the compact source animation deck as the desktop first view", () => {
     const css = readWebSource("src/styles/globals.css");
     expect(css).toContain('.lf-dossier-grid[data-source-compact="true"]');
     expect(css).toMatch(
-      /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-grid\[data-source-compact="true"\] \{[\s\S]*?display: grid;/,
+      /\.lf-dossier-grid\[data-source-compact="true"\]\s*\{[\s\S]*?display:\s*none;/,
+    );
+    expect(css).not.toMatch(
+      /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-grid\[data-source-compact="true"\] \{[\s\S]*?display:\s*grid;/,
     );
     expect(css).toMatch(
       /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/,
