@@ -102,6 +102,10 @@ export function shouldShowHouseholdActivation(args: {
   return eligibleActivationWorkspace(args.plan, args.workspaces) !== null;
 }
 
+export function householdSetupInitialFocusTarget(hasExistingWorkspace: boolean): "email" | "name" {
+  return hasExistingWorkspace ? "email" : "name";
+}
+
 interface InviteFailure {
   email: string;
   error: string;
@@ -186,6 +190,7 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
   }, [dismissed, plan]);
 
   const target = workspaces ? eligibleActivationWorkspace(plan, workspaces) : null;
+  const targetWorkspaceId = target?.id ?? null;
   const visible =
     workspaces !== null &&
     shouldShowHouseholdActivation({
@@ -223,11 +228,14 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
   useEffect(() => {
     if (!open || result || submitting) return;
     const raf = window.requestAnimationFrame(() => {
-      const targetInput = name.trim() ? firstEmailInputRef.current : nameInputRef.current;
+      const targetInput =
+        householdSetupInitialFocusTarget(Boolean(targetWorkspaceId)) === "email"
+          ? firstEmailInputRef.current
+          : nameInputRef.current;
       targetInput?.focus();
     });
     return () => window.cancelAnimationFrame(raf);
-  }, [open, result, submitting]);
+  }, [open, result, submitting, targetWorkspaceId]);
 
   const handleDismiss = () => {
     setDismissed(true);

@@ -31,6 +31,10 @@ From `Move.dc.html`:
 - The earlier web light canvas was softened to `#FBFAF6`, which drifted away from the requested source beige family; the later flat `#EFEADF` canvas overcorrected and made the dashboard too muddy.
 - The prior light-stage fix made dossier stages light blue/grey, but source expects a dark animated dossier stage.
 - Web service worker is intentionally auth-safe and does not cache `/api/*`; dossier UI cache is `sessionStorage` in `HomeDossier`, not the prototype's broad offline-first service worker.
+- Home Dossier web cache is browser-side per tab/session: key `lf:home-dossier:v1:{addressId}`, freshness from the dossier route's private `max-age` header or the client fallback.
+- Route map light labels already have a light-mode CSS override; if staging still shows dark labels, the browser/server is serving an older deployed asset or cached CSS.
+- The PDF route has a real-generator regression test for the current dossier payload, so a continuing staging 500 should be checked in server runtime logs for the concrete logged `Failed to build dossier PDF` error shape.
+- The household activation modal can open for an already-existing household where the user's next action is invite email, but the prior focus decision could still land on the household name input.
 
 ## Changes Made In This Pass
 
@@ -44,6 +48,9 @@ From `Move.dc.html`:
 - Made the source-style dossier deck the primary web presentation by hiding the legacy row grid until `View full` is selected; if there are no source cards, the legacy grid still shows as fallback.
 - Updated the dossier CSS regression test to pin both the source beige app canvas and dark animated dossier stage.
 - Added a follow-up regression check in the pricing/free-tier contract test so the light app canvas stays in the source warm-paper family without returning to the muddy outer-page radial or a flat beige wash.
+- Added a `showTag` switch to `DossierAmbient` and used it in the source deck so the deck renders one `GOOD/CHECK/ALERT` label instead of stacking the ambient scene's internal label under the deck label.
+- Changed household activation modal initial focus so an existing household opens on the first invite email field; only the no-workspace create flow starts on household name.
+- Added focused tests for both the suppressed dossier internal tag and household setup focus target.
 
 ## Current Mobile Findings
 
@@ -76,10 +83,16 @@ From `Move.dc.html`:
     - passed.
   - `git diff --check`
     - passed with the existing line-ending warning for `apps/web/src/styles/globals.css`.
+- Follow-up source-deck/invite-focus patch:
+  - `pnpm --filter @locateflow/web test -- dossier-ambient home-dossier household-activation-card route-map-card pricing-free-tier-contract`
+    - 6 files passed, 152 tests passed.
+    - Local warning: Node v24.13.0 does not match repo expected Node 22.x.
 
 ## Remaining Work
 
 - Visually verify staging after deploy against the source screenshots/current browser state.
 - Visually verify that the source deck is now primary and that `View full` reveals the legacy detail grid without overwhelming the first view.
+- Open Dokploy/staging logs for the exact PDF 500 cause if staging still returns `{"error":"Failed to build dossier PDF"}` after the newest image is active.
+- Hard-refresh or unregister the staging service worker before judging route-map/dossier CSS, because the web app intentionally does not service-worker-cache `/api/*` but stale static assets can still make old UI appear.
 - Before any mobile edits, confirm with the user whether to implement the source deck treatment and free/entitlement copy cleanup on mobile.
 - Admin needs a separate decision: keep current light-capable admin or align closer to source dark-only admin.

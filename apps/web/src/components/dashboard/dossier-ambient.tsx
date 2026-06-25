@@ -1075,10 +1075,12 @@ export function DossierAmbient({
   kind,
   intensity,
   variant,
+  showTag = true,
 }: {
   kind: AmbientKind;
   intensity: number;
   variant?: AmbientVariant;
+  showTag?: boolean;
 }) {
   const ref = useAmbientPause();
   const level = clampIntensity(intensity);
@@ -1098,7 +1100,7 @@ export function DossierAmbient({
       style={{ zIndex: 0, ...sourceSceneStyle }}
       className="da-layer pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden rounded-r-xl"
     >
-      <span className="lf-dossier-scene-tag">{sourceSceneTag(sourceScene)}</span>
+      {showTag && <span className="lf-dossier-scene-tag">{sourceSceneTag(sourceScene)}</span>}
       <SourceDossierScene scene={sourceScene} />
     </div>
   );

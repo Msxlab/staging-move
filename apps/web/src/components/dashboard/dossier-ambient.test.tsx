@@ -288,6 +288,13 @@ describe("DossierAmbient rendering", () => {
     expect(markup).toContain("--rc-head");
   });
 
+  it("can suppress its internal stage tag when a source deck owns that label", () => {
+    const markup = renderToStaticMarkup(<DossierAmbient kind="flood" intensity={2} showTag={false} />);
+    expect(markup).toContain('data-source-type="flood"');
+    expect(markup).not.toContain("lf-dossier-scene-tag");
+    expect(markup).not.toContain("ALERT");
+  });
+
   it("clamps out-of-range intensity into the 0-2 contract", () => {
     expect(renderToStaticMarkup(<DossierAmbient kind="radon" intensity={7} />)).toContain(
       'data-intensity="2"',

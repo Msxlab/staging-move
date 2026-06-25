@@ -951,7 +951,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                   style={sceneVars}
                 >
                   <div className="lf-dossier-source-stage">
-                    <DossierAmbient {...card.ambient} />
+                    <DossierAmbient {...card.ambient} showTag={false} />
                     <span className="lf-dossier-source-tag">{sourceSceneTag(sourceScene)}</span>
                   </div>
                   <div className="lf-dossier-source-body">

@@ -47,6 +47,7 @@ vi.mock("next-intl", async () => {
 
 import {
   eligibleActivationWorkspace,
+  householdSetupInitialFocusTarget,
   isHouseholdPlan,
   shouldShowHouseholdActivation,
   type ActivationWorkspace,
@@ -155,6 +156,13 @@ describe("shouldShowHouseholdActivation", () => {
     expect(shouldShowHouseholdActivation({ ...base, workspaces: [] })).toBe(true);
     // ...but not on a non-household plan.
     expect(shouldShowHouseholdActivation({ ...base, plan: "INDIVIDUAL", workspaces: [] })).toBe(false);
+  });
+});
+
+describe("householdSetupInitialFocusTarget", () => {
+  it("starts on email for an existing household and on name when a workspace must be created", () => {
+    expect(householdSetupInitialFocusTarget(true)).toBe("email");
+    expect(householdSetupInitialFocusTarget(false)).toBe("name");
   });
 });
 
