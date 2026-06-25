@@ -163,6 +163,19 @@ describe("householdSetupInitialFocusTarget", () => {
   it("starts on email so the invite action never types into the household name field", () => {
     expect(householdSetupInitialFocusTarget()).toBe("email");
   });
+
+  it("keeps the first invite email input as the browser autofocus target", () => {
+    const cwd = process.cwd();
+    const webRoot = cwd.endsWith(`${path.sep}apps${path.sep}web`) ? cwd : path.join(cwd, "apps", "web");
+    const source = readFileSync(
+      path.join(webRoot, "src", "components", "dashboard", "household-activation-card.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain('autoComplete="off"');
+    expect(source).toContain("autoFocus={i === 0}");
+    expect(source).toContain('autoComplete="email"');
+  });
 });
 
 describe("household catalog parity (en/es)", () => {

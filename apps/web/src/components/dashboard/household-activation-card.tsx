@@ -461,7 +461,7 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
                 <input
                   id="household-name"
                   name="householdName"
-                  autoComplete="organization"
+                  autoComplete="off"
                   value={name}
                   maxLength={60}
                   placeholder={td("household_defaultName")}
@@ -482,6 +482,7 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
                       ref={i === 0 ? firstEmailInputRef : undefined}
                       type="email"
                       name={`householdInviteEmail-${i + 1}`}
+                      autoFocus={i === 0}
                       autoComplete="email"
                       inputMode="email"
                       aria-label={td("household_emailFieldLabel", { index: i + 1 })}
