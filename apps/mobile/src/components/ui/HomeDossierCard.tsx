@@ -769,10 +769,11 @@ const makeStyles = (theme: Theme) =>
       letterSpacing: 0.5,
     },
     rowValue: {
-      fontSize: 13,
-      fontWeight: "600",
+      fontSize: 20,
+      fontWeight: "700",
       color: theme.colors.text,
-      marginTop: 3,
+      marginTop: 4,
+      letterSpacing: -0.3,
     },
     rowMeta: {
       fontSize: 12,
