@@ -21,28 +21,29 @@
 From `Move.dc.html`:
 
 - Light tokens: `bg #EFEADF`, `bg2 #E7E1D4`, `surface #FFFFFF`, `surface2 #F5F0E7`, `surface3 #ECE6DA`.
-- Source prototype light theme uses `bg #EFEADF` as the app canvas and `surface #FFFFFF` for cards/panels. The prototype also has optional `lightPage()` radial variants, but the user clarified the dossier beige should be the whole light theme background.
+- Source prototype light theme uses `bg #EFEADF` as the warm paper family and `surface #FFFFFF` for cards/panels. A follow-up staging screenshot showed that a flat full-screen `#EFEADF` app canvas made the dashboard look muddy, so web now keeps the source paper as the warm edge tone in a white-to-paper gradient rather than as a solid wash.
 - Dossier card stage: 82px dark animated stage `linear-gradient(180deg,#101b30,#0a1322)` even when the app theme is light.
 - Dossier layout: source deck with `View full` / `Swipe view`, horizontal swipe mode at `76%`, expanded wrap mode at `calc(50% - 6px)`.
 
 ## Current Web Findings
 
 - Web had the source deck code and tests already (`lf-dossier-source-deck`, `lf-dossier-source-stage`, source scene data attributes).
-- The previous web light canvas was softened to `#FBFAF6`, which drifted away from the requested source beige background.
+- The earlier web light canvas was softened to `#FBFAF6`, which drifted away from the requested source beige family; the later flat `#EFEADF` canvas overcorrected and made the dashboard too muddy.
 - The prior light-stage fix made dossier stages light blue/grey, but source expects a dark animated dossier stage.
 - Web service worker is intentionally auth-safe and does not cache `/api/*`; dossier UI cache is `sessionStorage` in `HomeDossier`, not the prototype's broad offline-first service worker.
 
 ## Changes Made In This Pass
 
-- Restored web light app background to the source canvas color:
+- Restored web light app background to the source warm-paper family:
   - `--background: 41.25 33.33% 90.59%`
-- `--lf-app-bg: #EFEADF`
+- `--lf-app-bg: radial-gradient(ellipse 120% 80% at 50% -20%, #FFFFFF 0%, #F8F5EE 46%, #EFEADF 100%)`
 - Kept web app chrome and dense dashboard panels white to avoid the muddy monochrome UI seen on staging.
 - Restored light-mode dossier animated stages to the source dark stage background.
 - Strengthened source-scene ground visibility inside dark stages in light mode.
 - Increased the source-style dossier deck stage from 82px to 92px so the animated scene has enough vertical room on web.
 - Made the source-style dossier deck the primary web presentation by hiding the legacy row grid until `View full` is selected; if there are no source cards, the legacy grid still shows as fallback.
 - Updated the dossier CSS regression test to pin both the source beige app canvas and dark animated dossier stage.
+- Added a follow-up regression check in the pricing/free-tier contract test so the light app canvas stays in the source warm-paper family without returning to the muddy outer-page radial or a flat beige wash.
 
 ## Current Mobile Findings
 
@@ -68,6 +69,13 @@ From `Move.dc.html`:
   - passed.
 - `pnpm --filter @locateflow/web build`
   - passed with existing warnings: local Node v24.13.0 does not match the repo's expected Node 22.x, Next middleware convention warning, Prisma CommonJS re-export warning, and Edge runtime static-generation warnings.
+- Follow-up color hotfix:
+  - `pnpm --filter @locateflow/web test -- dossier-ambient pricing-free-tier-contract`
+    - 2 files passed, 40 tests passed.
+  - `pnpm --filter @locateflow/web lint`
+    - passed.
+  - `git diff --check`
+    - passed with the existing line-ending warning for `apps/web/src/styles/globals.css`.
 
 ## Remaining Work
 
