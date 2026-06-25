@@ -1150,6 +1150,9 @@ describe("dashboard wiring regression", () => {
       /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-grid\[data-source-compact="true"\] \{[\s\S]*?display: grid;/,
     );
     expect(css).toMatch(
+      /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/,
+    );
+    expect(css).toMatch(
       /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-source-toolbar,[\s\S]*?\.lf-dossier-source-deck,[\s\S]*?\.lf-dossier-source-dots \{[\s\S]*?display: none;/,
     );
   });

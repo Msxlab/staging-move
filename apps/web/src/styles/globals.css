@@ -323,15 +323,14 @@
   /*
    * Source Move.dc.html light theme:
    *   bg #EFEADF, bg2 #E7E1D4, surface #FFFFFF, surface2 #F5F0E7.
-   * The production web dashboard is denser than the source mobile frame, so the
-   * shell uses a white-led paper derivative instead of washing the full screen
-   * with the source beige token.
+   * The app shell uses the source paper token; dense panels/chrome stay on
+   * clean white surfaces so the page reads warm without veiling the content.
    */
   --background: 41.25 33.33% 90.59%;
   --muted: 38.57 41.18% 93.33%;
   --accent: 38.57 41.18% 93.33%;
   --surface-secondary: #F5F0E7;
-  --lf-app-bg: linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 58%, #F6F2EA 100%);
+  --lf-app-bg: #EFEADF;
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.96);
   --lf-app-chrome-bg-strong: #FFFFFF;
   --lf-app-panel-bg: rgba(255, 255, 255, 0.98);
@@ -1422,7 +1421,7 @@ html[data-embed="mobile"] .install-prompt {
 }
 @media (min-width: 900px) {
   .lf-dossier-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
   .lf-dossier-grid[data-source-compact="true"] {
     display: grid;
@@ -1813,6 +1812,58 @@ html[data-embed="mobile"] .install-prompt {
 .light .lf-dossier-stat {
   background: color-mix(in srgb, #FFFFFF 78%, var(--surface-2) 22%);
   border-color: rgba(20, 32, 47, 0.10);
+}
+
+@media (min-width: 900px) {
+  .lf-dossier-scene-card {
+    --lf-dossier-stage-h: 0px;
+    min-height: 4.75rem;
+    padding: 0.75rem !important;
+  }
+
+  .lf-dossier-scene-card::before {
+    opacity: 0.42;
+  }
+
+  .lf-dossier-scene-card > .da-layer {
+    inset: 0 0 0 auto !important;
+    width: 72% !important;
+    height: 100% !important;
+    border: 0 !important;
+    border-radius: inherit !important;
+    background:
+      radial-gradient(ellipse 64% 92% at 78% 78%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 16%, transparent), transparent 68%);
+    -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.36) 15%, rgba(0, 0, 0, 0.82) 32%, black 48%);
+    mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.36) 15%, rgba(0, 0, 0, 0.82) 32%, black 48%);
+    opacity: 0.98;
+    filter: saturate(1.22) contrast(1.06);
+  }
+
+  .lf-dossier-scene-card > .da-layer::before {
+    background:
+      linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--surface) 28%, transparent) 54%, transparent 100%);
+    opacity: 0.18;
+  }
+
+  .light .lf-dossier-scene-card > .da-layer {
+    background:
+      radial-gradient(ellipse 68% 94% at 78% 78%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 18%, transparent), transparent 70%);
+    filter: saturate(1.28) contrast(1.08);
+  }
+
+  .light .lf-dossier-scene-card > .da-layer::before {
+    background:
+      linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.22) 52%, rgba(255, 255, 255, 0.04) 100%);
+    opacity: 0.24;
+  }
+
+  .lf-dossier-scene-card > .da-layer .ds-root {
+    min-height: 100%;
+  }
+
+  .lf-dossier-scene-card .lf-dossier-scene-tag {
+    display: none;
+  }
 }
 
 /* =========================================================================
