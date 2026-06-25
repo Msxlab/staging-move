@@ -130,7 +130,7 @@ function StatusBar() {
   return (
     <div className="relative flex items-center justify-between px-6 pb-2 pt-3 text-[10px] font-semibold text-foreground/80">
       <span>9:41</span>
-      <span className="absolute left-1/2 top-2 h-5 w-24 -translate-x-1/2 rounded-full bg-background" />
+      <span className="absolute left-1/2 top-[7px] h-5 w-[88px] -translate-x-1/2 rounded-full bg-[#0b0b14] shadow-[inset_0_1px_2px_rgba(255,255,255,0.12)]" />
       <div className="flex items-center gap-1.5">
         <Wifi className="h-3 w-3" />
         <Battery className="h-3 w-3" />
