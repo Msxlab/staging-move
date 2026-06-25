@@ -829,6 +829,7 @@
     "household_modal_title": "Set up your household",
     "household_modal_desc": "Name your household and send email invitations. Each invitation link expires in 7 days.",
     "household_nameLabel": "Household name",
+    "household_defaultName": "My household",
     "household_emailsLabel": "Invite by email",
     "household_seatsHint": "You can invite up to {count} people on your plan.",
     "household_emailFieldLabel": "Invite email {index}",

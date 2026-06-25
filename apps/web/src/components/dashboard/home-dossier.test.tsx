@@ -1143,7 +1143,7 @@ describe("dashboard wiring regression", () => {
     expect(dossierKeys(en).length).toBeGreaterThan(0);
   });
 
-  it("shows the row/list dossier on desktop while keeping the source deck for compact screens", () => {
+  it("keeps the source animation deck visible on desktop alongside the row/list dossier", () => {
     const css = readWebSource("src/styles/globals.css");
     expect(css).toContain('.lf-dossier-grid[data-source-compact="true"]');
     expect(css).toMatch(
@@ -1152,8 +1152,9 @@ describe("dashboard wiring regression", () => {
     expect(css).toMatch(
       /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/,
     );
-    expect(css).toMatch(
-      /@media \(min-width: 900px\) \{[\s\S]*?\.lf-dossier-source-toolbar,[\s\S]*?\.lf-dossier-source-deck,[\s\S]*?\.lf-dossier-source-dots \{[\s\S]*?display: none;/,
+    expect(css).toContain(".lf-dossier-source-deck:not([data-expanded=\"true\"]) .lf-dossier-source-card");
+    expect(css).not.toMatch(
+      /\.lf-dossier-source-toolbar,\s*\.lf-dossier-source-deck,\s*\.lf-dossier-source-dots\s*\{[\s\S]*?display:\s*none;/,
     );
   });
 });

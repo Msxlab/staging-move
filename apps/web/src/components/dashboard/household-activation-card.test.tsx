@@ -160,9 +160,8 @@ describe("shouldShowHouseholdActivation", () => {
 });
 
 describe("householdSetupInitialFocusTarget", () => {
-  it("starts on email for an existing household and on name when a workspace must be created", () => {
-    expect(householdSetupInitialFocusTarget(true)).toBe("email");
-    expect(householdSetupInitialFocusTarget(false)).toBe("name");
+  it("starts on email so the invite action never types into the household name field", () => {
+    expect(householdSetupInitialFocusTarget()).toBe("email");
   });
 });
 

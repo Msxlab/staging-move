@@ -829,6 +829,7 @@
     "household_modal_title": "Configura tu hogar",
     "household_modal_desc": "Ponle nombre a tu hogar y envía invitaciones por correo. Cada enlace de invitación caduca en 7 días.",
     "household_nameLabel": "Nombre del hogar",
+    "household_defaultName": "Mi hogar",
     "household_emailsLabel": "Invitar por correo",
     "household_seatsHint": "Puedes invitar hasta {count} personas con tu plan.",
     "household_emailFieldLabel": "Correo de invitación {index}",
