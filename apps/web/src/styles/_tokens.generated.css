@@ -206,10 +206,10 @@
 
 .light {
   --bg:                 #FBFAF6;
-  --bg-deep:            #F3EEE4;
+  --bg-deep:            #F8F6F0;
   --surface:            #FFFFFF;
-  --surface-2:          #F7F3EA;
-  --surface-3:          #EEE7DA;
+  --surface-2:          #F5F0E7;
+  --surface-3:          #EFEADF;
   --elevated:           #FFFFFF;
 
   --fg:                 #14202F;

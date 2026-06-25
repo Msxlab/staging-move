@@ -246,7 +246,7 @@ describe("DossierAmbient rendering", () => {
     expect(missing).toEqual([]);
   });
 
-  it("keeps a clean warm light app canvas, white surfaces, visible dark stages, and desktop source deck", () => {
+  it("keeps the clean warm light canvas, source paper accents, white surfaces, visible dark stages, and desktop source deck", () => {
     const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
     const aurora = readFileSync(new URL("../../styles/aurora.css", import.meta.url), "utf8");
     const appStart = globals.indexOf(".light {");
@@ -267,15 +267,15 @@ describe("DossierAmbient rendering", () => {
     expect(auroraLightStart).toBeGreaterThan(-1);
     expect(sourceDesktopStart).toBeGreaterThan(-1);
     expect(desktopStart).toBeGreaterThan(-1);
-    expect(globals.slice(appStart, appEnd)).toContain("--background: 48 38% 97%");
-    expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #F7F3EA;");
+    expect(globals.slice(appStart, appEnd)).toContain("--background: 48 38.46% 97.45%");
+    expect(globals.slice(appStart, appEnd)).toContain("--lf-source-paper-bg: #EFEADF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-bg: #FBFAF6;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-chrome-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-app-panel-bg-strong: #FFFFFF;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-head: #7E8EA6;");
     expect(globals.slice(appStart, appEnd)).toContain("--lf-rc-eye: hsl(var(--primary));");
-    expect(aurora.slice(auroraLightStart, auroraLightEnd)).toContain("--background:           48 38% 97%;");
+    expect(aurora.slice(auroraLightStart, auroraLightEnd)).toContain("--background:           48 38.46% 97.45%;");
     expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none;[\s\S]*?opacity:\s*0;/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.app-shell-backdrop\s*\{[\s\S]*?background:\s*none !important;[\s\S]*?opacity:\s*0 !important;/);
     expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\]\s*\{[\s\S]*?background:\s*var\(--lf-app-bg,\s*#FBFAF6\) !important;/);
@@ -286,6 +286,7 @@ describe("DossierAmbient rendering", () => {
     expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.lf-source-hero-panel\s*\{[\s\S]*?linear-gradient\(135deg,\s*#FFFFFF 0%,\s*#F4EFE5 100%\) !important;/);
     expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*?background-color:\s*var\(--lf-app-panel-bg\);/);
     expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.bg-background\\\/55[\s\S]*?background-color:\s*var\(--lf-app-panel-bg,\s*#FFFFFF\);/);
+    expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.bg-card\\\/70[\s\S]*?background-color:\s*var\(--lf-app-panel-bg,\s*#FFFFFF\);/);
     expect(globals).toContain("@keyframes lf-mv-rise");
     expect(globals).toContain(".lf-move-rise");
     expect(globals).toContain(".lf-route-map-dash");

@@ -128,8 +128,8 @@
 }
 
 /* Light-mode app glass: dark-first translucent utilities (`bg-foreground/5`,
-   `bg-card/70`, etc.) can read muddy over a warm app canvas. Keep the wide
-   desktop canvas clean, and let panels read as white paper. */
+   `bg-card/70`, etc.) can read muddy over warm canvases. Keep the app canvas
+   clean, and let panels read as white paper. */
 .light .lf-aurora .bg-foreground\/5,
 .light .lf-aurora .bg-foreground\/\[0\.03\],
 .light .lf-aurora .bg-foreground\/\[0\.04\],
@@ -498,7 +498,7 @@
 .light .lf-aurora {
   --au-base:              #FBFAF6;
   --au-base-2:            #FFFFFF;
-  --au-base-3:            #F7F3EA;
+  --au-base-3:            #F5F0E7;
   --au-pane:              #FFFFFF;
   --au-pane-2:            #FFFFFF;
   --au-pane-3:            #FFFFFF;
@@ -507,7 +507,7 @@
   --au-aurora-3:          rgba(15, 107, 80, 0.035);
   --au-aurora-4:          rgba(162, 59, 63, 0.025);
 
-  --background:           48 38% 97%;
+  --background:           48 38.46% 97.45%;
   --foreground:           213 39% 13%;
   --card:                 0 0% 100%;
   --card-foreground:      213 39% 13%;
@@ -517,9 +517,9 @@
   --primary-foreground:   0 0% 100%;
   --secondary:            214 22% 38%;
   --secondary-foreground: 0 0% 100%;
-  --muted:                39 35% 94%;
+  --muted:                45 36.36% 95.69%;
   --muted-foreground:     213 18% 30%;
-  --accent:               39 35% 94%;
+  --accent:               45 36.36% 95.69%;
   --accent-foreground:    213 39% 13%;
   --destructive:          358 47% 43%;
   --destructive-foreground: 0 0% 100%;
