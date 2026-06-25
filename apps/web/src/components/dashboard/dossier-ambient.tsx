@@ -114,6 +114,29 @@ export interface SourceDossierSceneSpec {
   detail?: SceneDetail;
 }
 
+/**
+ * RACCOON-LITE dossier scenes (no-gold + "less raccoon" direction).
+ *
+ * The dossier scenes used to render a <SourceCharacter>/<DossierRaccoon> mascot
+ * ON TOP of their data-derived background + particle + glow layers. User
+ * feedback was "too much raccoon" in the dossier, so this flag gates EVERY
+ * in-scene mascot at a single point: when false, SourceCharacter renders
+ * nothing and the scene reads purely from its tone + particle density +
+ * GOOD/CHECK/ALERT tag + sibling status glyphs (ds-alert-symbol, ds-air-wary,
+ * ds-spark, ds-warning-triangle, …). The background / particle / glow / tone
+ * layers (ds-ground, ds-radial, ds-leaf, ds-mote, ds-rain, ds-snow, ds-cloud,
+ * ds-fogband, ds-streak, ds-ray, ds-glow, ds-flood, ds-ev-node, …) all stay.
+ *
+ * It is deliberately a module-level constant (not deleted code): flip it back
+ * to `true` to restore the mascot in all scenes at once. The DossierRaccoon /
+ * SourceCharacter definitions are KEPT for the app's other raccoon uses (logo,
+ * dashboard greeting mascot, RaccoonMark) and for this reversibility.
+ *
+ * Scope: the in-scene mascot ONLY. The foreground AqiGauge / EvMeter (air, EV)
+ * never used SourceCharacter, so they are unaffected.
+ */
+const SCENE_RACCOON = false;
+
 function riskSourceLevel(intensity: AmbientIntensity): "good" | "mid" | "bad" {
   return intensity === 2 ? "bad" : intensity === 1 ? "mid" : "good";
 }
@@ -256,6 +279,11 @@ function SourceCharacter({
   headChildren?: ReactNode;
   children?: ReactNode;
 }) {
+  // Raccoon-lite: the in-scene mascot (head + body + its attached props such as
+  // arms / signs / status pop) is removed at this single gate. The scene's
+  // sibling background + particle + glow + tone layers and the GOOD/CHECK/ALERT
+  // tag still render, so each state stays legible without the character.
+  if (!SCENE_RACCOON) return null;
   return (
     <div className="ds-char" style={style}>
       <div className="ds-hd" style={headStyle}>

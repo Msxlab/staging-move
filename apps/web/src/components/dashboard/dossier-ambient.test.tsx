@@ -351,12 +351,15 @@ describe("DossierAmbient rendering", () => {
     expect(lowWalk).not.toContain("ds-chase-pack");
   });
 
-  it("renders the source air and storm character props", () => {
+  it("renders the source air and storm scene layers (raccoon-lite: no in-scene mascot)", () => {
     const air = renderToStaticMarkup(<DossierAmbient kind="air" intensity={2} />);
     expect(air).toContain('data-ds-type="air"');
     expect(air).toContain('data-ds-level="bad"');
-    expect(air).toContain("ds-mask");
-    expect(air).toContain("ds-popmark");
+    // Raccoon-lite: the mascot (and its attached ds-mask / ds-popmark) is gone;
+    // the unhealthy band still reads from the haze layer + the ALERT tag.
+    expect(air).toContain("ds-haze-bg");
+    expect(air).toContain("ALERT");
+    expect(air).not.toContain("ds-char");
 
     const storm = renderToStaticMarkup(<DossierAmbient kind="weather" intensity={2} variant="storm" />);
     expect(storm).toContain('data-ds-level="storm"');
@@ -389,16 +392,26 @@ describe("DossierAmbient rendering", () => {
     expect(none).not.toContain("ds-ev-bolt");
   });
 
-  it("renders the source air extras at their bands", () => {
+  it("renders the source air extras at their bands (raccoon-lite: tone + particles carry the state)", () => {
     const calm = renderToStaticMarkup(<DossierAmbient kind="air" intensity={0} />);
     const moderate = renderToStaticMarkup(<DossierAmbient kind="air" intensity={1} />);
     const elevated = renderToStaticMarkup(<DossierAmbient kind="air" intensity={2} />);
+    // GOOD: clear radial + drifting leaves, no haze.
     expect(calm).toContain("ds-leaf");
-    expect(calm).not.toContain("ds-mask");
+    expect(calm).not.toContain("ds-haze-bg");
+    // MODERATE: amber wash + amber motes (visibly NOT good).
     expect(moderate).toContain("ds-mote-amber");
-    expect(moderate).toContain("ds-mask");
+    expect(moderate).toContain('data-ds-level="mid"');
+    expect(moderate).toContain("CHECK");
+    // ELEVATED: grey haze + ALERT tag (visibly NOT moderate).
     expect(elevated).toContain("ds-haze-bg");
-    expect(elevated).toContain("ds-mask");
+    expect(elevated).toContain('data-ds-level="bad"');
+    expect(elevated).toContain("ALERT");
+    // The in-scene mascot (ds-mask lived on it) is gone in all three bands.
+    for (const markup of [calm, moderate, elevated]) {
+      expect(markup).not.toContain("ds-char");
+      expect(markup).not.toContain("ds-mask");
+    }
   });
 
   it("renders source water and housing scenes", () => {
