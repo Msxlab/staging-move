@@ -50,6 +50,7 @@ async function loadWidgetPrefs(): Promise<DashboardWidgetPrefs | null> {
 export default async function DashboardPage() {
   const initialPrefs = await loadWidgetPrefs();
   const session = await getUserSession();
+  const userPrefs = session ? await loadUserPreferences(session.userId) : null;
   const [flagEnabled, trustFlagEnabled, consumerFree] = session
     ? await Promise.all([
         isFeatureEnabled(UX_AI_BRIEFING_EXPERIENCE_FLAG, { userId: session.userId }),
@@ -65,6 +66,7 @@ export default async function DashboardPage() {
       uxAiBriefingExperienceVariant={uxAiBriefingExperienceVariant}
       uxTrustCopyVariant={uxTrustCopyVariant}
       consumerFree={consumerFree}
+      userFirstName={userPrefs?.firstName ?? null}
     />
   );
 }

@@ -595,6 +595,9 @@
   },
   "dashboard": {
     "welcome": "Bienvenido de vuelta",
+    "greetingMorning": "Buenos días",
+    "greetingAfternoon": "Buenas tardes",
+    "greetingEvening": "Buenas noches",
     "subtitle": "Esto es lo que pasa en tus direcciones.",
     "stat_addresses": "Direcciones",
     "stat_services": "Servicios activos",

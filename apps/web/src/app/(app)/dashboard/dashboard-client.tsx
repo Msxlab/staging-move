@@ -271,14 +271,36 @@ export default function DashboardClient({
   uxAiBriefingExperienceVariant = "control",
   uxTrustCopyVariant = "control",
   consumerFree = false,
+  userFirstName = null,
 }: {
   initialPrefs: DashboardWidgetPrefs | null;
   uxAiBriefingExperienceVariant?: UxAiBriefingExperienceVariant;
   uxTrustCopyVariant?: UxTrustCopyVariant;
   consumerFree?: boolean;
+  userFirstName?: string | null;
 }) {
   const t = useTranslations("services");
   const td = useTranslations("dashboard");
+  // DASH-06: personalized greeting. The time-of-day + date depend on the
+  // viewer's clock/locale, so they're computed CLIENT-side after mount — the
+  // first render (and SSR) omits the kicker, so there is no hydration drift.
+  const [timeOfDay, setTimeOfDay] = useState<"morning" | "afternoon" | "evening" | null>(null);
+  const [todayLabel, setTodayLabel] = useState<string | null>(null);
+  useEffect(() => {
+    const now = new Date();
+    const h = now.getHours();
+    setTimeOfDay(h < 12 ? "morning" : h < 18 ? "afternoon" : "evening");
+    setTodayLabel(now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
+  }, []);
+  const greetingLabel = timeOfDay
+    ? td(
+        timeOfDay === "morning"
+          ? "greetingMorning"
+          : timeOfDay === "afternoon"
+            ? "greetingAfternoon"
+            : "greetingEvening",
+      )
+    : null;
   const widgetLabels: Record<WidgetKey, string> = {
     stats: td("widget_stats"),
     nextCritical: td("widget_nextCritical"),
@@ -1195,6 +1217,12 @@ export default function DashboardClient({
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
+          {greetingLabel && (
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.2em] text-tone-honey-fg">
+              {greetingLabel}
+              {userFirstName ? `, ${userFirstName}` : ""}
+            </p>
+          )}
           <div className="flex items-center gap-3">
             {/* Aurora serif greeting — display face with ONE italic <em>
                 accent (cool gradient via the .h1 helper in globals.css). */}
@@ -1208,7 +1236,10 @@ export default function DashboardClient({
               </span>
             )}
           </div>
-          <p className="text-muted-foreground mt-1">{td("welcome")}. {td("subtitle")}</p>
+          <p className="text-muted-foreground mt-1">
+            {td("welcome")}. {td("subtitle")}
+            {todayLabel ? ` · ${todayLabel}` : ""}
+          </p>
         </div>
         <div className="flex gap-2">
           <button
