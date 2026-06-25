@@ -102,10 +102,10 @@ export const surfaceDark = {
 } as const;
 
 export const surfaceLight = {
-  background: "#EFEADF",
+  background: "#F8FAFC",
   surface: "#FFFFFF",
-  card: "#FFFFFF",
-  cardHover: "#F5F0E7",
+  card: "#F6F8FB",
+  cardHover: "#EEF2F7",
   elevated: "#FFFFFF",
 } as const;
 
