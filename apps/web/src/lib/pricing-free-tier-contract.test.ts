@@ -262,14 +262,16 @@ describe("consumer-free pricing + affiliate contract", () => {
     }
   });
 
-  it("keeps the light app canvas in the source warm-paper family without the muddy outer-page radial", () => {
+  it("keeps the light app canvas in a clean warm-paper derivative", () => {
     const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
     const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
 
     expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
     expect(globals).toMatch(
-      /\.light\s*\{[\s\S]*--lf-app-bg:\s*radial-gradient\(ellipse 120% 80% at 50% -20%, #FFFFFF 0%, #F8F5EE 46%, #EFEADF 100%\);/,
+      /\.light\s*\{[\s\S]*--lf-app-bg:\s*linear-gradient\(180deg, #FFFFFF 0%, #FBFAF7 58%, #F6F2EA 100%\);/,
     );
+    expect(globals).not.toContain("--lf-app-bg: #EFEADF;");
+    expect(globals).not.toContain("#F8F5EE 46%");
     expect(globals).not.toContain("#FAF8F3 38%");
     expect(globals).not.toContain("#F3EFE6 78%");
     expect(globals).not.toContain("#DEDCD3");

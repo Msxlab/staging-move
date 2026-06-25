@@ -246,7 +246,7 @@ describe("DossierAmbient rendering", () => {
     expect(missing).toEqual([]);
   });
 
-  it("keeps the source light app background and dark animated dossier stage", () => {
+  it("keeps the light app background clean and the source dark animated dossier stage", () => {
     const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
     const appStart = globals.indexOf(".light {");
     const appEnd = globals.indexOf(".light .app-shell-backdrop", appStart);
@@ -260,8 +260,9 @@ describe("DossierAmbient rendering", () => {
     expect(rowStart).toBeGreaterThan(-1);
     expect(globals.slice(appStart, appEnd)).toContain("--background: 41.25 33.33% 90.59%");
     expect(globals.slice(appStart, appEnd)).toContain(
-      "--lf-app-bg: radial-gradient(ellipse 120% 80% at 50% -20%, #FFFFFF 0%, #F8F5EE 46%, #EFEADF 100%);",
+      "--lf-app-bg: linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 58%, #F6F2EA 100%);",
     );
+    expect(globals.slice(appStart, appEnd)).not.toContain("--lf-app-bg: #EFEADF;");
     expect(globals).toMatch(/\.lf-dossier-source-stage\s*\{[\s\S]*?height:\s*92px;/);
     expect(globals.slice(stageStart, stageEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");
     expect(globals.slice(rowStart, rowEnd)).toContain("linear-gradient(180deg, #101B30, #0A1322)");

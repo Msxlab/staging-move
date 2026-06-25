@@ -21,14 +21,14 @@
 From `Move.dc.html`:
 
 - Light tokens: `bg #EFEADF`, `bg2 #E7E1D4`, `surface #FFFFFF`, `surface2 #F5F0E7`, `surface3 #ECE6DA`.
-- Source prototype light theme uses `bg #EFEADF` as the warm paper family and `surface #FFFFFF` for cards/panels. A follow-up staging screenshot showed that a flat full-screen `#EFEADF` app canvas made the dashboard look muddy, so web now keeps the source paper as the warm edge tone in a white-to-paper gradient rather than as a solid wash.
+- Source prototype light theme uses `bg #EFEADF` as the warm paper family and `surface #FFFFFF` for cards/panels. Follow-up staging screenshots showed that both a flat full-screen `#EFEADF` canvas and the earlier warm radial wash made the dense web dashboard look muddy. Web now keeps the source beige token in the shared theme model but uses a cleaner white-led warm-paper derivative for the app shell canvas.
 - Dossier card stage: 82px dark animated stage `linear-gradient(180deg,#101b30,#0a1322)` even when the app theme is light.
 - Dossier layout: source deck with `View full` / `Swipe view`, horizontal swipe mode at `76%`, expanded wrap mode at `calc(50% - 6px)`.
 
 ## Current Web Findings
 
 - Web had the source deck code and tests already (`lf-dossier-source-deck`, `lf-dossier-source-stage`, source scene data attributes).
-- The earlier web light canvas was softened to `#FBFAF6`, which drifted away from the requested source beige family; the later flat `#EFEADF` canvas overcorrected and made the dashboard too muddy.
+- The earlier web light canvas was softened to `#FBFAF6`, which drifted away from the requested source beige family; the later warm radial/flat `#EFEADF` attempts overcorrected and made the dashboard too muddy.
 - The prior light-stage fix made dossier stages light blue/grey, but source expects a dark animated dossier stage.
 - Web service worker is intentionally auth-safe and does not cache `/api/*`; dossier UI cache is `sessionStorage` in `HomeDossier`, not the prototype's broad offline-first service worker.
 - Home Dossier web cache is browser-side per tab/session: key `lf:home-dossier:v1:{addressId}`, freshness from the dossier route's private `max-age` header or the client fallback.
@@ -39,16 +39,16 @@ From `Move.dc.html`:
 
 ## Changes Made In This Pass
 
-- Restored web light app background to the source warm-paper family:
+- Restored web light app tokens to the source warm-paper family:
   - `--background: 41.25 33.33% 90.59%`
-- `--lf-app-bg: radial-gradient(ellipse 120% 80% at 50% -20%, #FFFFFF 0%, #F8F5EE 46%, #EFEADF 100%)`
+- Changed the actual web app shell background to `linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 58%, #F6F2EA 100%)` so the full dashboard no longer gets a beige/grey veil.
 - Kept web app chrome and dense dashboard panels white to avoid the muddy monochrome UI seen on staging.
 - Restored light-mode dossier animated stages to the source dark stage background.
 - Strengthened source-scene ground visibility inside dark stages in light mode.
 - Increased the source-style dossier deck stage from 82px to 92px so the animated scene has enough vertical room on web.
-- Made the source-style dossier deck the primary web presentation by hiding the legacy row grid until `View full` is selected; if there are no source cards, the legacy grid still shows as fallback.
-- Updated the dossier CSS regression test to pin both the source beige app canvas and dark animated dossier stage.
-- Added a follow-up regression check in the pricing/free-tier contract test so the light app canvas stays in the source warm-paper family without returning to the muddy outer-page radial or a flat beige wash.
+- Made the source-style dossier deck the compact/mobile web presentation while restoring the desktop row/list dossier view from the provided web reference image.
+- Updated the dossier CSS regression test to pin both the clean warm app canvas derivative and dark animated dossier stage.
+- Added a follow-up regression check in the pricing/free-tier contract test so the light app canvas stays in a clean warm-paper derivative without returning to the muddy outer-page radial or a flat beige wash.
 - Added a `showTag` switch to `DossierAmbient` and used it in the source deck so the deck renders one `GOOD/CHECK/ALERT` label instead of stacking the ambient scene's internal label under the deck label.
 - Changed household activation modal initial focus so an existing household opens on the first invite email field; only the no-workspace create flow starts on household name.
 - Added focused tests for both the suppressed dossier internal tag and household setup focus target.
@@ -102,11 +102,24 @@ From `Move.dc.html`:
     - passed with the same local Node engine warning.
   - `git diff --check`
     - passed with the existing CRLF warning for `apps/web/src/styles/globals.css`.
+- Follow-up light-canvas cleanup after staging feedback:
+  - `pnpm --filter @locateflow/web test -- dossier-ambient pricing-free-tier-contract`
+    - 2 files passed, 41 tests passed.
+    - Local warning: Node v24.13.0 does not match repo expected Node 22.x.
+  - `pnpm --filter @locateflow/web test -- dossier-ambient home-dossier route-map-card household-activation-card pricing-free-tier-contract`
+    - 6 files passed, 153 tests passed.
+    - Local warning: Node v24.13.0 does not match repo expected Node 22.x.
+  - `pnpm --filter @locateflow/web lint`
+    - passed with the same local Node engine warning.
+  - `git diff --check`
+    - passed with the existing CRLF warning for `apps/web/src/styles/globals.css`.
+  - `pnpm --filter @locateflow/web build`
+    - passed with the same local Node engine warning and existing Next/Prisma/Edge-runtime warnings.
 
 ## Remaining Work
 
 - Visually verify staging after deploy against the source screenshots/current browser state.
-- Visually verify that the source deck is now primary and that `View full` reveals the legacy detail grid without overwhelming the first view.
+- Visually verify that desktop shows the row/list dossier by default and compact/mobile widths keep the source deck/swipe presentation.
 - Open Dokploy/staging logs for the exact PDF 500 cause if staging still returns `{"error":"Failed to build dossier PDF"}` after the newest image is active.
 - Hard-refresh or unregister the staging service worker before judging route-map/dossier CSS, because the web app intentionally does not service-worker-cache `/api/*` but stale static assets can still make old UI appear.
 - Before any mobile edits, confirm with the user whether to implement the source deck treatment and free/entitlement copy cleanup on mobile.
