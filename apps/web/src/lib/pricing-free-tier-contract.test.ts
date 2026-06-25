@@ -261,4 +261,13 @@ describe("consumer-free pricing + affiliate contract", () => {
       expect(dossierShowcase).toContain(`variant: "${variant}"`);
     }
   });
+
+  it("keeps the light app shell on the source beige token, not a local off-white override", () => {
+    const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
+    const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
+
+    expect(tokens).toMatch(/--bg:\s*#EFEADF;/);
+    expect(globals).toMatch(/\.light\s*\{\s*--lf-app-bg:\s*var\(--bg\);/);
+    expect(globals).not.toContain("--lf-app-bg: #FAF7F0");
+  });
 });

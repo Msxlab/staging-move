@@ -320,17 +320,16 @@
 }
 
 .light {
-  --lf-app-bg: #FAF7F0;
+  --lf-app-bg: var(--bg);
 }
 
 .light .app-shell-backdrop {
   background:
-    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.58) 0%, transparent 32%),
-    radial-gradient(circle at 86% 10%, rgba(46, 95, 176, 0.012) 0%, transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.06) 48%, rgba(239, 234, 223, 0.10) 100%),
+    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.22) 0%, transparent 31%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, transparent 56%),
     repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.004) 0 1px, transparent 1px 80px),
     repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.0035) 0 1px, transparent 1px 80px);
-  opacity: 0.18;
+  opacity: 0.14;
 }
 
 .light .lf-app-shell .from-primary\/5,
@@ -1480,18 +1479,19 @@ html[data-embed="mobile"] .install-prompt {
 .light .lf-dossier-scene-card > .da-layer {
   border-color: rgba(16, 29, 45, 0.13);
   background:
-    radial-gradient(ellipse 70% 92% at 72% 86%, rgba(203, 164, 94, 0.12), transparent 68%),
+    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 22%, transparent), transparent 68%),
     linear-gradient(180deg, #101B30, #0A1322);
-  filter: saturate(1.16) contrast(1.04);
+  filter: saturate(1.28) contrast(1.1);
 }
 .light .lf-dossier-scene-card > .da-layer::before {
   background:
-    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
-  opacity: 0.38;
+    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.045), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%);
+  opacity: 0.24;
 }
 .light .lf-dossier-scene-card .lf-dossier-scene-tag {
-  background: color-mix(in srgb, var(--ds-tone) 13%, rgba(255, 255, 255, 0.78));
+  background: color-mix(in srgb, var(--ds-tone) 18%, rgba(12, 19, 34, 0.74));
+  color: var(--ds-tone);
 }
 .light .lf-dossier-scene-card > .da-layer .ds-ground,
 .light .lf-dossier-scene-card > .da-layer .ds-ground-warn,
