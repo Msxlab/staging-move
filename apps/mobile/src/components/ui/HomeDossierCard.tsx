@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, type ViewStyle } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, type ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -92,16 +92,64 @@ function HeaderDisc({ style, children }: { style: ViewStyle; children: React.Rea
  * conditional rows and keeps indices sequential whatever sections the server
  * returned. Plays once per mount; data updates don't replay (see ListEntrance).
  */
+/**
+ * Dossier deck — a horizontal, snap-paged carousel of the data scenes (matching
+ * the web "source dossier deck" instead of a flat vertical list). Each child row
+ * becomes a fixed-width card the user swipes through, with paging dots below.
+ * Falls back to a single stacked reveal when there is only one card.
+ */
 function StaggeredReveal({ children }: { children: React.ReactNode }) {
-  const items = React.Children.toArray(children);
+  const items = React.Children.toArray(children).filter(Boolean);
+  const { width } = useWindowDimensions();
+  const { colors } = useAppTheme();
+  const CARD_W = Math.round(Math.min(width * 0.82, 320));
+  const GAP = 12;
+  const [active, setActive] = useState(0);
+
+  if (items.length <= 1) {
+    return (
+      <>
+        {items.map((child, i) => (
+          <ListEntrance key={i} index={i}>
+            {child}
+          </ListEntrance>
+        ))}
+      </>
+    );
+  }
+
   return (
-    <>
-      {items.map((child, i) => (
-        <ListEntrance key={i} index={i}>
-          {child}
-        </ListEntrance>
-      ))}
-    </>
+    <View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={CARD_W + GAP}
+        decelerationRate="fast"
+        contentContainerStyle={{ gap: GAP, paddingRight: 16, paddingBottom: 2 }}
+        onMomentumScrollEnd={(e) =>
+          setActive(Math.round(e.nativeEvent.contentOffset.x / (CARD_W + GAP)))
+        }
+      >
+        {items.map((child, i) => (
+          <ListEntrance key={i} index={i}>
+            <View style={{ width: CARD_W }}>{child}</View>
+          </ListEntrance>
+        ))}
+      </ScrollView>
+      <View style={{ flexDirection: "row", justifyContent: "center", gap: 5, marginTop: 12 }}>
+        {items.map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: i === active ? 18 : 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: i === active ? colors.primary : colors.border,
+            }}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
 
