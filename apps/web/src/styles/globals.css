@@ -321,16 +321,17 @@
 
 .light {
   /*
-   * Source Move.dc.html uses warm paper tokens for the phone-sized canvas.
-   * On the wider web app those tokens become heavy when translucent dashboard
-   * cards sit on top of them, so keep the source warmth as an undertone while
-   * restoring crisp white chrome and readable panels.
+   * Source Move.dc.html light theme:
+   *   bg #EFEADF, bg2 #E7E1D4, surface #FFFFFF, surface2 #F5F0E7.
+   * The raw paper token is too heavy across the wide web dashboard, so keep
+   * that warmth as the page undertone while the shell chrome and panels stay
+   * crisp enough for dense product screens.
    */
   --background: 40 45% 97%;
   --muted: 39 39% 94%;
   --accent: 39 39% 94%;
-  --surface-secondary: #FAF8F2;
-  --lf-app-bg: #FAF8F2;
+  --surface-secondary: #F7F1E8;
+  --lf-app-bg: #FAF7F0;
   --lf-app-chrome-bg: rgba(255, 255, 255, 0.96);
   --lf-app-chrome-bg-strong: #FFFFFF;
   --lf-app-panel-bg: rgba(255, 255, 255, 0.96);
