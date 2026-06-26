@@ -79,7 +79,6 @@ const config: Config = {
           "foil-a": "var(--foil-a)",
           "foil-b": "var(--foil-b)",
           "foil-c": "var(--foil-c)",
-          "foil-ink": "var(--foil-ink)",
           sage: "var(--sage)",
         },
         rose: {
@@ -92,7 +91,6 @@ const config: Config = {
           a: "var(--foil-a)",
           b: "var(--foil-b)",
           c: "var(--foil-c)",
-          ink: "var(--foil-ink)",
         },
         sage: {
           DEFAULT: "var(--sage)",

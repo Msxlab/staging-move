@@ -465,7 +465,7 @@ export default function ProviderQualityClient() {
             </div>
 
             <div className="mt-5 overflow-x-auto overscroll-x-contain rounded-2xl border border-border">
-              <table className="w-full min-w-[640px]">
+              <table className="w-full md:min-w-[640px]">
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Provider</th>

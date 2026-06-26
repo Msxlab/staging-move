@@ -493,7 +493,7 @@ export function DataTablePage<Row extends { id: string }>(
           of panning the whole page; min-w keeps columns legible. */}
       <div className="admin-panel">
         <div className="overflow-x-auto overscroll-x-contain">
-        <table className="w-full min-w-[640px]">
+        <table className="w-full md:min-w-[640px]">
           <thead className="bg-muted/50">
             <tr>
               {selectable ? (

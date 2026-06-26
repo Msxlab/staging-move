@@ -71,7 +71,7 @@ export function AdminPageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className="flex flex-wrap items-center gap-3 shrink-0">{actions}</div>
+        <div className="flex flex-wrap items-center gap-3 sm:justify-end">{actions}</div>
       ) : null}
     </div>
   );
