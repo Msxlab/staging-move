@@ -2,6 +2,7 @@ export { AuditFeed } from "./audit-feed";
 export type { AuditFeedItem, AuditFeedTone } from "./audit-feed";
 export { AuroraBackground } from "./aurora-background";
 export { AuroraStatCard } from "./aurora-stat-card";
+export { AuroraDonut } from "./donut";
 export { OverviewTrendsCard } from "./overview-trends";
 export { PlanDonut } from "./plan-donut";
 export type { PlanDonutSegment } from "./plan-donut";

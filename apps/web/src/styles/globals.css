@@ -1440,6 +1440,47 @@ html[data-embed="mobile"] .install-prompt {
   border-radius: 20px;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+/* Premium hover lift — a soft sapphire glow + border highlight on pointer
+   devices. No transform (keeps the lf-move-rise entrance + the deck's
+   offsetWidth snap math untouched). */
+@media (hover: hover) {
+  .lf-dossier-source-card:hover {
+    border-color: color-mix(in srgb, var(--primary) 36%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 12px 32px -14px color-mix(in srgb, var(--primary) 50%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lf-dossier-source-card {
+    transition: none;
+  }
+}
+/* Border beam — reusable premium accent (see components/ui/border-beam.tsx).
+   A conic gradient masked to the border frame, spun by a plain CSS keyframe so
+   it runs on Tailwind v3 (unlike v4 keyframe utilities). */
+.lf-border-beam {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+.lf-border-beam__spin {
+  position: absolute;
+  inset: -150%;
+  animation: lf-border-beam-spin var(--lf-beam-duration, 8s) linear infinite;
+}
+@keyframes lf-border-beam-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lf-border-beam__spin {
+    animation: none;
+  }
 }
 .lf-dossier-source-card::before {
   content: "";

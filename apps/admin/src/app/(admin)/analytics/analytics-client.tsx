@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { SpendingByRegionWidget } from "@/components/spending-by-region-widget";
 import { EmailHealthWidget } from "@/components/email-health-widget";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { AuroraDonut } from "@/components/aurora";
 
 interface AnalyticsData {
   activeUsers: { total: number; today: number; week: number; month: number };
@@ -117,52 +118,6 @@ function BarChart({ data, colorMap, maxItems = 6 }: { data: [string, number][]; 
   );
 }
 
-function DonutChart({ data, colorMap }: { data: [string, number][]; colorMap?: Record<string, string> }) {
-  const total = data.reduce((s, [, v]) => s + v, 0);
-  if (total === 0) return <p className="text-center text-sm text-muted-foreground py-8">No data</p>;
-
-  let offset = 0;
-  const segments = data.map(([label, value]) => {
-    const pct = (value / total) * 100;
-    const seg = { label, value, pct, offset };
-    offset += pct;
-    return seg;
-  });
-
-  // Aurora-friendly categorical palette — cool / mint / honey / coral / violet
-  // / sky / rose / slate. Resolved at render so theme switching repaints.
-  const colors = [
-    "var(--au-cool)", "var(--au-mint)", "var(--au-amber)", "var(--au-coral)",
-    "var(--au-violet)", "var(--au-cool-2)", "var(--au-rose)", "var(--au-ink-3)",
-  ];
-
-  return (
-    <div className="flex items-center gap-6">
-      <div className="relative h-32 w-32 flex-shrink-0">
-        <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
-          {segments.map((seg, i) => (
-            <circle key={seg.label} cx="18" cy="18" r="14" fill="none" stroke={colors[i % colors.length]}
-              strokeWidth="4" strokeDasharray={`${seg.pct * 0.88} ${88 - seg.pct * 0.88}`}
-              strokeDashoffset={`${-seg.offset * 0.88}`} />
-          ))}
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="font-display text-lg font-extrabold text-foreground">{total}</span>
-        </div>
-      </div>
-      <div className="space-y-1.5 flex-1">
-        {segments.map((seg, i) => (
-          <div key={seg.label} className="flex items-center gap-2 text-xs">
-            <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }} />
-            <span className="text-foreground flex-1">{seg.label}</span>
-            <span className="font-mono text-muted-foreground">{seg.value} ({Math.round(seg.pct)}%)</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function SparkLine({ data }: { data: Record<string, number> }) {
   const entries = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
   if (entries.length === 0) return <p className="text-center text-sm text-muted-foreground py-4">No data</p>;
@@ -175,8 +130,8 @@ function SparkLine({ data }: { data: Record<string, number> }) {
 
   return (
     <div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-16" preserveAspectRatio="none">
-        <polyline points={points} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary" />
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-16" preserveAspectRatio="none" role="img" aria-label="New registrations trend">
+        <polyline points={points} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary au-sparkpath" />
         <polyline points={`0,${height} ${points} ${width},${height}`} fill="currentColor" className="text-primary/10" />
       </svg>
       <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
@@ -578,7 +533,7 @@ export default function AnalyticsClient() {
             <div>
               <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Platform (window)</p>
               {overview.platforms.length > 0 ? (
-                <DonutChart data={overview.platforms} />
+                <AuroraDonut data={overview.platforms} />
               ) : (
                 <p className="text-center text-sm text-muted-foreground py-8">No session data in window.</p>
               )}
@@ -586,7 +541,7 @@ export default function AnalyticsClient() {
             <div>
               <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Plan Mix</p>
               {overview.planMix.length > 0 ? (
-                <DonutChart data={overview.planMix.map((p) => [planLabel(p.plan), p.count])} />
+                <AuroraDonut data={overview.planMix.map((p) => [planLabel(p.plan), p.count])} />
               ) : (
                 <p className="text-center text-sm text-muted-foreground py-8">No subscriptions.</p>
               )}
@@ -625,7 +580,7 @@ export default function AnalyticsClient() {
           <div>
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Platform</p>
             {data.platforms.length > 0 ? (
-              <DonutChart data={data.platforms} />
+              <AuroraDonut data={data.platforms} />
             ) : (
               <p className="text-center text-sm text-muted-foreground py-8">No session data yet. Enable tracking in web app.</p>
             )}

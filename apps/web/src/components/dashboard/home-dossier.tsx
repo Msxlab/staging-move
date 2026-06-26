@@ -29,6 +29,7 @@ import {
   type SceneDetail,
 } from "./dossier-ambient";
 import { AqiGauge, EvMeter, WeatherGlyph } from "./dossier-indicators";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 /**
  * NEW HOME DOSSIER — Aurora dashboard widget.
@@ -976,7 +977,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
               if (next !== dossierDeckIndex) setDossierDeckIndex(next);
             }}
           >
-            {sceneCards.map((card) => {
+            {sceneCards.map((card, cardIndex) => {
               const activeBars = activeDossierDeckBars(card.ambient.intensity);
               const bandKey = dossierDeckBandKey(card.ambient.intensity);
               const sourceScene = sourceDossierSceneFor(card.ambient);
@@ -1035,6 +1036,10 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                       <span className="lf-dossier-source-band">{td(bandKey)}</span>
                     </div>
                   </div>
+                  {/* Premium accent: a sapphire border-beam highlights the
+                      lead (highest-priority) dossier card. aria-hidden, motion
+                      JS-driven (v3-safe), honours reduced motion. */}
+                  {cardIndex === 0 && <BorderBeam radius={20} />}
                 </article>
               );
             })}
