@@ -386,8 +386,8 @@ html:not(.dark) .adm-aurora .admin-panel {
   --card-foreground:      214 40% 98%;
   --popover:              218 22% 19%;
   --popover-foreground:   214 40% 98%;
-  /* Primary = LocateFlow Gold #5B8DEF (honey is warn/caution only). */
-  --primary:              38.53 51.17% 58.24%;
+  /* Primary = LocateFlow Sapphire #5B8DEF (honey is warn/caution only). */
+  --primary:              219.73 82.22% 64.71%;
   --primary-foreground:   215 45% 8%;
   --secondary:            215 24% 82%;
   --secondary-foreground: 218 43% 6%;
@@ -399,7 +399,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --destructive-foreground: 218 43% 6%;
   --border:               217 20% 30%;
   --input:                217 20% 30%;
-  --ring:                 38.53 51.17% 58.24%;
+  --ring:                 219.73 82.22% 64.71%;
   --radius:               0.625rem;
 
   /* Brand-token redirect — anything still calling --rose gets the LocateFlow Gold

@@ -437,7 +437,7 @@
   --card-foreground:      214 36% 95%;
   --popover:              217 41% 9%;
   --popover-foreground:   214 36% 95%;
-  --primary:              38.53 51.17% 58.24%;
+  --primary:              219.73 82.22% 64.71%;
   --primary-foreground:   218 43% 6%;
   --secondary:            215 22% 72%;
   --secondary-foreground: 218 43% 6%;
@@ -449,11 +449,11 @@
   --destructive-foreground: 218 43% 6%;
   --border:               217 32% 18%;
   --input:                217 32% 18%;
-  --ring:                 38.53 51.17% 58.24%;
+  --ring:                 219.73 82.22% 64.71%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect — anything still calling --rose gets LocateFlow Gold
-     primary; --foil-* also resolves to the Gold accent. The SVG
+  /* Brand-token redirect — anything still calling --rose gets LocateFlow Sapphire
+     primary; --foil-* also resolves to the Sapphire accent. The SVG
      sidebar logo sets its own gradients via inline `<defs>`, so it's not
      affected. */
   --rose:        var(--au-cool);
