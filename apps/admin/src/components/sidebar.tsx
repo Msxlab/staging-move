@@ -370,7 +370,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
           ) : (
             panelGroup && (
               <>
-                <div className="adp-grp px-3 pb-2 pt-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/60">
+                <div className="adp-grp px-3 pb-2 pt-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                   {navLabel(tNav, panelGroup.labelKey, panelGroup.label)}
                 </div>
                 <div className="space-y-1">{panelGroup.items.map((item) => renderItem(item))}</div>

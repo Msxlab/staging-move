@@ -456,7 +456,7 @@ html:not(.dark) .adm-aurora {
   --secondary:            216 14% 41%;   /* #5A6678 slate */
   --secondary-foreground: 0 0% 100%;
   --muted:                216 25% 94%;
-  --muted-foreground:     216 14% 41%;
+  --muted-foreground:     216 14% 30%;
   --accent:               216 28% 95%;
   --accent-foreground:    216 33% 15%;
   --destructive:          359 51% 49%;
