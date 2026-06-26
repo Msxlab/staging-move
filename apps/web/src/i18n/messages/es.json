@@ -638,6 +638,35 @@
     "widget_monthlySpark": "Tendencia de gasto",
     "widget_homeDossier": "Dossier del nuevo hogar",
     "dossier_title": "El dossier de tu <em>nuevo hogar</em>",
+    "dossier": {
+      "air": {
+        "l1": "Aire de spa. Respira como protagonista.",
+        "l2": "Bien para la mayoría — tus plantas tranquilas.",
+        "l3": "¿Pulmones sensibles? Tómalo con calma.",
+        "l4": "Mejor no salgas a correr hoy.",
+        "l5": "Quédate dentro, sella todo, usa el purificador.",
+        "unavailable": "Lectura de aire no disponible aquí.",
+        "caveat": "AirNow (EPA) — una foto del momento, no un promedio."
+      },
+      "flood": {
+        "l1": "Zona X — terreno seguro y seco.",
+        "l2": "Riesgo bajo, pero conoce tu zona.",
+        "l3": "Riesgo de inundación moderado — revísalo.",
+        "l4": "Zona de alto riesgo. El seguro importa aquí.",
+        "l5": "Zona de alto riesgo. Tómalo en serio.",
+        "unavailable": "Zona de inundación no disponible aquí.",
+        "caveat": "Mapas FEMA — informativo, no una determinación de seguro."
+      },
+      "weather": {
+        "l1": "Cielo despejado — gracias del camión.",
+        "l2": "Clima de mudanza templado.",
+        "l3": "Mantén un ojo en el pronóstico.",
+        "l4": "Día de mudanza difícil — protege todo.",
+        "l5": "Clima severo — considera reprogramar.",
+        "unavailable": "El pronóstico aparece cuando se acerca tu mudanza.",
+        "caveat": "Pronóstico del Servicio Meteorológico Nacional."
+      }
+    },
     "dossier_flood_title": "Zona de inundación",
     "dossier_flood_low": "Zona {zone} — riesgo de inundación mínimo",
     "dossier_flood_high": "Zona {zone} — área de alto riesgo de inundación",

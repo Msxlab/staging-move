@@ -638,6 +638,35 @@
     "widget_monthlySpark": "Spend Trend",
     "widget_homeDossier": "New Home Dossier",
     "dossier_title": "Your <em>new home</em> dossier",
+    "dossier": {
+      "air": {
+        "l1": "Spa-day air. Inhale like a main character.",
+        "l2": "Fine for most — your ferns aren’t worried.",
+        "l3": "Sensitive lungs? Ease up out there.",
+        "l4": "Skip the outdoor run today.",
+        "l5": "Stay in, seal up, run the purifier.",
+        "unavailable": "Air reading unavailable here.",
+        "caveat": "AirNow (EPA) — a current snapshot, not a long-term average."
+      },
+      "flood": {
+        "l1": "Zone X — high and dry.",
+        "l2": "Low risk, but know your zone.",
+        "l3": "Moderate flood risk — worth a look.",
+        "l4": "High-risk zone. Insurance matters here.",
+        "l5": "High-risk zone. Take this one seriously.",
+        "unavailable": "Flood zone unavailable here.",
+        "caveat": "FEMA flood maps — informational, not an insurance determination."
+      },
+      "weather": {
+        "l1": "Clear skies — the truck says thanks.",
+        "l2": "Mild moving-day weather.",
+        "l3": "Keep an eye on the forecast.",
+        "l4": "Rough moving day — plan for covers.",
+        "l5": "Severe weather — consider rescheduling.",
+        "unavailable": "Forecast appears when your move is near.",
+        "caveat": "National Weather Service forecast."
+      }
+    },
     "dossier_flood_title": "Flood zone",
     "dossier_flood_low": "Zone {zone} — minimal flood risk",
     "dossier_flood_high": "Zone {zone} — high-risk flood area",
