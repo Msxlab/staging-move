@@ -52,10 +52,19 @@ describe("mobile tab cache and transit map contracts", () => {
   it("preloads replacement transit maps without dropping the last good image", () => {
     const source = readMobile("src/components/addresses/TransitRouteMap.tsx");
 
-    expect(source).toContain("const visibleUri = loadedUri ?? uri");
-    expect(source).toContain("const isLoadingReplacement = Boolean(loadedUri && uri !== loadedUri && !failed)");
+    expect(source).toContain("const visibleUri = Platform.OS === \"web\" ? loadedUri : loadedUri ?? uri");
+    expect(source).toContain("const isLoadingReplacement = Platform.OS !== \"web\" && Boolean(loadedUri && uri !== loadedUri && !failed)");
     expect(source).toContain("style={styles.preloadImage}");
     expect(source).toContain("setLoadedUri(uri)");
     expect(source).toContain("const routeKeyCoord = (value: number) => Math.round(value * 1e5) / 1e5");
+  });
+
+  it("uses authenticated fetch plus an object URL for transit maps on Expo web", () => {
+    const source = readMobile("src/components/addresses/TransitRouteMap.tsx");
+
+    expect(source).toContain("Platform.OS !== \"web\"");
+    expect(source).toContain("fetch(uri, { headers: buildMobileAuthHeaders(token) })");
+    expect(source).toContain("URL.createObjectURL");
+    expect(source).toContain("URL.revokeObjectURL");
   });
 });

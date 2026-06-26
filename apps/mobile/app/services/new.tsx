@@ -703,7 +703,7 @@ export default function NewServiceScreen() {
         )}
 
         {/* ═══════════════════════ BROWSE MODE ═══════════════════════ */}
-        {mode === "browse" && selectedAddress && (
+        {mode === "browse" && Boolean(selectedAddress) && (
           <View style={{ marginTop: 8 }}>
             {/* State label */}
             <Text style={styles.stateLabel}>

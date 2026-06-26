@@ -46,8 +46,14 @@ export const KNOWN_SOURCES = [
   "water",
   "air",
   "nws",
+  "hud_housing",
+  "ev_charging",
+  "census",
+  "walkability",
+  "schools",
   "briefing",
   "dossier",
+  "uptime",
 ] as const;
 
 export type SourceStatus = "healthy" | "degraded" | "off";

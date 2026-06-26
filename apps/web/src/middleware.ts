@@ -132,6 +132,14 @@ function matchesPathOrChild(pathname: string, path: string): boolean {
 }
 
 function isPublicPath(pathname: string): boolean {
+  // Dev-only: the /dev/* preview pages (e.g. /dev/shadcn-pilot, /dev/dossier-preview)
+  // render without auth in local development. NEVER public in production.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    (pathname === "/dev" || pathname.startsWith("/dev/"))
+  ) {
+    return true;
+  }
   if (isPublicStatePage(pathname)) return true;
   for (const p of PUBLIC_PATHS) {
     if (matchesPathOrChild(pathname, p)) return true;
@@ -152,6 +160,92 @@ function isPublicApi(pathname: string, method: string): boolean {
     }
   }
   return false;
+}
+
+const LOCAL_API_CORS_ALLOWED_HEADERS = [
+  "authorization",
+  "content-type",
+  "x-client-type",
+  "x-client-platform",
+  "x-client-version",
+  "x-workspace-id",
+  "x-requested-with",
+  "accept-language",
+  "sentry-trace",
+  "baggage",
+  "traceparent",
+  "tracestate",
+].join(", ");
+
+const LOCAL_API_CORS_ALLOWED_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
+const LOCAL_API_CORS_EXPOSED_HEADERS =
+  "X-LocateFlow-Auth-Layer, X-LocateFlow-Auth-Failure, Retry-After";
+const DEPLOYED_ENVS = new Set(["production", "staging", "preview"]);
+
+function isLoopbackHost(hostname: string): boolean {
+  const normalized = hostname.trim().toLowerCase().replace(/^\[(.*)\]$/, "$1");
+  return (
+    normalized === "localhost" ||
+    normalized === "::1" ||
+    /^127(?:\.\d{1,3}){3}$/.test(normalized)
+  );
+}
+
+function parseOrigin(origin: string | null): URL | null {
+  if (!origin) return null;
+  try {
+    return new URL(origin);
+  } catch {
+    return null;
+  }
+}
+
+function isAllowedLocalApiCorsOrigin(req: NextRequest, origin: string | null): boolean {
+  if (!req.nextUrl.pathname.startsWith("/api/")) return false;
+  const originUrl = parseOrigin(origin);
+  if (!originUrl) return false;
+
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  if (DEPLOYED_ENVS.has(appEnv) || process.env.VERCEL === "1") return false;
+  if (!["http:", "https:"].includes(originUrl.protocol)) return false;
+
+  return isLoopbackHost(req.nextUrl.hostname) && isLoopbackHost(originUrl.hostname);
+}
+
+function appendVaryHeader(response: NextResponse, value: string): void {
+  const existing = response.headers.get("Vary");
+  if (!existing) {
+    response.headers.set("Vary", value);
+    return;
+  }
+  const values = new Set(existing.split(",").map((entry) => entry.trim().toLowerCase()));
+  if (!values.has(value.toLowerCase())) {
+    response.headers.set("Vary", `${existing}, ${value}`);
+  }
+}
+
+function applyLocalApiCorsHeaders(request: NextRequest, response: NextResponse): NextResponse {
+  const origin = request.headers.get("origin");
+  if (!isAllowedLocalApiCorsOrigin(request, origin)) return response;
+
+  response.headers.set("Access-Control-Allow-Origin", origin as string);
+  response.headers.set("Access-Control-Allow-Methods", LOCAL_API_CORS_ALLOWED_METHODS);
+  response.headers.set("Access-Control-Allow-Headers", LOCAL_API_CORS_ALLOWED_HEADERS);
+  response.headers.set("Access-Control-Expose-Headers", LOCAL_API_CORS_EXPOSED_HEADERS);
+  appendVaryHeader(response, "Origin");
+  return response;
+}
+
+function localApiCorsPreflight(request: NextRequest): NextResponse | null {
+  if (request.method !== "OPTIONS") return null;
+  if (!request.headers.get("access-control-request-method")) return null;
+  if (!isAllowedLocalApiCorsOrigin(request, request.headers.get("origin"))) return null;
+
+  const response = new NextResponse(null, { status: 204 });
+  applyLocalApiCorsHeaders(request, response);
+  appendVaryHeader(response, "Access-Control-Request-Method");
+  appendVaryHeader(response, "Access-Control-Request-Headers");
+  return response;
 }
 
 // ── Body size ──────────────────────────────────────────────────
@@ -266,6 +360,9 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   const allowedOrigin = req.nextUrl.origin;
   const origin = req.headers.get("origin");
   if (origin && origin !== allowedOrigin) {
+    if (isAllowedLocalApiCorsOrigin(req, origin)) {
+      return null;
+    }
     return NextResponse.json(
       {
         error:
@@ -674,6 +771,7 @@ function applyStagingNoIndex(request: NextRequest, response: NextResponse): Next
   if (shouldNoIndex || pathShouldNoIndex(request.nextUrl.pathname)) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
+  applyLocalApiCorsHeaders(request, response);
   return applySecurityHeaders(request, response);
 }
 
@@ -839,6 +937,9 @@ export default async function middleware(request: NextRequest) {
 
   const bodySizeBlocked = applyBodySizeLimit(request);
   if (bodySizeBlocked) return applyStagingNoIndex(request, bodySizeBlocked);
+
+  const corsPreflight = localApiCorsPreflight(request);
+  if (corsPreflight) return applyStagingNoIndex(request, corsPreflight);
 
   const csrfBlocked = applyCsrfCheck(request);
   if (csrfBlocked) return applyStagingNoIndex(request, csrfBlocked);

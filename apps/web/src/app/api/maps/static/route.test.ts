@@ -44,6 +44,26 @@ function request(query: string) {
   });
 }
 
+function imageRequest(query: string) {
+  return new NextRequest(`https://app.locateflow.com/api/maps/static?${query}`, {
+    headers: {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "sec-fetch-dest": "image",
+      "x-forwarded-for": "203.0.113.10",
+    },
+  });
+}
+
+function reactNativeWebImageRequest(query: string) {
+  return new NextRequest(`https://app.locateflow.com/api/maps/static?${query}`, {
+    headers: {
+      "referer": "https://app.locateflow.com/addresses",
+      "user-agent": "LocateFlow/0.0.0 (Mobile; Expo)",
+      "x-forwarded-for": "203.0.113.10",
+    },
+  });
+}
+
 const VALID_QUERY = "from=41.8781,-87.6298&to=30.2672,-97.7431&w=640&h=296&theme=dark";
 
 describe("/api/maps/static proxy", () => {
@@ -86,6 +106,32 @@ describe("/api/maps/static proxy", () => {
     expect(response.status).toBe(403);
     expect(body.code).toBe("REAL_MAP_UPGRADE_REQUIRED");
     expect(mocks.getRuntimeConfigValue).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns an empty image fallback response for image-loader errors so browsers do not ORB-block JSON", async () => {
+    mocks.requestHasPlanFeature.mockResolvedValue(false);
+
+    const response = await GET(imageRequest(VALID_QUERY));
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("x-maps-error-code")).toBe("REAL_MAP_UPGRADE_REQUIRED");
+    expect(response.headers.get("x-maps-original-status")).toBe("403");
+    expect(response.headers.get("content-type")).toBeNull();
+    expect(await response.text()).toBe("");
+    expect(mocks.getRuntimeConfigValue).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("also uses the empty fallback for React Native Web image requests that omit Accept and Sec-Fetch-Dest", async () => {
+    mocks.requireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
+
+    const response = await GET(reactNativeWebImageRequest(VALID_QUERY));
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("x-maps-error-code")).toBe("MAPS_UNAUTHORIZED");
+    expect(response.headers.get("x-maps-original-status")).toBe("401");
+    expect(await response.text()).toBe("");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

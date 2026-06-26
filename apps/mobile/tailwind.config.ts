@@ -11,6 +11,7 @@ import type { Config } from "tailwindcss";
 // `bg-foil`/gold,
 // `bg-sage`/green).
 export default {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
