@@ -44,9 +44,9 @@ const DEFAULT_HEIGHT = 320;
 /** Aurora map palettes — hexes mirror web globals.css / mobile theme.ts. */
 const MAP_THEMES = {
   dark: {
-    // sage --sage #54CB7E, accent --rose / default --primary #CBA45E
+    // sage --sage #54CB7E, accent --rose / default --primary #5B8DEF
     sage: "54CB7E",
-    accent: "CBA45E",
+    accent: "5B8DEF",
     styles: [
       "element:geometry|color:0x0F1726",
       "element:labels.text.fill|color:0x8A99AD",
@@ -212,7 +212,22 @@ function formatSourceStatuses(sourceStatuses: MapSourceStatuses): string {
     .join(",");
 }
 
-function mapsJsonError(
+function wantsImageFallback(request: NextRequest): boolean {
+  const dest = request.headers.get("sec-fetch-dest")?.toLowerCase();
+  if (dest === "image") return true;
+  const accept = request.headers.get("accept")?.toLowerCase() ?? "";
+  if (accept.includes("application/json") || accept.includes("text/html")) return false;
+  if (accept.includes("image/")) return true;
+
+  // React Native Web's Image loader may issue a browser image request without
+  // Accept/Sec-Fetch-Dest and without custom auth headers. When that happens,
+  // returning JSON causes Chromium ORB to flag the request as failed before
+  // the client can gracefully fall back to the stylized route banner.
+  return !accept && Boolean(request.headers.get("referer"));
+}
+
+function mapsErrorResponse(
+  request: NextRequest,
   status: number,
   code: string,
   error: string,
@@ -224,6 +239,11 @@ function mapsJsonError(
   });
   if (sourceStatuses && Object.keys(sourceStatuses).length > 0) {
     headers.set("X-Maps-Source-Statuses", formatSourceStatuses(sourceStatuses));
+  }
+
+  if (wantsImageFallback(request)) {
+    headers.set("X-Maps-Original-Status", String(status));
+    return new NextResponse(null, { status: 204, headers });
   }
 
   return NextResponse.json(
@@ -291,7 +311,7 @@ export async function GET(request: NextRequest) {
     // screen already has a graceful map fallback.
     userId = await requireDbUserId({ invalidateOnFingerprintMismatch: false });
   } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return mapsErrorResponse(request, 401, "MAPS_UNAUTHORIZED", "Unauthorized");
   }
 
   try {
@@ -302,10 +322,7 @@ export async function GET(request: NextRequest) {
       rateLimit(getRateLimitKey(request, "maps:static"), { limit: 120, windowSeconds: 60 }),
     ]);
     if (!userRl.success || !ipRl.success) {
-      return NextResponse.json(
-        { error: "Too many requests. Please wait.", code: "MAPS_RATE_LIMITED" },
-        { status: 429 },
-      );
+      return mapsErrorResponse(request, 429, "MAPS_RATE_LIMITED", "Too many requests. Please wait.");
     }
 
     const { searchParams } = new URL(request.url);
@@ -316,19 +333,13 @@ export async function GET(request: NextRequest) {
     const from = parseLatLng(searchParams.get("from"));
     const to = parseLatLng(searchParams.get("to"));
     if (!from || !to) {
-      return NextResponse.json(
-        { error: "Invalid or missing from/to coordinates", code: "MAPS_INVALID_COORDINATES" },
-        { status: 400 },
-      );
+      return mapsErrorResponse(request, 400, "MAPS_INVALID_COORDINATES", "Invalid or missing from/to coordinates");
     }
 
     // The full Geoapify route map stays a Family+ feature; the free preview map is
     // a ~zero-cost OSM source, so only the non-preview path is realMap-gated.
     if (!preview && !(await requestHasPlanFeature(request, userId, "realMap"))) {
-      return NextResponse.json(
-        { error: "Real route maps require Family or Pro.", code: "REAL_MAP_UPGRADE_REQUIRED" },
-        { status: 403 },
-      );
+      return mapsErrorResponse(request, 403, "REAL_MAP_UPGRADE_REQUIRED", "Real route maps require Family or Pro.");
     }
 
     const params: StaticMapParams = {
@@ -385,12 +396,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (sourceStatuses.geoapify === "unconfigured") {
-      return mapsJsonError(503, "MAPS_NOT_CONFIGURED", "Maps are not configured", sourceStatuses);
+      return mapsErrorResponse(request, 503, "MAPS_NOT_CONFIGURED", "Maps are not configured", sourceStatuses);
     }
 
-    return mapsJsonError(424, "MAPS_UPSTREAM_ERROR", "Map image unavailable", sourceStatuses);
+    return mapsErrorResponse(request, 424, "MAPS_UPSTREAM_ERROR", "Map image unavailable", sourceStatuses);
   } catch (error) {
     console.error("[maps/static] failed:", error);
-    return mapsJsonError(500, "MAPS_PROXY_ERROR", "Map image unavailable");
+    return mapsErrorResponse(request, 500, "MAPS_PROXY_ERROR", "Map image unavailable");
   }
 }

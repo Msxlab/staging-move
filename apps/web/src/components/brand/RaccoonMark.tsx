@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * picker); only `size` + `mood` are author-facing.
  *
  * The **eye accent is bound to the theme token** by default —
- * `hsl(var(--primary))` resolves to Gold (`#CBA45E`) in dark mode and Sapphire
+ * `hsl(var(--primary))` resolves to Sapphire (`#5B8DEF`) in dark mode and Sapphire
  * (`#2E5FB0`) in light mode (D5). Pass an explicit `eye` to pin it.
  *
  * Moods (ported 1:1 from the design's `renderVals()`):
@@ -46,7 +46,7 @@ export type RaccoonMarkProps = {
 };
 
 // Source defaults from Raccoon.dc.html `data-props` (head/mask/ear/pupil). The
-// `eye` default is the theme token rather than the stale hardcoded `#CBA45E`
+// `eye` default is the theme token rather than the stale hardcoded `#5B8DEF`
 // so the mark re-tints with the active accent.
 const HEAD = "#8C9AB2";
 const MASK = "#0C1525";

@@ -259,13 +259,13 @@ const CATEGORY_SLATE = "#6E7C92";
 
 export const categoryColors: Record<string, string> = {
   GOVERNMENT: semanticColors.danger, // #E25C5C
-  UTILITY: brandColors.rose, // #CBA45E (Gold)
+  UTILITY: brandColors.rose, // #5B8DEF (Sapphire)
   FINANCIAL: semanticColors.success, // #54CB7E
-  HOUSING: brandColors.rose, // #CBA45E (Gold)
+  HOUSING: brandColors.rose, // #5B8DEF (Sapphire)
   HEALTHCARE: CATEGORY_PINK, // #F0A0B8
-  TRANSPORTATION: brandColors.roseDeep, // #B0852F (Gold deep)
-  KIDS: brandColors.roseDeep, // #B0852F (Gold deep)
-  FITNESS: brandColors.rose, // #CBA45E (Gold)
+  TRANSPORTATION: brandColors.roseDeep, // #3D6FD6 (Sapphire deep)
+  KIDS: brandColors.roseDeep, // #3D6FD6 (Sapphire deep)
+  FITNESS: brandColors.rose, // #5B8DEF (Sapphire)
   SHOPPING: CATEGORY_PINK, // #F0A0B8
   OTHER: CATEGORY_SLATE, // #6E7C92
 } as const;

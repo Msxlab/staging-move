@@ -65,7 +65,6 @@ export function AppShell({
   const { theme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const embedMode = useEmbedMode();
-  const { theme } = useTheme();
   // Plan class hook consumed by globals.css. The classes are now Sapphire
   // pass-throughs; Individual stays classless for the same base theme.
   const planClass =
@@ -92,7 +91,7 @@ export function AppShell({
   const embedShell = useMemo(() => {
     if (!embedMode) return null;
     return (
-      <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+      <div className="min-h-screen" style={{ background: "var(--lf-app-bg, var(--bg))" }}>
         <ImpersonationBanner />
         <main id="main-content" tabIndex={-1} className="p-4 focus:outline-none">
           <div className="mx-auto w-full max-w-screen-md">{children}</div>

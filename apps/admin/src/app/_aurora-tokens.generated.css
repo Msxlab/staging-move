@@ -22,13 +22,13 @@
   --au-rule:          rgba(255, 255, 255, 0.10);
   --au-rule-2:        rgba(255, 255, 255, 0.16);
 
-  --au-cool:          #CBA45E;
-  --au-cool-2:        #B0852F;
-  --au-cool-soft:     rgba(203, 164, 94, 0.20);
-  --au-violet:        #CBA45E;
-  --au-violet-soft:   rgba(203, 164, 94, 0.20);
-  --au-family:        #CBA45E;
-  --au-family-soft:   rgba(203, 164, 94, 0.14);
+  --au-cool:          #5B8DEF;
+  --au-cool-2:        #3D6FD6;
+  --au-cool-soft:     rgba(91, 141, 239, 0.20);
+  --au-violet:        #5B8DEF;
+  --au-violet-soft:   rgba(91, 141, 239, 0.20);
+  --au-family:        #5B8DEF;
+  --au-family-soft:   rgba(91, 141, 239, 0.14);
   --au-mint:          #8BE3A8;
   --au-mint-soft:     rgba(84, 203, 126, 0.20);
   --au-amber:         #E0A85A;
@@ -37,17 +37,17 @@
   --au-coral-soft:rgba(226, 92, 92, 0.22);
   --au-rose:          #F0A0B8;
 
-  --au-aurora-1:      rgba(203, 164, 94, 0.18);
-  --au-aurora-2:      rgba(203, 164, 94, 0.12);
+  --au-aurora-1:      rgba(91, 141, 239, 0.18);
+  --au-aurora-2:      rgba(91, 141, 239, 0.12);
   --au-aurora-3:      rgba(84, 203, 126, 0.10);
   --au-aurora-4:      rgba(240, 160, 184, 0.08);
 
-  /* ── Phase 3 accent + chrome (dark: Gold) ── */
-  --au-accent:        #CBA45E;
-  --au-accent-2:      #DCBC7C;
+  /* ── Phase 3 accent + chrome (dark: Sapphire) ── */
+  --au-accent:        #5B8DEF;
+  --au-accent-2:      #83AAF5;
   --au-accent-ink:    #0A1626;
-  --au-accent-soft:   rgba(203, 164, 94, 0.13);
-  --au-accent-line:   rgba(203, 164, 94, 0.28);
+  --au-accent-soft:   rgba(91, 141, 239, 0.13);
+  --au-accent-line:   rgba(91, 141, 239, 0.28);
 
   --au-surface:     #0E1626;                   /* solid chrome slab (rail/topbar/drawer/cards) */
   --au-field:       #16203A;                   /* solid control fill */

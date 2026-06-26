@@ -146,7 +146,7 @@ function LoadingBar({ active, reduceMotion }: { active: boolean; reduceMotion: b
         ]}
       >
         <LinearGradient
-          colors={["#B0852F", "#CBA45E", "#F6E5BE"]}
+          colors={["#3D6FD6", "#5B8DEF", "#F6E5BE"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={styles.loadingGradient}
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 2.6,
     textTransform: "uppercase",
-    color: "#CBA45E",
+    color: "#5B8DEF",
     textAlign: "center",
     marginTop: 8,
   },

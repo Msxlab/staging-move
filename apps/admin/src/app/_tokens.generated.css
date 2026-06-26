@@ -4,36 +4,36 @@
 
 :root,
 .dark {
-  --rose:               #CBA45E;
-  --rose-light:         #DCBC7C;
-  --rose-deep:          #B0852F;
+  --rose:               #5B8DEF;
+  --rose-light:         #83AAF5;
+  --rose-deep:          #3D6FD6;
   --rose-dark:          #86631A;
-  --foil-a:             #DCBC7C;
-  --foil-b:             #CBA45E;
-  --foil-c:             #B0852F;
-  --foil:               #CBA45E;
+  --foil-a:             #83AAF5;
+  --foil-b:             #5B8DEF;
+  --foil-c:             #3D6FD6;
+  --foil:               #5B8DEF;
   --foil-ink:           #86631A;
   --sage:               #54CB7E;
 
-  --brand-orange:       #CBA45E;
-  --brand-orange-light: #DCBC7C;
-  --brand-orange-dark:  #B0852F;
+  --brand-orange:       #5B8DEF;
+  --brand-orange-light: #83AAF5;
+  --brand-orange-dark:  #3D6FD6;
   --brand-amber:        #E0A85A;
 
-  --orange-50:          #FFF8E8;
-  --orange-100:         #F8E8BF;
-  --orange-200:         #EAD095;
-  --orange-300:         #DCBC7C;
-  --orange-400:         #CBA45E;
-  --orange-500:         #CBA45E;
-  --orange-600:         #B0852F;
-  --orange-700:         #9A7325;
-  --orange-800:         #86631A;
-  --orange-900:         #5F4614;
+  --orange-50:          #EEF4FF;
+  --orange-100:         #D6E4FD;
+  --orange-200:         #B5CEFA;
+  --orange-300:         #83AAF5;
+  --orange-400:         #5B8DEF;
+  --orange-500:         #5B8DEF;
+  --orange-600:         #3D6FD6;
+  --orange-700:         #2F5AB8;
+  --orange-800:         #264A99;
+  --orange-900:         #1B3469;
 
-  /* Honest canonical names (D13) — Gold + Sapphire literal; teal/green
+  /* Honest canonical names (D13) — Sapphire literal; teal/green
      follow the per-mode info/success ramp. */
-  --gold:               #CBA45E;
+  --gold:               #5B8DEF;
   --sapphire:           #2E5FB0;
   --teal:               #37C2C9;
   --green:              #54CB7E;
@@ -47,30 +47,30 @@
 
   --line:               rgba(255, 255, 255, 0.10);
   --line-2:             rgba(255, 255, 255, 0.16);
-  --line-foil:          rgba(203, 164, 94, 0.22);
-  --border-focus:       rgba(203, 164, 94, 0.55);
+  --line-foil:          rgba(91, 141, 239, 0.22);
+  --border-focus:       rgba(91, 141, 239, 0.55);
 
   --tone-rose-bg: rgba(226, 92, 92, 0.16); --tone-rose-br: rgba(226, 92, 92, 0.32); --tone-rose-fg: #E25C5C;
-  --tone-foil-bg: rgba(203, 164, 94, 0.16); --tone-foil-br: rgba(203, 164, 94, 0.32); --tone-foil-fg: #DCBC7C;
+  --tone-foil-bg: rgba(91, 141, 239, 0.16); --tone-foil-br: rgba(91, 141, 239, 0.32); --tone-foil-fg: #83AAF5;
   --tone-sage-bg: rgba(84, 203, 126, 0.16); --tone-sage-br: rgba(84, 203, 126, 0.32); --tone-sage-fg: #A0EAD2;
   --tone-honey-bg: rgba(224, 168, 90, 0.16); --tone-honey-br: rgba(224, 168, 90, 0.32); --tone-honey-fg: #E0A85A;
-  --tone-umber-bg: rgba(217, 154, 78, 0.16); --tone-umber-br: rgba(217, 154, 78, 0.32); --tone-umber-fg: #E2B873;
+  --tone-umber-bg: rgba(91, 141, 239, 0.16); --tone-umber-br: rgba(91, 141, 239, 0.32); --tone-umber-fg: #83AAF5;
   --tone-slate-bg: rgba(168, 181, 201, 0.16); --tone-slate-br: rgba(168, 181, 201, 0.32); --tone-slate-fg: #C3CEDD;
-  --tone-orange-bg: rgba(203, 164, 94, 0.16); --tone-orange-br: rgba(203, 164, 94, 0.32); --tone-orange-fg: #CBA45E;
+  --tone-orange-bg: rgba(91, 141, 239, 0.16); --tone-orange-br: rgba(91, 141, 239, 0.32); --tone-orange-fg: #5B8DEF;
   --tone-emerald-bg: rgba(84, 203, 126, 0.16); --tone-emerald-br: rgba(84, 203, 126, 0.32); --tone-emerald-fg: #A0EAD2;
   --tone-amber-bg: rgba(224, 168, 90, 0.16); --tone-amber-br: rgba(224, 168, 90, 0.32); --tone-amber-fg: #E0A85A;
   --tone-sky-bg: rgba(55, 194, 201, 0.14); --tone-sky-br: rgba(55, 194, 201, 0.28); --tone-sky-fg: #37C2C9;
   --tone-cyan-bg: rgba(55, 194, 201, 0.14); --tone-cyan-br: rgba(55, 194, 201, 0.28); --tone-cyan-fg: #37C2C9;
 
-  --shadow-glow:        0 0 10px rgba(203, 164, 94, 0.16);
-  --shadow-rose:        0 0 10px rgba(203, 164, 94, 0.16);
-  --shadow-foil:        0 0 14px rgba(203, 164, 94, 0.07);
+  --shadow-glow:        0 0 10px rgba(91, 141, 239, 0.16);
+  --shadow-rose:        0 0 10px rgba(91, 141, 239, 0.16);
+  --shadow-foil:        0 0 14px rgba(91, 141, 239, 0.07);
 
   /* Semantic — Aurora ramp. Consumed by Tailwind `bg-success` etc. */
   --success:            #54CB7E;
   --success-soft:       rgba(84, 203, 126, 0.14);
-  --warning:            #E0A85A;
-  --warning-soft:       rgba(224, 168, 90, 0.16);
+  --warning:            #E8843C;
+  --warning-soft:       rgba(232, 132, 60, 0.16);
   --danger:             #E25C5C;
   --danger-soft:        rgba(226, 92, 92, 0.16);
   --info:               #37C2C9;
@@ -105,9 +105,9 @@
   --orange-800:         #244C90;
   --orange-900:         #18345F;
 
-  /* Honest canonical names (D13) — Gold + Sapphire literal; teal/green
+  /* Honest canonical names (D13) — Sapphire literal; teal/green
      follow the AA-safe light info/success ramp. */
-  --gold:               #CBA45E;
+  --gold:               #5B8DEF;
   --sapphire:           #2E5FB0;
   --teal:               #16666B;
   --green:              #0F6B50;
@@ -140,8 +140,8 @@
 
   --success:            #0F6B50;
   --success-soft:       rgba(15, 107, 80, 0.10);
-  --warning:            #7A5418;
-  --warning-soft:       rgba(185, 131, 24, 0.10);
+  --warning:            #9D4F15;
+  --warning-soft:       rgba(157, 79, 21, 0.10);
   --danger:             #A83333;
   --danger-soft:        rgba(168, 51, 51, 0.10);
   --info:               #16666B;

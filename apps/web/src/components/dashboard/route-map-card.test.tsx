@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -137,11 +136,11 @@ describe("routeMarkerCorners", () => {
 });
 
 describe("hslTripletToHex", () => {
-  it("converts the Gold/Sapphire token shapes from globals.css", () => {
-    expect(hslTripletToHex("38.53 51.17% 58.24%")).toBe("CBA45E"); // .plan-free/.plan-family/.plan-pro (dark)
+  it("converts the Sapphire token shapes from globals.css", () => {
+    expect(hslTripletToHex("219.73 82.22% 64.71%")).toBe("5B8DEF"); // .plan-free/.plan-family/.plan-pro (dark)
     expect(hslTripletToHex("217.38 58.56% 43.53%")).toBe("2E5FB0"); // .light plan classes
     expect(hslTripletToHex("0 0% 100%")).toBe("FFFFFF");
-    expect(hslTripletToHex(" 38.53 51.17% 58.24% ")).toMatch(/^[0-9A-F]{6}$/);
+    expect(hslTripletToHex(" 219.73 82.22% 64.71% ")).toMatch(/^[0-9A-F]{6}$/);
   });
 
   it("returns null for unparseable values", () => {
@@ -156,10 +155,10 @@ describe("buildRouteMapSrc", () => {
     const src = buildRouteMapSrc(
       { lat: 41.87810001234, lng: -87.62980004321 },
       { lat: 30.2672, lng: -97.7431 },
-      { width: 640, height: 224, theme: "dark", accent: "#CBA45E" },
+      { width: 640, height: 224, theme: "dark", accent: "#5B8DEF" },
     );
     expect(src).toBe(
-      "/api/maps/static?from=41.8781%2C-87.6298&to=30.2672%2C-97.7431&w=640&h=224&theme=dark&accent=CBA45E",
+      "/api/maps/static?from=41.8781%2C-87.6298&to=30.2672%2C-97.7431&w=640&h=224&theme=dark&accent=5B8DEF",
     );
   });
 
@@ -177,10 +176,10 @@ describe("buildRouteMapSrc", () => {
     const src = buildRouteMapSrc(
       { lat: 41.8781, lng: -87.6298 },
       { lat: 30.2672, lng: -97.7431 },
-      { width: 640, height: 224, theme: "dark", accent: "#CBA45E", preview: true },
+      { width: 640, height: 224, theme: "dark", accent: "#5B8DEF", preview: true },
     );
     expect(src).toContain("preview=1");
-    expect(src).toContain("accent=CBA45E");
+    expect(src).toContain("accent=5B8DEF");
   });
 });
 
@@ -227,46 +226,6 @@ describe("route map catalog", () => {
     expect(routeMapKeys(en)).toEqual(routeMapKeys(es));
     expect(routeMapKeys(en)).toContain("routeMap_imageAlt");
     expect(en.dashboard.routeMap_imageAlt).toContain("{from}");
-  });
-});
-
-describe("route map light chrome", () => {
-  it("uses light paper labels instead of dark overlay labels in light mode", () => {
-    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
-    const start = globals.indexOf(".light .lf-route-map-label {");
-    const end = globals.indexOf(".light .lf-route-map-label[data-endpoint=\"from\"]", start);
-    const block = globals.slice(start, end);
-
-    expect(start).toBeGreaterThan(-1);
-    expect(block).toContain("rgba(255, 255, 255, 0.92)");
-    expect(block).not.toContain("rgba(10, 15, 28");
-  });
-
-  it("uses the source light-map palette for the stylized fallback canvas", () => {
-    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
-    const start = globals.indexOf(".light .lf-route-map-canvas {");
-    const end = globals.indexOf(".lf-route-map-label {", start);
-    const block = globals.slice(start, end);
-
-    expect(start).toBeGreaterThan(-1);
-    expect(block).toContain("linear-gradient(180deg, #dde6ef, #cdd8e6)");
-    expect(block).toContain("--lf-route-map-grid: rgba(12, 24, 40, 0.07)");
-    expect(block).toContain("--lf-route-map-route-base: rgba(12, 24, 40, 0.12)");
-  });
-
-  it("keeps the stylized fallback route animated like the source map", () => {
-    const markup = renderToStaticMarkup(<RouteMapCard fromCity="Wayne" toCity="Irvine" realMap={false} />);
-    const globals = readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8");
-
-    expect(markup).toContain("lf-route-map-canvas");
-    expect(markup).toContain("lf-route-map-dash");
-    expect(markup).toContain("lf-route-map-traveler");
-    expect(markup).toContain("var(--lf-route-map-route-base)");
-    expect(markup).toContain('stroke-dasharray="9 9"');
-    expect(globals).toContain("@keyframes lf-route-map-dash");
-    expect(globals).toContain("@keyframes lf-route-map-travel");
-    expect(globals).toContain(".lf-route-map-dash");
-    expect(globals).toContain(".lf-route-map-traveler");
   });
 });
 

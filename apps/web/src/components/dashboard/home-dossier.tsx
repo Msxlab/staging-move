@@ -26,7 +26,10 @@ import {
   sourceSceneVars,
   sourceSceneTag,
   useDossierCountUp,
+  type SceneDetail,
 } from "./dossier-ambient";
+import { AqiGauge, EvMeter, WeatherGlyph } from "./dossier-indicators";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 /**
  * NEW HOME DOSSIER — Aurora dashboard widget.
@@ -67,7 +70,29 @@ type DossierSceneDeckCard = {
   value: string;
   sub: string;
   ambient: ReturnType<typeof ambientForSection>;
+  /** Raw narration payload (EV count / AQI) threaded to the scene (additive). */
+  detail?: SceneDetail;
 };
+
+/**
+ * Build the optional raw-narration payload for the EV / Air scenes. ADDITIVE:
+ * the 0|1|2 intensity contract is unchanged; this only lets those two scenes
+ * pick a finer in-scene sub-state. EV buckets on the UNCAPPED area station
+ * count (totalResults, ~0..100+), falling back to the API-capped stationCount.
+ */
+function evSceneDetail(ev: NonNullable<HomeDossierView["evCharging"]>): SceneDetail {
+  return {
+    evCount: ev.totalResults ?? ev.stationCount,
+    evDcFast: ev.dcFastPortCount,
+  };
+}
+
+function airSceneDetail(air: NonNullable<HomeDossierView["air"]>): SceneDetail {
+  return {
+    aqi: air.aqi ?? undefined,
+    aqiCategory: air.category ?? undefined,
+  };
+}
 
 function dossierDeckPriority(intensity: number): number {
   return intensity >= 2 ? 3 : intensity >= 1 ? 2 : 1;
@@ -270,6 +295,9 @@ export interface HomeDossierView {
   } | null;
   evCharging: {
     radiusMiles: number;
+    /** Uncapped AREA station count (NREL total_results) — drives the EV scene's
+     *  5 density sub-states. Falls back to stationCount when the API omits it. */
+    totalResults: number | null;
     stationCount: number;
     nearestDistanceMiles: number | null;
     dcFastPortCount: number;
@@ -594,6 +622,12 @@ export function deriveEvCharging(
     typeof section.stationCount === "number" && Number.isFinite(section.stationCount) && section.stationCount >= 0
       ? Math.round(section.stationCount)
       : 0;
+  // Uncapped area count for the scene's density buckets; the row's stationCount
+  // saturates at the API limit (~20) so it can't tell s3 from s4 in dense metros.
+  const totalResults =
+    typeof section.totalResults === "number" && Number.isFinite(section.totalResults) && section.totalResults >= 0
+      ? Math.round(section.totalResults)
+      : null;
   const nearestDistanceMiles =
     typeof section.nearestDistanceMiles === "number" && Number.isFinite(section.nearestDistanceMiles) && section.nearestDistanceMiles >= 0
       ? Math.round(section.nearestDistanceMiles * 10) / 10
@@ -607,7 +641,7 @@ export function deriveEvCharging(
       ? Math.round(section.level2PortCount)
       : 0;
 
-  return { radiusMiles, stationCount, nearestDistanceMiles, dcFastPortCount, level2PortCount };
+  return { radiusMiles, totalResults, stationCount, nearestDistanceMiles, dcFastPortCount, level2PortCount };
 }
 
 /** Plain-English flood label key for a zone, driven by the API's isHighRisk. */
@@ -807,6 +841,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
             : td("dossier_air_categoryOnly", { category: view.air.category ?? "" }),
       sub: td("dossier_air_disclaimer"),
       ambient: ambientForSection({ kind: "air", aqi: view.air.aqi, category: view.air.category }),
+      detail: airSceneDetail(view.air),
     });
   }
   if (view.housing) {
@@ -846,6 +881,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         dcFastPortCount: view.evCharging.dcFastPortCount,
         level2PortCount: view.evCharging.level2PortCount,
       }),
+      detail: evSceneDetail(view.evCharging),
     });
   }
   if (view.neighborhood?.locked === false) {
@@ -941,11 +977,19 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
               if (next !== dossierDeckIndex) setDossierDeckIndex(next);
             }}
           >
-            {sceneCards.map((card) => {
+            {sceneCards.map((card, cardIndex) => {
               const activeBars = activeDossierDeckBars(card.ambient.intensity);
               const bandKey = dossierDeckBandKey(card.ambient.intensity);
               const sourceScene = sourceDossierSceneFor(card.ambient);
               const sceneVars = sourceSceneVars(sourceScene);
+              // WEATHER, AIR and EV render a clear foreground indicator (animated
+              // Meteocons weather glyph / AQI gauge / EV density meter) in place
+              // of the decorative ambient scene; all other kinds keep the masked
+              // <DossierAmbient> background.
+              const isIndicatorCard =
+                (card.key === "weather" && view.weather) ||
+                (card.key === "air" && view.air) ||
+                (card.key === "ev-charging" && view.evCharging);
               return (
                 <article
                   key={card.key}
@@ -953,9 +997,31 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                   data-dossier-scene={card.key}
                   style={sceneVars}
                 >
-                  <div className="lf-dossier-source-stage">
-                    <DossierAmbient {...card.ambient} showTag={false} pauseOffscreen={false} />
-                    <span className="lf-dossier-source-tag">{sourceSceneTag(sourceScene)}</span>
+                  <div
+                    className={
+                      isIndicatorCard
+                        ? "lf-dossier-source-stage lf-dossier-source-stage--indicator"
+                        : "lf-dossier-source-stage"
+                    }
+                  >
+                    {card.key === "weather" && view.weather ? (
+                      <div className="lf-dossier-indicator-wrap">
+                        <WeatherGlyph variant={card.ambient.variant} size={64} />
+                      </div>
+                    ) : card.key === "air" && view.air ? (
+                      <div className="lf-dossier-indicator-wrap">
+                        <AqiGauge aqi={view.air.aqi} category={view.air.category} />
+                      </div>
+                    ) : card.key === "ev-charging" && view.evCharging ? (
+                      <div className="lf-dossier-indicator-wrap">
+                        <EvMeter count={view.evCharging.totalResults ?? view.evCharging.stationCount} />
+                      </div>
+                    ) : (
+                      <>
+                        <DossierAmbient {...card.ambient} detail={card.detail} showTag={false} pauseOffscreen={false} />
+                        <span className="lf-dossier-source-tag">{sourceSceneTag(sourceScene)}</span>
+                      </>
+                    )}
                   </div>
                   <div className="lf-dossier-source-body">
                     <p className="lf-dossier-source-label">{card.label}</p>
@@ -970,6 +1036,10 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                       <span className="lf-dossier-source-band">{td(bandKey)}</span>
                     </div>
                   </div>
+                  {/* Premium accent: a sapphire border-beam highlights the
+                      lead (highest-priority) dossier card. aria-hidden, motion
+                      JS-driven (v3-safe), honours reduced motion. */}
+                  {cardIndex === 0 && <BorderBeam radius={20} />}
                 </article>
               );
             })}
@@ -1048,18 +1118,12 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         )}
 
         {/* (3) Moving-day weather — only when the API says "ok" (≤7 days out,
-            destination address). "too_far" renders nothing by design. */}
+            destination address). "too_far" renders nothing by design. The
+            decorative ambient is replaced by a clear, animated foreground
+            Meteocons weather glyph for this row (no overflow mask / absolute
+            scene to clip it), same direction as the AIR and EV indicators. */}
         {view.weather && (
-          <div className={DOSSIER_SCENE_ROW_CLASS}>
-            <DossierAmbient
-              {...ambientForSection({
-                kind: "weather",
-                summary: view.weather.summary,
-                precipChancePct: view.weather.precipChancePct,
-                tempHighF: view.weather.tempHighF,
-                tempLowF: view.weather.tempLowF,
-              })}
-            />
+          <div className={DOSSIER_ROW_CLASS}>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-cyan-bg border border-tone-cyan-br flex items-center justify-center shrink-0">
                 <CloudSun className="h-4 w-4 text-tone-cyan-fg" />
@@ -1074,6 +1138,19 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                   {[view.weather.summary, weatherStats.join(" · ")].filter(Boolean).join(" — ")}
                 </p>
               </div>
+            </div>
+            <div className="mt-3 lf-dossier-indicator-wrap">
+              <WeatherGlyph
+                variant={
+                  ambientForSection({
+                    kind: "weather",
+                    summary: view.weather.summary,
+                    precipChancePct: view.weather.precipChancePct,
+                    tempHighF: view.weather.tempHighF,
+                    tempLowF: view.weather.tempLowF,
+                  }).variant
+                }
+              />
             </div>
             <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{td("dossier_weather_disclaimer")}</p>
           </div>
@@ -1167,10 +1244,11 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
           </div>
         )}
 
-        {/* (7) Air quality now — AirNow snapshot; hidden when not_configured */}
+        {/* (7) Air quality now — AirNow snapshot; hidden when not_configured.
+            The decorative ambient is replaced by a clear foreground AQI gauge
+            for this row (no overflow mask / absolute scene to clip it). */}
         {view.air && (
-          <div className={DOSSIER_SCENE_ROW_CLASS}>
-            <DossierAmbient {...ambientForSection({ kind: "air", aqi: view.air.aqi, category: view.air.category })} />
+          <div className={DOSSIER_ROW_CLASS}>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sage-bg border border-tone-sage-br flex items-center justify-center shrink-0">
                 <Wind className="h-4 w-4 text-tone-sage-fg" />
@@ -1185,6 +1263,9 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                       : td("dossier_air_categoryOnly", { category: view.air.category ?? "" })}
                 </p>
               </div>
+            </div>
+            <div className="mt-3 lf-dossier-indicator-wrap">
+              <AqiGauge aqi={view.air.aqi} category={view.air.category} />
             </div>
             <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{td("dossier_air_disclaimer")}</p>
           </div>
@@ -1248,17 +1329,11 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
           </div>
         )}
 
-        {/* (9) EV charging - NLR/AFDC public active stations near destination. */}
+        {/* (9) EV charging - NLR/AFDC public active stations near destination.
+            The decorative ambient is replaced by a clear foreground EV density
+            meter for this row (no overflow mask / absolute scene to clip it). */}
         {view.evCharging && (
-          <div className={DOSSIER_SCENE_ROW_CLASS}>
-            <DossierAmbient
-              {...ambientForSection({
-                kind: "evCharging",
-                stationCount: view.evCharging.stationCount,
-                dcFastPortCount: view.evCharging.dcFastPortCount,
-                level2PortCount: view.evCharging.level2PortCount,
-              })}
-            />
+          <div className={DOSSIER_ROW_CLASS}>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center shrink-0">
                 <Zap className="h-4 w-4 text-tone-sky-fg" />
@@ -1277,6 +1352,9 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                   {td("dossier_ev_nearest", { distance: view.evCharging.nearestDistanceMiles })}
                 </span>
               )}
+            </div>
+            <div className="mt-3 lf-dossier-indicator-wrap">
+              <EvMeter count={view.evCharging.totalResults ?? view.evCharging.stationCount} />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               {td("dossier_ev_ports", {

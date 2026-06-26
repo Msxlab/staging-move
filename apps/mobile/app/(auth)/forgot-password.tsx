@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
   TouchableOpacity,
 } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import { Mail, ArrowRight, CheckCircle2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -58,7 +59,7 @@ export default function ForgotPasswordScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.authPanel}>
-          <View style={styles.hero}>
+          <Animated.View style={styles.hero} entering={FadeInDown.duration(480)}>
             <View style={styles.brandBadge}>
               <MoveRaccoon size={62} mood={sent ? "happy" : "calm"} />
             </View>
@@ -75,7 +76,7 @@ export default function ForgotPasswordScreen() {
                   })
                 : t("auth.forgotPassword_subtitle", "Enter your account email.")}
             </Text>
-          </View>
+          </Animated.View>
 
           {sent ? (
             <View style={styles.sentBox}>

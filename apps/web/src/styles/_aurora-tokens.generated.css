@@ -21,16 +21,16 @@
   --au-rule:        rgba(255, 255, 255, 0.06);
   --au-rule-2:      rgba(255, 255, 255, 0.10);
 
-  --au-cool:        #CBA45E;
-  --au-cool-2:      #B0852F;
-  --au-cool-soft:   rgba(203, 164, 94, 0.14);
-  /* Legacy name — now holds Gold. Kept so old class names keep compiling;
+  --au-cool:        #5B8DEF;
+  --au-cool-2:      #3D6FD6;
+  --au-cool-soft:   rgba(91, 141, 239, 0.14);
+  /* Legacy name — now holds Sapphire. Kept so old class names keep compiling;
      never reintroduce violet here. */
-  --au-violet:      #CBA45E;
-  --au-violet-soft: rgba(203, 164, 94, 0.14);
-  /* Family plan hook — compatibility alias that resolves to Gold. */
-  --au-family:      #CBA45E;
-  --au-family-soft: rgba(203, 164, 94, 0.14);
+  --au-violet:      #5B8DEF;
+  --au-violet-soft: rgba(91, 141, 239, 0.14);
+  /* Family plan hook — compatibility alias that resolves to Sapphire. */
+  --au-family:      #5B8DEF;
+  --au-family-soft: rgba(91, 141, 239, 0.14);
   --au-mint:        #54CB7E;
   --au-mint-soft:   rgba(84, 203, 126, 0.14);
   --au-amber:       #E0A85A;
@@ -39,8 +39,8 @@
   --au-coral-soft:rgba(226, 92, 92, 0.16);
   --au-rose:        #F0A0B8;
 
-  --au-aurora-1:    rgba(203, 164, 94, 0.18);
-  --au-aurora-2:    rgba(203, 164, 94, 0.10);
+  --au-aurora-1:    rgba(91, 141, 239, 0.18);
+  --au-aurora-2:    rgba(91, 141, 239, 0.10);
   --au-aurora-3:    rgba(84, 203, 126, 0.10);
   --au-aurora-4:    rgba(240, 160, 184, 0.08);
 
@@ -57,9 +57,9 @@
   --au-ink-2:       #4A5C75;
   --au-ink-3:       #7A8A9F;
   --au-ink-4:       #ABB6C5;
-  --au-base:        #F8FAFC;
+  --au-base:        #EFEADF;
   --au-base-2:      #FFFFFF;
-  --au-base-3:      #EEF2F7;
+  --au-base-3:      #F5F0E7;
   --au-pane:        rgba(255, 255, 255, 0.92);
   --au-pane-2:      rgba(255, 255, 255, 0.98);
   --au-pane-3:      #FFFFFF;

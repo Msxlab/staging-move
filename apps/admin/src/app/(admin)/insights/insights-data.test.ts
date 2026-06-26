@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import enMessages from "@/i18n/messages/en.json";
+import esMessages from "@/i18n/messages/es.json";
 import {
   KNOWN_SOURCES,
   PROVIDER_USER_FLOOR,
@@ -14,6 +16,7 @@ import {
 
 const TODAY = new Date("2026-06-10T15:30:00.000Z");
 const DAY_KEYS = lastNDayKeys(14, TODAY);
+const SOURCE_LABEL_CATALOGS = [enMessages, esMessages] as const;
 
 function stat(
   day: string,
@@ -38,6 +41,14 @@ describe("lastNDayKeys / utcDayKey", () => {
 });
 
 describe("buildSourceHealth", () => {
+  it("has locale labels for every known health source", () => {
+    for (const messages of SOURCE_LABEL_CATALOGS) {
+      for (const source of KNOWN_SOURCES) {
+        expect(messages.insights.health.sources).toHaveProperty(source);
+      }
+    }
+  });
+
   it("lists every known source as 'off' with zero-filled days when there are no rows", () => {
     const health = buildSourceHealth([], DAY_KEYS);
     expect(health.map((h) => h.source)).toEqual([...KNOWN_SOURCES]);

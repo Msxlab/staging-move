@@ -37,17 +37,17 @@ export default function OpengraphImage() {
               height: 72,
               borderRadius: 18,
               background: "linear-gradient(135deg, #18233A 0%, #0E1521 100%)",
-              border: "1px solid rgba(203, 164, 94, 0.30)",
+              border: "1px solid rgba(91, 141, 239, 0.30)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 40px rgba(203, 164, 94, 0.30)",
+              boxShadow: "0 0 40px rgba(91, 141, 239, 0.30)",
             }}
           >
             {/*
              * Official LocateFlow brand mark — the parametric raccoon
              * (Raccoon.dc.html), `calm` mood, gold eye baked in (Satori can't
-             * resolve `hsl(var(--primary))`, so the dark-mode accent #CBA45E is
+             * resolve `hsl(var(--primary))`, so the dark-mode accent #5B8DEF is
              * inlined for the static card). Replaces the legacy "M" glyph.
              */}
             <svg width="54" height="54" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -60,9 +60,9 @@ export default function OpengraphImage() {
               <ellipse cx="67" cy="51" rx="16" ry="13" fill="#0C1525" />
               <rect x="44" y="46" width="12" height="10" rx="5" fill="#0C1525" />
               <path d="M20 43 Q50 36 80 43" stroke="#0C1525" strokeWidth="8" strokeLinecap="round" fill="none" />
-              <circle cx="33" cy="51" r="8" fill="#CBA45E" />
+              <circle cx="33" cy="51" r="8" fill="#5B8DEF" />
               <circle cx="33" cy="51" r="5" fill="#04080F" />
-              <circle cx="67" cy="51" r="8" fill="#CBA45E" />
+              <circle cx="67" cy="51" r="8" fill="#5B8DEF" />
               <circle cx="67" cy="51" r="5" fill="#04080F" />
               <path d="M46 66 L50 72 L54 66 Q50 63 46 66Z" fill="#0C1525" />
             </svg>
@@ -109,8 +109,8 @@ export default function OpengraphImage() {
             marginTop: 48,
             padding: "12px 20px",
             borderRadius: 999,
-            background: "rgba(203, 164, 94, 0.10)",
-            border: "1px solid rgba(203, 164, 94, 0.30)",
+            background: "rgba(91, 141, 239, 0.10)",
+            border: "1px solid rgba(91, 141, 239, 0.30)",
           }}
         >
           <div
@@ -118,10 +118,10 @@ export default function OpengraphImage() {
               width: 8,
               height: 8,
               borderRadius: "50%",
-              background: "#CBA45E",
+              background: "#5B8DEF",
             }}
           />
-          <span style={{ fontSize: 20, color: "#DCBC7C", fontWeight: 600 }}>
+          <span style={{ fontSize: 20, color: "#83AAF5", fontWeight: 600 }}>
             locateflow.com
           </span>
         </div>

@@ -218,8 +218,14 @@
         "water": "Calidad del agua",
         "air": "Calidad del aire",
         "nws": "Clima (NWS)",
+        "hud_housing": "Vivienda HUD",
+        "ev_charging": "Carga EV",
+        "census": "Censo ACS",
+        "walkability": "Caminabilidad",
+        "schools": "Escuelas",
         "briefing": "Briefing de IA",
-        "dossier": "Dossier de IA"
+        "dossier": "Dossier de IA",
+        "uptime": "Monitor uptime"
       },
       "empty": "Aún no hay telemetría de integraciones en la ventana."
     },

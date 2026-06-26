@@ -23,7 +23,7 @@
 @keyframes lf-mv-rise {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -31,72 +31,13 @@
   }
 }
 
-@keyframes lf-mv-grow {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-@keyframes lf-route-map-dash {
-  to {
-    stroke-dashoffset: -32;
-  }
-}
-
-@keyframes lf-route-map-travel {
-  0% {
-    offset-distance: 0%;
-  }
-  80%,
-  100% {
-    offset-distance: 100%;
-  }
-}
-
 .lf-move-rise {
-  animation: lf-mv-rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
-}
-
-.lf-move-bar {
-  animation: lf-mv-grow 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) both;
-  transform-origin: left center;
-}
-
-.lf-route-map-dash {
-  animation: lf-route-map-dash 1.4s linear infinite;
-}
-
-.lf-route-map-traveler {
-  animation: lf-route-map-travel 6.5s ease-in-out infinite;
-  will-change: offset-distance;
-}
-
-.lf-route-map-traveler-shadow {
-  fill: #000;
-  opacity: 0.28;
-}
-
-.lf-route-map-traveler-cargo {
-  fill: color-mix(in srgb, hsl(var(--primary)) 72%, white 28%);
-}
-
-.lf-route-map-traveler-wheel {
-  fill: #0A0F1C;
-}
-
-.light .lf-route-map-traveler-wheel {
-  fill: #101D2D;
+  animation: lf-mv-rise 0.36s ease both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lf-move-rise,
-  .lf-move-bar,
-  .lf-route-map-dash,
-  .lf-route-map-traveler {
-    animation: none !important;
+  .lf-move-rise {
+    animation: none;
   }
 }
 
@@ -117,7 +58,7 @@
     --popover:                217 41% 9%;
     --popover-foreground:     214 36% 95%;
 
-    --primary:                38.53 51.17% 58.24%;
+    --primary:                219.73 82.22% 64.71%;
     --primary-foreground:     218 43% 6%;
 
     --secondary:              215 22% 72%;
@@ -132,13 +73,13 @@
     --destructive:            359 75% 75%;
     --destructive-foreground: 218 43% 6%;
 
-    --warning:                35 68% 62%;
+    --warning:                25.12 78.90% 57.25%;
     --success:                156 56% 70%;
     --info:                   183 57% 50%;
 
     --border:                 217 32% 18%;
     --input:                  217 32% 18%;
-    --ring:                   38.53 51.17% 58.24%;
+    --ring:                   219.73 82.22% 64.71%;
 
     --radius: 0.625rem; /* 10px */
 
@@ -152,15 +93,15 @@
   /* Plan classes are kept for legacy selectors, but all resolve to the
      canonical LocateFlow accent. Plan identity should be expressed by
      copy/badges, not by changing the global brand color. */
-  .plan-free { --primary: 38.53 51.17% 58.24%; --ring: 38.53 51.17% 58.24%; }
+  .plan-free { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
   .light .plan-free { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
-  .plan-family { --primary: 38.53 51.17% 58.24%; --ring: 38.53 51.17% 58.24%; }
+  .plan-family { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
   .light .plan-family { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
-  .plan-pro { --primary: 38.53 51.17% 58.24%; --ring: 38.53 51.17% 58.24%; }
+  .plan-pro { --primary: 219.73 82.22% 64.71%; --ring: 219.73 82.22% 64.71%; }
   .light .plan-pro { --primary: 217.38 58.56% 43.53%; --ring: 217.38 58.56% 43.53%; }
 
   .light {
-    --background:             210 40% 98.04%;
+    --background:             41.25 33.33% 90.59%;
     --foreground:             213 39% 13%;
 
     --card:                   0 0% 100%;
@@ -175,16 +116,16 @@
     --secondary:              214 22% 38%;
     --secondary-foreground:   0 0% 100%;
 
-    --muted:                  210 40% 96.08%;
+    --muted:                  38.57 41.18% 93.33%;
     --muted-foreground:       213 18% 30%;
 
-    --accent:                 210 40% 96.08%;
+    --accent:                 38.57 41.18% 93.33%;
     --accent-foreground:      213 39% 13%;
 
     --destructive:            358 47% 43%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning:                36.73 67.12% 28.63%;
+    --warning:                25.58 76.40% 34.90%;
     --success:                162 75% 24%;
     --info:                   184 66% 25%;
 
@@ -194,8 +135,8 @@
 
     --radius:                 0.625rem;
 
-    /* Legacy short surface tokens - neutral app canvas with source paper accents */
-    --surface-secondary:      #F1F5F9;
+    /* Legacy short surface tokens — warm paper canvas */
+    --surface-secondary:      #F5F0E7;
     --text-primary:           rgba(20, 32, 47, 1);
     --text-secondary:         rgba(20, 32, 47, 0.72);
     --text-tertiary:          rgba(20, 32, 47, 0.50);
@@ -391,8 +332,8 @@
 
 .app-shell-backdrop {
   background:
-    linear-gradient(135deg, rgba(203, 164, 94, 0.10) 0%, transparent 32%),
-    linear-gradient(220deg, transparent 8%, rgba(203, 164, 94, 0.055) 44%, transparent 78%),
+    linear-gradient(135deg, rgba(91, 141, 239, 0.10) 0%, transparent 32%),
+    linear-gradient(220deg, transparent 8%, rgba(91, 141, 239, 0.055) 44%, transparent 78%),
     linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--surface) 86%, transparent) 100%),
     repeating-linear-gradient(90deg, rgba(236, 241, 248, 0.026) 0 1px, transparent 1px 72px),
     repeating-linear-gradient(0deg, rgba(236, 241, 248, 0.018) 0 1px, transparent 1px 72px);
@@ -400,41 +341,16 @@
 }
 
 .light {
-  --background: 210 40% 98.04%;
-  --muted: 210 40% 96.08%;
-  --accent: 210 40% 96.08%;
-  --lf-source-paper-bg: #EFEADF;
-  --surface-secondary: #F1F5F9;
-  --lf-app-bg: #F8FAFC;
-  --lf-app-chrome-bg: rgba(255, 255, 255, 0.98);
-  --lf-app-chrome-bg-strong: #FFFFFF;
-  --lf-app-panel-bg: #FFFFFF;
-  --lf-app-panel-bg-strong: #FFFFFF;
-  --lf-app-panel-bg-soft: #F6F8FB;
-  --lf-rc-head: #7E8EA6;
-  --lf-rc-mask: #0F1D2D;
-  --lf-rc-eye: hsl(var(--primary));
-  --lf-rc-pupil: #06101E;
+  --lf-app-bg: radial-gradient(ellipse 120% 78% at 50% -18%, #FFFFFF 0%, #FAF8F3 38%, #F3EFE6 78%, #EFEADF 100%);
 }
 
 .light .app-shell-backdrop {
-  background: none;
-  opacity: 0;
-}
-
-.light .lf-app-shell .app-shell-backdrop {
-  background: none !important;
-  opacity: 0 !important;
-}
-
-.light .lf-app-shell > aside,
-.light .lf-app-shell header,
-.light .lf-app-shell nav.fixed {
-  background: var(--lf-app-chrome-bg) !important;
-}
-
-.light .lf-app-shell > aside {
-  background: var(--lf-app-chrome-bg-strong) !important;
+  background:
+    radial-gradient(circle at 16% -4%, rgba(255, 255, 255, 0.42) 0%, transparent 32%),
+    radial-gradient(circle at 78% 2%, rgba(46, 95, 176, 0.018) 0%, transparent 36%),
+    repeating-linear-gradient(90deg, rgba(16, 29, 45, 0.006) 0 1px, transparent 1px 88px),
+    repeating-linear-gradient(0deg, rgba(16, 29, 45, 0.005) 0 1px, transparent 1px 88px);
+  opacity: 0.07;
 }
 
 .light .lf-app-shell .from-primary\/5,
@@ -448,112 +364,13 @@
 .light .lf-app-shell .via-primary\/5,
 .light .lf-app-shell .via-foreground\/\[0\.03\] {
   --tw-gradient-to: rgba(255, 255, 255, 0) var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), rgba(255, 255, 255, 0.78) var(--tw-gradient-via-position), var(--tw-gradient-to);
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(255, 255, 255, 0.92) var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
-.light .lf-app-shell .lf-source-hero-panel {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F4EFE5 100%) !important;
-  border-color: rgba(203, 164, 94, 0.26) !important;
-  box-shadow:
-    0 18px 42px rgba(20, 32, 47, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.92);
-}
-
-.light .lf-app-shell .bg-foreground\/5,
-.light .lf-app-shell .bg-foreground\/\[0\.05\] {
-  background-color: var(--lf-app-panel-bg-strong);
-}
-
-.light .lf-app-shell .bg-foreground\/\[0\.02\],
-.light .lf-app-shell .bg-foreground\/\[0\.03\],
-.light .lf-app-shell .bg-foreground\/\[0\.04\] {
-  background-color: var(--lf-app-panel-bg);
-}
-
-.light .lf-app-shell .bg-white\/5,
-.light .lf-app-shell .bg-white\/10,
-.light .lf-app-shell .bg-white\/\[0\.02\],
-.light .lf-app-shell .bg-white\/\[0\.03\],
-.light .lf-app-shell .bg-white\/\[0\.05\],
-.light .lf-app-shell .bg-white\/\[0\.07\] {
-  background-color: var(--lf-app-panel-bg);
-}
-
-.light .lf-app-shell .bg-background,
-.light .lf-app-shell .bg-background\/30,
-.light .lf-app-shell .bg-background\/35,
-.light .lf-app-shell .bg-background\/40,
-.light .lf-app-shell .bg-background\/45,
-.light .lf-app-shell .bg-background\/55,
-.light .lf-app-shell .bg-background\/60,
-.light .lf-app-shell .bg-background\/70,
-.light .lf-app-shell .bg-background\/75,
-.light .lf-app-shell .bg-background\/95 {
-  background-color: var(--lf-app-panel-bg);
-}
-
-.light .lf-app-shell .hover\:bg-foreground\/5:hover,
-.light .lf-app-shell .hover\:bg-foreground\/\[0\.03\]:hover,
-.light .lf-app-shell .hover\:bg-foreground\/\[0\.05\]:hover,
-.light .lf-app-shell .hover\:bg-foreground\/\[0\.06\]:hover,
-.light .lf-app-shell .hover\:bg-foreground\/\[0\.07\]:hover,
-.light .lf-app-shell .hover\:bg-foreground\/\[0\.08\]:hover,
-.light .lf-app-shell .hover\:bg-background\/45:hover,
-.light .lf-app-shell .hover\:bg-accent:hover,
-.light .lf-app-shell .hover\:bg-white\/5:hover,
-.light .lf-app-shell .hover\:bg-white\/10:hover,
-.light .lf-app-shell .hover\:bg-white\/\[0\.03\]:hover,
-.light .lf-app-shell .hover\:bg-white\/\[0\.05\]:hover,
-.light .lf-app-shell .hover\:bg-white\/\[0\.07\]:hover {
-  background-color: #FFFFFF;
-}
-
-.lf-app-shell[data-lf-theme="light"] {
-  background: var(--lf-app-bg, #F8FAFC) !important;
-}
-
-.lf-app-shell[data-lf-theme="light"] .app-shell-backdrop {
-  background: none !important;
-  opacity: 0 !important;
-}
-
-.lf-app-shell[data-lf-theme="light"] > aside,
-.lf-app-shell[data-lf-theme="light"] header,
-.lf-app-shell[data-lf-theme="light"] nav.fixed {
-  background: var(--lf-app-chrome-bg, #FFFFFF) !important;
-}
-
-.lf-app-shell[data-lf-theme="light"] > aside {
-  background: var(--lf-app-chrome-bg-strong, #FFFFFF) !important;
-}
-
-.lf-app-shell[data-lf-theme="light"] .bg-foreground\/5,
-.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.05\],
-.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.06\],
-.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.08\],
-.lf-app-shell[data-lf-theme="light"] .bg-white\/5,
-.lf-app-shell[data-lf-theme="light"] .bg-white\/10,
-.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.02\],
-.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.03\],
-.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.05\],
-.lf-app-shell[data-lf-theme="light"] .bg-white\/\[0\.07\],
-.lf-app-shell[data-lf-theme="light"] .bg-background,
-.lf-app-shell[data-lf-theme="light"] .bg-background\/30,
-.lf-app-shell[data-lf-theme="light"] .bg-background\/35,
-.lf-app-shell[data-lf-theme="light"] .bg-background\/40,
-.lf-app-shell[data-lf-theme="light"] .bg-background\/45,
-.lf-app-shell[data-lf-theme="light"] .bg-background\/55,
-.lf-app-shell[data-lf-theme="light"] .bg-background\/60,
-.lf-app-shell[data-lf-theme="light"] .bg-background\/70,
-.lf-app-shell[data-lf-theme="light"] .bg-background\/75,
-.lf-app-shell[data-lf-theme="light"] .bg-background\/95 {
-  background-color: var(--lf-app-panel-bg, #FFFFFF);
-}
-
-.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.02\],
-.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.03\],
-.lf-app-shell[data-lf-theme="light"] .bg-foreground\/\[0\.04\] {
-  background-color: var(--lf-app-panel-bg, #FFFFFF);
+.light .lf-app-shell .bg-gradient-to-br.from-primary\/5.to-transparent,
+.light .lf-app-shell .bg-gradient-to-br.from-primary\/10.to-transparent,
+.light .lf-app-shell .bg-gradient-to-br.from-primary\/15.to-transparent {
+  --tw-gradient-to: rgba(255, 255, 255, 0.70) var(--tw-gradient-to-position);
 }
 
 /* =========================================================================
@@ -599,8 +416,7 @@
    (DARK is untouched — utilities resolve to their authored alpha there).
    Decorative buckets /10–/30 (dividers, faint icons, disabled glyphs) are
    deliberately left alone so the visual hierarchy survives. Verified against
-   the neutral app canvas (#F8FAFC), source paper accent (#EFEADF), soft
-   neutral panels (#F6F8FB), and solid white card surfaces:
+   the source warm-paper --background (#EFEADF) and white card surfaces:
    /40 remains readable for secondary copy, while /45-/55 keep stronger body
    contrast. Mirrors the .text-white/NN remap above. */
 .light .text-foreground\/35 { color: hsl(var(--foreground) / 0.58); }
@@ -620,16 +436,16 @@
 
 .light .bg-foreground\/5,
 .light .bg-foreground\/\[0\.05\] {
-  background-color: rgba(255, 255, 255, 0.88);
+  background-color: rgba(255, 255, 255, 0.96);
 }
 .light .bg-foreground\/\[0\.02\],
 .light .bg-foreground\/\[0\.03\],
 .light .bg-foreground\/\[0\.04\] {
-  background-color: rgba(255, 255, 255, 0.74);
+  background-color: rgba(255, 255, 255, 0.88);
 }
 .light .bg-foreground\/\[0\.06\],
 .light .bg-foreground\/\[0\.08\] {
-  background-color: rgba(255, 255, 255, 0.94);
+  background-color: rgba(255, 255, 255, 0.98);
 }
 
 .light .hover\:bg-white\/5:hover { background-color: rgba(20, 32, 47, 0.06); }
@@ -687,9 +503,9 @@
   color: rgba(20, 32, 47, 0.35);
 }
 
-/* Keep global light navigation crisp while source-paper panels stay opt-in. */
+/* Sidebar stays dark in light mode for contrast (per design doc rule). */
 .light aside {
-  background: var(--lf-app-chrome-bg-strong, var(--surface-secondary));
+  background: var(--surface);
 }
 .light aside .text-white,
 .light aside .text-white\/80,
@@ -789,7 +605,7 @@
 .premium-sticker svg { display: block; overflow: visible; }
 .premium-sticker:hover { transform: translateY(-1px) scale(1.04); }
 .premium-sticker.tier-pro:hover {
-  filter: drop-shadow(0 0 8px rgba(203, 164, 94, 0.4));
+  filter: drop-shadow(0 0 8px rgba(91, 141, 239, 0.4));
 }
 
 .ps-shimmer-overlay {
@@ -870,12 +686,12 @@
   width: min(540px, 92vw);
   padding: 56px 40px 40px;
   background: linear-gradient(180deg, #131C2C 0%, #0E1521 100%);
-  border: 1px solid rgba(203, 164, 94, 0.22);
+  border: 1px solid rgba(91, 141, 239, 0.22);
   border-radius: 24px;
   text-align: center;
   box-shadow:
     0 40px 100px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(203, 164, 94, 0.1) inset;
+    0 0 0 1px rgba(91, 141, 239, 0.1) inset;
   overflow: hidden;
   color: #ECF1F8;
 }
@@ -885,7 +701,7 @@
   inset: 0;
   background: radial-gradient(
     600px 300px at 50% 0%,
-    rgba(203, 164, 94, 0.16),
+    rgba(91, 141, 239, 0.16),
     transparent 60%
   );
   pointer-events: none;
@@ -932,11 +748,11 @@
   pointer-events: none;
 }
 .reveal-sticker-stage::before {
-  background: radial-gradient(circle, rgba(203, 164, 94, 0.30), transparent 60%);
+  background: radial-gradient(circle, rgba(91, 141, 239, 0.30), transparent 60%);
   animation: reveal-glow 2.4s ease-out infinite;
 }
 .reveal-sticker-stage::after {
-  border: 1px solid rgba(203, 164, 94, 0.4);
+  border: 1px solid rgba(91, 141, 239, 0.4);
   animation: reveal-ring 2.4s ease-out infinite;
 }
 @keyframes reveal-glow {
@@ -1529,20 +1345,6 @@ html[data-embed="mobile"] .install-prompt {
 /* =========================================================================
    Dashboard map + dossier theme hooks
    ========================================================================= */
-.lf-route-map-canvas {
-  --lf-route-map-grid: rgba(255, 255, 255, 0.06);
-  --lf-route-map-block: rgba(255, 255, 255, 0.03);
-  --lf-route-map-road: rgba(255, 255, 255, 0.07);
-  --lf-route-map-route-base: rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, #0d1830, #0a1120);
-}
-.light .lf-route-map-canvas {
-  --lf-route-map-grid: rgba(12, 24, 40, 0.07);
-  --lf-route-map-block: rgba(12, 24, 40, 0.05);
-  --lf-route-map-road: rgba(12, 24, 40, 0.07);
-  --lf-route-map-route-base: rgba(12, 24, 40, 0.12);
-  background: linear-gradient(180deg, #dde6ef, #cdd8e6);
-}
 .lf-route-map-label {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(10, 15, 28, 0.82);
@@ -1558,21 +1360,21 @@ html[data-embed="mobile"] .install-prompt {
   color: color-mix(in srgb, hsl(var(--primary)) 22%, rgba(239, 243, 250, 0.92) 78%);
 }
 .light .lf-route-map-label {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(16, 29, 45, 0.22);
-  color: #101D2D;
-  box-shadow: 0 8px 18px rgba(20, 32, 47, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.98);
-  text-shadow: none;
+  background: rgba(255, 255, 255, 0.97) !important;
+  border-color: rgba(16, 29, 45, 0.16) !important;
+  color: rgba(16, 29, 45, 0.92) !important;
+  box-shadow: 0 8px 18px rgba(20, 32, 47, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  text-shadow: none !important;
 }
 .light .lf-route-map-label[data-endpoint="from"] {
-  background: rgba(255, 255, 255, 0.94);
-  border-color: color-mix(in srgb, var(--sage) 42%, rgba(16, 29, 45, 0.18));
-  color: #101D2D;
+  background: color-mix(in srgb, var(--sage) 5%, rgba(255, 255, 255, 0.97) 95%) !important;
+  border-color: color-mix(in srgb, var(--sage) 24%, rgba(16, 29, 45, 0.12)) !important;
+  color: color-mix(in srgb, var(--sage) 38%, #101D2D 62%) !important;
 }
 .light .lf-route-map-label[data-endpoint="to"] {
-  background: rgba(255, 255, 255, 0.94);
-  border-color: color-mix(in srgb, hsl(var(--primary)) 44%, rgba(16, 29, 45, 0.18));
-  color: #101D2D;
+  background: color-mix(in srgb, hsl(var(--primary)) 5%, rgba(255, 255, 255, 0.97) 95%) !important;
+  border-color: color-mix(in srgb, hsl(var(--primary)) 24%, rgba(16, 29, 45, 0.12)) !important;
+  color: color-mix(in srgb, hsl(var(--primary)) 40%, #101D2D 60%) !important;
 }
 
 .lf-dossier-grid {
@@ -1581,24 +1383,45 @@ html[data-embed="mobile"] .install-prompt {
   gap: 0.625rem;
 }
 .lf-dossier-grid[data-source-compact="true"] {
-  display: none;
+  padding-top: 0.5rem;
 }
 @media (min-width: 900px) {
   .lf-dossier-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-  .lf-dossier-source-deck {
-    scroll-snap-type: none;
-  }
-  .lf-dossier-source-deck:not([data-expanded="true"]) .lf-dossier-source-card {
-    flex-basis: min(22rem, calc(33.333% - 0.5rem));
-    min-width: 15rem;
-  }
 }
 
+.lf-dossier-source-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+.lf-dossier-source-toggle {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--fg) 13%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
+  color: var(--foil-b);
+  font-size: 0.625rem;
+  font-weight: 800;
+  padding: 0.35rem 0.7rem;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.16s ease;
+}
+.lf-dossier-source-toggle:hover {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border-color: color-mix(in srgb, var(--foil-b) 34%, transparent);
+}
+.lf-dossier-source-toggle:active {
+  transform: translateY(1px);
+}
 .lf-dossier-source-deck {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.875rem;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
@@ -1607,25 +1430,8 @@ html[data-embed="mobile"] .install-prompt {
 .lf-dossier-source-deck::-webkit-scrollbar {
   display: none;
 }
-.lf-dossier-source-toolbar {
-  display: flex;
-  justify-content: flex-end;
-}
-.lf-dossier-source-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--fg) 13%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  color: var(--foil-b);
-  cursor: pointer;
-  font-size: 0.625rem;
-  font-weight: 800;
-  line-height: 1;
-  padding: 0.45rem 0.72rem;
-}
 .lf-dossier-source-card {
+  --lf-dossier-source-stage-h: 96px;
   position: relative;
   flex: 0 0 min(76%, 22rem);
   overflow: hidden;
@@ -1634,6 +1440,47 @@ html[data-embed="mobile"] .install-prompt {
   border-radius: 20px;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+/* Premium hover lift — a soft sapphire glow + border highlight on pointer
+   devices. No transform (keeps the lf-move-rise entrance + the deck's
+   offsetWidth snap math untouched). */
+@media (hover: hover) {
+  .lf-dossier-source-card:hover {
+    border-color: color-mix(in srgb, var(--primary) 36%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 12px 32px -14px color-mix(in srgb, var(--primary) 50%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lf-dossier-source-card {
+    transition: none;
+  }
+}
+/* Border beam — reusable premium accent (see components/ui/border-beam.tsx).
+   A conic gradient masked to the border frame, spun by a plain CSS keyframe so
+   it runs on Tailwind v3 (unlike v4 keyframe utilities). */
+.lf-border-beam {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+.lf-border-beam__spin {
+  position: absolute;
+  inset: -150%;
+  animation: lf-border-beam-spin var(--lf-beam-duration, 8s) linear infinite;
+}
+@keyframes lf-border-beam-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lf-border-beam__spin {
+    animation: none;
+  }
 }
 .lf-dossier-source-card::before {
   content: "";
@@ -1646,7 +1493,7 @@ html[data-embed="mobile"] .install-prompt {
 }
 .lf-dossier-source-stage {
   position: relative;
-  height: 82px;
+  height: var(--lf-dossier-source-stage-h);
   overflow: hidden;
   border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
   background:
@@ -1675,20 +1522,41 @@ html[data-embed="mobile"] .install-prompt {
 .lf-dossier-source-stage .ds-root {
   min-height: 0;
 }
+/* Indicator stage (AIR / EV): the AQI gauge and EV meter are FOREGROUND
+   content, not a masked ambient — so the stage drops the dark scene canvas,
+   the overflow clip, and the fixed height, and gives the indicator a legible
+   light surface with breathing room. Tuned for the LIGHT theme default. */
+.lf-dossier-source-stage--indicator {
+  height: auto;
+  min-height: var(--lf-dossier-source-stage-h);
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, white), var(--surface));
+}
+.lf-dossier-indicator-wrap {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  color: #0b1422;
+}
 .lf-dossier-source-tag {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  z-index: 5;
-  border-radius: 0.4375rem;
-  background: color-mix(in srgb, var(--ds-tone, var(--foil-b)) 14%, rgba(10, 19, 34, 0.72));
-  color: var(--ds-tone, var(--foil-b));
-  font-size: 0.5625rem;
+  z-index: 4;
+  border: 1px solid color-mix(in srgb, var(--ds-tone, var(--foil-b)) 28%, transparent);
+  border-radius: 999px;
+  background: rgba(10, 19, 34, 0.72);
+  color: color-mix(in srgb, var(--ds-tone, var(--foil-b)) 78%, white 22%);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.5rem;
   font-weight: 900;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
   line-height: 1;
-  padding: 0.22rem 0.42rem;
-  text-transform: uppercase;
+  padding: 0.25rem 0.38rem;
 }
 .lf-dossier-source-body {
   padding: 0.6875rem 0.8125rem 0.8125rem;
@@ -1749,24 +1617,26 @@ html[data-embed="mobile"] .install-prompt {
   color: var(--ds-tone, var(--foil-b));
   font-size: 0.5rem;
   font-weight: 900;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   line-height: 1;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 .lf-dossier-source-dots {
   display: flex;
   justify-content: center;
   gap: 0.3125rem;
-  padding: 0 0 0.75rem;
+  padding: 0 0 0.875rem;
 }
 .lf-dossier-source-dots span {
   width: 0.3125rem;
   height: 0.3125rem;
   border-radius: 999px;
-  background: var(--muted-foreground);
-  opacity: 0.45;
-  transition: width 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+  background: color-mix(in srgb, var(--fg) 18%, transparent);
+  opacity: 0.65;
+  transition:
+    width 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
 }
 .lf-dossier-source-dots span[data-active="true"] {
   width: 1rem;
@@ -1782,6 +1652,18 @@ html[data-embed="mobile"] .install-prompt {
   flex-basis: calc(50% - 0.375rem);
   min-width: min(100%, 18rem);
 }
+@media (min-width: 900px) {
+  .lf-dossier-source-deck {
+    scroll-snap-type: none;
+  }
+  .lf-dossier-source-deck:not([data-expanded="true"]) .lf-dossier-source-card {
+    flex-basis: min(24rem, calc(33.333% - 0.625rem));
+    min-width: 17rem;
+  }
+  .lf-dossier-source-card {
+    min-width: 0;
+  }
+}
 @media (max-width: 680px) {
   .lf-dossier-source-deck[data-expanded="true"] .lf-dossier-source-card {
     flex-basis: 100%;
@@ -1792,25 +1674,12 @@ html[data-embed="mobile"] .install-prompt {
   background: color-mix(in srgb, var(--surface) 58%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
-.light .lf-dossier-shell {
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow:
-    0 16px 38px rgba(20, 32, 47, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96);
-}
 .lf-dossier-row {
   background: color-mix(in srgb, var(--surface-2) 28%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
-.light .lf-dossier-row {
-  background: color-mix(in srgb, #FFFFFF 88%, #F5F0E7 12%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.98);
-}
 .lf-dossier-stat {
   background: color-mix(in srgb, var(--surface) 42%, transparent);
-}
-.light .lf-dossier-stat {
-  background: rgba(255, 255, 255, 0.84);
 }
 .lf-dossier-scene-card {
   --lf-dossier-stage-h: 82px;
@@ -1904,135 +1773,65 @@ html[data-embed="mobile"] .install-prompt {
 }
 .light .lf-dossier-shell {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(255, 255, 255, 0.94)),
     #FFFFFF;
   border-color: rgba(20, 32, 47, 0.11);
-  box-shadow: 0 16px 38px rgba(20, 32, 47, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 38px rgba(20, 32, 47, 0.055), inset 0 1px 0 rgba(255, 255, 255, 0.94);
 }
 .light .lf-dossier-row {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(255, 255, 255, 0.93)),
     #FFFFFF;
   border-color: rgba(20, 32, 47, 0.10);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  box-shadow: 0 1px 0 rgba(20, 32, 47, 0.018), inset 0 1px 0 rgba(255, 255, 255, 0.92);
 }
 .light .lf-dossier-source-card {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.90)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(255, 255, 255, 0.93)),
     #FFFFFF;
   border-color: rgba(20, 32, 47, 0.12);
-  box-shadow: 0 14px 30px rgba(20, 32, 47, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 34px rgba(20, 32, 47, 0.075), inset 0 1px 0 rgba(255, 255, 255, 0.96);
 }
 .light .lf-dossier-source-stage {
   border-color: rgba(16, 29, 45, 0.13);
-  background:
-    radial-gradient(ellipse 68% 90% at 70% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 18%, transparent), transparent 66%),
-    linear-gradient(180deg, #101B30, #0A1322);
 }
 .light .lf-dossier-source-stage > .da-layer {
   background:
-    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 24%, transparent), transparent 68%),
+    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 22%, transparent), transparent 68%),
     linear-gradient(180deg, #101B30, #0A1322);
   filter: saturate(1.28) contrast(1.1);
 }
 .light .lf-dossier-source-stage > .da-layer::before {
   background:
-    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
-  opacity: 0.34;
-}
-.light .lf-dossier-source-tag {
-  border: 1px solid color-mix(in srgb, var(--ds-tone, var(--foil-b)) 26%, transparent);
-  background: color-mix(in srgb, var(--ds-tone, var(--foil-b)) 14%, rgba(10, 19, 34, 0.74));
-  color: var(--ds-tone, var(--foil-b));
+    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.045), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%);
+  opacity: 0.24;
 }
 .light .lf-dossier-scene-card > .da-layer {
   border-color: rgba(16, 29, 45, 0.13);
   background:
-    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 24%, transparent), transparent 68%),
+    radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 22%, transparent), transparent 68%),
     linear-gradient(180deg, #101B30, #0A1322);
   filter: saturate(1.28) contrast(1.1);
 }
 .light .lf-dossier-scene-card > .da-layer::before {
   background:
-    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
-  opacity: 0.34;
+    radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.045), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%);
+  opacity: 0.24;
 }
 .light .lf-dossier-scene-card .lf-dossier-scene-tag {
-  border-color: color-mix(in srgb, var(--ds-tone) 26%, transparent);
-  background: color-mix(in srgb, var(--ds-tone) 14%, rgba(10, 19, 34, 0.74));
+  background: color-mix(in srgb, var(--ds-tone) 18%, rgba(12, 19, 34, 0.74));
   color: var(--ds-tone);
 }
-.light .lf-dossier-source-stage > .da-layer .ds-ground,
-.light .lf-dossier-source-stage > .da-layer .ds-ground-warn,
-.light .lf-dossier-source-stage > .da-layer .ds-ground-dark,
 .light .lf-dossier-scene-card > .da-layer .ds-ground,
 .light .lf-dossier-scene-card > .da-layer .ds-ground-warn,
 .light .lf-dossier-scene-card > .da-layer .ds-ground-dark {
   opacity: 0.86;
 }
 .light .lf-dossier-stat {
-  background: color-mix(in srgb, #FFFFFF 82%, var(--surface-2) 18%);
+  background: color-mix(in srgb, #FFFFFF 78%, var(--surface-2) 22%);
   border-color: rgba(20, 32, 47, 0.10);
-}
-
-@media (min-width: 900px) {
-  .lf-dossier-scene-card {
-    --lf-dossier-stage-h: 82px;
-    min-height: calc(var(--lf-dossier-stage-h) + 112px);
-    padding: calc(var(--lf-dossier-stage-h) + 0.75rem) 0.75rem 0.75rem !important;
-  }
-
-  .lf-dossier-scene-card::before {
-    opacity: 0.58;
-  }
-
-  .lf-dossier-scene-card > .da-layer {
-    inset: 0 0 auto 0 !important;
-    width: 100% !important;
-    height: var(--lf-dossier-stage-h) !important;
-    border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent) !important;
-    border-radius: inherit !important;
-    border-bottom-right-radius: 0 !important;
-    border-bottom-left-radius: 0 !important;
-    background:
-      radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 22%, transparent), transparent 68%),
-      linear-gradient(180deg, #101B30, #0A1322);
-    -webkit-mask-image: none;
-    mask-image: none;
-    opacity: 1;
-    filter: saturate(1.18) contrast(1.04);
-  }
-
-  .lf-dossier-scene-card > .da-layer::before {
-    background:
-      radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
-    opacity: 0.38;
-  }
-
-  .light .lf-dossier-scene-card > .da-layer {
-    background:
-      radial-gradient(ellipse 70% 92% at 72% 86%, color-mix(in srgb, var(--ds-tone, var(--foil-b)) 24%, transparent), transparent 68%),
-      linear-gradient(180deg, #101B30, #0A1322);
-    filter: saturate(1.28) contrast(1.1);
-  }
-
-  .light .lf-dossier-scene-card > .da-layer::before {
-    background:
-      radial-gradient(ellipse 70% 82% at 74% 62%, rgba(255, 255, 255, 0.08), transparent 68%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
-    opacity: 0.34;
-  }
-
-  .lf-dossier-scene-card > .da-layer .ds-root {
-    min-height: 100%;
-  }
-
-  .lf-dossier-scene-card .lf-dossier-scene-tag {
-    display: inline-flex;
-  }
 }
 
 /* =========================================================================
@@ -2049,9 +1848,9 @@ html[data-embed="mobile"] .install-prompt {
    ========================================================================= */
 .da-layer {
   z-index: 0;
-  -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.62) 8%, black 20%);
-  mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.62) 8%, black 20%);
-  opacity: 0.86;
+  -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.72) 6%, black 16%);
+  mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.72) 6%, black 16%);
+  opacity: 0.9;
   filter: saturate(1.32) contrast(1.08);
 }
 .da-layer::before {
@@ -2065,14 +1864,14 @@ html[data-embed="mobile"] .install-prompt {
   opacity: 0.22;
 }
 .light .da-layer {
-  opacity: 0.94;
-  filter: saturate(1.24) contrast(1.06);
+  opacity: 1;
+  filter: saturate(1.42) contrast(1.12);
 }
 .light .da-layer::before {
   background:
-    radial-gradient(ellipse 76% 84% at 74% 58%, rgba(46, 95, 176, 0.075), transparent 68%),
-    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18));
-  opacity: 0.34;
+    radial-gradient(ellipse 76% 84% at 74% 58%, rgba(46, 95, 176, 0.06), transparent 68%),
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.10));
+  opacity: 0.22;
 }
 .da-layer[data-source-level="bad"],
 .da-layer[data-source-level="storm"],
@@ -2088,7 +1887,7 @@ html[data-embed="mobile"] .install-prompt {
 .light .da-layer[data-source-level="wind"],
 .light .da-layer[data-source-level="heat"],
 .light .da-layer[data-source-level="cold"] {
-  filter: saturate(1.34) contrast(1.08);
+  filter: saturate(1.42) contrast(1.12);
 }
 .da-layer.da-paused,
 .da-layer.da-paused * {
@@ -2922,9 +2721,9 @@ html[data-embed="mobile"] .install-prompt {
 /* Family plan tone hook — compatibility alias that resolves to the current accent. */
 :root,
 .dark {
-  --tone-family-bg: rgba(203, 164, 94, 0.10);
-  --tone-family-br: rgba(203, 164, 94, 0.22);
-  --tone-family-fg: #CBA45E;
+  --tone-family-bg: rgba(91, 141, 239, 0.10);
+  --tone-family-br: rgba(91, 141, 239, 0.22);
+  --tone-family-fg: #5B8DEF;
 }
 .light {
   --tone-family-bg: rgba(46, 95, 176, 0.10);
@@ -2943,7 +2742,7 @@ html[data-embed="mobile"] .install-prompt {
   box-shadow: var(--shadow-foil);
 }
 .btn-foil:focus-visible {
-  --tw-ring-color: rgba(203, 164, 94, 0.55);
+  --tw-ring-color: rgba(91, 141, 239, 0.55);
 }
 
 /* — Button · press shimmer (primary + foil): CSS-only radial bloom on

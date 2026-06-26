@@ -262,33 +262,9 @@ describe("consumer-free pricing + affiliate contract", () => {
     }
   });
 
-  it("keeps a neutral app canvas with source paper accents and white web surfaces", () => {
-    const globals = readRepoFile("apps", "web", "src", "styles", "globals.css");
-    const aurora = readRepoFile("apps", "web", "src", "styles", "aurora.css");
-    const tokens = readRepoFile("apps", "web", "src", "styles", "_tokens.generated.css");
-
-    expect(tokens).toMatch(/--bg:\s*#F8FAFC;/);
-    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-source-paper-bg:\s*#EFEADF;/);
-    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-bg:\s*#F8FAFC;/);
-    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-chrome-bg-strong:\s*#FFFFFF;/);
-    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-panel-bg:\s*#FFFFFF;/);
-    expect(globals).toMatch(/\.light\s*\{[\s\S]*--lf-app-panel-bg-strong:\s*#FFFFFF;/);
-    expect(globals).toMatch(/\.light \.lf-app-shell \.bg-background\\\/55[\s\S]*background-color:\s*var\(--lf-app-panel-bg\);/);
-    expect(globals).toMatch(/\.light \.app-shell-backdrop\s*\{[\s\S]*background:\s*none;[\s\S]*opacity:\s*0;/);
-    expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\]\s*\{[\s\S]*background:\s*var\(--lf-app-bg,\s*#F8FAFC\) !important;/);
-    expect(globals).toMatch(/\.lf-app-shell\[data-lf-theme="light"\] \.app-shell-backdrop\s*\{[\s\S]*background:\s*none !important;[\s\S]*opacity:\s*0 !important;/);
-    expect(aurora).toMatch(/\.light \.lf-aurora\s*\{[\s\S]*--background:\s*210 40% 98\.04%;/);
-    expect(aurora).toMatch(/\.light \.lf-aurora\s*\{[\s\S]*--au-base:\s*#F8FAFC;/);
-    expect(aurora).toMatch(/\.light \.lf-aurora \.lf-app-shell \.bg-background\\\/55[\s\S]*background-color:\s*var\(--lf-app-panel-bg,\s*#FFFFFF\);/);
-    expect(globals).not.toContain("#F8F5EE 46%");
-    expect(globals).not.toContain("--lf-app-bg: #F8F5EE");
-    expect(globals).toContain("--lf-app-bg: #F8FAFC");
-    expect(globals).not.toContain("--lf-app-bg: #EFEADF");
-    expect(globals).not.toContain("#DEDCD3");
-    expect(globals).not.toContain("#D4D2C8");
-    expect(globals).not.toContain("--lf-app-bg: var(--bg)");
-    expect(globals).not.toContain("color-mix(in srgb, var(--bg) 18%, #FFFFFF 82%)");
-    expect(globals).not.toContain("--lf-app-bg: #FAF7F0");
-    expect(globals).not.toContain("--lf-app-bg: #F8F4EC");
-  });
+  // Removed: a brittle light-canvas CSS-snapshot test that was rewritten on nearly
+  // every commit to ratify the current value and ban the previous ones (it even
+  // forbade the *designed* `--lf-app-bg: radial-gradient` baseline). That goalpost-
+  // moving is what let an unconverged canvas-tweak loop keep shipping "green". Light-
+  // canvas styling belongs in a dedicated visual/theme test, not the pricing contract.
 });

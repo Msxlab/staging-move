@@ -593,7 +593,7 @@ function StampPro({ size = 80 }: SizeProps) {
       >
         EST · 2026
       </text>
-      <circle cx="40" cy="40" r="38" fill="none" stroke="rgba(203, 164, 94,0.15)" strokeWidth="1" />
+      <circle cx="40" cy="40" r="38" fill="none" stroke="rgba(91, 141, 239, 0.15)" strokeWidth="1" />
     </svg>
   );
 }

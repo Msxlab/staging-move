@@ -196,7 +196,7 @@ export default async function RootLayout({
          * favicon.svg (sizes="any") plus the PNG apple-touch/manifest icons.
          */}
         <link rel="icon" type="image/svg+xml" href="/favicon-small.svg" sizes="16x16 32x32" />
-        <link rel="mask-icon" href="/logo-mark.svg" color="#CBA45E" />
+        <link rel="mask-icon" href="/logo-mark.svg" color="#5B8DEF" />
         {/*
          * iOS Safari smart app banner. Shows a system-rendered "OPEN / VIEW
          * IN APP STORE" strip above the page on iPhone/iPad. Becomes a no-op

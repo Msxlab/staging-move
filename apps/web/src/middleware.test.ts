@@ -399,6 +399,86 @@ describe("web middleware auth boundaries", () => {
     expect(response.headers.get("permissions-policy")).toBe("camera=(), microphone=(), geolocation=(self)");
   });
 
+  it("answers local loopback API CORS preflights without requiring auth", async () => {
+    vi.stubEnv("APP_ENV", "");
+    vi.stubEnv("VERCEL_ENV", "");
+    vi.stubEnv("VERCEL", "");
+
+    const response = await middleware(
+      request("http://127.0.0.1:3100/api/services", {
+        method: "OPTIONS",
+        headers: {
+          origin: "http://127.0.0.1:19006",
+          "access-control-request-method": "GET",
+          "access-control-request-headers":
+            "authorization,content-type,x-client-type,x-client-platform,x-workspace-id",
+        },
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("access-control-allow-origin")).toBe("http://127.0.0.1:19006");
+    expect(response.headers.get("access-control-allow-methods")).toContain("OPTIONS");
+    expect(response.headers.get("access-control-allow-headers")).toContain("authorization");
+    expect(response.headers.get("vary")).toContain("Origin");
+  });
+
+  it("adds local loopback CORS headers to protected API auth failures", async () => {
+    vi.stubEnv("APP_ENV", "");
+    vi.stubEnv("VERCEL_ENV", "");
+    vi.stubEnv("VERCEL", "");
+
+    const response = await middleware(
+      request("http://127.0.0.1:3100/api/services", {
+        headers: {
+          origin: "http://127.0.0.1:19006",
+          "x-client-type": "mobile",
+        },
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+    expect(response.headers.get("access-control-allow-origin")).toBe("http://127.0.0.1:19006");
+  });
+
+  it("lets local loopback API mutations pass CSRF origin checks while still requiring auth", async () => {
+    vi.stubEnv("APP_ENV", "");
+    vi.stubEnv("VERCEL_ENV", "");
+    vi.stubEnv("VERCEL", "");
+
+    const response = await middleware(
+      request("http://127.0.0.1:3100/api/services", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "http://127.0.0.1:19006",
+          "x-client-type": "mobile",
+        },
+        body: "{}",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+    expect(response.headers.get("access-control-allow-origin")).toBe("http://127.0.0.1:19006");
+  });
+
+  it("does not add local CORS headers in deployed environments", async () => {
+    const response = await middleware(
+      request("http://127.0.0.1:3100/api/services", {
+        headers: {
+          origin: "http://127.0.0.1:19006",
+        },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
   it("rejects cross-site logout attempts before they reach the route", async () => {
     const response = await middleware(
       request("https://locateflow.com/api/auth/logout", {

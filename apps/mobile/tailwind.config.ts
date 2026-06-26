@@ -11,6 +11,7 @@ import type { Config } from "tailwindcss";
 // `bg-foil`/gold,
 // `bg-sage`/green).
 export default {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
@@ -25,16 +26,16 @@ export default {
         // Legacy keys (rose/foil/sage/primary/surface) are kept so existing
         // className call sites keep rendering.
         primary: {
-          DEFAULT: "#CBA45E",
-          light: "#DCBC7C",
-          dark: "#B0852F",
+          DEFAULT: "#5B8DEF",
+          light: "#83AAF5",
+          dark: "#3D6FD6",
           50: "#FFF8E8",
           100: "#F8E8BF",
           200: "#EAD095",
-          300: "#DCBC7C",
-          400: "#CBA45E",
-          500: "#CBA45E",
-          600: "#B0852F",
+          300: "#83AAF5",
+          400: "#5B8DEF",
+          500: "#5B8DEF",
+          600: "#3D6FD6",
           700: "#9A7325",
           800: "#86631A",
           900: "#5F4614",
@@ -47,9 +48,9 @@ export default {
           dark: "#A83333",
         },
         foil: {
-          DEFAULT: "#CBA45E",
-          highlight: "#DCBC7C",
-          shadow: "#B0852F",
+          DEFAULT: "#5B8DEF",
+          highlight: "#83AAF5",
+          shadow: "#3D6FD6",
           ink: "#86631A",
         },
         sage: {
@@ -62,7 +63,7 @@ export default {
           card: "#18233A",
           hover: "#16203A",
         },
-        accent: "#CBA45E",
+        accent: "#5B8DEF",
         // Semantic shorthands - green / amber / coral / teal.
         success: "#54CB7E",
         warning: "#E0A85A",

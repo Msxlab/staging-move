@@ -87,10 +87,55 @@ export type SourceDossierSceneLevel =
   | "heat"
   | "cold";
 
+/**
+ * OPTIONAL raw-narration payload threaded from the row's real data down to the
+ * scene so EV / Air can compute their OWN fine-grained sub-state WITHOUT
+ * touching the 0|1|2 intensity contract. This is purely ADDITIVE — data-intensity
+ * stays 0-2 and data-ds-level stays good/mid/bad (still derived from intensity
+ * for tone/tag/mood/band-meter). When `detail` is absent (e.g. the marketing
+ * showcase, or any caller that doesn't pass it) the scenes fall back to the
+ * current level-based rendering with no crash.
+ */
+export type SceneDetail = {
+  /** Uncapped area EV-station count (NREL total_results); drives the 5 EV sub-states. */
+  evCount?: number;
+  /** DC-fast port count near the address (kept for parity / future use). */
+  evDcFast?: number;
+  /** Raw current AQI; drives the 6 air bands (Good … Hazardous). */
+  aqi?: number;
+  /** AirNow category string fallback when a numeric AQI is absent. */
+  aqiCategory?: string;
+};
+
 export interface SourceDossierSceneSpec {
   type: SourceDossierSceneType;
   level: SourceDossierSceneLevel;
+  /** Optional raw data enriching the in-scene visual (see SceneDetail). */
+  detail?: SceneDetail;
 }
+
+/**
+ * RACCOON-LITE dossier scenes (no-gold + "less raccoon" direction).
+ *
+ * The dossier scenes used to render a <SourceCharacter>/<DossierRaccoon> mascot
+ * ON TOP of their data-derived background + particle + glow layers. User
+ * feedback was "too much raccoon" in the dossier, so this flag gates EVERY
+ * in-scene mascot at a single point: when false, SourceCharacter renders
+ * nothing and the scene reads purely from its tone + particle density +
+ * GOOD/CHECK/ALERT tag + sibling status glyphs (ds-alert-symbol, ds-air-wary,
+ * ds-spark, ds-warning-triangle, …). The background / particle / glow / tone
+ * layers (ds-ground, ds-radial, ds-leaf, ds-mote, ds-rain, ds-snow, ds-cloud,
+ * ds-fogband, ds-streak, ds-ray, ds-glow, ds-flood, ds-ev-node, …) all stay.
+ *
+ * It is deliberately a module-level constant (not deleted code): flip it back
+ * to `true` to restore the mascot in all scenes at once. The DossierRaccoon /
+ * SourceCharacter definitions are KEPT for the app's other raccoon uses (logo,
+ * dashboard greeting mascot, RaccoonMark) and for this reversibility.
+ *
+ * Scope: the in-scene mascot ONLY. The foreground AqiGauge / EvMeter (air, EV)
+ * never used SourceCharacter, so they are unaffected.
+ */
+const SCENE_RACCOON = false;
 
 function riskSourceLevel(intensity: AmbientIntensity): "good" | "mid" | "bad" {
   return intensity === 2 ? "bad" : intensity === 1 ? "mid" : "good";
@@ -126,20 +171,26 @@ function weatherSourceLevel(variant: AmbientVariant | undefined): SourceDossierS
  * DossierScene(type, level) matrix so web renders the prototype scene states
  * explicitly rather than an unrelated row-art approximation.
  */
-export function sourceDossierSceneFor({ kind, intensity, variant }: AmbientSpec): SourceDossierSceneSpec {
+export function sourceDossierSceneFor(
+  { kind, intensity, variant }: AmbientSpec,
+  detail?: SceneDetail,
+): SourceDossierSceneSpec {
   switch (kind) {
     case "weather":
       return { type: "weather", level: weatherSourceLevel(variant) };
     case "air":
-      return { type: "air", level: riskSourceLevel(intensity) };
+      // intensity still drives level (tone/tag/mood/band-meter); detail.aqi (or
+      // aqiCategory) lets the AIR scene split "mid" into the 6 distinct bands.
+      return { type: "air", level: riskSourceLevel(intensity), detail };
     case "water":
       return { type: "water", level: riskSourceLevel(intensity) };
     case "housing":
       return { type: "housing", level: "mid" };
     case "evCharging":
       // Dedicated EV scene: charging post + a pulsing bolt + charge nodes (denser with
-      // more stations); the empty/"bad" state simply drops the bolt and nodes.
-      return { type: "ev", level: positiveSourceLevel(intensity) };
+      // more stations); the empty/"bad" state simply drops the bolt and nodes. detail
+      // (evCount) lets the scene pick one of 5 escalating density sub-states.
+      return { type: "ev", level: positiveSourceLevel(intensity), detail };
     case "neighborhood":
       // Dedicated neighbourhood scene: a lit skyline + a stroller whose liveliness tracks
       // walkability. Never an alarming state (walkability is not a risk signal).
@@ -228,6 +279,11 @@ function SourceCharacter({
   headChildren?: ReactNode;
   children?: ReactNode;
 }) {
+  // Raccoon-lite: the in-scene mascot (head + body + its attached props such as
+  // arms / signs / status pop) is removed at this single gate. The scene's
+  // sibling background + particle + glow + tone layers and the GOOD/CHECK/ALERT
+  // tag still render, so each state stays legible without the character.
+  if (!SCENE_RACCOON) return null;
   return (
     <div className="ds-char" style={style}>
       <div className="ds-hd" style={headStyle}>
@@ -305,52 +361,165 @@ function TransitSourceScene({ level }: { level: SourceDossierSceneLevel }) {
   );
 }
 
-function AirSourceScene({ level }: { level: SourceDossierSceneLevel }) {
-  if (level === "bad") {
+/**
+ * The six EPA AQI bands the AIR scene narrates. The #1 fix: "Moderate" must
+ * read CLEARLY different from "Good" (a visible amber wash + amber motes + a
+ * wary raccoon), and the mask appears from USG (101) onward as the air turns
+ * genuinely unhealthy. Each step up adds haze opacity, mote count, and a
+ * darker palette so the band is self-evident at a glance.
+ */
+type AirBand = "good" | "moderate" | "usg" | "unhealthy" | "veryUnhealthy" | "hazardous";
+
+/**
+ * Resolve the air band from raw detail. Prefers a numeric AQI; falls back to
+ * the AirNow category string; finally falls back to the coarse 0|1|2 level so a
+ * detail-less caller still renders sensibly (good / moderate / unhealthy).
+ */
+export function airBandFor(level: SourceDossierSceneLevel, detail?: SceneDetail): AirBand {
+  const aqi = detail?.aqi;
+  if (typeof aqi === "number" && Number.isFinite(aqi)) {
+    if (aqi <= 50) return "good";
+    if (aqi <= 100) return "moderate";
+    if (aqi <= 150) return "usg";
+    if (aqi <= 200) return "unhealthy";
+    if (aqi <= 300) return "veryUnhealthy";
+    return "hazardous";
+  }
+  const c = (detail?.aqiCategory ?? "").toLowerCase();
+  if (c) {
+    if (c.includes("hazard")) return "hazardous";
+    if (c.includes("very unhealthy")) return "veryUnhealthy";
+    if (c.includes("sensitive")) return "usg";
+    if (c.includes("unhealthy")) return "unhealthy";
+    if (c.includes("moderate")) return "moderate";
+    if (c.includes("good")) return "good";
+  }
+  // No detail → coarse level (keeps the marketing showcase + legacy callers).
+  return level === "bad" ? "unhealthy" : level === "mid" ? "moderate" : "good";
+}
+
+// Per-band mote layouts (left%, bottom px) — count escalates with severity so
+// the haze visibly thickens. Reused for amber and grey motes.
+const AIR_MOTE_SLOTS = [14, 30, 44, 58, 70, 82, 22, 50, 66, 78] as const;
+
+function airMotes(count: number, amber: boolean): ReactNode {
+  return AIR_MOTE_SLOTS.slice(0, count).map((left, i) => (
+    <span
+      key={`${left}-${i}`}
+      className={amber ? "ds-mote ds-mote-amber" : "ds-mote"}
+      style={{ left: `${left}%`, bottom: 8 + ((i * 7) % 22), animationDelay: `${i * 0.32}s` }}
+    />
+  ));
+}
+
+function AirSourceScene({ level, detail }: { level: SourceDossierSceneLevel; detail?: SceneDetail }) {
+  const band = airBandFor(level, detail);
+  const hasAqi = typeof detail?.aqi === "number" && Number.isFinite(detail.aqi);
+  const hasDetail = hasAqi || Boolean(detail?.aqiCategory);
+
+  // GOOD (0–50): clear radial, leaves drifting up, breathing raccoon. Bright.
+  if (band === "good") {
     return (
-      <>
-        <div className="ds-haze-bg" />
-        {[14, 30, 44, 64, 78].map((left, i) => (
-          <span key={left} className="ds-mote" style={{ left: `${left}%`, bottom: 8 + ((i * 6) % 20), animationDelay: `${i * 0.4}s` }} />
+      <div className="ds-air" data-air-band="good">
+        <div className="ds-radial" />
+        {[24, 56, 72].map((left, i) => (
+          <span key={left} className="ds-leaf" style={{ left: `${left}%`, bottom: 14 + i * 3, animationDelay: `${i}s` }} />
         ))}
         <SourceCharacter
-          mood="alert"
-          style={{ left: "50%", marginLeft: -17, animation: "ds-heave 1.1s ease-in-out infinite" }}
-          headChildren={<div className="ds-mask" />}
-        >
-          <span className="ds-popmark">~</span>
-        </SourceCharacter>
-      </>
+          mood="approved"
+          size={30}
+          style={{ left: "50%", marginLeft: -17, animation: "ds-bob 3s ease-in-out infinite" }}
+          bodyStyle={{ transformOrigin: "bottom center", animation: "ds-breathe 3.4s ease-in-out infinite" }}
+        />
+      </div>
     );
   }
-  if (level === "mid") {
+
+  // MODERATE (51–100): a CLEARLY visible amber wash (ds-air-amber, bumped
+  // opacity) + 3 amber motes + a visibly WARY raccoon — NO mask yet, but it
+  // must NOT look like Good. The amber haze is the unambiguous "this is not
+  // Good" cue. NOTE: when no raw detail was threaded (legacy / marketing
+  // showcase) we keep the prior level-1 look — amber wash + amber motes + mask
+  // — so detail-less callers degrade to the familiar moderate scene.
+  if (band === "moderate") {
     return (
-      <>
-        <div className="ds-amber-bg" />
-        {[24, 60, 76].map((left, i) => (
-          <span key={left} className="ds-mote ds-mote-amber" style={{ left: `${left}%`, bottom: 14 + ((i * 4) % 10), animationDelay: `${i * 0.7}s` }} />
-        ))}
+      <div className="ds-air" data-air-band="moderate">
+        <div className={hasDetail ? "ds-amber-bg ds-air-amber" : "ds-amber-bg"} />
+        {airMotes(3, true)}
+        {hasDetail && <span className="ds-air-wary">?</span>}
+        <SourceCharacter
+          mood="thinking"
+          style={{ left: "50%", marginLeft: -17, animation: "ds-bob 3s ease-in-out infinite" }}
+          headStyle={hasDetail ? { transformOrigin: "bottom center", animation: "ds-look 3.4s ease-in-out infinite" } : undefined}
+          headChildren={hasDetail ? undefined : <div className="ds-mask" />}
+        />
+      </div>
+    );
+  }
+
+  // USG (101–150): amber-orange haze + more motes; the raccoon dons the mask.
+  if (band === "usg") {
+    return (
+      <div className="ds-air" data-air-band="usg">
+        <div className="ds-amber-bg ds-air-haze ds-air-haze-usg" />
+        {airMotes(5, true)}
         <SourceCharacter
           mood="thinking"
           style={{ left: "50%", marginLeft: -17, animation: "ds-bob 3s ease-in-out infinite" }}
           headChildren={<div className="ds-mask" />}
         />
-      </>
+      </div>
     );
   }
+
+  // UNHEALTHY (151–200): grey-orange haze, denser motes, mask, alert.
+  if (band === "unhealthy") {
+    return (
+      <div className="ds-air" data-air-band="unhealthy">
+        <div className="ds-haze-bg ds-air-haze ds-air-haze-unhealthy" />
+        {airMotes(7, false)}
+        <SourceCharacter
+          mood="alert"
+          style={{ left: "50%", marginLeft: -17, animation: "ds-heave 1.2s ease-in-out infinite" }}
+          headChildren={<div className="ds-mask" />}
+        >
+          <span className="ds-popmark">~</span>
+        </SourceCharacter>
+      </div>
+    );
+  }
+
+  // VERY UNHEALTHY (201–300): heavy grey haze, swarm of motes, mask, alert.
+  if (band === "veryUnhealthy") {
+    return (
+      <div className="ds-air" data-air-band="veryUnhealthy">
+        <div className="ds-haze-bg ds-air-haze ds-air-haze-very" />
+        {airMotes(9, false)}
+        <SourceCharacter
+          mood="alert"
+          style={{ left: "50%", marginLeft: -17, animation: "ds-heave 1s ease-in-out infinite" }}
+          headChildren={<div className="ds-mask" />}
+        >
+          <span className="ds-popmark">~</span>
+        </SourceCharacter>
+      </div>
+    );
+  }
+
+  // HAZARDOUS (301+): dark red-grey haze, max motes, mask + an alert glyph.
   return (
-    <>
-      <div className="ds-radial" />
-      {[24, 56, 72].map((left, i) => (
-        <span key={left} className="ds-leaf" style={{ left: `${left}%`, bottom: 14 + i * 3, animationDelay: `${i}s` }} />
-      ))}
+    <div className="ds-air" data-air-band="hazardous">
+      <div className="ds-haze-bg ds-air-haze ds-air-haze-hazard" />
+      {airMotes(10, false)}
+      <span className="ds-alert-symbol ds-air-hazard-glyph">!</span>
       <SourceCharacter
-        mood="approved"
-        size={30}
-        style={{ left: "50%", marginLeft: -17, animation: "ds-bob 3s ease-in-out infinite" }}
-        bodyStyle={{ transformOrigin: "bottom center", animation: "ds-breathe 3.4s ease-in-out infinite" }}
-      />
-    </>
+        mood="alert"
+        style={{ left: "50%", marginLeft: -17, animation: "ds-heave 0.9s ease-in-out infinite" }}
+        headChildren={<div className="ds-mask" />}
+      >
+        <span className="ds-popmark">~</span>
+      </SourceCharacter>
+    </div>
   );
 }
 
@@ -506,26 +675,80 @@ function NeighborhoodSourceScene({ level }: { level: SourceDossierSceneLevel }) 
   );
 }
 
+// Extended to 6 deterministic charge-node positions so the busiest sub-states
+// (s3 "charging hub", s4 "EV paradise") can swarm with nodes. The first three
+// match the original layout so the existing scene reads identically at low
+// density; the latter three fan out around the charger.
 const EV_NODE_SPECS = [
   { right: "40%", bottom: 30, delay: "0s" },
   { right: "52%", bottom: 22, delay: "-0.5s" },
   { right: "64%", bottom: 34, delay: "-1s" },
+  { right: "46%", bottom: 42, delay: "-1.5s" },
+  { right: "58%", bottom: 14, delay: "-0.8s" },
+  { right: "70%", bottom: 26, delay: "-1.3s" },
 ] as const;
 
-function EvSourceScene({ level }: { level: SourceDossierSceneLevel }) {
-  const active = level !== "bad";
-  const nodeCount = level === "good" ? 3 : level === "mid" ? 2 : 0;
-  const mood: DossierRaccoonMood = level === "good" ? "approved" : level === "mid" ? "happy" : "calm";
+/**
+ * EV METRIC + THRESHOLDS — chosen to give 5 GENUINELY distinct states.
+ *
+ * We bucket on `detail.evCount`, which is threaded from the row's UNCAPPED area
+ * station count (NREL `total_results` → HomeDossierView.evCharging.totalResults
+ * → the `evCount` detail). That count realistically spans 0..100+ and matches
+ * the user's mental model of area density (0 / 1–20 / 20–40 / 40–60 / 60–80 /
+ * 80–100), so the five sub-states map cleanly onto it:
+ *
+ *   s0  evCount === 0            "charging desert"  — empty post, raccoon snoozing
+ *   s1  1–14                     "one lonely plug"  — 1 node, faint slow bolt
+ *   s2  15–34                    "some juice"       — 2 nodes, steady bolt
+ *   s3  35–69                    "charging hub"     — 4 nodes buzzing, bright bolt
+ *   s4  70+                      "EV paradise"      — 6 nodes swarming, glow halo
+ *
+ * FALLBACK: when no detail is threaded (marketing showcase / legacy callers) we
+ * derive the sub-state from the coarse level instead — bad→s0, mid→s2, good→s4
+ * — so the scene still renders sensibly and the non-empty states keep showing
+ * ds-ev-node / ds-ev-bolt for the guardrail tests. (We deliberately bucket on
+ * the uncapped area count, NOT the API-limited `stationCount` which saturates
+ * at ~20 and would collapse s3+s4 into one bucket for dense metros.)
+ */
+function evSubState(level: SourceDossierSceneLevel, detail?: SceneDetail): 0 | 1 | 2 | 3 | 4 {
+  const count = detail?.evCount;
+  if (typeof count === "number" && Number.isFinite(count)) {
+    if (count <= 0) return 0;
+    if (count < 15) return 1;
+    if (count < 35) return 2;
+    if (count < 70) return 3;
+    return 4;
+  }
+  // No detail → map the coarse positive level onto the sub-state scale.
+  return level === "good" ? 4 : level === "mid" ? 2 : 0;
+}
+
+const EV_SUBSTATE_NODES: Record<0 | 1 | 2 | 3 | 4, number> = { 0: 0, 1: 1, 2: 2, 3: 4, 4: 6 };
+
+function EvSourceScene({ level, detail }: { level: SourceDossierSceneLevel; detail?: SceneDetail }) {
+  const sub = evSubState(level, detail);
+  const nodeCount = EV_SUBSTATE_NODES[sub];
+  const active = sub > 0;
+  // Mood escalates with density: desert → calm/snoozing, lonely/some → happy,
+  // hub/paradise → approved.
+  const mood: DossierRaccoonMood = sub >= 3 ? "approved" : sub >= 1 ? "happy" : "calm";
   return (
-    <>
+    <div className="ds-ev" data-ev-state={sub}>
       <div className="ds-radial" />
+      {/* s4 paradise: a soft glow halo behind the charger. */}
+      {sub >= 4 && <div className="ds-ev-halo" />}
       <div className="ds-charger" />
       {active && <span className="ds-ev-bolt" />}
       {EV_NODE_SPECS.slice(0, nodeCount).map((n, i) => (
         <span key={i} className="ds-ev-node" style={{ right: n.right, bottom: n.bottom, animationDelay: n.delay }} />
       ))}
-      <SourceCharacter mood={mood} style={{ left: "20%", animation: "ds-bob 3s ease-in-out infinite" }} />
-    </>
+      {/* s4 paradise: an extra spark sells the "swarming" peak. */}
+      {sub >= 4 && <span className="ds-ev-spark">+</span>}
+      <SourceCharacter mood={mood} style={{ left: "20%", animation: "ds-bob 3s ease-in-out infinite" }}>
+        {/* s0 desert: a tiny sleepy "z" over the snoozing raccoon. */}
+        {sub === 0 && <span className="ds-ev-zzz">z</span>}
+      </SourceCharacter>
+    </div>
   );
 }
 
@@ -752,13 +975,13 @@ function SourceDossierScene({ scene }: { scene: SourceDossierSceneSpec }) {
   return (
     <div className="ds-root" data-ds-type={scene.type} data-ds-level={scene.level} style={sourceSceneVars(scene)}>
       {scene.type === "transit" && <TransitSourceScene level={scene.level} />}
-      {scene.type === "air" && <AirSourceScene level={scene.level} />}
+      {scene.type === "air" && <AirSourceScene level={scene.level} detail={scene.detail} />}
       {scene.type === "water" && <WaterSourceScene level={scene.level} />}
       {scene.type === "flood" && <FloodSourceScene level={scene.level} />}
       {scene.type === "radon" && <RadonSourceScene level={scene.level} />}
       {scene.type === "school" && <SchoolSourceScene />}
       {scene.type === "hood" && <NeighborhoodSourceScene level={scene.level} />}
-      {scene.type === "ev" && <EvSourceScene level={scene.level} />}
+      {scene.type === "ev" && <EvSourceScene level={scene.level} detail={scene.detail} />}
       {scene.type === "area" && <AreaSourceScene level={scene.level} />}
       {scene.type === "cost" && <CostSourceScene level={scene.level} />}
       {scene.type === "housing" && <HousingSourceScene />}
@@ -978,6 +1201,7 @@ export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
 function useAmbientPause(enabled = true): MutableRefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
+    if (!enabled) return;
     const node = ref.current;
     if (!enabled) {
       node?.classList.remove("da-paused");
@@ -1079,18 +1303,26 @@ export function DossierAmbient({
   kind,
   intensity,
   variant,
+  detail,
   showTag = true,
   pauseOffscreen = true,
 }: {
   kind: AmbientKind;
   intensity: number;
   variant?: AmbientVariant;
+  /**
+   * Optional raw-narration payload (EV count / AQI). ADDITIVE only: it enriches
+   * the in-scene visual without altering the 0|1|2 intensity contract or any of
+   * the data-* attributes. Omit it (marketing showcase) and the scene falls
+   * back to the level-based rendering.
+   */
+  detail?: SceneDetail;
   showTag?: boolean;
   pauseOffscreen?: boolean;
 }) {
   const ref = useAmbientPause(pauseOffscreen);
   const level = clampIntensity(intensity);
-  const sourceScene = sourceDossierSceneFor({ kind, intensity: level, variant });
+  const sourceScene = sourceDossierSceneFor({ kind, intensity: level, variant }, detail);
   const sourceSceneStyle = sourceSceneVars(sourceScene);
   return (
     <div

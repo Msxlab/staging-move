@@ -3,7 +3,7 @@
    Primary theme: SLATE light enterprise — paper base, flat solid cards,
    1px hairlines, feather shadows, Sapphire accent #2E5FB0.
    Secondary: the existing dark navy, accent shifted to the source Gold
-   #CBA45E, glass toned down (~half blur/alpha). Honey is demoted to
+   #5B8DEF, glass toned down (~half blur/alpha). Honey is demoted to
    WARN/caution only.
    Scoped to `.adm-aurora`. Theme follows next-themes' `.dark` class on <html>.
    Ported from the design handoffs at aurora/aurora.css + admin-pro.css.
@@ -202,7 +202,7 @@ html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
 }
 .adm-aurora .au-display em {
   font-style: italic;
-  background-image: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #B0852F 100%);
+  background-image: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -362,7 +362,7 @@ html:not(.dark) .adm-aurora .admin-panel {
 .adm-aurora .admin-panel-flagship::before {
   background: radial-gradient(
     600px 140px at 50% 0%,
-    rgba(203, 164, 94, 0.10),
+    rgba(91, 141, 239, 0.10),
     transparent 60%
   );
 }
@@ -386,7 +386,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --card-foreground:      214 40% 98%;
   --popover:              218 22% 19%;
   --popover-foreground:   214 40% 98%;
-  /* Primary = LocateFlow Gold #CBA45E (honey is warn/caution only). */
+  /* Primary = LocateFlow Gold #5B8DEF (honey is warn/caution only). */
   --primary:              38.53 51.17% 58.24%;
   --primary-foreground:   215 45% 8%;
   --secondary:            215 24% 82%;
@@ -407,9 +407,9 @@ html:not(.dark) .adm-aurora .admin-panel {
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
   --rose-deep:   var(--au-cool-2);
-  --foil-a:      #DCBC7C;
+  --foil-a:      #83AAF5;
   --foil-b:      var(--au-violet);
-  --foil-c:      #B0852F;
+  --foil-c:      #3D6FD6;
   --foil:        var(--au-violet);
   --foil-ink:    #86631A;
   --sage:        var(--au-mint);
@@ -422,12 +422,12 @@ html:not(.dark) .adm-aurora .admin-panel {
      etc. now reads Aurora colors. Mappings preserve semantic intent
      (rose=warning/attention, sage=positive, honey=caution, slate=neutral). */
   --tone-rose-bg:    rgba(226, 92, 92, 0.16); --tone-rose-br:    rgba(226, 92, 92, 0.32); --tone-rose-fg:    var(--au-coral);
-  --tone-foil-bg:    rgba(203, 164, 94, 0.20); --tone-foil-br:    rgba(203, 164, 94, 0.36); --tone-foil-fg:    var(--au-violet);
+  --tone-foil-bg:    rgba(91, 141, 239, 0.20); --tone-foil-br:    rgba(91, 141, 239, 0.36); --tone-foil-fg:    var(--au-violet);
   --tone-sage-bg:    rgba(84, 203, 126, 0.20); --tone-sage-br:    rgba(84, 203, 126, 0.36); --tone-sage-fg:    var(--au-mint);
   --tone-honey-bg:   rgba(224, 168, 90, 0.16); --tone-honey-br:   rgba(224, 168, 90, 0.32); --tone-honey-fg:   var(--au-amber);
-  --tone-umber-bg:   rgba(176, 133, 47, 0.20); --tone-umber-br:   rgba(176, 133, 47, 0.36); --tone-umber-fg:   #B0852F;
+  --tone-umber-bg:   rgba(61, 111, 214, 0.20); --tone-umber-br:   rgba(61, 111, 214, 0.36); --tone-umber-fg:   #3D6FD6;
   --tone-slate-bg:   rgba(168, 181, 201, 0.20); --tone-slate-br:   rgba(168, 181, 201, 0.36); --tone-slate-fg:   var(--au-ink-2);
-  --tone-orange-bg:  rgba(203, 164, 94, 0.20); --tone-orange-br:  rgba(203, 164, 94, 0.36); --tone-orange-fg:  var(--au-cool);
+  --tone-orange-bg:  rgba(91, 141, 239, 0.20); --tone-orange-br:  rgba(91, 141, 239, 0.36); --tone-orange-fg:  var(--au-cool);
   --tone-emerald-bg: rgba(84, 203, 126, 0.20); --tone-emerald-br: rgba(84, 203, 126, 0.36); --tone-emerald-fg: var(--au-mint);
   --tone-amber-bg:   rgba(224, 168, 90, 0.16); --tone-amber-br:   rgba(224, 168, 90, 0.32); --tone-amber-fg:   var(--au-amber);
   --tone-sky-bg:     rgba(55, 194, 201, 0.14); --tone-sky-br:     rgba(55, 194, 201, 0.28); --tone-sky-fg:     #37C2C9;
@@ -435,12 +435,12 @@ html:not(.dark) .adm-aurora .admin-panel {
 
   --line:      var(--au-rule);
   --line-2:    var(--au-rule-2);
-  --line-foil: rgba(203, 164, 94, 0.22);
+  --line-foil: rgba(91, 141, 239, 0.22);
   /* Focus + glow follow the corporate accent. */
-  --border-focus: rgba(203, 164, 94, 0.55);
-  --shadow-glow: 0 0 16px rgba(203, 164, 94, 0.25);
-  --shadow-rose: 0 0 16px rgba(203, 164, 94, 0.25);
-  --shadow-foil: 0 0 30px rgba(203, 164, 94, 0.20);
+  --border-focus: rgba(91, 141, 239, 0.55);
+  --shadow-glow: 0 0 16px rgba(91, 141, 239, 0.25);
+  --shadow-rose: 0 0 16px rgba(91, 141, 239, 0.25);
+  --shadow-foil: 0 0 30px rgba(91, 141, 239, 0.20);
 }
 
 /* --- Light theme overrides — slate enterprise ----------------------- */
@@ -529,7 +529,7 @@ html:not(.dark) .adm-aurora aside.bg-card {
 .adm-aurora h2 em,
 .adm-aurora h3 em {
   font-style: italic;
-  background: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #B0852F 100%);
+  background: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -618,10 +618,10 @@ html:not(.dark) .adm-aurora .kpi-foil {
   color: var(--au-family);
 }
 .adm-aurora .tier-stamp.tier-pro {
-  background: linear-gradient(135deg, rgba(255, 239, 204, 0.18), rgba(203, 164, 94, 0.22));
+  background: linear-gradient(135deg, rgba(255, 239, 204, 0.18), rgba(91, 141, 239, 0.22));
   border-color: var(--au-accent-line);
   color: var(--au-ink);
-  box-shadow: 0 0 0 1px rgba(203, 164, 94, 0.14) inset;
+  box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.14) inset;
 }
 .adm-aurora .tier-stamp.tier-trial {
   background: var(--au-amber-soft);
@@ -634,8 +634,8 @@ html:not(.dark) .adm-aurora .kpi-foil {
 .adm-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
 .adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), var(--au-cool)); }
 .adm-aurora .tier-bar-seg-pro {
-  background: linear-gradient(90deg, #DCBC7C 0%, var(--au-violet) 60%, #B0852F 100%);
-  box-shadow: 0 0 8px rgba(203, 164, 94, 0.4);
+  background: linear-gradient(90deg, #83AAF5 0%, var(--au-violet) 60%, #3D6FD6 100%);
+  box-shadow: 0 0 8px rgba(91, 141, 239, 0.4);
 }
 
 /* Inputs / search fields — anything using `bg-background` + `border-input`
@@ -698,7 +698,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
 /* Foil-text inside the sidebar wordmark — keep the accent gradient
    regardless of theme so the brand mark stays on theme. */
 .adm-aurora aside .foil-text {
-  background: linear-gradient(135deg, #F6E5BE 0%, var(--au-violet) 60%, #B0852F 100%);
+  background: linear-gradient(135deg, #F6E5BE 0%, var(--au-violet) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
           background-clip: text;
 }
@@ -805,16 +805,16 @@ html:not(.dark) .adm-aurora .au-plancard {
    -------------------------------------------------------------------------
    Ported from the design system's `.adp-top` (admin-pro.css). Slate light
    enterprise: flat near-solid surface, 1px hairline, accent
-   (#2E5FB0 light / #CBA45E dark — honey stays demoted to warn and is not
+   (#2E5FB0 light / #5B8DEF dark — honey stays demoted to warn and is not
    used here). All colors flow through --au-* vars; the topbar-only vars
    below extend the token sheet rather than hex-littering the component.
    ========================================================================= */
 .adm-aurora {
   --au-top-bg:      rgba(18, 25, 38, 0.88);
   --au-top-field:   rgba(255, 255, 255, 0.06);
-  --au-acc:         #CBA45E;
-  --au-acc-soft:    rgba(203, 164, 94, 0.13);
-  --au-acc-line:    rgba(203, 164, 94, 0.26);
+  --au-acc:         #5B8DEF;
+  --au-acc-soft:    rgba(91, 141, 239, 0.13);
+  --au-acc-line:    rgba(91, 141, 239, 0.26);
 }
 html:not(.dark) .adm-aurora {
   --au-top-bg:      rgba(255, 255, 255, 0.92);
@@ -839,8 +839,8 @@ html:not(.dark) .adm-aurora {
   min-height: calc(100vh - 60px);
   padding: 28px 32px 40px;
   background:
-    linear-gradient(135deg, rgba(203, 164, 94, 0.055), transparent 34%),
-    linear-gradient(220deg, transparent 6%, rgba(203, 164, 94, 0.045) 48%, transparent 84%),
+    linear-gradient(135deg, rgba(91, 141, 239, 0.055), transparent 34%),
+    linear-gradient(220deg, transparent 6%, rgba(91, 141, 239, 0.045) 48%, transparent 84%),
     repeating-linear-gradient(90deg, color-mix(in srgb, var(--au-ink) 4%, transparent) 0 1px, transparent 1px 78px),
     repeating-linear-gradient(0deg, color-mix(in srgb, var(--au-ink) 3%, transparent) 0 1px, transparent 1px 78px);
 }
@@ -1348,7 +1348,7 @@ html:not(.dark) .adm-aurora {
    segmented range control, the x-axis label strip, and the audit feed.
    Ported from the design system's .adp-chartwrap/.adp-seg/.adp-feed
    (admin-pro.css). Everything binds to the --au-* token system — accent is
-   LocateFlow brand accent (#2E5FB0 light / #CBA45E dark); honey appears only
+   LocateFlow brand accent (#2E5FB0 light / #5B8DEF dark); honey appears only
    via the warn tone on audit dots.
    ========================================================================= */
 

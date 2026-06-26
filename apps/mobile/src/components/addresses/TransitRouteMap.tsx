@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Image, Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useTranslation } from "react-i18next";
 import { API_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth-store";
@@ -56,6 +56,7 @@ export function TransitRouteMap({
   const [loaded, setLoaded] = useState(false);
   const [loadedUri, setLoadedUri] = useState<string | null>(null);
   const previousUriRef = useRef<string | null>(null);
+  const webObjectUrlRef = useRef<string | null>(null);
   // Tier ladder: try the full Geoapify route map first; on ANY failure (incl. the
   // realMap 403 for Free/Individual) fall back to the free OSM "preview" map,
   // and only then to the stylized banner. Both tiers are served by Geoapify —
@@ -70,14 +71,24 @@ export function TransitRouteMap({
     ? `${routeKeyCoord(coords.from.lat)},${routeKeyCoord(coords.from.lng)}->${routeKeyCoord(coords.to.lat)},${routeKeyCoord(coords.to.lng)}`
     : null;
 
+  const revokeWebObjectUrl = () => {
+    if (webObjectUrlRef.current && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+      URL.revokeObjectURL(webObjectUrlRef.current);
+      webObjectUrlRef.current = null;
+    }
+  };
+
   // A new route resets the ladder so it re-tries the full map first.
   useEffect(() => {
+    revokeWebObjectUrl();
     setTier("full");
     setFailed(false);
     setLoaded(false);
     setLoadedUri(null);
     previousUriRef.current = null;
   }, [routeKey]);
+
+  useEffect(() => () => revokeWebObjectUrl(), []);
 
   useEffect(() => {
     let alive = true;
@@ -109,6 +120,7 @@ export function TransitRouteMap({
   useEffect(() => {
     if (!uri) {
       previousUriRef.current = null;
+      revokeWebObjectUrl();
       setLoaded(false);
       setLoadedUri(null);
       return;
@@ -119,12 +131,50 @@ export function TransitRouteMap({
     }
   }, [loadedUri, uri]);
 
+  useEffect(() => {
+    if (Platform.OS !== "web" || !uri || !token) return;
+
+    let alive = true;
+    fetch(uri, { headers: buildMobileAuthHeaders(token) })
+      .then(async (response) => {
+        if (!alive) return;
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!response.ok || !contentType.startsWith("image/")) {
+          if (!webObjectUrlRef.current) setLoaded(false);
+          if (tier === "full") setTier("preview");
+          else setFailed(true);
+          return;
+        }
+        const blobUrl = URL.createObjectURL(await response.blob());
+        if (!alive) {
+          URL.revokeObjectURL(blobUrl);
+          return;
+        }
+        revokeWebObjectUrl();
+        webObjectUrlRef.current = blobUrl;
+        setLoaded(true);
+        setLoadedUri(blobUrl);
+        setFailed(false);
+      })
+      .catch(() => {
+        if (!alive) return;
+        if (!webObjectUrlRef.current) setLoaded(false);
+        if (tier === "full") setTier("preview");
+        else setFailed(true);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [tier, token, uri]);
+
   // Graceful fallback: the banner's stylized dashed route stays as-is.
   if (!coords || !uri || !token || (failed && !loadedUri)) return null;
 
-  const visibleUri = loadedUri ?? uri;
+  const visibleUri = Platform.OS === "web" ? loadedUri : loadedUri ?? uri;
+  if (!visibleUri) return null;
   const showPreloadFrame = !loadedUri && !loaded;
-  const isLoadingReplacement = Boolean(loadedUri && uri !== loadedUri && !failed);
+  const isLoadingReplacement = Platform.OS !== "web" && Boolean(loadedUri && uri !== loadedUri && !failed);
 
   return (
     <View
