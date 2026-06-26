@@ -250,7 +250,7 @@
 }
 .lf-aurora .au-display em {
   font-style: italic;
-  background-image: linear-gradient(180deg, #F6E5BE 0%, var(--au-cool) 60%, #3D6FD6 100%);
+  background-image: linear-gradient(180deg, #C7DCFF 0%, var(--au-cool) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -561,7 +561,7 @@
 .lf-aurora h2 em,
 .lf-aurora h3 em {
   font-style: italic;
-  background: linear-gradient(180deg, #F6E5BE 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
+  background: linear-gradient(180deg, #C7DCFF 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -718,7 +718,7 @@
 /* Foil-text inside the sidebar wordmark — keep the accent gradient
    regardless of theme so the brand mark always reads Aurora. */
 .lf-aurora aside .foil-text {
-  background: linear-gradient(135deg, #F6E5BE 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
+  background: linear-gradient(135deg, #C7DCFF 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
   -webkit-background-clip: text;
           background-clip: text;
 }

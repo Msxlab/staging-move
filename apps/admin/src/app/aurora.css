@@ -202,7 +202,7 @@ html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
 }
 .adm-aurora .au-display em {
   font-style: italic;
-  background-image: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #3D6FD6 100%);
+  background-image: linear-gradient(180deg, #C7DCFF 0%, var(--au-violet) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -529,7 +529,7 @@ html:not(.dark) .adm-aurora aside.bg-card {
 .adm-aurora h2 em,
 .adm-aurora h3 em {
   font-style: italic;
-  background: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #3D6FD6 100%);
+  background: linear-gradient(180deg, #C7DCFF 0%, var(--au-violet) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -698,7 +698,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
 /* Foil-text inside the sidebar wordmark — keep the accent gradient
    regardless of theme so the brand mark stays on theme. */
 .adm-aurora aside .foil-text {
-  background: linear-gradient(135deg, #F6E5BE 0%, var(--au-violet) 60%, #3D6FD6 100%);
+  background: linear-gradient(135deg, #C7DCFF 0%, var(--au-violet) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
           background-clip: text;
 }
