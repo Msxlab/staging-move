@@ -65,7 +65,6 @@ export function AppShell({
   const { theme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const embedMode = useEmbedMode();
-  const { theme } = useTheme();
   // Plan class hook consumed by globals.css. The classes are now Sapphire
   // pass-throughs; Individual stays classless for the same base theme.
   const planClass =
