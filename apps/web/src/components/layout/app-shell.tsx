@@ -62,6 +62,7 @@ export function AppShell({
   consumerFree = false,
 }: AppShellProps) {
   const tCommon = useTranslations("common");
+  const { theme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const embedMode = useEmbedMode();
   const { theme } = useTheme();
