@@ -386,6 +386,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.9.0
         version: 3.10.0(react-hook-form@7.76.1(react@19.2.6))
+      '@hugeicons/core-free-icons':
+        specifier: ^4.2.1
+        version: 4.2.1
+      '@hugeicons/react':
+        specifier: ^1.1.9
+        version: 1.1.9(react@19.2.6)
       '@locateflow/connectors':
         specifier: workspace:*
         version: link:../../packages/connectors
@@ -440,6 +446,9 @@ importers:
       lucide-react:
         specifier: ^1.16.0
         version: 1.16.0(react@19.2.6)
+      motion:
+        specifier: ^12.42.0
+        version: 12.42.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       next:
         specifier: 16.2.6
         version: 16.2.6(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -464,6 +473,9 @@ importers:
       react-hook-form:
         specifier: ^7.76.1
         version: 7.76.1(react@19.2.6)
+      react-icons:
+        specifier: ^5.6.0
+        version: 5.6.0(react@19.2.6)
       resend:
         specifier: ^6.12.4
         version: 6.12.4
@@ -1823,6 +1835,14 @@ packages:
     resolution: {integrity: sha512-79Dv+3mDF7i+2ajj7SkypSKHhl1cbln1OGavqrsF7p6mbUv11xpqpacPsGDCTRvCSjEEIez2ef1NveSVL3b0Ag==}
     peerDependencies:
       react-hook-form: ^7.0.0
+
+  '@hugeicons/core-free-icons@4.2.1':
+    resolution: {integrity: sha512-75jYZKYyA9VwS35YRmmGUGzFedbY+Fl0Vxx5FzXR2CGDlIhNRumFeVqaaKoClf2MeYEJwPAVMEL9RwCYtOgnSw==}
+
+  '@hugeicons/react@1.1.9':
+    resolution: {integrity: sha512-O+lWSWjbijoAvMCxn4K2bQWCGN5+mP1y5j+X99j23mXMj+s0X25fs71T6t9YJLaBodwmZdaewD27dzS/PiboQw==}
+    peerDependencies:
+      react: '>=16.0.0'
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -5587,6 +5607,20 @@ packages:
       react-dom:
         optional: true
 
+  framer-motion@12.42.0:
+    resolution: {integrity: sha512-wp7EJnfWaaEScVygKv3e20udoRz+LbtxScsuTkakAxfXmt+ReC6WyPW2nINRAGvd+hG9odwcjBLyOTPjH5pBRA==}
+    peerDependencies:
+      '@emotion/is-prop-valid': '*'
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@emotion/is-prop-valid':
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
   fresh@0.5.2:
     resolution: {integrity: sha512-zJ2mQYM18rEFOudeV4GShTGIQ7RbzA7ozbU9I/XBpm7kqgMywgmylMwXHxZJmkVoYkna9d2pVXVXPdYTP9ej8Q==}
     engines: {node: '>= 0.6'}
@@ -6722,8 +6756,25 @@ packages:
   motion-dom@12.40.0:
     resolution: {integrity: sha512-HxU3ZaBwNPVQUBQf1xxgq+7JrPNZvjLVxgbpEZL7RrWJnsxOf0/OM+yrHG9ogLQ31Do/r57Oz2gQWPK+6q62mg==}
 
+  motion-dom@12.42.0:
+    resolution: {integrity: sha512-M63h4n8R+quJdNhBwuLlgxM+OLYa9+I/T2pzDRboB9fLXRdbou+Gw7Zury+SkpaCyACP1JHSjHgZ1EgTkBr30w==}
+
   motion-utils@12.39.0:
     resolution: {integrity: sha512-8nadJAJjTtqRkmRF36FoJTrywK9nnFmnPwnSMyxaOCU7GDjN9RTMJIxx9De8ErM+vpPhMccr/6fo5WciyQLnMQ==}
+
+  motion@12.42.0:
+    resolution: {integrity: sha512-Qhwvu9sVl5/URSq5CNzwMCpSKK8Uhnrwb6VO977kZyj/wOCS7mWebJUnBoHx5cZU1Zv8a9BD5CSICWKAlrLJgA==}
+    peerDependencies:
+      '@emotion/is-prop-valid': '*'
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@emotion/is-prop-valid':
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
 
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
@@ -7389,6 +7440,11 @@ packages:
         optional: true
       typescript:
         optional: true
+
+  react-icons@5.6.0:
+    resolution: {integrity: sha512-RH93p5ki6LfOiIt0UtDyNg/cee+HLVR6cHHtW3wALfo+eOHTp8RnU2kRkI6E+H19zMIs03DyxUG/GfZMOGvmiA==}
+    peerDependencies:
+      react: '*'
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -10408,6 +10464,12 @@ snapshots:
   '@hookform/resolvers@3.10.0(react-hook-form@7.76.1(react@19.2.6))':
     dependencies:
       react-hook-form: 7.76.1(react@19.2.6)
+
+  '@hugeicons/core-free-icons@4.2.1': {}
+
+  '@hugeicons/react@1.1.9(react@19.2.6)':
+    dependencies:
+      react: 19.2.6
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -14835,6 +14897,15 @@ snapshots:
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
 
+  framer-motion@12.42.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+    dependencies:
+      motion-dom: 12.42.0
+      motion-utils: 12.39.0
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
+
   fresh@0.5.2: {}
 
   fs-extra@10.1.0:
@@ -16220,7 +16291,19 @@ snapshots:
     dependencies:
       motion-utils: 12.39.0
 
+  motion-dom@12.42.0:
+    dependencies:
+      motion-utils: 12.39.0
+
   motion-utils@12.39.0: {}
+
+  motion@12.42.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+    dependencies:
+      framer-motion: 12.42.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
 
   mrmime@2.0.1: {}
 
@@ -16895,6 +16978,10 @@ snapshots:
       react-dom: 19.2.0(react@19.2.0)
       react-native: 0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10)
       typescript: 5.9.3
+
+  react-icons@5.6.0(react@19.2.6):
+    dependencies:
+      react: 19.2.6
 
   react-is@16.13.1: {}
 
