@@ -500,6 +500,11 @@ function warnAdminRateLimitMemoryFallbackOnce() {
 function getAdminRouteRateLimit(req: NextRequest): { limit: number; windowMs: number; group: string } | null {
   const pathname = req.nextUrl?.pathname || "";
   if (!pathname.startsWith("/api/")) return null;
+  // Health/readiness probes must never be rate-limited (and thus must never
+  // fail-closed on Redis): container liveness must not depend on the limiter
+  // backend. A blocked /api/healthz makes Docker mark the container Unhealthy
+  // and Traefik stops routing it.
+  if (pathname === "/api/healthz" || pathname === "/api/ready") return null;
   if (pathname.startsWith("/api/cron/")) return { limit: 1, windowMs: 60_000, group: "cron" };
   if (pathname.startsWith("/api/internal/")) return { limit: 60, windowMs: 60_000, group: "internal" };
   if (pathname === "/api/auth/login") return { limit: 20, windowMs: 15 * 60_000, group: "admin_login" };
