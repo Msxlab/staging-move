@@ -38,6 +38,7 @@
     "framer-motion": "^12.40.0",
     "html-to-text": "^10.0.0",
     "jose": "^6.2.3",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^1.16.0",
     "motion": "^12.42.0",
     "next": "16.2.6",
