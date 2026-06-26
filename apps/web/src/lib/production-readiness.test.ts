@@ -166,15 +166,15 @@ describe("buildReadinessReport", () => {
     expect(report.issues.find((i) => i.key === "QA_PERSONA_ACCOUNTS")?.severity).toBe("fail");
   });
 
-  it("flags placeholder Redis env in production", () => {
+  it("warns (not fails) on placeholder Redis env — in-memory rate-limit fallback", () => {
     const env = {
       ...validProdEnv,
       UPSTASH_REDIS_REST_URL: "REPLACE_WITH_URL",
       UPSTASH_REDIS_REST_TOKEN: "REPLACE_WITH_TOKEN",
     };
     const report = buildReadinessReport(env, true);
-    expect(report.ready).toBe(false);
-    expect(report.issues.find((i) => i.key === "UPSTASH_REDIS")?.severity).toBe("fail");
+    expect(report.ready).toBe(true);
+    expect(report.issues.find((i) => i.key === "UPSTASH_REDIS")?.severity).toBe("warn");
   });
 
   it("never returns secret values in summary", () => {

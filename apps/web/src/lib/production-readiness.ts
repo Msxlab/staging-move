@@ -261,17 +261,17 @@ export function buildReadinessReport(
   // ── Redis (rate-limit / step-up store) ───────────────────────
   if (productionLike) {
     if (!upstashRedisRestUrl || !upstashRedisRestToken) {
-      fail(
+      warn(
         "UPSTASH_REDIS",
-        "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be configured in production for rate limiting and shared step-up state.",
+        "UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN not configured; rate limiting and step-up state fall back to in-memory per-instance behavior. Configure Upstash for distributed limits across replicas.",
       );
     } else if (
       upstashRedisRestUrl.includes("REPLACE") ||
       upstashRedisRestToken.includes("REPLACE")
     ) {
-      fail(
+      warn(
         "UPSTASH_REDIS",
-        "UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN still contains a placeholder value.",
+        "UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN is a placeholder; using in-memory rate limiting. Configure Upstash for distributed limits.",
       );
     }
   }
