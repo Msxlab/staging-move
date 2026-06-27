@@ -460,8 +460,8 @@ html:not(.dark) .adm-aurora {
   --accent-foreground:    216 33% 15%;
   --destructive:          359 51% 49%;
   --destructive-foreground: 0 0% 100%;
-  --border:               217 25% 90%;   /* hairline */
-  --input:                217 25% 90%;
+  --border:               217 22% 62%;   /* hairline ~2.9:1 on #FFFFFF cards */
+  --input:                217 22% 62%;
   --ring:                 217.38 58.56% 43.53%;
 
   /* Brand-token redirect (light) — Sapphire paper accent mirrors the dark Gold scope. */
@@ -573,6 +573,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
   font-weight: 600;
   font-size: 1.875rem;
   letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
   color: var(--au-ink);
 }
 .adm-aurora .kpi-foil .kpi-label {

@@ -72,7 +72,7 @@ export default function WorkspacesClient() {
       />
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Households", value: total, color: "text-foreground", bg: "bg-card" },
           { label: "On this page", value: rows.length, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg" },

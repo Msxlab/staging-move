@@ -150,7 +150,7 @@ export default function FeatureFlagsClient() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
           { label: "Total Flags", value: flags.length, color: "text-foreground", bg: "bg-card" },
           { label: "Enabled", value: flags.filter(f => f.enabled).length, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },

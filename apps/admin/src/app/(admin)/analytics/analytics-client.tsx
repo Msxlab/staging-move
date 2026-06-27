@@ -155,7 +155,7 @@ function KpiCard({ label, kpi, icon: Icon }: { label: string; kpi: Kpi; icon: an
         <p className="text-[11px] font-semibold text-muted-foreground">{label}</p>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
-      <p className="mt-1.5 font-display text-[28px] font-extrabold text-foreground">{kpi.value.toLocaleString()}</p>
+      <p className="mt-1.5 font-display text-[28px] font-extrabold tabular-nums text-foreground">{kpi.value.toLocaleString()}</p>
       <div className="mt-1 flex items-center gap-1.5 text-[11px]">
         <span className={`inline-flex items-center gap-0.5 font-mono font-medium ${deltaColor}`}>
           <DeltaIcon className="h-3.5 w-3.5" />
@@ -379,7 +379,7 @@ export default function AnalyticsClient() {
               <p className="text-[11px] font-semibold text-muted-foreground">{s.label}</p>
               <s.icon className={`h-4 w-4 ${s.color}`} />
             </div>
-            <p className={`mt-1.5 font-display text-[28px] font-extrabold ${s.color}`}>{s.value}</p>
+            <p className={`mt-1.5 font-display text-[28px] font-extrabold tabular-nums ${s.color}`}>{s.value}</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">{s.note}</p>
           </div>
         ))}
@@ -421,7 +421,7 @@ export default function AnalyticsClient() {
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                     <ArrowRight className="h-3.5 w-3.5" /> Interstate vs Intrastate
                   </div>
-                  <p className="mt-2 font-display text-2xl font-extrabold text-foreground">
+                  <p className="mt-2 font-display text-2xl font-extrabold tabular-nums text-foreground">
                     {overview.moveAnalytics.interstatePct}% / {overview.moveAnalytics.intrastatePct}%
                   </p>
                   <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-muted">
@@ -437,7 +437,7 @@ export default function AnalyticsClient() {
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                     <Timer className="h-3.5 w-3.5" /> Avg Move Lead Time
                   </div>
-                  <p className="mt-2 font-display text-2xl font-extrabold text-foreground">
+                  <p className="mt-2 font-display text-2xl font-extrabold tabular-nums text-foreground">
                     {overview.moveAnalytics.avgLeadTimeDays === null
                       ? "—"
                       : `${overview.moveAnalytics.avgLeadTimeDays} days`}
@@ -451,7 +451,7 @@ export default function AnalyticsClient() {
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5" /> Distinct State Pairs
                   </div>
-                  <p className="mt-2 font-display text-2xl font-extrabold text-foreground">
+                  <p className="mt-2 font-display text-2xl font-extrabold tabular-nums text-foreground">
                     {overview.moveAnalytics.topPairs.length >= 10 ? "10+" : overview.moveAnalytics.topPairs.length}
                   </p>
                   <p className="mt-1.5 text-[11px] text-muted-foreground">
@@ -600,7 +600,7 @@ export default function AnalyticsClient() {
                       <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-[14px] bg-muted">
                         <Icon className="h-6 w-6 text-muted-foreground" />
                       </div>
-                      <p className="font-display text-lg font-extrabold text-foreground">{pct}%</p>
+                      <p className="font-display text-lg font-extrabold tabular-nums text-foreground">{pct}%</p>
                       <p className="text-[11px] text-muted-foreground">{label}</p>
                     </div>
                   );

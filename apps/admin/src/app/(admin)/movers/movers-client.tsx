@@ -303,7 +303,7 @@ export default function MoversClient() {
             ETL trigger here on purpose: the FMCSA census download is
             form-gated, so the script needs a locally-downloaded CSV. ── */}
       {freshness ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               {t("freshness.totalRows")}

@@ -235,7 +235,7 @@ export default function SecurityClient() {
         {tab === "ip" && <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"><Plus className="h-4 w-4" /> Add IP Rule</button>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
         {statCards.map(c => (
           <div key={c.label} className="rounded-2xl border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2">
@@ -275,7 +275,7 @@ export default function SecurityClient() {
 
           {readinessOpen && (
             <div className="border-t border-border p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
                 {readinessStatCards.map((card) => (
                   <div key={card.label} className="rounded-2xl border border-border bg-background p-4">
                     <div className="flex items-center justify-between gap-2">

@@ -452,7 +452,7 @@ export default function ProviderGovernanceClient() {
         </section>
       )}
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4">
         {QUEUE_ORDER.filter((key) => key in summary).map((key) => (
           <div key={key} className="rounded-2xl border border-border bg-card p-4">
             <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{QUEUE_LABELS[key] || key}</p>

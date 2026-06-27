@@ -249,7 +249,7 @@ export default function ProviderQualityClient() {
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
             <MetricCard label="Active providers" value={formatNumber(data.snapshot.summary.activeProviders)} />
             <MetricCard label="Categories" value={formatNumber(data.snapshot.summary.categoryCount)} tone="info" />
             <MetricCard

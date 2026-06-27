@@ -316,7 +316,7 @@ export default function ConnectorsClient() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           { label: "Supported", value: availableConnectors.length, color: "text-foreground", bg: "bg-card" },
           { label: "Registered", value: connectors.length, color: "text-foreground", bg: "bg-card" },

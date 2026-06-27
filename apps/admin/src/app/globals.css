@@ -220,9 +220,9 @@
   box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.14) inset;
 }
 .tier-stamp.tier-trial {
-  background: var(--tone-orange-bg);
-  border-color: var(--tone-orange-br);
-  color: var(--tone-orange-fg);
+  background: var(--tone-amber-bg);
+  border-color: var(--tone-amber-br);
+  color: var(--tone-amber-fg);
 }
 
 /* =========================================================================
@@ -308,6 +308,7 @@
   font-size: 2rem;
   letter-spacing: 0;
   font-variation-settings: "opsz" 48, "SOFT" 30;
+  font-variant-numeric: tabular-nums;
 }
 .kpi-foil .kpi-label {
   font-family: var(--font-mono, "Geist Mono", ui-monospace, monospace);

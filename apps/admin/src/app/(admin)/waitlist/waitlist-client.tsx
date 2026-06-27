@@ -202,14 +202,14 @@ export default function WaitlistClient() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <SummaryCard label="Total signups" value={summary.totalAll} />
         <SummaryCard label="Pending outreach" value={summary.pendingCount} />
         <SummaryCard label="Notified" value={summary.notifiedCount} />
         <SummaryCard label="Converted" value={summary.convertedCount} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-6">
         {TARGETS.map((target) => {
           const meta = TARGET_META[target];
           const Icon = meta.icon;

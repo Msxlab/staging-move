@@ -432,7 +432,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <MetricCard label="Admins" value={admins.length} icon={Users} />
         <MetricCard label="Active" value={totals.active} icon={ShieldCheck} />
         <MetricCard label="MFA Enabled" value={totals.mfa} icon={Shield} />
