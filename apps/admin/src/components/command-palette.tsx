@@ -242,7 +242,7 @@ export function CommandPalette({ ctx }: { ctx?: Ctx }) {
               if (groupRows.length === 0) return null;
               return (
                 <div key={group} className="mb-1">
-                  <p className="px-4 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  <p className="px-4 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {groupLabels[group]}
                   </p>
                   {groupRows.map((row) => {

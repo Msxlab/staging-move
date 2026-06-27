@@ -493,7 +493,7 @@ export function DataTablePage<Row extends { id: string }>(
           of panning the whole page; min-w keeps columns legible. */}
       <div className="admin-panel">
         <div className="overflow-x-auto overscroll-x-contain">
-        <table className="w-full min-w-[640px]">
+        <table className="w-full md:min-w-[640px]">
           <thead className="bg-muted/50">
             <tr>
               {selectable ? (
@@ -620,7 +620,7 @@ export function DataTablePage<Row extends { id: string }>(
                           disabled={!canSelect}
                           aria-pressed={Boolean(selected)}
                           aria-label={selected ? "Deselect row" : "Select row"}
-                          className="text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                          className="text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <CheckSquareIcon checked={Boolean(selected)} primary={Boolean(selected)} />
                         </button>
@@ -668,7 +668,7 @@ export function DataTablePage<Row extends { id: string }>(
               onClick={() => query.setPage(query.state.page - 1)}
               disabled={query.state.page <= 1}
               aria-label="Previous page"
-              className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"
+              className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -679,7 +679,7 @@ export function DataTablePage<Row extends { id: string }>(
               onClick={() => query.setPage(query.state.page + 1)}
               disabled={query.state.page >= totalPages}
               aria-label="Next page"
-              className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"
+              className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

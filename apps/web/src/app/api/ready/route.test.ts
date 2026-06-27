@@ -94,16 +94,16 @@ describe("/api/ready", () => {
     expect(JSON.stringify(body)).not.toContain("USER_JWT_SECRET");
   });
 
-  it("fails with 503 when Upstash is missing in production", async () => {
+  it("warns but stays ready (200) when Upstash is missing — in-memory rate-limit fallback", async () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
     const response = await GET(request());
     const body = await response.json();
 
-    expect(response.status).toBe(503);
-    expect(body.requiredOk).toBe(false);
-    expect(body.missingRequiredCount).toBeGreaterThan(0);
+    expect(response.status).toBe(200);
+    expect(body.requiredOk).toBe(true);
+    expect(body.warningCount).toBeGreaterThan(0);
     expect(JSON.stringify(body)).not.toContain("UPSTASH_REDIS");
   });
 

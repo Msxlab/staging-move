@@ -36,6 +36,7 @@ export * from "./blog";
 export * from "./build-info";
 export * from "./billing-metrics";
 export * from "./mover-portal";
+export * from "./dossier-scale";
 export {
   sanitizeEmailHtml as sharedSanitizeEmailHtml,
   sanitizeEmailSubject as sharedSanitizeEmailSubject,

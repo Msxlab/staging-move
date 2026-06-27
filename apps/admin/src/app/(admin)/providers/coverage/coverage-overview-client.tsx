@@ -125,7 +125,7 @@ export default function CoverageOverviewClient() {
       ) : (
         <>
           {/* Summary stats */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
             {[
               { label: "States + DC", value: data.summary.totalStates, color: "text-foreground", bg: "bg-card" },
               { label: "Federal providers", value: data.summary.federalProviderCount, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg" },

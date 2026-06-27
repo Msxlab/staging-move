@@ -89,7 +89,7 @@ export function ConfirmDialog({
             aria-label={cancelLabel}
             disabled={busy}
             onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
@@ -100,7 +100,7 @@ export function ConfirmDialog({
             type="button"
             disabled={busy}
             onClick={onClose}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -109,7 +109,7 @@ export function ConfirmDialog({
             type="button"
             disabled={busy}
             onClick={() => void onConfirm()}
-            className={`rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 ${confirmClasses}`}
+            className={`rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${confirmClasses}`}
           >
             {busy ? "Working..." : confirmLabel}
           </button>

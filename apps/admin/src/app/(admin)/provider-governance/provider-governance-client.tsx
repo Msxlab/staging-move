@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
 
 const QUEUE_LABELS: Record<string, string> = {
   userCreatedProviderReview: "User-Submitted Provider Requests",
@@ -271,9 +272,7 @@ export default function ProviderGovernanceClient() {
               {aiBusy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Analyze gaps
             </button>
-            <button onClick={exportQueue} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-              <Download className="h-4 w-4" /> Export queue
-            </button>
+            <Button onClick={exportQueue} leftIcon={<Download />}>Export queue</Button>
           </>
         }
       />
@@ -452,7 +451,7 @@ export default function ProviderGovernanceClient() {
         </section>
       )}
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4">
         {QUEUE_ORDER.filter((key) => key in summary).map((key) => (
           <div key={key} className="rounded-2xl border border-border bg-card p-4">
             <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{QUEUE_LABELS[key] || key}</p>

@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { ADMIN_RESOURCES } from "@/lib/admin-permissions";
+import { Button } from "@/components/ui/button";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
@@ -422,17 +423,12 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
         subtitle="Roster, role boundaries, permission matrices, and admin-session visibility"
         actions={
           currentAdminRole === "SUPER_ADMIN" && (
-            <button
-              onClick={() => setShowForm((current) => !current)}
-              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4" /> Add Admin
-            </button>
+            <Button onClick={() => setShowForm((current) => !current)} leftIcon={<Plus />}>Add Admin</Button>
           )
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <MetricCard label="Admins" value={admins.length} icon={Users} />
         <MetricCard label="Active" value={totals.active} icon={ShieldCheck} />
         <MetricCard label="MFA Enabled" value={totals.mfa} icon={Shield} />

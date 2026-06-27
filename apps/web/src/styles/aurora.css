@@ -250,7 +250,7 @@
 }
 .lf-aurora .au-display em {
   font-style: italic;
-  background-image: linear-gradient(180deg, #F6E5BE 0%, var(--au-cool) 60%, #3D6FD6 100%);
+  background-image: linear-gradient(180deg, #C7DCFF 0%, var(--au-cool) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -437,7 +437,7 @@
   --card-foreground:      214 36% 95%;
   --popover:              217 41% 9%;
   --popover-foreground:   214 36% 95%;
-  --primary:              38.53 51.17% 58.24%;
+  --primary:              219.73 82.22% 64.71%;
   --primary-foreground:   218 43% 6%;
   --secondary:            215 22% 72%;
   --secondary-foreground: 218 43% 6%;
@@ -449,11 +449,11 @@
   --destructive-foreground: 218 43% 6%;
   --border:               217 32% 18%;
   --input:                217 32% 18%;
-  --ring:                 38.53 51.17% 58.24%;
+  --ring:                 219.73 82.22% 64.71%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect — anything still calling --rose gets LocateFlow Gold
-     primary; --foil-* also resolves to the Gold accent. The SVG
+  /* Brand-token redirect — anything still calling --rose gets LocateFlow Sapphire
+     primary; --foil-* also resolves to the Sapphire accent. The SVG
      sidebar logo sets its own gradients via inline `<defs>`, so it's not
      affected. */
   --rose:        var(--au-cool);
@@ -561,7 +561,7 @@
 .lf-aurora h2 em,
 .lf-aurora h3 em {
   font-style: italic;
-  background: linear-gradient(180deg, #F6E5BE 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
+  background: linear-gradient(180deg, #C7DCFF 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -718,7 +718,7 @@
 /* Foil-text inside the sidebar wordmark — keep the accent gradient
    regardless of theme so the brand mark always reads Aurora. */
 .lf-aurora aside .foil-text {
-  background: linear-gradient(135deg, #F6E5BE 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
+  background: linear-gradient(135deg, #C7DCFF 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
   -webkit-background-clip: text;
           background-clip: text;
 }

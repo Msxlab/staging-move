@@ -21,7 +21,6 @@ import {
   QuickDrawerSection,
 } from "@/components/quick-drawer";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
-import { TierStamp } from "@/components/premium/tier-stamp";
 import { HealthPill } from "@/components/premium/health-pill";
 import { computeUserHealth } from "@/lib/user-health";
 import { maskEmail } from "@/lib/privacy";
@@ -171,12 +170,9 @@ export default function UsersClient() {
       cell: (user) => (
         <div className="min-w-0 flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <p className="font-medium text-foreground text-sm truncate">
-                {user.firstName} {user.lastName}
-              </p>
-              <TierStamp plan={user.subscription?.plan} />
-            </div>
+            <p className="font-medium text-foreground text-sm truncate">
+              {user.firstName} {user.lastName}
+            </p>
             <p className="text-xs text-muted-foreground truncate">{maskEmail(user.email)}</p>
           </div>
         </div>
@@ -394,7 +390,7 @@ export default function UsersClient() {
         headerActions={() => (
           <button
             onClick={openExport}
-            className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <Download className="h-3.5 w-3.5" /> Export
           </button>

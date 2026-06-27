@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
 
 interface ConnectorConfig {
   id: string;
@@ -307,16 +308,11 @@ export default function ConnectorsClient() {
         title="<em>Connectors</em>"
         subtitle="Enable, stage, and roll out partner connectors — and kill them fast."
         actions={
-          <button
-            onClick={() => startRegister(firstRegisterableConnector)}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" /> {firstRegisterableConnector ? `Register ${firstRegisterableConnector.displayName}` : "Register"}
-          </button>
+          <Button onClick={() => startRegister(firstRegisterableConnector)} leftIcon={<Plus />}>{firstRegisterableConnector ? `Register ${firstRegisterableConnector.displayName}` : "Register"}</Button>
         }
       />
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           { label: "Supported", value: availableConnectors.length, color: "text-foreground", bg: "bg-card" },
           { label: "Registered", value: connectors.length, color: "text-foreground", bg: "bg-card" },

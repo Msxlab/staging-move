@@ -120,12 +120,14 @@ html:not(.dark) .adm-aurora .adp-topbar {
 }
 
 /* Anything inside the wrapper sits above the aurora layers.
-   Exclude the fixed-position mobile chrome (dock + section sheet): without
-   the exclusion this rule's higher specificity (0,3,0) overrode their
-   `position: fixed` (0,2,0), forcing them `relative` — which dropped the
-   mobile dock back into normal flow as a flex sibling of <main>, collapsing
-   the content column. Keep them out so they pin to the viewport as intended. */
-.adm-aurora > *:not(.au-aurora):not(.au-grain):not(.adp-mobile-dock):not(.adp-mobile-sheet) { position: relative; z-index: 2; }
+   Exclude the fixed-position chrome (desktop sidebar `.adp-side`, mobile dock,
+   section sheet): without the exclusion this rule's higher specificity overrode
+   their `position: fixed`, forcing them `relative` — which dropped them back
+   into normal flow as flex siblings of <main>. For the desktop sidebar that
+   double-offset the content (in-flow 256px rail + the shell's lg:pl-64),
+   leaving a ~256px gap; for the mobile dock it collapsed the content column.
+   Keep them out so they pin to the viewport as intended. */
+.adm-aurora > *:not(.au-aurora):not(.au-grain):not(.adp-side):not(.adp-mobile-dock):not(.adp-mobile-sheet) { position: relative; z-index: 2; }
 
 /* === Card — toned-down glass (dark) / flat solid (light) =========== */
 .adm-aurora .au-card {
@@ -202,7 +204,7 @@ html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
 }
 .adm-aurora .au-display em {
   font-style: italic;
-  background-image: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #3D6FD6 100%);
+  background-image: linear-gradient(180deg, var(--foil-edge) 0%, var(--au-violet) 60%, var(--foil-c) 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -253,7 +255,7 @@ html:not(.dark) .adm-aurora .au-pill.neutral { background: rgba(20,32,47,0.05); 
 .adm-aurora .au-btn.primary:hover { background: var(--au-accent-2); border-color: transparent; }
 html:not(.dark) .adm-aurora .au-btn.primary {
   background: var(--au-accent);
-  color: #FFFFFF;
+  color: var(--au-accent-ink);
   border-color: transparent;
   box-shadow: 0 1px 2px rgba(20, 32, 51, 0.16);
 }
@@ -386,8 +388,8 @@ html:not(.dark) .adm-aurora .admin-panel {
   --card-foreground:      214 40% 98%;
   --popover:              218 22% 19%;
   --popover-foreground:   214 40% 98%;
-  /* Primary = LocateFlow Gold #5B8DEF (honey is warn/caution only). */
-  --primary:              38.53 51.17% 58.24%;
+  /* Primary = LocateFlow Sapphire #5B8DEF (honey is warn/caution only). */
+  --primary:              219.73 82.22% 64.71%;
   --primary-foreground:   215 45% 8%;
   --secondary:            215 24% 82%;
   --secondary-foreground: 218 43% 6%;
@@ -399,7 +401,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --destructive-foreground: 218 43% 6%;
   --border:               217 20% 30%;
   --input:                217 20% 30%;
-  --ring:                 38.53 51.17% 58.24%;
+  --ring:                 219.73 82.22% 64.71%;
   --radius:               0.625rem;
 
   /* Brand-token redirect — anything still calling --rose gets the LocateFlow Gold
@@ -410,8 +412,8 @@ html:not(.dark) .adm-aurora .admin-panel {
   --foil-a:      #83AAF5;
   --foil-b:      var(--au-violet);
   --foil-c:      #3D6FD6;
+  --foil-edge:   #C7DCFF;
   --foil:        var(--au-violet);
-  --foil-ink:    #86631A;
   --sage:        var(--au-mint);
   --brand-orange:       var(--au-cool);
   --brand-orange-light: var(--au-cool);
@@ -456,13 +458,13 @@ html:not(.dark) .adm-aurora {
   --secondary:            216 14% 41%;   /* #5A6678 slate */
   --secondary-foreground: 0 0% 100%;
   --muted:                216 25% 94%;
-  --muted-foreground:     216 14% 41%;
+  --muted-foreground:     216 14% 30%;
   --accent:               216 28% 95%;
   --accent-foreground:    216 33% 15%;
   --destructive:          359 51% 49%;
   --destructive-foreground: 0 0% 100%;
-  --border:               217 25% 90%;   /* hairline */
-  --input:                217 25% 90%;
+  --border:               217 22% 62%;   /* hairline ~2.9:1 on #FFFFFF cards */
+  --input:                217 22% 62%;
   --ring:                 217.38 58.56% 43.53%;
 
   /* Brand-token redirect (light) — Sapphire paper accent mirrors the dark Gold scope. */
@@ -473,7 +475,6 @@ html:not(.dark) .adm-aurora {
   --foil-b:      var(--au-violet);
   --foil-c:      #244C90;
   --foil:        var(--au-violet);
-  --foil-ink:    #2E5FB0;
   --sage:        var(--au-mint);
   --brand-orange:       var(--au-cool);
   --brand-orange-light: var(--au-cool);
@@ -529,7 +530,7 @@ html:not(.dark) .adm-aurora aside.bg-card {
 .adm-aurora h2 em,
 .adm-aurora h3 em {
   font-style: italic;
-  background: linear-gradient(180deg, #F6E5BE 0%, var(--au-violet) 60%, #3D6FD6 100%);
+  background: linear-gradient(180deg, var(--foil-edge) 0%, var(--au-violet) 60%, var(--foil-c) 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -575,6 +576,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
   font-weight: 600;
   font-size: 1.875rem;
   letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
   color: var(--au-ink);
 }
 .adm-aurora .kpi-foil .kpi-label {
@@ -698,7 +700,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
 /* Foil-text inside the sidebar wordmark — keep the accent gradient
    regardless of theme so the brand mark stays on theme. */
 .adm-aurora aside .foil-text {
-  background: linear-gradient(135deg, #F6E5BE 0%, var(--au-violet) 60%, #3D6FD6 100%);
+  background: linear-gradient(135deg, var(--foil-edge) 0%, var(--au-violet) 60%, #3D6FD6 100%);
   -webkit-background-clip: text;
           background-clip: text;
 }
@@ -996,6 +998,16 @@ html:not(.dark) .adm-aurora .admin-workspace {
 /* desktop-first, but keep the row intact at 1280px-wide viewports */
 @media (max-width: 1366px) {
   .adm-aurora .adp-tsearch { width: 240px; }
+
+  /* C2 - tablet band (1024-1366px): the phone collapse at <=1023px does not
+     reach here, so the full Admin > Section > Page competes with the 240px
+     search field + icon cluster and crowds the row. Cap the crumb and drop
+     the intermediate (section) crumb + its leading separator, collapsing to
+     Admin > Page. Mirrors the proven <=1023px treatment. */
+  .adm-aurora .adp-topbar .adp-crumb { max-width: 38%; }
+  .adm-aurora .adp-topbar .adp-crumb b { max-width: 32vw; }
+  .adm-aurora .adp-topbar .adp-crumb span:not(:first-child),
+  .adm-aurora .adp-topbar .adp-crumb svg:first-of-type { display: none; }
 }
 
 /* Mobile topbar sizing — MUST come after the base .adp-tsearch / .adp-iconbtn /
@@ -1012,6 +1024,26 @@ html:not(.dark) .adm-aurora .admin-workspace {
   .adm-aurora .adp-tsearch .kbd { display: none; }
   .adm-aurora .adp-iconbtn { width: 44px; height: 44px; flex-shrink: 0; }
   .adm-aurora .adp-avatar { width: 40px; height: 40px; flex-shrink: 0; }
+}
+
+/* C6 - very narrow phones (~300-360px). At max-width:1023px the topbar's
+   fixed cluster (search 44 + bell 44 + help 44 + avatar 40) plus gaps and
+   side padding leaves too little room for the breadcrumb, so the flex row
+   overflows below ~320px. Tighten gap/padding, let the search shrink, and
+   drop the non-essential help icon (Help Center stays reachable from nav;
+   the bell, gated to ADMIN+, stays). */
+@media (max-width: 360px) {
+  .adm-aurora .adp-topbar {
+    gap: 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+  .adm-aurora .adp-topbar .adp-tsearch {
+    width: 40px; min-width: 0; flex-shrink: 1;
+  }
+  .adm-aurora .adp-topbar a.adp-iconbtn[href="/help-center"] {
+    display: none;
+  }
 }
 
 /* =========================================================================
@@ -1065,6 +1097,12 @@ html:not(.dark) .adm-aurora {
 @media (max-width: 640px) {
   .adm-aurora .au-mini,
   .adm-aurora .au-mini--wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* C5 - tablet: a plain (non-wrap) 4-up strip otherwise stays 4-up from 641px
+   and crushes the 22px mono values. Cap to 2-up across the tablet band; the
+   N-up natural layout returns at >=1025px. .au-mini--wrap keeps its 3-up rule. */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .adm-aurora .au-mini:not(.au-mini--wrap) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 400px) {
   .adm-aurora .au-mini,
@@ -1508,7 +1546,7 @@ html:not(.dark) .adm-aurora .au-tip {
   font-weight: 600; font-size: 18px;
   margin-bottom: 12px;
 }
-html:not(.dark) .adm-aurora .adp-rail .mark { color: #FFFFFF; }
+html:not(.dark) .adm-aurora .adp-rail .mark { color: var(--au-accent-ink); }
 .adm-aurora .adp-rail .rail-nav { display: flex; flex-direction: column; gap: 4px; width: 100%; }
 .adm-aurora .adp-rail .rail-grow { flex: 1; }
 .adm-aurora .adp-rail .rail-av {
@@ -1926,7 +1964,7 @@ html:not(.dark) .adm-aurora .adp-rail .mark { color: #FFFFFF; }
   border: none;
   background: var(--au-accent); color: var(--au-accent-ink);
 }
-html:not(.dark) .adm-aurora .adp-dact .pri { color: #FFFFFF; }
+html:not(.dark) .adm-aurora .adp-dact .pri { color: var(--au-accent-ink); }
 .adm-aurora .adp-dact .pri:hover { background: var(--au-accent-2); }
 .adm-aurora .adp-dact .ghost {
   background: var(--au-field);

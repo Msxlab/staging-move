@@ -73,7 +73,7 @@ export default function HelpCenterClient() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Articles", value: articles.length, color: "text-foreground", bg: "bg-card" },
           { label: "Published", value: articles.filter(a => a.isPublished).length, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },

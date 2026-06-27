@@ -83,7 +83,7 @@
 html:not(.dark) .adm-aurora {
   --au-ink:           #1A2433;
   --au-ink-2:         #5A6678;
-  --au-ink-3:         #93A0B0;
+  --au-ink-3:         #65727A;
   --au-ink-4:         #ABB6C5;
   --au-base:          #F4F6F9;
   --au-base-2:        #FFFFFF;
@@ -95,7 +95,7 @@ html:not(.dark) .adm-aurora {
   /* Edges become dark hairlines (no more white inset highlights). */
   --au-edge:          rgba(20, 32, 51, 0.10);
   --au-edge-2:        rgba(20, 32, 51, 0.085);
-  --au-rule:          rgba(20, 32, 51, 0.085);
+  --au-rule:          rgba(20, 32, 51, 0.22);
   --au-rule-2:        rgba(20, 32, 51, 0.16);
 
   --au-cool:          #2E5FB0;

@@ -5,6 +5,7 @@ import { Link2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
 
 interface FallbackAction {
   id: string;
@@ -153,12 +154,7 @@ export default function ConnectorFallbacksClient() {
         title="Fallback <em>actions</em>"
         subtitle="Guided deep-link / mailto / PDF steps a connector degrades to when it can't auto-push. A row here overrides the in-code default; unsafe URLs are rejected and every write is audit-logged."
         actions={
-          <button
-            onClick={startCreate}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" /> Add fallback
-          </button>
+          <Button onClick={startCreate} leftIcon={<Plus />}>Add fallback</Button>
         }
       />
 

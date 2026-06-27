@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { createPublicPageMetadata } from "@/lib/seo";
 import {
-  CONTACT_CONFIGURATION_NOTE,
   displayCompanyAddress,
   displayLegalEntityName,
   LEGAL_CONTACTS,
@@ -126,9 +125,7 @@ export default function ContactPage() {
               <p className="text-[15px] leading-relaxed text-foreground/90">{publicCompanyAddress}</p>
             ) : (
               <p className="text-[15px] leading-relaxed text-foreground/90">Formal legal, billing, and privacy correspondence can use the contact paths above until the public mailing address is finalized.</p>
-            )}
-            <p className="text-xs leading-relaxed text-muted-foreground">{CONTACT_CONFIGURATION_NOTE}</p>
-          </div>
+            )}          </div>
         </div>
       </PublicSection>
 

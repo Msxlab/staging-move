@@ -93,7 +93,7 @@ export function PasswordConfirmModal({
             aria-label="Close"
             disabled={busy}
             onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
@@ -195,14 +195,14 @@ export function PasswordConfirmModal({
               type="button"
               disabled={busy}
               onClick={onClose}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitDisabled}
-              className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+              className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy ? "Confirming..." : confirmLabel}
             </button>

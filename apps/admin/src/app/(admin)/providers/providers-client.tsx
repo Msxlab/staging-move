@@ -460,7 +460,7 @@ export default function ProvidersClient() {
       )}
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         {[
           { label: "Total", value: total, color: "text-foreground", bg: "bg-card" },
           { label: "Active", value: activeCount, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
@@ -700,7 +700,7 @@ export default function ProvidersClient() {
                 </button>
                 {isOpen && items.length > 0 && (
                   <div className="border-t border-border overflow-x-auto">
-                    <table className="w-full min-w-[640px]">
+                    <table className="w-full md:min-w-[640px]">
                       <thead className="bg-muted/30">
                         <tr>
                           <th className="w-10 px-3 py-2.5"><button onClick={() => { const allSelected = items.every(p => selected.has(p.id)); items.forEach(p => { setSelected(prev => { const n = new Set(prev); allSelected ? n.delete(p.id) : n.add(p.id); return n; }); }); }} aria-label="Select all providers in this category"><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>

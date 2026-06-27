@@ -356,7 +356,7 @@ export default function NotificationsClient() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statCards.map((card) => (
           <div
             key={card.label}
@@ -701,7 +701,7 @@ export default function NotificationsClient() {
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto overscroll-x-contain rounded-xl border border-border">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full md:min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/30 text-left">
                   <th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Title</th>
