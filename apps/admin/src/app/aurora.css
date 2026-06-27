@@ -120,12 +120,14 @@ html:not(.dark) .adm-aurora .adp-topbar {
 }
 
 /* Anything inside the wrapper sits above the aurora layers.
-   Exclude the fixed-position mobile chrome (dock + section sheet): without
-   the exclusion this rule's higher specificity (0,3,0) overrode their
-   `position: fixed` (0,2,0), forcing them `relative` — which dropped the
-   mobile dock back into normal flow as a flex sibling of <main>, collapsing
-   the content column. Keep them out so they pin to the viewport as intended. */
-.adm-aurora > *:not(.au-aurora):not(.au-grain):not(.adp-mobile-dock):not(.adp-mobile-sheet) { position: relative; z-index: 2; }
+   Exclude the fixed-position chrome (desktop sidebar `.adp-side`, mobile dock,
+   section sheet): without the exclusion this rule's higher specificity overrode
+   their `position: fixed`, forcing them `relative` — which dropped them back
+   into normal flow as flex siblings of <main>. For the desktop sidebar that
+   double-offset the content (in-flow 256px rail + the shell's lg:pl-64),
+   leaving a ~256px gap; for the mobile dock it collapsed the content column.
+   Keep them out so they pin to the viewport as intended. */
+.adm-aurora > *:not(.au-aurora):not(.au-grain):not(.adp-side):not(.adp-mobile-dock):not(.adp-mobile-sheet) { position: relative; z-index: 2; }
 
 /* === Card — toned-down glass (dark) / flat solid (light) =========== */
 .adm-aurora .au-card {
