@@ -334,7 +334,7 @@ export default function LogsClient() {
             </a>
             <button
               onClick={() => setExportStepUpOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent"
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <Download className="h-3.5 w-3.5" /> Export CSV
             </button>

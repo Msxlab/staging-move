@@ -918,7 +918,7 @@ const adminAuroraLight: CssBlock = {
     c("Edges become dark hairlines (no more white inset highlights)."),
     v("au-edge", "rgba(20, 32, 51, 0.10)"),
     v("au-edge-2", "rgba(20, 32, 51, 0.085)"),
-    v("au-rule", "rgba(20, 32, 51, 0.085)"),
+    v("au-rule", "rgba(20, 32, 51, 0.22)"),
     v("au-rule-2", "rgba(20, 32, 51, 0.16)"),
     blank,
     v("au-cool", "#2E5FB0"),

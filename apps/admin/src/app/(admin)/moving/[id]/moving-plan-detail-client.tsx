@@ -416,7 +416,7 @@ export default function MovingPlanDetailClient({ id }: { id: string }) {
           />
         ) : (
           <div className="overflow-x-auto overscroll-x-contain rounded-[18px] border border-border bg-card">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full md:min-w-[640px] text-sm">
               <thead className="bg-foreground/[0.03] text-left text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Task</th>

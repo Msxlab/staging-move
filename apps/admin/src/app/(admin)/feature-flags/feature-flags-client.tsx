@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
 
 interface FeatureFlag { id: string; name: string; description: string | null; enabled: boolean; targetType: string; targetValue: string | null; createdAt: string }
 const TARGET_TYPES = ["ALL", "PERCENTAGE", "USER_LIST", "PLAN"];
@@ -146,7 +147,7 @@ export default function FeatureFlagsClient() {
         title="Feature <em>Flags</em>"
         subtitle="Toggle features and manage rollouts"
         actions={
-          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"><Plus className="h-4 w-4" /> New Flag</button>
+          <Button onClick={() => { reset(); setShowForm(true); }} leftIcon={<Plus />}>New Flag</Button>
         }
       />
 

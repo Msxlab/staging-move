@@ -417,7 +417,7 @@ export default function AnalyticsClient() {
             <>
               {/* Headline move metrics */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="rounded-[14px] border border-border bg-muted/30 p-4">
+                <div className="rounded-xl border border-border bg-muted/30 p-4">
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                     <ArrowRight className="h-3.5 w-3.5" /> Interstate vs Intrastate
                   </div>
@@ -433,7 +433,7 @@ export default function AnalyticsClient() {
                   </p>
                 </div>
 
-                <div className="rounded-[14px] border border-border bg-muted/30 p-4">
+                <div className="rounded-xl border border-border bg-muted/30 p-4">
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                     <Timer className="h-3.5 w-3.5" /> Avg Move Lead Time
                   </div>
@@ -447,7 +447,7 @@ export default function AnalyticsClient() {
                   </p>
                 </div>
 
-                <div className="rounded-[14px] border border-border bg-muted/30 p-4">
+                <div className="rounded-xl border border-border bg-muted/30 p-4">
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5" /> Distinct State Pairs
                   </div>

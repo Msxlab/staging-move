@@ -95,7 +95,7 @@ html:not(.dark) .adm-aurora {
   /* Edges become dark hairlines (no more white inset highlights). */
   --au-edge:          rgba(20, 32, 51, 0.10);
   --au-edge-2:        rgba(20, 32, 51, 0.085);
-  --au-rule:          rgba(20, 32, 51, 0.085);
+  --au-rule:          rgba(20, 32, 51, 0.22);
   --au-rule-2:        rgba(20, 32, 51, 0.16);
 
   --au-cool:          #2E5FB0;

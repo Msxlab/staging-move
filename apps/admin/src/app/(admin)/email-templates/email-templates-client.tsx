@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
 
 interface Template {
   id: string;
@@ -145,7 +146,7 @@ export default function EmailTemplatesClient() {
         title="Email <em>Templates</em>"
         subtitle="Manage email templates and view send logs"
         actions={
-          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"><Plus className="h-4 w-4" /> New Template</button>
+          <Button onClick={() => { reset(); setShowForm(true); }} leftIcon={<Plus />}>New Template</Button>
         }
       />
 
@@ -196,7 +197,7 @@ export default function EmailTemplatesClient() {
       {tab === "templates" && (
         <>
         <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card sm:block">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full md:min-w-[640px] text-sm">
             <thead className="bg-muted/50"><tr className="text-left"><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Name</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Slug</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Category</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sent</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Failed</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</th><th className="px-4 py-3 w-32 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Actions</th></tr></thead>
             <tbody className="divide-y divide-border">
               {templates.length === 0 ? (<tr><td colSpan={7} className="px-4"><EmptyState icon={Mail} title="No templates yet" description="Create your first email template to get started." /></td></tr>) : templates.map((t) => (
@@ -248,7 +249,7 @@ export default function EmailTemplatesClient() {
       {tab === "logs" && (
         <>
         <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card sm:block">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full md:min-w-[640px] text-sm">
             <thead className="bg-muted/50"><tr className="text-left"><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">To</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Template</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Subject</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sent</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Provider ID</th><th className="px-4 py-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Details</th></tr></thead>
             <tbody className="divide-y divide-border">
               {logs.length === 0 ? (<tr><td colSpan={7} className="px-4"><EmptyState icon={Send} title="No emails sent yet" description="Send logs will appear here once emails go out." /></td></tr>) : logs.map((l) => (

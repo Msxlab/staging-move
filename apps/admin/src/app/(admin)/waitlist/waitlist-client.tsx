@@ -305,7 +305,7 @@ export default function WaitlistClient() {
             description="Try adjusting or clearing the filters above."
           />
         ) : (
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full md:min-w-[640px] text-sm">
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Email</th>

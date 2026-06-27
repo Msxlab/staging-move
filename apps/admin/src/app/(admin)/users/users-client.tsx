@@ -390,7 +390,7 @@ export default function UsersClient() {
         headerActions={() => (
           <button
             onClick={openExport}
-            className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <Download className="h-3.5 w-3.5" /> Export
           </button>
