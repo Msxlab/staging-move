@@ -67,7 +67,7 @@
     "@tanstack/react-query-devtools": "^5.100.14",
     "@types/bcryptjs": "^2.4.6",
     "@types/html-to-text": "^9.0.4",
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.0.1",
     "@types/pdfkit": "^0.17.6",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.2.15",
