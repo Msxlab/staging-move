@@ -91,7 +91,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.7",
+    "@babel/core": "^8.0.1",
     "@bacons/apple-targets": "^4.0.7",
     "@types/react": "~19.2.15",
     "eas-cli": "^20.1.0",
